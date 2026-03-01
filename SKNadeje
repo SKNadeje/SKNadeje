@@ -1,0 +1,2661 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SK Naděje - WorldCup2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+
+<header class="site-header">
+    <div class="mini-host-bar">
+        <div class="mini-flags">
+            <img src="https://flagcdn.com/us.svg" alt="USA" class="wave-1">
+            <img src="https://flagcdn.com/mx.svg" alt="Mexico" class="wave-2">
+            <img src="https://flagcdn.com/ca.svg" alt="Canada" class="wave-3">
+        </div>
+        <span class="mini-text">UNITED STATES | MEXICO | CANADA 2026</span>
+    </div>
+</header>
+    
+    <style>
+/* Celá obrazovka - pozadí */
+.modal-overlay {
+    position: fixed;
+    inset: 0; /* Pokryje celou plochu */
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(8px); /* Rozmazání pozadí pro luxusní vzhled */
+    display: none; /* Zapne JS */
+    justify-content: center; /* Horizontální střed */
+    align-items: center;     /* Vertikální střed */
+    z-index: 99999;
+    padding: 20px;
+}
+
+/* Ten tvůj tmavý "obdélník" */
+.payment-modal {
+    background: #0f172a; /* Tmavě modrá/černá */
+    border: 2px solid #fbbf24; /* Zlatý okraj */
+    border-radius: 24px;
+    padding: 30px;
+    max-width: 400px; /* Aby nebyl moc široký na PC */
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Srovná vše v modalu na střed */
+}
+        #payment-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(8px);
+    display: none; /* JS přepne na flex */
+    justify-content: center; /* Horizontální střed */
+    align-items: center;     /* Vertikální střed */
+    z-index: 10000;
+}
+
+.payment-modal h2 { color: #fbbf24; margin-bottom: 10px; }
+.payment-modal p { color: #f8fafc; font-size: 0.9rem; margin-bottom: 20px; }
+
+.qr-placeholder {
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    margin: 0 auto 20px auto;
+    width: 200px; height: 200px;
+}
+
+.payment-info {
+    background: rgba(255,255,255,0.05);
+    padding: 15px;
+    border-radius: 10px;
+    text-align: left;
+    font-family: monospace;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+}
+
+.close-payment-btn {
+    background: #fbbf24;
+    color: #0f172a;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 10px;
+    font-weight: 800;
+    cursor: pointer;
+    width: 100%;
+}
+        
+/* Samotný pohyb ve větru */
+@keyframes flutter {
+    0% { transform: rotate(-5deg) translateY(0px); }
+    50% { transform: rotate(5deg) translateY(-2px); }
+    100% { transform: rotate(-5deg) translateY(0px); }
+}
+
+/* Nastavení pro každou vlajku zvlášť (různé zpoždění animace) */
+.wave-1 {
+    animation: flutter 2.5s ease-in-out infinite;
+    transform-origin: bottom center;
+}
+
+.wave-2 {
+    animation: flutter 2.5s ease-in-out infinite;
+    animation-delay: 0.4s; /* Začne o trochu později */
+    transform-origin: bottom center;
+}
+
+.wave-3 {
+    animation: flutter 2.5s ease-in-out infinite;
+    animation-delay: 0.8s; /* Začne jako poslední */
+    transform-origin: bottom center;
+}
+        
+    /* --- VYLEPŠENÉ PROMĚNNÉ --- */
+    :root { 
+        --bg: #050810; /* Ještě hlubší a luxusnější černomodrá */
+        --card: rgba(30, 41, 59, 0.65); /* Poloprůhledná pro skleněný efekt */
+        --card-solid: #1e293b;
+        --accent: #38bdf8; 
+        --accent-glow: rgba(56, 189, 248, 0.4);
+        --text: #f8fafc; 
+        --text-muted: #94a3b8;
+        --winner: #22c55e; 
+        --winner-glow: rgba(34, 197, 94, 0.4);
+        --lose: #ef4444; 
+        --border: rgba(51, 65, 85, 0.8); 
+    }
+
+    /* --- CUSTOM SCROLLBAR --- */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    /* --- ZÁKLAD --- */
+   body { 
+    background: radial-gradient(circle at top center, #111827 0%, var(--bg) 100%); 
+    color: var(--text); 
+    font-family: 'Inter', sans-serif; 
+    margin: 0; 
+    padding: 0; 
+    min-height: 100vh;
+    overflow-x: hidden; /* Zabrání horizontálnímu ujíždění */
+    width: 100%;
+}
+    
+    .app-wrapper { max-width: 1600px; margin: 0 auto; padding: 20px; }
+    
+    /* --- NÁDHERNÝ NADPIS --- */
+    header { text-align: center; padding: 15px 0; }
+    header h1 {
+        font-size: 2.5rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 20px;
+        background: linear-gradient(135deg, #fff 0%, #38bdf8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0px 4px 10px rgba(56, 189, 248, 0.2));
+    }
+
+    /* --- STEPPER --- */
+    /* Najdi .step-indicator a přidej tam flex-wrap: wrap */
+.step-indicator { 
+    display: flex; 
+    justify-content: center; 
+    gap: 10px; 
+    margin-bottom: 30px; 
+    flex-wrap: wrap; /* TOTO OPRAVÍ ROZTAŽENÍ STRÁNKY */
+}
+    .step-dot { 
+        padding: 8px 18px; 
+        border-radius: 30px; 
+        background: rgba(36, 49, 71, 0.5); 
+        backdrop-filter: blur(5px);
+        font-size: 0.85rem; 
+        font-weight: 600;
+        color: var(--text-muted); 
+        border: 1px solid var(--border); 
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .step-dot.active { 
+        background: linear-gradient(135deg, #facc15, #eab308) !important; 
+        color: #000 !important; 
+        border-color: #facc15; 
+        box-shadow: 0 0 15px rgba(250, 204, 21, 0.4);
+        transform: scale(1.05);
+    }
+    .step-dot.completed { 
+        background: linear-gradient(135deg, #22c55e, #16a34a) !important; 
+        color: #fff !important; 
+        border-color: var(--winner); 
+        box-shadow: 0 0 15px var(--winner-glow);
+    }
+
+    .dashboard { display: grid; grid-template-columns: 480px 1fr; gap: 30px; align-items: start; }
+    @media (max-width: 1200px) { .dashboard { grid-template-columns: 1fr; gap: 20px;} }
+
+    /* --- SECTIONS & GLASSMORPHISM --- */
+    .section-box { 
+        background: var(--card); 
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.05); 
+        border-radius: 16px; 
+        margin-bottom: 25px; 
+        overflow: hidden; 
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    } 
+    .section-header { 
+        padding: 18px 25px; 
+        background: rgba(15, 23, 42, 0.8); 
+        font-weight: 800; 
+        letter-spacing: 1px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+    }
+
+    /* --- ŽEBŘÍČEK --- */
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 14px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
+    tr.player-row:hover { background: rgba(56, 189, 248, 0.08); cursor: pointer; }
+
+    /* --- LEVÝ SLOUPEC DETAIL --- */
+    .tip-detail-row { display: none; background: rgba(7, 10, 19, 0.8); }
+    .detail-container { padding: 25px; border-left: 4px solid var(--accent); }
+    .detail-section-title { color: var(--accent); font-size: 0.9rem; font-weight: 800; text-transform: uppercase; margin-bottom: 15px; display: block; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .det-groups-grid { 
+    display: grid; 
+    /* Místo natvrdo 3 sloupců dovolíme prohlížeči skládat je podle šířky */
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); 
+    gap: 12px; 
+    margin-bottom: 25px; 
+}
+    .det-group-box { background: rgba(22, 30, 46, 0.8); padding: 12px; border-radius: 10px; font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.05); }
+    .det-group-box b { color: var(--accent); display: block; margin-bottom: 8px; font-size: 0.75rem; }
+    /* Základní nastavení (pro velké obrazovky) */
+.det-playoff-stages { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 15px; 
+}
+    .det-stage-column { display: flex; flex-direction: column; gap: 15px; }
+    .det-stage-card { background: rgba(22, 30, 46, 0.8); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+    .det-stage-card h5 { margin: 0 0 12px 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .det-team-list { display: flex; flex-direction: column; gap: 6px; }
+        /* OPRAVA PRO MOBILY (šířka pod 768px) */
+@media (max-width: 768px) {
+    .det-playoff-stages {
+        grid-template-columns: 1fr; /* Všechno pod sebou */
+        gap: 20px;
+    }
+    
+    .detail-container {
+        padding: 15px; /* Menší padding, aby bylo víc místa na text */
+    }
+
+    .det-team-tag {
+        font-size: 0.75rem; /* Menší písmo týmů v detailu pro mobil */
+        padding: 4px 6px;
+    }
+}
+
+    #admin-panel { min-height: 800px; overflow-anchor: none; }
+    #leaderboard-section { contain: layout; }
+    html, body { overflow-anchor: none !important; scroll-behavior: auto !important; }
+
+    #admin-form-container { min-height: 100vh; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+
+    /* --- LUXUSNÍ TOP 3 ŽEBŘÍČEK (Síň slávy) --- */
+    #leaderboard { 
+    border-collapse: separate; 
+    border-spacing: 0 8px; 
+    width: 100%; 
+    padding: 0; 
+    table-layout: fixed; /* Nutí tabulku držet se šířky kontejneru */
+}
+    #leaderboard tbody tr { border-radius: 12px; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; background: rgba(255, 255, 255, 0.02); }
+    #leaderboard tbody tr:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4); z-index: 10; position: relative;}
+
+    #leaderboard tbody tr:nth-child(1), #leaderboard tbody tr:nth-child(2), #leaderboard tbody tr:nth-child(3) { font-weight: 800; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); }
+
+    .rank-icon { 
+    font-size: 1.4rem; /* Ikona byla zbytečně obří (1.8rem), tohle sedne lépe */
+    vertical-align: middle; 
+    display: inline-block; 
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
+    #leaderboard tbody tr:hover .rank-icon { transform: scale(1.2) rotate(10deg); }
+
+    #leaderboard tbody tr:nth-child(1) { background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.05) 50%, rgba(251, 191, 36, 0.2)) !important; color: #fbbf24 !important; border: 1px solid rgba(251, 191, 36, 0.4); box-shadow: 0 0 20px rgba(251, 191, 36, 0.15); transform: scale(1.02); }
+    #leaderboard tbody tr:nth-child(1):hover { transform: scale(1.03) translateY(-2px); box-shadow: 0 10px 30px rgba(251, 191, 36, 0.3); }
+    #leaderboard tbody tr:nth-child(1) .rank-icon { color: #fbbf24; filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8)); }
+
+    #leaderboard tbody tr:nth-child(2) { background: linear-gradient(135deg, rgba(148, 163, 184, 0.15), rgba(148, 163, 184, 0.02) 50%, rgba(148, 163, 184, 0.15)) !important; color: #f8fafc !important; border: 1px solid rgba(148, 163, 184, 0.3); }
+    #leaderboard tbody tr:nth-child(2) .rank-icon { color: #cbd5e1; filter: drop-shadow(0 0 6px rgba(148, 163, 184, 0.6)); }
+
+    #leaderboard tbody tr:nth-child(3) { background: linear-gradient(135deg, rgba(217, 119, 6, 0.15), rgba(217, 119, 6, 0.02) 50%, rgba(217, 119, 6, 0.15)) !important; color: #fb923c !important; border: 1px solid rgba(217, 119, 6, 0.3); }
+    #leaderboard tbody tr:nth-child(3) .rank-icon { color: #d97706; filter: drop-shadow(0 0 5px rgba(217, 119, 6, 0.5)); }
+
+    #leaderboard tbody tr:nth-child(n+4) { border: 1px solid rgba(255, 255, 255, 0.03); }
+    #leaderboard td { padding: 15px; vertical-align: middle; border: none; }
+    #leaderboard td:first-child { width: 60px; text-align: center; font-size: 1.2rem; }
+    #leaderboard td { 
+    overflow: hidden; 
+    text-overflow: ellipsis; /* Pokud by jméno bylo moc dlouhé, zkrátí ho tečkami */
+}
+
+    /* --- VLAJKY --- */
+    /* Najdi v CSS tyto třídy a uprav je takto: */
+.site-header { 
+    width: 100%; 
+    display: flex; 
+    justify-content: center; 
+    padding: 20px 0; 
+    box-sizing: border-box; /* Zajistí, že padding neudělá header širší */
+}
+    .mini-host-bar { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 12px; 
+    background: rgba(255, 255, 255, 0.02); 
+    padding: 15px 20px; /* Trochu jsem zmenšil padding pro mobily */
+    border-radius: 16px; 
+    border: 1px solid rgba(255,255,255,0.05); 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    max-width: 90%; /* Aby na malých mobilech nelezl mimo */
+}
+    .mini-flags { display: flex; gap: 12px; }
+    /* Uprav tento blok */
+.mini-flags img { 
+    height: 40px; 
+    width: auto; 
+    border-radius: 4px; 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4); 
+    transition: transform 0.3s ease, filter 0.3s ease; 
+    filter: brightness(0.9); 
+}
+    .mini-flags img:hover { transform: translateY(-3px); filter: brightness(1.1); }
+    @media (min-width: 768px) { .mini-flags img { height: 180px; border-radius: 8px; } }
+   /* A uprav tento text, aby se na mobilu nezalamoval ošklivě */
+.mini-text { 
+    font-size: 0.75rem; /* O trochu menší na mobilu */
+    color: var(--text-muted); 
+    font-weight: 800; 
+    letter-spacing: 2px; /* Trochu menší rozestupy */
+    text-transform: uppercase; 
+    text-align: center; 
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+    /* --- ŠIROKÉ KARTY SKUPIN (Nový vzhled) --- */
+    .groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; padding: 10px 0; }
+    .group-card { 
+        background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+        border: 1px solid rgba(255,255,255,0.05); 
+        padding: 18px; 
+        border-radius: 14px; 
+        cursor: pointer; 
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        text-align: left; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .group-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 12px 25px rgba(56, 189, 248, 0.15); }
+    .group-card.filled { border-color: var(--winner); background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(34, 197, 94, 0.08)); }
+    .group-card.selected { background: var(--accent); color: #000; border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+    
+    .g-card-header { font-size: 0.8rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;}
+    .g-teams-row { display: flex; justify-content: space-between; align-items: center; }
+    .g-team-name { font-size: 1.05rem; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 8px; }
+    .g-pos-number { color: var(--accent); font-size: 0.85rem; opacity: 0.9; font-weight: 900; background: rgba(56,189,248,0.1); padding: 2px 6px; border-radius: 6px;}
+
+    /* --- TŘETÍ MÍSTA (Karty) --- */
+    .card-third { position: relative; background: var(--card-solid); border: 1px solid rgba(255,255,255,0.05); padding: 20px 10px; border-radius: 14px; text-align: center; cursor: pointer; transition: all 0.3s ease; min-height: 80px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);}
+    .card-third:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(56,189,248,0.15);}
+    .card-third.selected { background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(21, 128, 61, 0.4)) !important; border: 2px solid var(--winner) !important; color: white !important; box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+    .card-third small { font-size: 0.7rem; opacity: 0.7; text-transform: uppercase; font-weight: 600; letter-spacing: 1px; }
+    .selection-order { position: absolute; top: -12px; right: -12px; background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; width: 32px; height: 32px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; border: 3px solid var(--bg); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); z-index: 10; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    @keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+    /* --- PLAYOFF MATCHUPY --- */
+    .playoff-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 18px; padding: 25px; }
+    .matchup { background: rgba(15, 23, 42, 0.6); padding: 15px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; gap: 8px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);}
+    .playoff-team { padding: 12px; background: rgba(30, 41, 59, 0.8); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; text-align: center; font-size: 0.9rem; font-weight: 600; transition: all 0.2s ease; }
+    .playoff-team:hover { border-color: var(--accent); background: rgba(56, 189, 248, 0.05); }
+    .playoff-team.selected { background: linear-gradient(90deg, rgba(34,197,94,0.15), rgba(34,197,94,0.3)) !important; border-color: var(--winner) !important; color: #fff !important; font-weight: 800; box-shadow: 0 0 15px rgba(34,197,94,0.2); }
+
+    /* --- TLAČÍTKA --- */
+    .btn { padding: 14px 24px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; margin-top: 10px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); letter-spacing: 1px; }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #0284c7); color: #fff; width: 100%; text-transform: uppercase; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4); text-shadow: 0 1px 2px rgba(0,0,0,0.3);}
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(2, 132, 199, 0.6); filter: brightness(1.1);}
+    .btn-back { background: rgba(71, 85, 105, 0.5); color: white; font-size: 0.75rem; padding: 8px 16px; margin-top: 0; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(5px);}
+    .btn-back:hover { background: rgba(100, 116, 139, 0.8); }
+
+    /* --- BADGES & STATUS --- */
+    .status-correct { background: linear-gradient(135deg, #059669, #047857) !important; color: white !important; box-shadow: 0 2px 8px rgba(5,150,105,0.4); border: none;}
+    .status-wrong { background: linear-gradient(135deg, #dc2626, #b91c1c) !important; color: white !important; opacity: 0.85; border: none;}
+    .status-pending { background: rgba(51, 65, 85, 0.5) !important; color: var(--text-muted) !important; border: 1px solid rgba(255,255,255,0.05);}
+    .det-team-tag { display: inline-block; padding: 4px 10px; margin: 2px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; background: var(--card-solid); border: 1px solid rgba(255,255,255,0.05); }
+   .rank-pill { 
+    padding: 4px 12px; 
+    border-radius: 20px; 
+    font-weight: 900; 
+    font-size: 1.1rem; /* Trochu jsem to zvětšil pro lepší čitelnost */
+    background: rgba(0,0,0,0.3); 
+    border: 1px solid rgba(255,255,255,0.02); 
+    backdrop-filter: blur(4px);
+    display: inline-flex; /* Kouzlo, které srovná prvky vedle sebe */
+    align-items: center; 
+    justify-content: center;
+    gap: 8px; /* Pevná mezera mezi číslem a ikonou */
+    white-space: nowrap; /* Zabrání zalomení na další řádek */
+}
+    .pts-pill { background: linear-gradient(145deg, #1e293b, #0f172a); padding: 6px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: inline-block; }
+    #thirds-counter { background: linear-gradient(135deg, #fbbf24, #d97706) !important; color: #000 !important; padding: 6px 20px; border-radius: 10px; font-weight: 900; font-size: 1.3rem; min-width: 80px; text-align: center; display: inline-block; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);}
+
+    /* --- AUTH & LEGEND --- */
+    .auth-container { background: var(--card); backdrop-filter: blur(12px); border: 1px solid rgba(251, 191, 36, 0.2); padding: 30px; border-radius: 16px; max-width: 400px; margin: 0 auto 30px auto; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+    .auth-container h3 { font-size: 1.5rem; font-weight: 800; margin-bottom: 20px; color: #fff; }
+    .auth-input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white; font-size: 1rem; transition: border-color 0.3s; }
+    .auth-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+    .auth-buttons { display: flex; gap: 12px; justify-content: center; }
+    .btn-login { background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; flex: 1; text-shadow: none; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);}
+    .btn-register { background: rgba(51, 65, 85, 0.8); color: white; flex: 1; border: 1px solid rgba(255,255,255,0.1);}
+    
+    .scoring-legend { background: var(--card); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 25px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);}
+    .scoring-legend h3 { color: var(--accent); font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; font-weight: 900;}
+    .legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; }
+    .legend-item { background: rgba(15, 23, 42, 0.6); padding: 15px 10px; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.02); transition: transform 0.2s; }
+    .legend-item:hover { transform: translateY(-2px); background: rgba(30, 41, 59, 0.8); }
+    .legend-item .label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; margin-bottom: 6px; }
+    .legend-item .value { font-size: 1.0rem; font-weight: 900; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3);}
+
+    .special-gold { border-color: rgba(251, 191, 36, 0.4) !important; background: linear-gradient(180deg, rgba(30,41,59,0.5) 0%, rgba(251, 191, 36, 0.1) 100%); }
+    .special-gold .value { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+    .special-bronze { border-color: rgba(205, 127, 50, 0.4) !important; background: linear-gradient(180deg, rgba(30,41,59,0.5) 0%, rgba(205, 127, 50, 0.1) 100%); }
+    .special-bronze .value { color: #fb923c; }
+
+    /* --- MODAL --- */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+    .modal-content { background: linear-gradient(145deg, #1e293b, #0f172a); padding: 40px; border-radius: 20px; border: 1px solid rgba(251, 191, 36, 0.4); text-align: center; max-width: 450px; width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+    .modal-icon { font-size: 3.5rem; color: #fbbf24; margin-bottom: 20px; filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.5));}
+    .modal-content h2 { color: white; margin-bottom: 15px; font-size: 1.8rem; font-weight: 900;}
+    .modal-content p { color: var(--text-muted); margin-bottom: 30px; font-size: 1.1rem; line-height: 1.5;}
+
+    /* --- OSTATNÍ UTILITKY A FIXY --- */
+    .hidden { display: none !important; }
+    .admin-trigger { position: fixed; bottom: 20px; right: 20px; opacity: 0.1; cursor: pointer; transition: opacity 0.3s; z-index: 1000;}
+    .admin-trigger:hover { opacity: 0.8; }
+    input { width: 100%; padding: 14px; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; box-sizing: border-box; font-family: inherit;}
+    input:focus { outline: none; border-color: var(--accent); }
+    .team-item { background: rgba(30, 41, 59, 0.8); padding: 14px; margin: 8px 0; border-radius: 10px; border-left: 4px solid var(--accent); display: flex; justify-content: space-between; cursor: grab; border: 1px solid rgba(255,255,255,0.05); transition: transform 0.2s;}
+    .team-item:hover { transform: translateX(5px); background: rgba(56, 189, 248, 0.05); }
+    
+   /* --- TŘETÍ MÍSTA (Opravený Header) --- */
+.thirds-header-row { 
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: flex-start !important; 
+    gap: 10px !important; /* Menší mezera pro mobily */
+    width: 100% !important; 
+    padding: 10px 0 25px 0 !important; 
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important; 
+    margin-bottom: 25px !important; 
+    flex-wrap: wrap !important; /* Povolí zalomení, pokud je nadpis dlouhý */
+}
+
+.thirds-title-text { 
+    font-size: 1.1rem !important; /* Mírně menší písmo */
+    font-weight: 800 !important; 
+    color: #fff !important; 
+    white-space: normal !important; /* ZMĚNA: Text se teď na mobilu zalomí na dva řádky */
+    text-transform: uppercase; 
+    letter-spacing: 1px;
+    line-height: 1.3;
+}
+
+/* --- GRID (Opravené sloupce pro mobily) --- */
+#thirds-actual-grid { 
+    display: grid !important; 
+    grid-template-columns: repeat(4, 1fr) !important; 
+    gap: 15px; 
+    width: 100%; 
+}
+
+/* Tablet - 3 sloupce */
+@media (max-width: 1000px) { 
+    #thirds-actual-grid { grid-template-columns: repeat(3, 1fr) !important; } 
+}
+
+/* Mobil - 2 sloupce (tady byla ta chyba!) */
+@media (max-width: 600px) { 
+    #thirds-actual-grid { 
+        grid-template-columns: repeat(2, 1fr) !important; 
+        gap: 10px !important; 
+    } 
+    
+    .thirds-wrapper {
+        padding: 10px !important; /* Menší padding, aby zbylo víc místa pro karty */
+    }
+}
+
+/* --- ZBYTEK NAVIGATION --- */
+.phase-navigation { 
+    display: block !important; 
+    text-align: center !important; 
+    width: 100% !important; 
+    max-width: 100vw !important; 
+    padding: 10px !important; 
+    box-sizing: border-box !important; 
+    overflow: hidden !important; 
+}
+    
+    @keyframes winner-glow { 0% { filter: drop-shadow(0 0 4px #fbbf24); } 50% { filter: drop-shadow(0 0 15px #fbbf24); } 100% { filter: drop-shadow(0 0 4px #fbbf24); } }
+    .winner-icon { animation: winner-glow 2s infinite; font-size: 1.4rem; }
+
+        .bank-container {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); /* Tvá fotbalová modrá */
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    
+    /* KLÍČOVÉ ZMĚNY PRO ZAROVNÁNÍ: */
+    display: block;               /* Změna z inline-block na block */
+    max-width: 400px;             /* Stejná šířka jako odpočet */
+    margin: 0 auto 25px auto;    /* Středění a mezera pod boxem */
+    box-sizing: border-box;       /* Padding se počítá do šířky */
+    
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border: 2px solid #ffd700;    /* Zlatý rámeček */
+}
+
+.bank-label {
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.9;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.bank-amount {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+/* Styl pro rozpis výher pod hlavní částkou */
+.bank-prizes {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+        .countdown-wrapper {
+    background: #1e293b;
+    padding: 15px 20px;
+    border-radius: 10px;
+    text-align: center;
+    border: 2px solid #38bdf8;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.countdown-title {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+.countdown-numbers {
+    color: #fff;
+    font-size: 1.8rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+.countdown-numbers span {
+    color: #38bdf8; /* Modrá barva pro samotná čísla */
+}
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+    <header>
+        <h1>🏆 WORLD CUP 2026 🏆</h1>
+        <div class="countdown-wrapper">
+    <div class="countdown-title">Tipování se uzavře za:</div>
+    <div id="countdown-timer" class="countdown-numbers">
+        <span id="cd-days">00</span>d : 
+        <span id="cd-hours">00</span>h : 
+        <span id="cd-mins">00</span>m : 
+        <span id="cd-secs">00</span>s
+    </div>
+    <div id="countdown-expired" style="display: none; color: #ef4444; font-weight: bold; font-size: 1.2rem;">
+        <i class="fas fa-lock"></i> Tipování je uzavřeno! Turnaj začal.
+    </div>
+</div>
+       <div class="step-indicator">
+    <span class="step-dot active" id="dot-s1">Skupiny</span>
+    <span class="step-dot" id="dot-s2">3. místa</span>
+    <span class="step-dot" id="dot-s32">1/16</span>
+    <span class="step-dot" id="dot-s16">1/8</span>
+    <span class="step-dot" id="dot-s8">Čtvrtfinále</span>
+    <span class="step-dot" id="dot-s4">Semifinále</span>
+    <span class="step-dot" id="dot-fin">Finále/3 místo</span>
+</div>
+    </header>
+
+ <div id="auth-section" class="auth-container">
+    <h3>Přihlášení / Registrace</h3>
+    <form onsubmit="return false;"> 
+        <input type="email" id="auth-email" placeholder="Tvůj email" class="auth-input" autocomplete="username">
+        <input type="password" id="auth-password" placeholder="Heslo (min. 6 znaků)" class="auth-input" autocomplete="current-password">
+        
+        <div class="auth-buttons">
+            <button type="button" class="btn-login btn" onclick="loginUser()">Přihlásit</button>
+            <button type="button" class="btn-register btn" onclick="registerUser()">Vytvořit účet</button>
+        </div>
+    </form>
+</div>
+
+<div id="logged-in-section" class="auth-container hidden">
+    <p>Přihlášen jako: <strong id="user-email-display" style="color:var(--accent);"></strong></p>
+    <button onclick="logoutUser()" class="btn-logout btn" style="width:100%;">Odhlásit se</button>
+</div>
+
+    <div id="admin-panel" class="hidden section-box" style="border-color: var(--lose);">
+    <div class="section-header" style="background: var(--lose)">🔧 ADMIN PANEL</div>
+    <div class="section-content" id="admin-form-container" style="padding:20px; display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:15px;"></div>
+    <div style="grid-column: 1 / -1; margin: 10px 0 20px 0; padding: 20px; background: rgba(56, 189, 248, 0.05); border: 2px dashed rgba(56, 189, 248, 0.3); border-radius: 12px; text-align: center;">
+    <h4 style="color: #38bdf8; margin: 0 0 10px 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+        <i class="fas fa-chart-line"></i> Aktualizace trendů
+    </h4>
+    <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 15px;">
+        Kliknutím uložíš aktuální pozice hráčů jako "minulé". Žebříček pak ukáže zelené/červené šipky posunu.
+    </p>
+    <button id="btn-update-trends" type="button" class="btn" 
+            style="background: #38bdf8; color: #0f172a; font-weight: 800; padding: 10px 20px; font-size: 0.85rem;" 
+            onclick="updateRankTrends()">
+        ZMRAZIT AKTUÁLNÍ POŘADÍ
+    </button>
+</div>
+    <div style="padding: 20px;"><button type="button" class="btn btn-primary" onclick="saveAdminResults()">ULOŽIT VÝSLEDKY</button></div>
+</div>
+
+    <div class="dashboard">
+        <aside>
+
+            <div class="scoring-legend">
+    <h3><i class="fas fa-info-circle"></i> Bodování turnaje</h3>
+    <div class="legend-grid">
+        <div class="legend-item">
+            <span class="label">Skupiny</span>
+            <span class="value">+4 b.</span>
+            <small>za přesné pořadí</small>
+        </div>
+        <div class="legend-item">
+            <span class="label">1/16 finále</span>
+            <span class="value">+2 b.</span>
+            <small>za každý tým</small>
+        </div>
+        <div class="legend-item">
+            <span class="label">1/8 finále</span>
+            <span class="value">+3 b.</span>
+            <small>za každý tým</small>
+        </div>
+        <div class="legend-item">
+            <span class="label">Čtvrtfinále</span>
+            <span class="value">+4 b.</span>
+            <small>za každý tým</small>
+        </div>
+        <div class="legend-item">
+            <span class="label">Semifinále</span>
+            <span class="value">+5 b.</span>
+            <small>za každý tým</small>
+        </div>
+        <div class="legend-item special-bronze">
+            <span class="label">3. místo</span>
+            <span class="value">+8 b.</span>
+            <small>přesný tip</small>
+        </div>
+         <div class="legend-item special-gold">
+            <span class="label">Vítěz</span>
+            <span class="value">+12 b.</span>
+            <small>přesný tip</small>
+        </div>
+      
+    </div>
+</div>
+<div class="bank-container" style="max-width: 400px; margin: 0 auto 25px auto; background: #0f172a; padding: 20px; border-radius: 10px; border: 2px solid #fbbf24; box-shadow: 0 10px 25px rgba(251,191,36,0.1); text-align: center; box-sizing: border-box;">
+    
+    <div class="bank-label" style="color: #fbbf24; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: bold;">
+        <i class="fas fa-trophy"></i> Aktuální bank
+    </div>
+
+    <div id="currentBank">
+        <div class="bank-amount" style="font-size: 1.8rem; font-weight: 900; color: #fff;">
+            1 000 Kč
+        </div>
+    </div>
+
+</div>
+           <div id="hlas-lidu-container"></div>
+
+<div class="section-box" id="section-leaderboard">
+    <div class="section-header">📊 ŽEBŘÍČEK HRÁČŮ</div>
+    <table id="leaderboard">
+        <tbody id="public-body"></tbody>
+    </table>
+</div>
+        </aside>
+
+        <main>
+            <div id="phase-groups" class="section-box">
+                <div class="section-header">1. POŘADÍ VE SKUPINÁCH</div>
+                <div class="section-content" style="padding: 25px;">
+                    <div class="groups-grid" id="groups-grid"></div>
+                    <div id="group-editor" class="hidden" style="margin-top:25px; padding:25px; background:rgba(0,0,0,0.3); border-radius:16px; border:1px solid var(--accent); box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+                        <h3 id="edit-title" style="text-align:center; margin:0 0 20px 0; font-size: 1.2rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 1px;"></h3>
+                        <div id="team-list-container"></div>
+                    </div>
+                    <button class="btn btn-primary" style="margin-top:25px; font-size: 1.1rem; padding: 16px;" onclick="confirmAllGroups()">Pokračovat na 3. místa <i class="fas fa-arrow-right" style="margin-left: 8px;"></i></button>
+                </div>
+            </div>
+
+            <div id="phase-thirds" class="hidden section-box">
+                <div class="section-header">
+                    <span>2. POSTUPUJÍCÍ ZE 3. MÍST (<span id="stat-thirds">0/8</span>)</span>
+                    <button class="btn btn-back" onclick="goBack('phase-thirds', 'phase-groups', 'dot-s1')"><i class="fas fa-arrow-left"></i> ZPĚT</button>
+                </div>
+                <div class="section-content" style="padding: 25px;">
+                    <div id="thirds-grid" class="groups-grid"></div>
+                    <button class="btn btn-primary" style="margin-top:25px; font-size: 1.1rem; padding: 16px;" onclick="confirmThirds()">Generovat pavouka <i class="fas fa-sitemap" style="margin-left: 8px;"></i></button>
+                </div>
+            </div>
+
+            <div class="third-place-card hidden" data-name="Česko" onclick="selectThird(this, 'Česko')">
+                <div class="rank-badge" style="display:none"></div>
+            </div>
+
+            <div id="playoff-container"></div>
+            <div id="sec-thirds" class="hidden"></div>
+            
+           <div id="final-box" class="hidden section-box" style="border: 2px solid var(--winner); text-align: center; background: linear-gradient(180deg, rgba(30,41,59,0.8) 0%, rgba(34,197,94,0.1) 100%);">
+    <div class="section-header" style="background: rgba(34,197,94,0.2); border-bottom: 1px solid var(--winner); justify-content: center;">🏆 FINÁLNÍ ODESLÁNÍ</div>
+    <div class="section-content" style="padding: 40px;">
+        <h2 id="winner-display" style="color:var(--winner); margin: 0 0 30px 0; font-size: 2rem; font-weight: 900; text-shadow: 0 0 20px rgba(34,197,94,0.4);"></h2>
+        
+        <div class="countdown-wrapper" style="max-width: 400px; margin: 0 auto 25px auto; background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #38bdf8;">
+    <div class="countdown-title" style="color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 8px;">Tipování se uzavře za:</div>
+    
+    <div class="countdown-numbers js-timer-container" style="color: #fff; font-size: 1.8rem; font-weight: 900;">
+        <span class="cd-days" style="color: #38bdf8;">00</span>d : 
+        <span class="cd-hours" style="color: #38bdf8;">00</span>h : 
+        <span class="cd-mins" style="color: #38bdf8;">00</span>m : 
+        <span class="cd-secs" style="color: #38bdf8;">00</span>s
+    </div>
+
+    <div class="countdown-expired" style="display: none; color: #ef4444; font-weight: bold; font-size: 1.2rem;">
+        <i class="fas fa-lock"></i> Tipování je uzavřeno!
+    </div>
+</div>
+
+<input type="text" id="user-name" placeholder="Zadej své jméno pro žebříček" style="margin-bottom:25px; text-align:center; font-size:1.2rem; padding: 16px; max-width: 400px; display: block; margin-left: auto; margin-right: auto; background: #1e293b; color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
+
+<button id="btn-odeslat-tip" class="btn btn-primary" style="font-size: 1.2rem; padding: 18px 40px; max-width: 400px; width: 100%; display: block; margin: 0 auto; background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 0 10px 25px rgba(34,197,94,0.4); border: none; cursor: pointer; border-radius: 8px;" onclick="saveToSupabase()">
+    ODESLAT TIP DO ŽEBŘÍČKU
+</button>   </div>
+</div>
+        </main>
+    </div>
+</div>
+
+<div class="admin-trigger" onclick="checkAdmin()"><i class="fas fa-lock"></i></div>
+
+ <div id="payment-modal-overlay" class="modal-overlay" style="display: none;">
+    <div class="payment-modal">
+        <div style="font-size: 2.5rem; margin-bottom: 10px;">🎉</div>
+        <h2>Tipy uloženy!</h2>
+        <p>Pro zařazení do hry zbývá poslední krok:<br>zaplatit startovné.</p>
+        
+        <div id="qr-code-container"></div>
+
+        <button class="close-payment-btn" onclick="closePaymentModal()">
+            MÁM ZAPLACENO / ZAVŘÍT
+        </button>
+    </div>
+</div>
+    
+<script>
+
+function showPaymentModal(playerName) {
+    const modal = document.getElementById('payment-modal-overlay');
+    const qrContainer = document.getElementById('qr-code-container');
+    
+    // 1. Očista jména (bez diakritiky) a příprava zprávy
+    const cleanName = playerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    // IBAN CZ12 (ověřený)
+    const iban = "CZ1203000000000295511827"; 
+    
+    // Sestavení zprávy přesně podle tvého zadání: WC26 Jmeno
+    // Mezery v platebním řetězci banky často zlobí, nahrazujeme je bezpečným kódováním
+    const rawMsg = `WC26 ${cleanName}`;
+    const spaydData = `SPD*1.0*ACC:${iban}*AM:200.00*CUR:CZK*MSG:${rawMsg}`;
+
+    // 2. GENERÁTOR - KLÍČ K ÚSPĚCHU:
+    // size=450 (velký), ecc=L (nízká hustota = velké čtverečky), margin=5 (obří okraj)
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&data=${encodeURIComponent(spaydData)}&ecc=L&margin=5`;
+
+    if (qrContainer) {
+        qrContainer.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                
+                <div style="background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 45px rgba(0,0,0,0.7); margin-bottom: 25px; display: inline-block;">
+                    <img src="${qrUrl}" alt="QR Platba" 
+                         style="display: block; width: 260px; height: 260px; image-rendering: pixelated; border: 1px solid #eee;">
+                    <div style="color: #000; font-family: sans-serif; font-weight: 900; font-size: 14px; margin-top: 20px; text-align: center; letter-spacing: 4px; opacity: 0.5;">QR PLATBA</div>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; width: 100%; max-width: 340px; border: 1px solid rgba(255,255,255,0.1); text-align: left; box-sizing: border-box;">
+                    <div style="color: #fbbf24; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">Platební instrukce</div>
+                    
+                    <div style="margin-bottom: 8px; display: flex; justify-content: space-between; font-size: 1rem;">
+                        <span style="opacity: 0.7;">Částka:</span>
+                        <b style="color: #22c55e;">200 Kč</b>
+                    </div>
+                    
+                    <div style="margin-bottom: 8px; display: flex; flex-direction: column;">
+                        <span style="opacity: 0.7; font-size: 0.8rem;">Číslo účtu:</span>
+                        <b style="font-family: monospace; letter-spacing: 0.5px;">295511827 / 0300</b>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="opacity: 0.7; font-size: 0.8rem;">Zpráva (Poznámka):</span>
+                        <b style="color: #fff; font-size: 1.1rem; border-left: 3px solid #fbbf24; padding-left: 8px; margin-top: 4px;">WC26 ${playerName}</b>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.style.setProperty('display', 'flex', 'important');
+    }
+}
+    
+function closePaymentModal() {
+    document.getElementById('payment-modal-overlay').style.display = 'none';
+}
+    
+function renderHlasLidu(data) {
+    const cont = document.getElementById('hlas-lidu-container');
+    if (!cont || !data || data.length === 0) return;
+
+    // 1. Spočítáme hlasy pro vítěze
+    const counts = {};
+    data.forEach(player => {
+        let tip = player.tip_data;
+        if (typeof tip === 'string') { try { tip = JSON.parse(tip); } catch(e) { return; } }
+        const winner = tip?.winner;
+        if (winner) counts[winner] = (counts[winner] || 0) + 1;
+    });
+
+    // 2. Převedeme na pole a seřadíme od nejvíc hlasů po nejméně
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    if (sorted.length === 0) return;
+
+    // 3. Výběr: Top 2 favoriti + 1 outsider (poslední v seznamu)
+    const favorites = sorted.slice(0, 2);
+    let outsider = null;
+    if (sorted.length > 2) {
+        outsider = sorted[sorted.length - 1]; // Ten úplně poslední s aspoň 1 hlasem
+    }
+
+    let html = `
+        <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 15px; margin-bottom: 25px; text-align: center;">
+            <div style="color: #38bdf8; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; font-weight: bold;">
+                <i class="fas fa-chart-pie"></i> Analýza tipů: Favorité & Outsider
+            </div>
+            <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; align-items: flex-start;">
+    `;
+
+    // Vykreslení favoritů
+    favorites.forEach((f, idx) => {
+        const percent = Math.round((f[1] / data.length) * 100);
+        html += `
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <div style="font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">${idx === 0 ? 'Hlavní favorit' : 'V závěsu'}</div>
+                <div style="font-weight: 900; color: ${idx === 0 ? '#fbbf24' : '#f8fafc'}; font-size: 1.2rem;">${f[0]}</div>
+                <div style="font-size: 0.75rem; color: #38bdf8;">${f[1]} tipů (${percent}%)</div>
+            </div>
+        `;
+    });
+
+    // Vykreslení outsidera (pokud existuje)
+    if (outsider) {
+        const percent = Math.round((outsider[1] / data.length) * 100);
+        html += `
+            <div style="height: 40px; width: 1px; background: rgba(255,255,255,0.1); align-self: center; display: none; @media (min-width: 600px) { display: block; }"></div>
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <div style="font-size: 0.6rem; color: #ef4444; text-transform: uppercase; margin-bottom: 4px;">Outsider / Černý kůň</div>
+                <div style="font-weight: 900; color: #ef4444; font-size: 1.1rem; opacity: 0.9;">${outsider[0]}</div>
+                <div style="font-size: 0.75rem; color: #94a3b8;">${outsider[1]} hlas (${percent}%)</div>
+            </div>
+        `;
+    }
+
+    html += `</div></div>`;
+    cont.innerHTML = html;
+}
+    
+function scrollToContent() {
+    // Najdeme hlavní kontejner tipovačky (např. tvůj main-content nebo konkrétní sekci)
+    const element = document.querySelector('.main-content'); 
+    if (element) {
+        // Srolujeme plynule k začátku obsahu, ne k vlajkám v headeru
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+    
+/* --- 1. ODPOČET (Synchronizovaný pro všechna místa) --- */
+function initCountdown() {
+    // MS 2026 začíná 11. června 2026 ve 21:00
+    const deadline = new Date("2026-06-11T21:00:00").getTime();
+
+    const timerInterval = setInterval(function() {
+        const now = new Date().getTime();
+        const distance = deadline - now;
+
+        const btnOdeslat = document.getElementById('btn-odeslat-tip'); 
+        const btnUpravit = document.getElementById('btn-upravit-tip');
+
+        if (distance < 0) {
+            clearInterval(timerInterval);
+            
+            // Schováme všechny běžící timery (pomocí třídy nebo ID)
+            document.querySelectorAll("#countdown-timer, .countdown-numbers").forEach(el => el.style.display = "none");
+            document.querySelectorAll("#countdown-expired, .countdown-expired").forEach(el => el.style.display = "block");
+
+            // Zablokování tlačítek pro odeslání/úpravu
+            [btnOdeslat, btnUpravit].forEach(btn => {
+                if (btn) {
+                    btn.disabled = true;
+                    btn.style.opacity = "0.3";
+                    btn.style.cursor = "not-allowed";
+                    btn.innerText = "Tipování skončilo";
+                }
+            });
+        } else {
+            // Výpočet zbývajícího času
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000).toString().padStart(2, '0');
+
+            // Aktualizace všech elementů na stránce, které mají tvoje ID
+            // (Pokud máš ID na více místech, doporučuji změnit na querySelectorAll('.cd-days'))
+            const updateText = (id, val) => {
+                const elements = document.querySelectorAll(`#${id}, .${id}`);
+                elements.forEach(el => el.innerText = val);
+            };
+
+            updateText("cd-days", days);
+            updateText("cd-hours", hours);
+            updateText("cd-mins", minutes);
+            updateText("cd-secs", seconds);
+        }
+    }, 1000);
+}
+
+/* --- 2. KONFIGURACE A DATA --- */
+if ('scrollRestoration' in history) { history.scrollRestoration = 'manual'; }
+
+const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
+const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X"; // Tvůj klíč
+const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+// 🚀 NOVÁ PŘEHLEDNÁ STRUKTURA TÝMŮ
+let state = { 
+    groups: [
+        { id: 'A', teams: ["Mexico", "Jihoafrická republica", "Jižní Korea", "Baráž D"], done: false },
+        { id: 'B', teams: ["Kanada", "Baráž A", "Katar", "Švýcarsko"], done: false },
+        { id: 'C', teams: ["Brazílie", "Maroko", "Haiti", "Skotsko"], done: false },
+        { id: 'D', teams: ["USA", "Paraguay", "Austrálie", "Baráž C"], done: false },
+        { id: 'E', teams: ["Německo", "Curacao", "Pobřeží slonoviny", "Ekvádor"], done: false },
+        { id: 'F', teams: ["Nizozemsko", "Japonsko", "Baráž B", "Tunisko"], done: false },
+        { id: 'G', teams: ["Belgie", "Egypt", "Írán", "Nový Zéland"], done: false },
+        { id: 'H', teams: ["Španělsko", "Kapverdy", "Saúdská Arábie", "Uruguay"], done: false },
+        { id: 'I', teams: ["Francie", "Senegal", "Baráž 2", "Norsko"], done: false },
+        { id: 'J', teams: ["Argentina", "Alžírsko", "Rakousko", "Jordánsko"], done: false },
+        { id: 'K', teams: ["Portugalsko", "Baráž 1", "Uzbekistán", "Kolumbie"], done: false },
+        { id: 'L', teams: ["Anglie", "Chorvatsko", "Ghana", "Panama"], done: false }
+    ], 
+    thirds: [], 
+    playoff: {},
+    history: {} 
+};
+
+let currentResults = { groups: [], s32: [], s16: [], s8: [], s4: [], winner: "", bronze: "" };
+
+/* --- 3. INICIALIZACE SKUPIN (Grid karet) --- */
+async function init() {
+    const grid = document.getElementById('groups-grid');
+    if (!grid) return;
+    
+    grid.innerHTML = ''; 
+
+    state.groups.forEach(g => { 
+        // Kontrola, jestli už je skupina hotová, abychom ukázali týmy místo nápisu
+        const teamsPreview = g.done 
+            ? g.teams.slice(0, 4).map((t, i) => `<div style="font-size:0.75rem;">${i+1}. ${t}</div>`).join('')
+            : `<span style="color:#64748b; font-size:0.85rem; width:100%; text-align:center;">Klikni pro úpravu</span>`;
+
+        grid.innerHTML += `
+        <div class="group-card ${g.done ? 'completed' : ''}" id="dot-${g.id}" onclick="editGroup('${g.id}')">
+            <div class="g-card-header">
+                <span>Skupina ${g.id}</span>
+                <i class="fas ${g.done ? 'fa-check-circle' : 'fa-edit'}" style="opacity: ${g.done ? '1' : '0.5'}; color: ${g.done ? '#22c55e' : 'inherit'};"></i>
+            </div>
+            <div class="g-teams-row" id="teams-${g.id}">
+                ${teamsPreview}
+            </div>
+        </div>`; 
+    });
+}
+
+// Spuštění při načtení
+document.addEventListener('DOMContentLoaded', () => {
+    initCountdown();
+    init();
+});
+
+    function aktualizujVzhledKarty(gid) {
+    const g = state.groups.find(x => x.id === gid);
+    const teamsContainer = document.getElementById(`teams-${gid}`);
+    const card = document.getElementById(`dot-${gid}`);
+
+    if (g && g.done && teamsContainer && card) {
+        card.classList.add('filled');
+        // Vykreslí 1. a 2. místo vedle sebe
+        teamsContainer.innerHTML = `
+            <div class="g-team-name"><span class="g-pos-number">1.</span> ${g.teams[0] || '?'}</div>
+            <div class="g-team-name"><span class="g-pos-number">2.</span> ${g.teams[1] || '?'}</div>
+        `;
+    }
+}
+
+async function loadAll() {
+    console.log("🔄 Načítám všechna data (Admin + Tipy)...");
+    try {
+        // 1. STÁHNEME VÝSLEDKY ADMINA (Reálný stav turnaje)
+        const { data: n, error: adminErr } = await supabaseClient
+            .from('admin_vysledky')
+            .select('*')
+            .eq('id', 1)
+            .maybeSingle();
+            
+        if (adminErr) console.error("❌ Chyba při stahování admin výsledků:", adminErr);
+
+        if (n) {
+            // Uložíme do globální proměnné, aby k datům měly přístup všechny funkce
+            window.currentResults = n; 
+            console.log("✅ Reálné výsledky (Admin) připraveny.");
+        }
+
+        // 2. STÁHNEME TIPY VŠECH HRÁČŮ
+        const { data: t, error: tipyErr } = await supabaseClient
+            .from('tipy')
+            .select('*');
+
+        if (tipyErr) {
+            console.error("❌ Chyba při stahování tipů:", tipyErr);
+            return;
+        }
+
+        // 3. VYKRESLÍME KOMPONENTY (Pokud existují data)
+        if (t && t.length > 0) {
+            
+            // --- A. HLAS LIDU ---
+            // Tato funkce spočítá, komu lidi nejvíc věří na titul
+            if (typeof renderHlasLidu === "function") {
+                renderHlasLidu(t);
+            }
+
+            // --- B. ŽEBŘÍČEK A BANK ---
+            // Tato funkce spočítá body a vykreslí tabulku i bank s odměnami
+            if (typeof renderLeaderboard === "function") {
+                await renderLeaderboard(t, window.currentResults || {});
+            }
+
+            console.log("✅ Všechny komponenty vykresleny.");
+        } else {
+            console.warn("⚠️ Zatím nebyly nalezeny žádné tipy v databázi.");
+            // I když nejsou tipy, vykreslíme prázdný žebříček, aby nezůstal viset loading
+            if (typeof renderLeaderboard === "function") {
+                renderLeaderboard([], window.currentResults || {});
+            }
+        }
+
+    } catch (error) {
+        console.error("❌ Kritická chyba v loadAll:", error);
+    }
+}
+
+async function renderLeaderboard(data, real) {
+    console.log("🚀 START: renderLeaderboard (Full Detail Mode + Bank)", { pocet_tipu: data?.length });
+    
+    const body = document.getElementById('public-body');
+    if (!body) return;
+
+    // --- 👤 ZÍSKÁNÍ UŽIVATELE ---
+    let loggedUserId = null;
+    try {
+        const { data: authData } = await supabaseClient.auth.getUser();
+        if (authData?.user) loggedUserId = authData.user.id;
+    } catch (e) { console.warn("Uživatel nepřihlášen."); }
+
+    // --- 🕒 KONTROLA DEADLINE ---
+    const isBeforeDeadline = new Date().getTime() < new Date("2026-06-11T20:00:00").getTime();
+
+    // --- 📦 DATA ADMINA A VÝPOČET BODŮ ---
+    const adminData = real || window.currentResults || {};
+    const r = adminData.playoff ? { ...adminData.playoff, groups: adminData.groups } : adminData;
+
+    const processed = (data || []).map(row => {
+        let tip = row.tip_data;
+        if (typeof tip === 'string') { try { tip = JSON.parse(tip); } catch(e) { tip = {}; } }
+        if (!tip) tip = {};
+        
+        let pts = 0;
+        // Bodování skupin
+        if (r.groups && tip.groups) {
+            r.groups.forEach((g, i) => {
+                const tipG = tip.groups[i] || [];
+                const aTeams = g.teams || g;
+                if (Array.isArray(aTeams)) {
+                    aTeams.forEach((team, pos) => {
+                        if (team && tipG[pos] && String(team).trim() === String(tipG[pos]).trim()) pts += 4;
+                    });
+                }
+            });
+        }
+        // Bodování playoff
+        const ck = (sid, p) => {
+            const rt = r[sid] || [];
+            const tt = tip[sid] || [];
+            if (Array.isArray(rt)) rt.forEach(t => { if (t && Array.isArray(tt) && tt.some(x => String(x).trim() === String(t).trim())) pts += p; });
+        };
+        ck('s32', 2); ck('s16', 3); ck('s8', 4); ck('s4', 5);
+        if (r.winner && tip.winner && String(r.winner).trim() === String(tip.winner).trim()) pts += 12;
+        if (r.bronze && tip.bronze && String(r.bronze).trim() === String(tip.bronze).trim()) pts += 8;
+
+        return { ...row, tip, points: pts };
+    }).sort((a, b) => b.points - a.points);
+
+    // --- 🎨 POMOCNÉ FUNKCE PRO BARVY ---
+    const getStatusClass = (stageId, teamName, stageCount) => {
+        const aS = r[stageId] || [];
+        if (!teamName) return ''; 
+        const valid = Array.isArray(aS) ? aS.filter(t => t && t.trim() !== "") : [];
+        if (valid.length === 0) return 'status-pending';
+        if (valid.some(t => String(t).trim() === String(teamName).trim())) return 'status-correct';
+        return (valid.length >= stageCount) ? 'status-wrong' : 'status-pending';
+    };
+
+    // --- 🖌️ RENDEROVÁNÍ TABULKY ---
+    let lastPoints = -1;
+    let currentRank = 0;
+
+    body.innerHTML = processed.map((player, i) => {
+        if (player.points !== lastPoints) { currentRank = i + 1; }
+        lastPoints = player.points;
+
+        const rowId = player.user_id || player.id;
+        const isOwn = loggedUserId && String(loggedUserId) === String(rowId);
+        const canSee = !isBeforeDeadline || isOwn;
+        const isPaid = player.paid === true || player.paid === 1 || String(player.paid) === 'true';
+
+        // Trendy (Šipky)
+        let trend = '<span style="color:#64748b; margin-left:8px; font-size:0.75rem;">-</span>';
+        if (player.previous_rank) {
+            const diff = player.previous_rank - currentRank;
+            if (diff > 0) trend = `<span style="color:#10b981; margin-left:8px; font-size:0.75rem;"><i class="fas fa-arrow-up"></i> ${diff}</span>`;
+            else if (diff < 0) trend = `<span style="color:#ef4444; margin-left:8px; font-size:0.75rem;"><i class="fas fa-arrow-down"></i> ${Math.abs(diff)}</span>`;
+        }
+
+        // Barvy pro top 3
+        let nameStyle = "color:#f8fafc;";
+        let rowStyle = "";
+        if (currentRank === 1) { nameStyle = "color:#fbbf24;"; rowStyle = "background:rgba(251,191,36,0.05); border-left:4px solid #fbbf24;"; }
+        else if (currentRank === 2) { nameStyle = "color:#cbd5e1;"; rowStyle = "border-left:4px solid #cbd5e1;"; }
+        else if (currentRank === 3) { nameStyle = "color:#cd7f32;"; rowStyle = "border-left:4px solid #cd7f32;"; }
+
+        return `
+            <tr class="player-row" ${canSee ? `onclick="toggleDetail('det-${rowId}')"` : ""} style="cursor:${canSee ? 'pointer':'default'}; ${rowStyle}">
+                <td style="width:75px; padding-left:15px; font-weight:bold; ${nameStyle}">${currentRank}.${trend}</td>
+                <td style="padding:12px 0;">
+                    <div style="font-weight:800; ${nameStyle} display:flex; align-items:center; gap:8px;">
+                        ${player.name || 'Anonym'} ${!canSee ? '🔒' : ''}
+                        <span onclick="event.stopPropagation(); togglePayment('${rowId}', ${isPaid})" 
+                              style="padding:2px 6px; border-radius:4px; font-size:0.6rem; background:${isPaid ? '#10b981':'#ef4444'}; color:white; cursor:pointer;">
+                            ${isPaid ? 'ZAPLACENO' : 'DLUŽÍ'}
+                        </span>
+                    </div>
+                </td>
+                <td style="text-align:right; padding-right:15px; font-weight:900; color:var(--accent);">${player.points} PTS</td>
+            </tr>
+            ${canSee ? `
+            <tr id="det-${rowId}" class="tip-detail-row" style="display:none; background:#0f172a;">
+                <td colspan="3" style="padding:20px;">
+                    <div style="border-left:4px solid #1e293b; padding-left:20px;">
+                        <span style="color:var(--accent); font-weight:bold; font-size:0.75rem; text-transform:uppercase;">Skupiny</span>
+                        <div class="det-groups-grid" style="margin-top:10px;">
+                            ${(player.tip.groups||[]).map((g, idx) => {
+                                const adminG = r.groups && r.groups[idx];
+                                const aTeams = adminG?.teams || adminG;
+                                return `
+                                    <div class="det-group-box">
+                                        <b>Sk. ${String.fromCharCode(65+idx)}</b>
+                                        ${g.map((t, p) => {
+                                            let c = (aTeams && aTeams[p] && String(aTeams[p]).trim() === String(t).trim()) ? 'status-correct' : 'status-wrong';
+                                            if (!aTeams || !aTeams[p]) c = '';
+                                            return `<div class="${c}" style="font-size:0.8rem; margin:1px 0;">${p+1}. ${t}</div>`;
+                                        }).join('')}
+                                    </div>`;
+                            }).join('')}
+                        </div>
+
+                        <span style="color:var(--winner); font-weight:bold; font-size:0.75rem; text-transform:uppercase; display:block; margin-top:20px;">Play-off</span>
+                        <div class="det-playoff-stages" style="margin-top:10px;">
+                            <div class="det-stage-column">
+                                <div class="det-stage-card"><h5>1/16</h5><div>${(player.tip.s32||[]).map(t => `<span class="det-team-tag ${getStatusClass('s32', t, 16)}">${t}</span>`).join('')}</div></div>
+                                <div class="det-stage-card"><h5>1/8</h5><div>${(player.tip.s16||[]).map(t => `<span class="det-team-tag ${getStatusClass('s16', t, 8)}">${t}</span>`).join('')}</div></div>
+                            </div>
+                            <div class="det-stage-column">
+                                <div class="det-stage-card"><h5>1/4</h5><div>${(player.tip.s8||[]).map(t => `<span class="det-team-tag ${getStatusClass('s8', t, 4)}">${t}</span>`).join('')}</div></div>
+                                <div class="det-stage-card"><h5>1/2</h5><div>${(player.tip.s4||[]).map(t => `<span class="det-team-tag ${getStatusClass('s4', t, 4)}">${t}</span>`).join('')}</div></div>
+                            </div>
+                            <div class="det-stage-column">
+                                <div class="det-stage-card" style="border-top:2px solid #cd7f32; background:rgba(205,127,50,0.05);">
+                                    <h5 style="color:#cd7f32;">🥉 3. Místo</h5>
+                                    <div class="det-team-tag ${getStatusClass('bronze', player.tip.bronze, 1)}">${player.tip.bronze || '--'}</div>
+                                </div>
+                                <div class="det-stage-card" style="border-top:2px solid gold; margin-top:10px; background:rgba(251,191,36,0.05);">
+                                    <h5 style="color:gold;">🥇 Vítěz</h5>
+                                    <div class="det-team-tag ${getStatusClass('winner', player.tip.winner, 1)}">${player.tip.winner || '--'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>` : ''}
+        `;
+    }).join('');
+
+    // --- 💰 AKTUALIZACE BANKU (Jen od zaplacených hráčů) ---
+const bankEl = document.getElementById('currentBank');
+if (bankEl) {
+    // Filtr: Spočítáme jen ty, kteří mají paid: true / 1 / "true"
+    const paidPlayers = processed.filter(p => 
+        p.paid === true || p.paid === 1 || String(p.paid) === 'true'
+    );
+    
+    const vklad = 200; // Částka za jednoho hráče
+    const celkovyBank = paidPlayers.length * vklad;
+    
+    // Výpočet odměn pro bednu
+    const p1 = Math.round(celkovyBank * 0.60);
+    const p2 = Math.round(celkovyBank * 0.30);
+    const p3 = Math.round(celkovyBank * 0.10);
+
+    bankEl.innerHTML = `
+        <div>${celkovyBank.toLocaleString('cs-CZ')} Kč</div>
+        <div class="bank-prizes">
+            <span style="color: #ffd700;">🥇 ${p1.toLocaleString('cs-CZ')}</span>
+            <span style="color: #e5e7eb;">🥈 ${p2.toLocaleString('cs-CZ')}</span>
+            <span style="color: #d97706;">🥉 ${p3.toLocaleString('cs-CZ')}</span>
+        </div>
+        <div style="font-size: 0.65rem; opacity: 0.7; margin-top: 8px; text-transform: uppercase;">
+            Aktuálně zaplatilo: ${paidPlayers.length} z ${processed.length} hráčů
+        </div>
+    `;
+}
+
+    console.log("✅ ŽEBŘÍČEK HOTOV (Full + Bank)");
+}
+    
+   async function togglePayment(rowId, currentStatus) {
+    // --- 🔒 OCHRANA ADMIN HESLEM 🔒 ---
+    // Zastavíme každého, kdo klikne, a vynutíme heslo
+    const heslo = prompt("Tato akce je pouze pro admina. Zadej heslo:");
+    
+    // TADY SI ZMĚŇ HESLO NA NĚJAKÉ SVOJE
+    if (heslo !== "Matysek.2019") {
+        alert("❌ Nesprávné heslo! Úprava platby zamítnuta.");
+        return; // Okamžitě ukončí funkci, zbytek kódu se vůbec nespustí
+    }
+    // ----------------------------------
+
+    console.log("1. Kliknuto! Spouštím úpravu pro ID:", rowId, "Současný stav:", currentStatus);
+    const novyStatus = !currentStatus; 
+    
+    if (!confirm(`Opravdu chceš hráči změnit platbu na: ${novyStatus ? "ZAPLACENO" : "NEZAPLACENO"}?`)) {
+        return; 
+    }
+
+    try {
+        console.log("2. Posílám požadavek do Supabase...");
+        
+        // Přidali jsme .select(), aby nám Supabase vrátila upravený řádek (pokud se to povede)
+        const { data, error } = await supabaseClient
+            .from('tipy')
+            .update({ paid: novyStatus })
+            .eq('user_id', rowId)
+            .select(); 
+
+        console.log("3. Odpověď ze Supabase - Upravená data:", data, "Chyba:", error);
+
+        if (error) throw error;
+
+        // Pokud pole 'data' neobsahuje žádný záznam, znamená to, že se nic neupravilo!
+        if (!data || data.length === 0) {
+            alert("⚠️ Supabase nic neupravila! Buď je to špatné ID, nebo to blokuje ochrana RLS.");
+            console.error("Chyba: Záznam s tímto ID se nenašel, nebo nemáš práva na UPDATE.");
+            return;
+        }
+
+        console.log("4. ✅ Úspěch! Načítám znovu data pro překreslení...");
+        if (typeof loadAll === "function") {
+            await loadAll(); 
+        }
+
+    } catch (error) {
+        console.error("❌ Zásadní chyba při úpravě platby:", error);
+        alert("Chyba: " + error.message);
+    }
+}
+    
+    function vypocitejZiskaneBody(tipData, adminVysledky) {
+    if (!tipData || !adminVysledky || !adminVysledky.playoff) return 0;
+    
+    let body = 0;
+    const bodovani = { 's32': 2, 's16': 3, 's8': 5, 's4': 8, 'winner': 15 };
+
+    // 1. Kontrola kol pavouka (s32, s16, s8, s4)
+    ['s32', 's16', 's8', 's4'].forEach(faze => {
+        const adminTymy = adminVysledky.playoff[faze] || [];
+        const tipTymy = tipData[faze] || [];
+        
+        if (adminTymy.length > 0) {
+            adminTymy.forEach(tym => {
+                // Pokud tým, který postoupil v reálu, má hráč ve svém tipu v dané fázi
+                if (tym && tipTymy.includes(tym)) {
+                    body += bodovani[faze];
+                }
+            });
+        }
+    });
+
+    // 2. Kontrola vítěze
+    if (adminVysledky.playoff.winner && tipData.winner === adminVysledky.playoff.winner) {
+        body += bodovani.winner;
+    }
+
+    return body;
+}
+    
+    function toggleDetail(id) {
+        const el = document.getElementById(id);
+        const isVisible = el.style.display === 'table-row';
+        document.querySelectorAll('.tip-detail-row').forEach(r => r.style.display = 'none');
+        el.style.display = isVisible ? 'none' : 'table-row';
+    }
+
+   function goBack(currentId, prevId, prevDot) {
+    // 1. Skryje aktuální sekci (např. 'phase-thirds')
+    const current = document.getElementById(currentId);
+    if (current) {
+        current.classList.add('hidden');
+    }
+
+    // 2. Ukáže předchozí sekci (např. 'phase-groups')
+    const prev = document.getElementById(prevId);
+    if (prev) {
+        prev.classList.remove('hidden');
+
+        // --- 🚀 FIX PRO MOBILY: CHYTRÉ SCROLLOVÁNÍ 🚀 ---
+        // Zajistí, že se stránka plynule posune na začátek sekce, na kterou se vracíš.
+        // Parametr 'block: start' zajistí, že horní hrana sekce bude u horního okraje displeje.
+        setTimeout(() => {
+            prev.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 50); 
+    }
+
+    // 3. Aktualizuje barvu v horním panelu (stepperu) podle prevDot
+    if (prevDot && typeof updateStepper === "function") {
+        updateStepper(prevDot);
+    }
+}
+  function editGroup(id) { 
+    const editor = document.getElementById('group-editor');
+    if (!editor) return;
+
+    editor.classList.remove('hidden'); 
+    document.getElementById('edit-title').innerText = `Pořadí ve Skupině ${id}`; 
+    renderTeamList(id); 
+
+    // --- 🚀 FIX PRO MOBILY ---
+    // Scrollne na editor plynule, aby byl hned vidět na začátku obrazovky
+    setTimeout(() => {
+        editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+}
+
+function renderTeamList(gid) {
+    const g = state.groups.find(x => x.id === gid);
+    const cont = document.getElementById('team-list-container');
+    
+    // Generujeme seznam s ID pro každé kolo a ovládacími prvky
+    cont.innerHTML = `<div id="L-${gid}" style="display:flex; flex-direction:column; gap:8px;">
+        ${g.teams.map((t, i) => `
+            <div class="team-item" draggable="true" 
+                 ondragstart="dS(event)" ondragover="dO(event)" ondragend="dE(event,'${gid}')"
+                 style="display:flex; justify-content:space-between; align-items:center;">
+                
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="color:var(--accent); font-weight:bold; min-width:20px;">${i+1}.</span>
+                    <span>${t}</span>
+                </div>
+
+                <div class="team-controls" style="display:flex; gap:5px;">
+                    <button class="arrow-btn" onclick="moveTeam('${gid}', ${i}, -1)" style="padding: 6px 12px; background:rgba(36,49,71,0.8); border:1px solid rgba(255,255,255,0.1); color:var(--accent); border-radius:6px; cursor:pointer;">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                    <button class="arrow-btn" onclick="moveTeam('${gid}', ${i}, 1)" style="padding: 6px 12px; background:rgba(36,49,71,0.8); border:1px solid rgba(255,255,255,0.1); color:var(--accent); border-radius:6px; cursor:pointer;">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('')}
+    </div>`;
+    
+    g.done = true;
+    aktualizujVzhledKarty(gid);
+    document.getElementById(`dot-${gid}`).classList.add('filled');
+}
+
+// Tahle funkce zajistí posun šipkami
+function moveTeam(gid, index, direction) {
+    const g = state.groups.find(x => x.id === gid);
+    const newIndex = index + direction;
+    
+    // Kontrola, jestli nevyskakujeme z pole (0-3)
+    if (newIndex >= 0 && newIndex < g.teams.length) {
+        const temp = g.teams[index];
+        g.teams[index] = g.teams[newIndex];
+        g.teams[newIndex] = temp;
+        renderTeamList(gid); // Znovu vykreslíme se změněným pořadím
+    }
+}
+    let dEl = null; 
+function dS(e) { dEl = e.currentTarget; dEl.style.opacity = '0.4'; }
+function dO(e) { 
+    e.preventDefault(); 
+    const l = dEl.parentNode; 
+    const s = [...l.querySelectorAll('.team-item')]; 
+    let n = s.find(x => e.clientY <= x.getBoundingClientRect().top + x.getBoundingClientRect().height/2); 
+    l.insertBefore(dEl, n); 
+}
+function dE(e, gid) { 
+    dEl.style.opacity = '1';
+    // Najdeme všechny spany s názvy týmů (jsou to vždy ty druhé v pořadí v každém itemu)
+    const n = [...document.querySelectorAll(`#L-${gid} .team-item span:nth-of-type(2)`)].map(x => x.innerText); 
+    state.groups.find(x => x.id === gid).teams = n; 
+    renderTeamList(gid); // Překreslíme, aby se opravila čísla 1-4
+}
+
+function confirmAllGroups() {
+    // 1. Validace
+    if(state.groups.filter(g => g.done).length < 12) {
+        return alert("Seřaď všech 12 skupin!");
+    }
+    
+    // 2. Přepnutí sekcí a stepperu
+    const groupsPhase = document.getElementById('phase-groups');
+    const thirdsPhase = document.getElementById('phase-thirds');
+    
+    if (groupsPhase) groupsPhase.classList.add('hidden');
+    if (thirdsPhase) thirdsPhase.classList.remove('hidden');
+    
+    updateStepper('dot-s2');
+
+    // 3. Příprava kontejneru
+    const container = document.getElementById('thirds-grid'); 
+    if (!container) return;
+
+    // Čistá struktura: TEXT + POČÍTADLO v jedné řadě
+    container.innerHTML = `
+        <div class="thirds-wrapper" style="width: 100%; padding: 0px 0px 20px 0px; box-sizing: border-box;">
+            <div class="thirds-header-row">
+                <span class="thirds-title-text">Vyber 8 postupujících týmů ze 3. míst</span>
+                <div id="thirds-counter">${state.thirds.length} / 8</div>
+            </div>
+            <div id="thirds-actual-grid"></div>
+        </div>
+    `; 
+    
+    const actualGrid = document.getElementById('thirds-actual-grid');
+    
+    // 4. Generování karet týmů (včetně logiky pro už vybrané týmy)
+    state.groups.forEach(g => { 
+        const teamName = g.teams[2]; // Tým na 3. místě
+        const selectedIndex = state.thirds.indexOf(teamName);
+        const isSelected = selectedIndex !== -1;
+        const selectedClass = isSelected ? 'selected' : '';
+        
+        // Vytvoříme kartu
+        const cardHtml = `
+            <div class="card-third ${selectedClass}" onclick="selectThird(this, '${teamName}')">
+                <span style="font-size: 0.75rem; opacity: 0.6; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Skupina ${g.id}</span>
+                <span style="font-weight: 800; font-size: 1.1rem; color: #fff;">${teamName}</span>
+                ${isSelected ? `<div class="selection-order" style="display: flex;">${selectedIndex + 1}</div>` : ''}
+            </div>`;
+        
+        actualGrid.insertAdjacentHTML('beforeend', cardHtml);
+    });
+
+    // 5. Stylizace počítadla podle naplnění
+    const counter = document.getElementById('thirds-counter');
+    if (counter) {
+        const isFull = state.thirds.length === 8;
+        counter.style.background = isFull ? 'linear-gradient(135deg, #22c55e, #16a34a)' : 'linear-gradient(135deg, #fbbf24, #d97706)';
+        counter.style.color = isFull ? '#fff' : '#000';
+    }
+
+    // --- 🚀 FIX PRO MOBILY: CHYTRÉ SCROLLOVÁNÍ 🚀 ---
+    setTimeout(() => {
+        if (thirdsPhase) {
+            thirdsPhase.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+    }, 100);
+}
+    
+function selectThird(el, teamName) {
+    // 1. Zjistíme aktuální stav
+    const name = teamName.trim();
+    const index = state.thirds.indexOf(name);
+
+    // 2. LOGIKA PŘIDÁNÍ / ODEBRÁNÍ
+    if (index > -1) {
+        // Tým už je vybraný -> SMAŽEME HO
+        state.thirds.splice(index, 1);
+    } else {
+        // Tým není vybraný -> PŘIDÁME HO (pokud jich není 8)
+        if (state.thirds.length < 8) {
+            state.thirds.push(name);
+        } else {
+            alert("Můžeš vybrat maximálně 8 týmů ze 3. míst.");
+            return;
+        }
+    }
+
+    // 3. KOMPLETNÍ PŘEKRESLENÍ VŠECH KARET (To vyřeší to číslování)
+    // Projdeme všechny karty s třídou .card-third
+    document.querySelectorAll('.card-third').forEach(card => {
+        // Zjistíme jméno týmu z této konkrétní karty (vytáhneme ho z onclicku nebo textu)
+        const currentCardName = card.querySelector('span:nth-child(2)').innerText.trim();
+        const currentIdx = state.thirds.indexOf(currentCardName);
+        
+        // Najdeme nebo vytvoříme odznáček pro číslo
+        let badge = card.querySelector('.selection-order');
+        if (!badge) {
+            badge = document.createElement('div');
+            badge.className = 'selection-order';
+            card.appendChild(badge);
+        }
+
+        if (currentIdx > -1) {
+            // Tým je v seznamu vybraných -> Zobrazíme číslo
+            card.classList.add('selected');
+            badge.style.display = 'flex';
+            badge.innerText = currentIdx + 1; // Pořadí 1 až 8
+        } else {
+            // Tým není vybraný -> Schováme vše
+            card.classList.remove('selected');
+            badge.style.display = 'none';
+        }
+    });
+
+    // 4. AKTUALIZACE POČÍTADLA (0/8)
+    const counterEl = document.getElementById('thirds-counter');
+    if (counterEl) {
+        counterEl.innerText = `${state.thirds.length} / 8`;
+        // Změna barvy při dokončení
+        if (state.thirds.length === 8) {
+            counterEl.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+            counterEl.style.color = '#fff';
+        } else {
+            counterEl.style.background = 'linear-gradient(135deg, #fbbf24, #d97706)';
+            counterEl.style.color = '#000';
+        }
+    }
+}
+
+function confirmThirds() {
+    // 1. Validace počtu vybraných týmů
+    if(state.thirds.length !== 8) {
+        return alert("Musíš vybrat přesně 8 týmů ze 3. míst!");
+    }
+
+    // 2. Vizuální zpětná vazba - stepper
+    const dotS2 = document.getElementById('dot-s2');
+    if(dotS2) {
+        dotS2.classList.remove('active');
+        dotS2.classList.add('completed');
+    }
+
+    // 3. Přepnutí sekcí
+    const thirdsDiv = document.getElementById('phase-thirds') || document.getElementById('sec-thirds');
+    const playoffCont = document.getElementById('playoff-container');
+
+    if(thirdsDiv) thirdsDiv.classList.add('hidden');
+    if(playoffCont) playoffCont.classList.remove('hidden');
+
+    // 4. GENEROVÁNÍ PAVOUKA
+    prepareS32(state.thirds);
+
+    // 5. Aktivace nové tečky v stepperu
+    if (typeof updateStepper === "function") {
+        updateStepper('dot-s32');
+    }
+
+    // --- 🚀 FIX PRO MOBILY: CHYTRÉ SCROLLOVÁNÍ 🚀 ---
+    // Místo window.scrollTo(0,0) použijeme zaměření na kontejner pavouka.
+    // setTimeout zajistí, že se scroll spustí až ve chvíli, kdy prohlížeč pavouka vykreslí.
+    if(playoffCont) {
+        setTimeout(() => {
+            playoffCont.scrollIntoView({ 
+                behavior: 'smooth', // Plynulý pohyb
+                block: 'start'      // Zarovnat horní hranu sekce k hornímu okraji displeje
+            });
+        }, 100); 
+    }
+}
+
+ function prepareS32(vybrane3) {
+    const g = {};
+    state.groups.forEach(group => { g[group.id] = group.teams; });
+
+    const getT = (groupLetter, rank) => {
+        const team = g[groupLetter] ? g[groupLetter][rank] : null;
+        if (!team) return "??";
+        return typeof team === 'object' ? team.name : team;
+    };
+
+    // POŘADÍ PODLE OFICIÁLNÍHO PAVOUKA FIFA
+    const s32Teams = [
+         // SEKCE 3 (W90 v R16)
+        getT('E', 0), vybrane3[0], // Z74 (1E vs 3ABCDF) Německo  Z89        ok
+        getT('I', 0), vybrane3[1], // Z77 (1I vs 3CDFGH) Francie
+
+          // SEKCE 5 (W93 v R16)
+        getT('A', 1), getT('B', 1), // Z73 (2A vs 2B) Baráž D   Z90          ok  Z97
+        getT('F', 0), getT('C', 1), // Z75 (1F vs 2C) Nizozemsko
+
+            // SEKCE 6 (W94 v R16)
+        getT('H', 0), getT('J', 1), // Z84 (1H vs 2J)  Španělsko  Z93
+        getT('K', 1), getT('L', 1),  // Z88 (2K vs 2L) Kolumbie 
+      //  getT('E', 1), getT('I', 1), // Z78 (2E vs 2I) Ekvádor    má být kolumbie
+        //getT('D', 1), getT('G', 1), // Z83 (2D vs 2G)
+
+          // SEKCE 4 (W92 v R16)
+        getT('D', 0), vybrane3[4], // Z81 (1D vs 3BEFIJ) Baráž C  Z94     ok     Z98
+        getT('G', 0), vybrane3[5], // Z82 (1G vs 3AEHIJ) Belgie            ok
+
+          // SEKCE 2 (W91 v R16)
+        getT('C', 0), getT('F', 1), // Z76 (1C vs 2F) Brazílie  Z91        ok
+        getT('E', 1), getT('I', 1), // Z78 (2E vs 2I) Ekvádor
+       // getT('D', 1), getT('G', 1), // Z83 (2D vs 2G) USA                má být ekvádor
+        //getT('E', 1), getT('I', 1), // Z78 (2E vs 2I)
+        
+        // SEKCE 1 (W89 v R16)
+        getT('A', 0), vybrane3[2], // Z79 (1A vs 3CEFHI)  Mexico  Z92        ok  Z99
+        getT('L', 0), vybrane3[3], // Z80 (1L vs 3EHIJK) Anglie                ok   
+
+       
+          // SEKCE 8 (W96 v R16)
+        getT('J', 0), getT('H', 1), // Z86 (1J vs 2H) Argentina   Z95        ok
+        getT('D', 1), getT('G', 1), // Z83 (2D vs 2G) USA
+        //getT('K', 1), getT('L', 1),  // Z88 (2K vs 2L) Kolumbie            má být USA
+
+
+        // SEKCE 7 (W95 v R16)
+        getT('B', 0), vybrane3[6], // Z85 (1B vs 3EFGIJ)  Švýcarsko  Z96        Z100        ok
+        getT('K', 0), vybrane3[7], // Z87 (1K vs 3DEIJL) Portugalsko                        ok
+    ];
+
+    /*genStage('Šestnáctifinále', s32Teams, 16, 's32', 'phase-thirds', 'dot-s32');*/
+     // Původní: genStage('Šestnáctifinále', s32Teams, 16, 's32', 'phase-thirds', 'dot-s32');
+// Opravené:
+genStage('Šestnáctifinále', s32Teams, 16, 's32', 'phase-thirds', 'dot-s2');
+}
+ // 3. KOMPLETNĚ PŘEPSANÁ genStage (včetně fixu pro mobilní scrollování)
+function genStage(title, teams, count, id, prevPhase, prevDot) {
+    const cont = document.getElementById('playoff-container');
+    if (!cont) return;
+
+    // --- MAPOVÁNÍ STEPPERU (Aktualizace barev nahoře) ---
+    const dotMap = {
+        's32': 'dot-s32',
+        's16': 'dot-s16',
+        's8':  'dot-s8',
+        's4':  'dot-s4',
+        's3':  'dot-fin',
+        's2':  'dot-fin'
+    };
+    
+    if (dotMap[id] && typeof updateStepper === "function") {
+        updateStepper(dotMap[id]);
+    }
+
+    // Načtení týmů z historie nebo stavu
+    const currentTeams = getTeamsForStage(id, teams);
+    const prevWins = state.playoff[id] || [];
+
+    // Vytvoření nebo získání DIVu pro danou fázi
+    let stageDiv = document.getElementById(`sec-${id}`);
+    if (!stageDiv) {
+        stageDiv = document.createElement('div');
+        stageDiv.id = `sec-${id}`;
+        stageDiv.className = 'section-box';
+        cont.appendChild(stageDiv);
+    }
+
+    // Sestavení HTML šablony
+    let h = `
+        <div class="section-header">
+            <span style="font-size: 1.2rem; font-weight: 800;">${title}</span>
+            <button class="btn btn-back" onclick="goBack('sec-${id}', '${prevPhase}', '${prevDot}')">
+                <i class="fas fa-arrow-left"></i> ZPĚT
+            </button>
+        </div>
+        <div class="section-content">
+            <div class="playoff-form-grid">`;
+    
+    for(let i=0; i<count; i++) {
+        let t1 = currentTeams[i*2] || '??';
+        let t2 = currentTeams[i*2+1] || '??';
+        
+        let sel1 = '';
+        let sel2 = '';
+
+        // Logika označení vybraných vítězů
+        if (id === 's2') {
+            if (state.playoff.winner === t1 && t1 !== '??') sel1 = 'selected';
+            if (state.playoff.winner === t2 && t2 !== '??') sel2 = 'selected';
+        } else if (id === 's3') {
+            if (state.playoff.bronze === t1 && t1 !== '??') sel1 = 'selected';
+            if (state.playoff.bronze === t2 && t2 !== '??') sel2 = 'selected';
+        } else {
+            sel1 = prevWins.includes(t1) ? 'selected' : '';
+            sel2 = prevWins.includes(t2) ? 'selected' : '';
+        }
+
+        h += `
+            <div class="matchup" id="m-${id}-${i}">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; margin-bottom: 6px; display: flex; justify-content: space-between; letter-spacing: 1px;">
+                    <span>${id === 's2' ? 'FINÁLE' : (id === 's3' ? 'O 3. MÍSTO' : 'ZÁPAS ' + (i+1))}</span>
+                    <i class="fas fa-sitemap" style="opacity: 0.3;"></i>
+                </div>
+                <div class="playoff-team ${sel1}" onclick="pk('${id}',${i},0)">${t1}</div>
+                <div class="playoff-team ${sel2}" onclick="pk('${id}',${i},1)">${t2}</div>
+            </div>`;
+    }
+    
+    // Uzavření gridu a přidání potvrzovacího tlačítka
+    stageDiv.innerHTML = h + `
+            </div>
+            <div style="padding: 0 25px 25px 25px;">
+                <button class="btn btn-primary" style="font-size: 1.1rem; padding: 16px; width: 100%;" onclick="cfS('${id}', ${count})">
+                    Potvrdit kolo <i class="fas fa-check" style="margin-left: 8px;"></i>
+                </button>
+            </div>
+        </div>`;
+    
+    // --- PŘEPNUTÍ VIDITELNOSTI ---
+ // Schováme všechny boxy formuláře, ale žebříček necháme svítit
+document.querySelectorAll('.section-box:not(#section-leaderboard)').forEach(div => {
+    div.classList.add('hidden');
+});
+
+    // Pak ukážeme jen to, co chceme
+    stageDiv.classList.remove('hidden');
+
+    // --- 🚀 FIX PRO MOBILY: CHYTRÉ SCROLLOVÁNÍ 🚀 ---
+    // Místo scrollTo(0,0) zamíříme přímo na začátek nové tabulky
+    setTimeout(() => {
+        stageDiv.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+    }, 50);
+}
+
+    function pk(sid, mi, ti) {
+        const m = document.getElementById(`m-${sid}-${mi}`);
+        m.querySelectorAll('.playoff-team').forEach(t => t.classList.remove('selected'));
+        m.querySelectorAll('.playoff-team')[ti].classList.add('selected');
+    }
+
+function cfS(sid, count) {
+    const wins = [...document.querySelectorAll(`#sec-${sid} .selected`)].map(e => e.innerText);
+    const loss = [...document.querySelectorAll(`#sec-${sid} .matchup`)].map(m => { 
+        const t = m.querySelectorAll('.playoff-team'); 
+        return t[0].classList.contains('selected') ? t[1].innerText : t[0].innerText; 
+    });
+
+    if(wins.length < count) return alert("Vyber vítěze všech zápasů!");
+    
+    state.playoff[sid] = wins;
+
+    // Reset budoucích kol při změně výsledku (maže staré tipy v pavouku)
+    const order = ['s32', 's16', 's8', 's4', 's3', 's2'];
+    let idx = order.indexOf(sid);
+    for(let i = idx + 1; i < order.length; i++) {
+        if(state.history) delete state.history[order[i]]; 
+        const nextDiv = document.getElementById(`sec-${order[i]}`);
+        if(nextDiv) nextDiv.remove();
+    }
+
+    // --- LOGIKA POSTUPU MEZI KOLY ---
+    // Poznámka: genStage v sobě už má nový scroll-fix, takže tady ho nemusíme volat extra
+    if(sid === 's32') {
+        genStage('Osmifinále (1/8)', wins, 8, 's16', 'sec-s32', 'dot-s32');
+    } 
+    else if(sid === 's16') {
+        genStage('Čtvrtfinále', wins, 4, 's8', 'sec-s16', 'dot-s16');
+    } 
+    else if(sid === 's8') {
+        genStage('Semifinále', wins, 2, 's4', 'sec-s8', 'dot-s8');
+    } 
+    else if(sid === 's4') {
+        // Aktivujeme stepper pro finálovou část
+        const dot4 = document.getElementById('dot-s4');
+        if(dot4) dot4.classList.add('active'); 
+        
+        // Zápas o 3. místo
+        genStage('O 3. Místo', loss, 1, 's3', 'sec-s4', 'dot-s4'); 
+    } 
+    else if(sid === 's3') {
+        const finalists = state.playoff['s4']; // Vítězové ze semifinále
+        genStage('Finále', finalists, 1, 's2', 'sec-s3', 'dot-s3');
+    } 
+    else if(sid === 's2') {
+        // --- 🏆 KONEC PAVOUKA - FINÁLNÍ SHRNUTÍ 🏆 ---
+        state.playoff.winner = wins[0]; 
+        const bronzeEl = document.querySelector('#sec-s3 .selected');
+        state.playoff.bronze = bronzeEl ? bronzeEl.innerText : "Nezvoleno"; 
+
+        // Skryjeme pavouka
+       document.querySelectorAll('.section-box:not(#section-leaderboard)').forEach(d => {
+    d.classList.add('hidden');
+});
+        
+        // Ukážeme finální potvrzovací box
+        const finalBox = document.getElementById('final-box');
+        if(finalBox) {
+            finalBox.classList.remove('hidden');
+            const winDisp = document.getElementById('winner-display');
+            if(winDisp) winDisp.innerText = "TVŮJ VÍTĚZ: " + wins[0];
+
+            // --- 🚀 FIX PRO MOBILY: POSLEDNÍ SCROLL ---
+            setTimeout(() => {
+                finalBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }
+
+    // TADY BYLO window.scrollTo(0,0) - SMAZÁNO!
+}
+    function checkAdmin() {
+    const now = new Date().getTime();
+    const adminLoginTime = localStorage.getItem('adminLoginTime');
+    const tenMinutes = 10 * 60 * 1000;
+
+    // Pokud je uživatel už přihlášený a neuběhlo 10 minut, jen přepneme panel
+    if (adminLoginTime && (now - adminLoginTime < tenMinutes)) {
+        toggleAdminPanel();
+        return;
+    }
+
+    // Pokud není přihlášen nebo vypršel čas, chce to heslo
+    if (prompt("Heslo:") === "Matysek.2019") {
+        localStorage.setItem('adminLoginTime', now);
+        toggleAdminPanel();
+    } else {
+        alert("Špatné heslo!");
+    }
+}
+    function toggleAdminPanel() {
+    const panel = document.getElementById('admin-panel');
+    panel.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) {
+        genAdminForm();
+    }
+}
+   function genAdminForm() {
+    const cont = document.getElementById('admin-form-container'); 
+    if (!cont) return;
+
+    // 🚀 ZDROJ PRAVDY: Seznam všech týmů bereme VŽDY z tvé nové definice v kódu
+    const allTeams = state.groups.flatMap(g => g.teams);
+
+    const res = window.currentResults || {};
+    let finalHTML = ''; 
+
+    // 1. SKUPINY (A-L)
+    state.groups.forEach((g, i) => {
+        let h = `<div style="background:rgba(15, 23, 42, 0.8);padding:15px;border-radius:12px;border:1px solid rgba(255,255,255,0.05)">
+                    <b style="color:var(--accent); font-size: 1.1rem; margin-bottom: 10px; display:block;">Skupina ${g.id}</b>`;
+        
+        for(let p=0; p<4; p++) {
+            // savedValue je to, co je uložené v DB (může být starý název)
+            const savedValue = res.groups?.[i]?.[p] || "";
+            
+            h += `<select id="a-g-${i}-${p}" style="width:100%;margin-top:8px;background:rgba(0,0,0,0.4);color:white;border:1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px;">
+                    <option value="" ${savedValue === '' ? 'selected' : ''}>-- ${p+1}. místo --</option>
+                    ${g.teams.map(t => {
+                        // Kontrola: pokud se název v DB shoduje s názvem v kódu, označíme ho jako vybraný
+                        const isSelected = String(t).trim() === String(savedValue).trim();
+                        return `<option value="${t}" ${isSelected ? 'selected' : ''}>${t}</option>`;
+                    }).join('')}
+                  </select>`;
+        }
+        finalHTML += h + `</div>`;
+    });
+
+    // 2. PLAYOFF (s32, s16, s8, s4)
+    const stages = [
+        {id:'s32', n:'1/16 finále', c:16}, {id:'s16', n:'1/8 finále', c:8}, 
+        {id:'s8', n:'Čtvrtfinále', c:4}, {id:'s4', n:'Semifinále', c:4}
+    ];
+
+    stages.forEach(s => {
+        let h = `<div style="background:rgba(15, 23, 42, 0.8);padding:15px;border-radius:12px;border:1px solid rgba(255,255,255,0.05)">
+                    <b style="color:var(--winner); font-size: 1.1rem; margin-bottom: 10px; display:block;">${s.n}</b>`;
+        
+        for(let j=0; j<s.c; j++) {
+            const savedValue = (res[s.id]?.[j] || res.playoff?.[s.id]?.[j]) || "";
+            
+            h += `<select id="a-${s.id}-${j}" style="width:100%;margin-top:8px;background:rgba(0,0,0,0.4);color:white;border:1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px;">
+                    <option value="" ${savedValue === '' ? 'selected' : ''}>-- vybrat --</option>
+                    ${allTeams.map(t => {
+                        const isSelected = String(t).trim() === String(savedValue).trim();
+                        return `<option value="${t}" ${isSelected ? 'selected' : ''}>${t}</option>`;
+                    }).join('')}
+                  </select>`;
+        }
+        finalHTML += h + `</div>`;
+    });
+
+    // 3. VÍTĚZ A BRONZ
+    const winS = res.winner || res.playoff?.winner || "";
+    const broS = res.bronze || res.playoff?.bronze || "";
+    finalHTML += `
+        <div style="background:linear-gradient(180deg, rgba(30,41,59,0.8) 0%, rgba(34,197,94,0.1) 100%);padding:20px;border-radius:12px;border:2px solid var(--winner);grid-column: 1 / -1">
+            <b style="font-size: 1.2rem; color: #fff;">🏆 Vítěz:</b>
+            <select id="a-win" style="width:100%;margin-bottom:20px;margin-top:10px;background:rgba(0,0,0,0.4);color:white;border:1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
+                <option value="">-- vybrat vítěze --</option>
+                ${allTeams.map(t => `<option value="${t}" ${String(t).trim() === String(winS).trim() ? 'selected' : ''}>${t}</option>`).join('')}
+            </select>
+            <b style="font-size: 1.2rem; color: #fff;">🥉 Bronz:</b>
+            <select id="a-bro" style="width:100%;margin-top:10px;background:rgba(0,0,0,0.4);color:white;border:1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
+                <option value="">-- vybrat 3. místo --</option>
+                ${allTeams.map(t => `<option value="${t}" ${String(t).trim() === String(broS).trim() ? 'selected' : ''}>${t}</option>`).join('')}
+            </select>
+        </div>`;
+
+    cont.innerHTML = finalHTML;
+}
+    // 1. TUTO FUNKCI NAPOJ NA TLAČÍTKO "ULOŽIT VÝSLEDKY" V ADMINU
+async function ulozitAdminVysledky() {
+    // Sestavíme reálné výsledky z tvého aktuálního naklikaného stavu
+    const adminData = {
+        id: 1, // Záměrně dáváme vždy 1. Chceme mít v tabulce jen jeden řádek, který se neustále přepisuje.
+        groups: state.groups.map(g => g.teams),
+        winner: state.playoff.winner
+        // Pokud už v adminu naklikáváš i s16, s8 atd., přidej je sem úplně stejně jako u uživatelů
+    };
+
+    // Odešleme výsledky do našeho trezoru
+    const { error } = await supabaseClient
+        .from('admin_vysledky')
+        .upsert(adminData);
+
+    if (error) {
+        alert("Něco se nepovedlo při ukládání výsledků: " + error.message);
+        return;
+    }
+
+    alert("Reálné výsledky uloženy! Jdu rozdat body hráčům...");
+    
+    // HNED PO ULOŽENÍ spustíme ten náš vyhodnocovací skript a pošleme mu tyhle čerstvé výsledky
+    await vyhodnotitTipy(adminData);
+}
+
+// 2. FUNKCE PRO NAČTENÍ VÝSLEDKŮ PO OTEVŘENÍ ADMIN STRÁNKY
+async function nacistAdminVysledky() {
+    const { data, error } = await supabaseClient
+        .from('admin_vysledky') // Ujisti se, že výsledky máš v této tabulce
+        .select('*')
+        .eq('id', 1)
+        .maybeSingle();
+
+    if (error) {
+        console.error("❌ Chyba při stahování admin výsledků:", error);
+        return;
+    }
+
+    if (data) {
+        console.log("✅ Admin data stažena:", data);
+
+        // A. Uložíme pro žebříček (aby tam nebyly nuly)
+        // Musíme zajistit, aby struktura odpovídala tomu, co čeká renderLeaderboard
+        window.currentResults = {
+            groups: data.groups || [],
+            playoff: {
+                s32: data.s32 || [],
+                s16: data.s16 || [],
+                s8:  data.s8 || [],
+                s4:  data.s4 || [],
+                bronze: data.bronze || "",
+                winner: data.winner || ""
+            },
+            // Přidáme i do kořene pro jistotu, kdyby renderLeaderboard koukal přímo tam
+            s32: data.s32 || [],
+            s16: data.s16 || [],
+            s8:  data.s8 || [],
+            s4:  data.s4 || [],
+            winner: data.winner || "",
+            bronze: data.bronze || ""
+        };
+
+        
+        
+        // Naplníme playoff ve state
+        if (state.playoff) {
+            state.playoff.s32 = data.s32 || [];
+            state.playoff.s16 = data.s16 || [];
+            state.playoff.s8  = data.s8 || [];
+            state.playoff.s4  = data.s4 || [];
+            state.playoff.bronze = data.bronze || "";
+            state.playoff.winner = data.winner || "";
+        }
+
+        console.log("🚀 window.currentResults připraveno pro žebříček:", window.currentResults);
+
+        // C. Refresh žebříčku (aby nuly zmizely hned po načtení)
+        if (typeof loadAll === "function") {
+            loadAll(); 
+        }
+    }
+}
+
+ async function saveAdminResults() {
+    console.log("🛠️ STARTUJI SBĚR DAT Z POLÍČEK...");
+
+    // Pomocná funkce, aby kód nebyl dlouhý
+    const getV = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value : "";
+    };
+
+    // 1. SBĚR SKUPIN (12 skupin, každá 4 místa)
+    const groups = [];
+    for (let i = 0; i < 12; i++) {
+        const gT = [];
+        for (let p = 0; p < 4; p++) {
+            gT.push(getV(`a-g-${i}-${p}`));
+        }
+        groups.push(gT);
+    }
+
+    // 2. SBĚR PLAYOFF (Přesně podle ID v genAdminForm)
+    const adminData = {
+        groups: groups,
+        s32: Array.from({length: 16}, (_, j) => getV(`a-s32-${j}`)),
+        s16: Array.from({length: 8},  (_, j) => getV(`a-s16-${j}`)),
+        s8:  Array.from({length: 4},  (_, j) => getV(`a-s8-${j}`)),
+        s4:  Array.from({length: 4},  (_, j) => getV(`a-s4-${j}`)),
+        winner: getV('a-win'),
+        bronze: getV('a-bro')
+    };
+
+    // 🔥 DIAGNOSTICKÝ LOG - Tady v konzoli uvidíš, co JS skutečně "vidí" před odesláním
+    console.log("📤 ODESÍLÁM DO DATABÁZE:", adminData);
+    if (adminData.winner !== "Slovensko" && document.getElementById('a-win').value === "Slovensko") {
+        console.error("❌ KRITICKÁ CHYBA: V políčku je Slovensko, ale JS čte něco jiného! Máš v HTML duplicitní ID 'a-win'?");
+    }
+
+    try {
+        const { error } = await supabaseClient
+            .from('admin_vysledky')
+            .upsert({ id: 1, ...adminData });
+
+        if (error) throw error;
+
+        // Aktualizujeme globální proměnnou a hlášku
+        window.currentResults = adminData;
+        alert("✅ Uloženo! Vítěz: " + adminData.winner);
+
+        // Překreslíme žebříček
+        if (typeof loadAll === "function") await loadAll();
+
+    } catch (err) {
+        console.error("Chyba při ukládání:", err);
+        alert("Chyba: " + err.message);
+    }
+}
+
+ async function saveToSupabase() {
+    // 1. KONTROLA PŘIHLÁŠENÍ
+    const { data: sessionData } = await supabaseClient.auth.getSession();
+    const session = sessionData?.session;
+
+    if (!session) {
+        return showCustomAlert("Pozor!", "Nejdřív se musíš přihlásit nebo vytvořit účet, abychom ti mohli tipy uložit k tvému jménu.");
+    }
+
+    const userId = session.user.id;
+
+    // 2. KONTROLA JMÉNA
+    const name = document.getElementById('user-name').value;
+    if (!name) return showCustomAlert("Chyba", "Zadej své jméno, ať víme, jak ti říkat v žebříčku!");
+
+    // 3. SESTAVENÍ DAT
+    const tipData = { 
+        groups: state.groups.map(g => g.teams), 
+        thirds: state.thirds, 
+        s32: state.playoff.s32, 
+        s16: state.playoff.s16, 
+        s8: state.playoff.s8, 
+        s4: state.playoff.s4, 
+        bronze: state.playoff.bronze, 
+        winner: state.playoff.winner 
+    };
+
+    try {
+        // 4. ODESLÁNÍ (UPSERT)
+        const { error } = await supabaseClient
+            .from('tipy')
+            .upsert(
+                { 
+                    user_id: userId,
+                    name: name,      
+                    tip_data: tipData 
+                }, 
+                { onConflict: 'user_id' }
+            );
+
+        if (error) throw error;
+
+        // 5. AKTUALIZACE JMÉNA V HLAVIČCE (pokud existuje element)
+        const userDisplay = document.getElementById('user-email-display');
+        if (userDisplay && name) {
+            const email = userDisplay.innerText.split(' ')[0]; 
+            userDisplay.innerText = `${email} (${name})`;
+        }
+
+        // 6. ZOBRAZENÍ PLATEBNÍHO OKNA (Místo starého alertu)
+        showPaymentModal(name);
+
+        // 7. REFRESH ŽEBŘÍČKU
+        if (typeof loadAll === 'function') await loadAll();
+
+    } catch (error) {
+        console.error("Supabase chyba:", error);
+        showCustomAlert("Chyba", "Něco se nepovedlo při ukládání: " + error.message);
+    }
+}
+    
+    // Pomocné funkce pro ovládání okna
+function showCustomAlert(title, message) {
+    document.getElementById('modal-title').innerText = title;
+    document.getElementById('modal-message').innerText = message;
+    document.getElementById('custom-alert').classList.remove('hidden');
+}
+
+function closeModalAndReload() {
+    document.getElementById('custom-alert').classList.add('hidden');
+    location.reload(); // Provede reload až po kliknutí na OK
+}
+    
+function updateStepper(activeId) {
+    const steps = [
+        { id: 'dot-s1',  check: () => state.groups.every(g => g.done) },
+        { id: 'dot-s2',  check: () => state.thirds.length === 8 },
+        { id: 'dot-s32', check: () => state.playoff.s32 && state.playoff.s32.length === 16 },
+        { id: 'dot-s16', check: () => state.playoff.s16 && state.playoff.s16.length === 8 },
+        { id: 'dot-s8',  check: () => state.playoff.s8 && state.playoff.s8.length === 4 },
+        { id: 'dot-s4',  check: () => state.playoff.s4 && state.playoff.s4.length === 2 },
+        { id: 'dot-fin', check: () => state.playoff.winner }
+    ];
+
+    steps.forEach(step => {
+        const el = document.getElementById(step.id);
+        if (!el) return;
+
+        el.classList.remove('active', 'completed');
+
+        if (step.id === activeId) {
+            el.classList.add('active'); // Žlutá (Právě vyplňuji)
+        } else if (step.check()) {
+            el.classList.add('completed'); // Zelená (Mám hotovo)
+        }
+    });
+}
+    
+    // 2. Tuhle funkci vlož do scriptu - zajistí, že se data neztratí
+function getTeamsForStage(id, fallbackTeams) {
+    if (fallbackTeams && fallbackTeams.length > 0) {
+        state.history[id] = fallbackTeams;
+    }
+    return state.history[id] || [];
+}
+
+
+async function updateRankTrends() {
+    const heslo = prompt("Zadej administrátorské heslo pro trendy:");
+    if (heslo !== "Matysek.2019") return alert("Přístup zamítnut!");
+
+    const btn = document.getElementById('btn-update-trends');
+    const originalText = btn.innerHTML;
+    
+    // Loading stav
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Počítám ranky...';
+
+    try {
+        // 1. Načteme všechna data
+        const { data: tipy, error: err1 } = await supabaseClient.from('tipy').select('*');
+        const { data: real, error: err2 } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).single();
+
+        if (err1 || err2) throw new Error("Nepodařilo se spojit s databází.");
+
+        // 2. Logika výpočtu bodů (musí být stejná jako v žebříčku)
+        const r = real.playoff ? { ...real.playoff, groups: real.groups } : real;
+        
+        const rankedPlayers = tipy.map(p => {
+            let tip = p.tip_data;
+            if (typeof tip === 'string') tip = JSON.parse(tip);
+            if (!tip) tip = {};
+
+            let pts = 0;
+            // Skupiny (4 body za přesné umístění)
+            if (r.groups && tip.groups) {
+                r.groups.forEach((g, i) => {
+                    const tipG = tip.groups[i] || [];
+                    const aT = g.teams || g;
+                    if (Array.isArray(aT)) {
+                        aT.forEach((t, pos) => { if (t && tipG[pos] && String(t).trim() === String(tipG[pos]).trim()) pts += 4; });
+                    }
+                });
+            }
+            // Playoff (body za účast týmu v daném kole)
+            const ck = (sid, val) => {
+                const rt = r[sid] || [];
+                const tt = tip[sid] || [];
+                if (Array.isArray(rt)) rt.forEach(t => { if (t && Array.isArray(tt) && tt.some(x => String(x).trim() === String(t).trim())) pts += val; });
+            };
+            ck('s32', 2); ck('s16', 3); ck('s8', 4); ck('s4', 5);
+            if (r.winner && tip.winner && String(r.winner).trim() === String(tip.winner).trim()) pts += 12;
+            if (r.bronze && tip.bronze && String(r.bronze).trim() === String(tip.bronze).trim()) pts += 8;
+
+            return { id: p.id, points: pts };
+        });
+
+        // 3. Seřazení hráčů podle bodů (vytvoření pořadí)
+        rankedPlayers.sort((a, b) => b.points - a.points);
+
+        // 4. Hromadný update do Supabase (previous_rank)
+        console.log("Zapisuji nové trendy do DB...");
+        for (let i = 0; i < rankedPlayers.length; i++) {
+            const currentRank = i + 1;
+            await supabaseClient
+                .from('tipy')
+                .update({ previous_rank: currentRank })
+                .eq('id', rankedPlayers[i].id);
+        }
+
+        alert("Hotovo! Pořadí bylo uloženo jako výchozí bod pro šipky.");
+        if (typeof loadAll === "function") await loadAll(); // Obnovit žebříček
+
+    } catch (err) {
+        console.error(err);
+        alert("Chyba: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}    
+
+
+// Tuto funkci zavoláš v adminu ve chvíli, kdy klikneš na "Vyhodnotit"
+// Jako parametr 'adminVysledky' jí předáš ten svůj uložený objekt s reálnými výsledky
+async function vyhodnotitTipy(adminVysledky) {
+    const { data: vsechnyTipy, error: fetchError } = await supabaseClient
+        .from('tipy')
+        .select('*');
+
+    if (fetchError) {
+        console.error("Chyba při načítání tipů z DB:", fetchError);
+        return;
+    }
+
+    let pocetVyhodnocenych = 0;
+
+    for (const radek of vsechnyTipy) {
+        let celkoveBody = 0;
+        const userTip = radek.tip_data;
+
+        // --- 1. SKUPINY (4 body za přesné umístění) ---
+        if (userTip.groups && adminVysledky.groups) {
+            adminVysledky.groups.forEach((adminSkupina, i) => {
+                const userSkupina = userTip.groups[i] || [];
+                adminSkupina.forEach((tym, j) => {
+                    if (tym && userSkupina[j] === tym) celkoveBody += 4;
+                });
+            });
+        }
+
+        // --- 2. PAVOUK (Body za účast týmu v daném kole) ---
+        // Definujeme si kola a jejich bodovou hodnotu
+        const kola = [
+            { klic: 's32', body: 2 },
+            { klic: 's16', body: 3 },
+            { klic: 's8',  body: 4 },
+            { klic: 's4',  body: 5 }
+        ];
+
+        kola.forEach(kolo => {
+            const adminTymy = adminVysledky[kolo.klic] || [];
+            const userTymy = userTip[kolo.klic] || [];
+            
+            // Za každý tým, který uživatel "poslal" do tohoto kola a reálně tam je
+            adminTymy.forEach(tym => {
+                if (tym && userTymy.includes(tym)) {
+                    celkoveBody += kolo.body;
+                }
+            });
+        });
+
+        // --- 3. BRONZ (8 bodů za přesnou trefu) ---
+        if (userTip.bronze && adminVysledky.bronze) {
+            if (userTip.bronze === adminVysledky.bronze) celkoveBody += 8;
+        }
+
+        // --- 4. CELKOVÝ VÍTĚZ (12 bodů za přesnou trefu) ---
+        if (userTip.winner && adminVysledky.winner) {
+            if (userTip.winner === adminVysledky.winner) celkoveBody += 12;
+        }
+
+        // Zápis do databáze
+        const { error: updateError } = await supabaseClient
+            .from('tipy')
+            .update({ body: celkoveBody })
+            .match({ id: radek.id });
+
+        if (!updateError) pocetVyhodnocenych++;
+    }
+
+    alert(`Úspěšně vyhodnoceno! Body rozděleny pro ${pocetVyhodnocenych} hráčů.`);
+    
+    // Po vyhodnocení hned aktualizujeme tabulku na webu
+    if (typeof nactiZebricek === "function") nactiZebricek();
+}
+    
+
+   // --- 1. REGISTRACE NOVÉHO ÚČTU ---
+async function registerUser() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+
+    if (!email || password.length < 6) {
+        alert("Zadej platný email a heslo dlouhé alespoň 6 znaků.");
+        return;
+    }
+
+    // TADY JE TA OPRAVA: voláme tvůj supabaseClient
+    const { data, error } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password
+    });
+
+    if (error) {
+        alert("Chyba při registraci: " + error.message);
+    } else {
+        alert("Účet vytvořen! Nyní jsi přihlášen.");
+        checkUserSession(); 
+    }
+}
+
+// --- 2. PŘIHLÁŠENÍ EXISTUJÍCÍHO ÚČTU ---
+async function loginUser() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+    });
+
+    if (error) {
+        alert("Špatný email nebo heslo! " + error.message);
+    } else {
+        checkUserSession(); 
+    }
+}
+
+// --- 3. ODHLÁŠENÍ ---
+async function logoutUser() {
+    await supabaseClient.auth.signOut();
+    checkUserSession(); 
+// Zásadní krok: Natvrdo obnovíme stránku. 
+    // Tím se vyčistí HTML, proměnná state i všechny tvé tipy z obrazovky.
+    window.location.reload();    
+}
+
+async function checkUserSession() {
+    // 1. Získáme základní session (email a ID)
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    const authSection = document.getElementById('auth-section');
+    const loggedInSection = document.getElementById('logged-in-section');
+    const userDisplay = document.getElementById('user-email-display');
+
+    if (session) {
+        // 2. Teď se musíme podívat do tabulky 'tipy', jestli tam uživatel už nemá jméno
+        // Používáme session.user.id, abychom našli ten správný řádek
+        const { data: tipData } = await supabaseClient
+            .from('tipy')
+            .select('name')
+            .eq('user_id', session.user.id)
+            .maybeSingle(); // Vrátí buď jeden řádek, nebo null
+
+        // 3. Připravíme si text jména (pokud existuje)
+        const nameSuffix = (tipData && tipData.name) ? ` (${tipData.name})` : "";
+
+        // 4. Nastavíme viditelnost sekcí
+        if (authSection) authSection.classList.add('hidden');
+        if (loggedInSection) loggedInSection.classList.remove('hidden');
+        
+        // 5. Vypíšeme email + jméno
+        if (userDisplay) {
+            userDisplay.innerText = session.user.email + nameSuffix;
+        }
+
+        // Tady pravděpodobně voláš další funkce jako loadMyTip() atd.
+    } else {
+        // Uživatel NENÍ přihlášený
+        if (authSection) authSection.classList.remove('hidden');
+        if (loggedInSection) loggedInSection.classList.add('hidden');
+    }
+}
+
+async function nactiUzivatelskyTip(userId) {
+    console.log("➡️ [Tip] 1. Začínám stahovat tvůj tip pro pavouka...");
+    
+    try {
+        const { data, error } = await supabaseClient
+            .from('tipy')
+            .select('name, tip_data') // Přidali jsme 'name', aby se ti jméno samo vyplnilo
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+            // 0. PŘEDVYPLNĚNÍ JMÉNA
+            if (data.name) {
+                const nameInput = document.getElementById('user-name');
+                if (nameInput) nameInput.value = data.name;
+            }
+
+            if (data.tip_data) {
+                console.log("➡️ [Tip] 2. Mám data z DB, plním proměnnou state...");
+                const tip = data.tip_data;
+                
+                // 1. NAPLNĚNÍ A PŘEKRESLENÍ SKUPIN
+                if (tip.groups) {
+                    tip.groups.forEach((tymy, i) => {
+                        if (state.groups[i]) {
+                            state.groups[i].teams = tymy;
+                            if (tymy && tymy.length > 0) {
+                                state.groups[i].done = true; 
+                                
+                                // --- TADY JE TA ZMĚNA VZHLEDU ---
+                                // Zavoláme naši novou funkci, která kartu stylově přeskládá
+                                if (typeof aktualizujVzhledKarty === "function") {
+                                    aktualizujVzhledKarty(state.groups[i].id);
+                                }
+                                // ---------------------------------
+                            }
+                        }
+                    });
+                }
+                
+                // ... (zbytek tvé funkce pokračuje beze změny: 2. NAPLNĚNÍ PAVOUKA atd.) ...
+                
+                // 2. NAPLNĚNÍ PAVOUKA (Playoff)
+                if (state.playoff) Object.assign(state.playoff, tip);
+
+                console.log("➡️ [Tip] 3. Generuji HTML a simuluji tvé klikání na 3. místa...");
+                
+                // 3. CHYTRÁ SIMULACE 3. MÍST
+                if (tip.thirds && tip.thirds.length === 8) {
+                    state.thirds = []; 
+                    if (typeof confirmAllGroups === "function") confirmAllGroups();
+                    
+                    tip.thirds.forEach(teamName => {
+                        document.querySelectorAll('.card-third').forEach(card => {
+                            const onclickAttr = card.getAttribute('onclick') || "";
+                            if (onclickAttr.includes(teamName)) {
+                                if (typeof selectThird === "function") selectThird(card, teamName);
+                            }
+                        });
+                    });
+                    
+                    if (typeof confirmThirds === "function") confirmThirds();
+                    
+                    // --- NÁVRAT ZPĚT NA SKUPINY ---
+                    const groupsDiv = document.getElementById('phase-groups');
+                    const thirdsDiv = document.getElementById('phase-thirds') || document.getElementById('sec-thirds');
+                    const playoffCont = document.getElementById('playoff-container');
+                    
+                    if (groupsDiv) groupsDiv.classList.remove('hidden');
+                    if (thirdsDiv) thirdsDiv.classList.add('hidden');
+                    if (playoffCont) playoffCont.classList.add('hidden');
+                    
+                    if (typeof updateStepper === "function") updateStepper('dot-s1');
+                    window.scrollTo(0, 0);
+                    
+                    console.log("✅ [Tip] 4. HOTOVO!");
+                } else {
+                    console.log("ℹ️ [Tip] Tip není kompletní, nechávám tě na skupinách.");
+                }
+            } // Konec if (data.tip_data)
+        } // Konec if (data)
+    } catch (err) {
+        console.error("🛑 [Tip] Kritická chyba při načítání tipu:", err);
+    }
+}
+    
+supabaseClient.auth.onAuthStateChange((event, session) => {
+    console.log("🔔 AUTH EVENT:", event);
+
+    // FÍGL: Dáme Supabase 100 milisekund pauzu, než začneme tahat data, 
+    // aby se nezasekl na zpracování přihlášení (deadlock).
+    setTimeout(async () => {
+        console.log("🔍 Zkouším volat žebříček (po krátké pauze)...");
+        try {
+            if (typeof loadAll === "function") {
+                await loadAll();
+            }
+        } catch (err) {
+            console.error("❌ Chyba v loadAll:", err);
+        }
+
+        const authSec = document.getElementById('auth-section');
+
+       if (session) {
+            console.log("👤 Přihlášen ID:", session.user.id);
+            try {
+                if (typeof nactiUzivatelskyTip === "function") {
+                    await nactiUzivatelskyTip(session.user.id);
+                } else {
+                    // Tady na nás teď vyskočí obří chyba, pokud funkce chybí
+                    console.error("❌ POZOR: Funkce nactiUzivatelskyTip() není v kódu k nalezení!");
+                }
+            } catch (err) {
+                console.error("❌ Chyba v nactiUzivatelskyTip:", err);
+            }
+            if (authSec) authSec.classList.add('hidden');
+        }
+       
+    else {
+            console.log("👤 Nepřihlášen.");
+            if (authSec) authSec.classList.remove('hidden');
+        }
+    }, 100); // <-- Těch 100ms je ten klíčový detail
+});
+
+// --- DYNAMICKÉ PŘESKLÁDÁNÍ NAVIGACE (MOBIL VS PC) ---
+function srovnejNavigaci() {
+    // 1. Najdeme správné prvky
+    const navigace = document.querySelector('.step-indicator'); 
+    const mainSekce = document.querySelector('main'); 
+    
+    // TADY JE OPRAVA: Hledáme header, který je uvnitř tvé hlavní aplikace, ne ten s vlajkami!
+    const spravnaHlavicka = document.querySelector('.app-wrapper header'); 
+
+    if (!navigace || !mainSekce || !spravnaHlavicka) return;
+
+    // 2. Kontrola šířky (1200px je tvůj zlomový bod v CSS)
+    if (window.innerWidth <= 1200) {
+        // Na mobilu: Přesuneme bubliny těsně nad <main> 
+        mainSekce.parentNode.insertBefore(navigace, mainSekce);
+        navigace.style.marginTop = '20px'; 
+    } else {
+        // Na počítači: Vrátíme bubliny zpět pod nadpis MS 2026 TIPOVAČKA
+        spravnaHlavicka.appendChild(navigace);
+        navigace.style.marginTop = '0';
+    }
+}
+
+// Spustíme to hned po načtení stránky a při každé změně velikosti okna
+window.addEventListener('DOMContentLoaded', () => {
+    srovnejNavigaci();
+    window.addEventListener('resize', srovnejNavigaci);
+});
+    
+// Spustíme kontrolu hned po načtení stránky
+window.addEventListener('DOMContentLoaded', checkUserSession);
+
+    window.onload = init;
+</script>
+
+<div id="custom-alert" class="modal-overlay hidden">
+    <div class="modal-content">
+        <i class="fas fa-check-circle modal-icon"></i>
+        <h2 id="modal-title">Skvělá práce!</h2>
+        <p id="modal-message"></p>
+        <button onclick="closeModalAndReload()" class="modal-btn">OK</button>
+    </div>
+</div>
+    
+</body>
+</html>
