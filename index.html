@@ -806,38 +806,17 @@
 </div>
     
 <script>
-<?php
-// qr.php
-require __DIR__ . '/vendor/autoload.php';
 
-use Defr\QRPlatba\QRPlatba;
-
-// 1. Získání a očištění jména z URL
-$playerName = $_GET['name'] ?? '';
-$cleanName = iconv('UTF-8', 'ASCII//TRANSLIT', $playerName);
-$cleanName = preg_replace('/[^a-zA-Z0-9 ]/', '', $cleanName);
-$cleanName = substr($cleanName, 0, 15);
-
-// 2. Vytvoření SPAYD platby
-$qrPlatba = new QRPlatba();
-$qrPlatba->setAccount('295511827/0300') // Knihovna si IBAN (CZ12...) spočítá a ověří sama!
-         ->setAmount(200.00)
-         ->setCurrency('CZK')
-         ->setMessage('WC26 ' . $cleanName);
-
-// 3. Odeslání obrázku zpět do prohlížeče
-header('Content-Type: image/png');
-echo $qrPlatba->getQRCodeImage();
-exit;
 function showPaymentModal(playerName) {
     const modal = document.getElementById('payment-modal-overlay');
     const qrContainer = document.getElementById('qr-code-container');
     
-    // 1. URL teď míří na tvůj vlastní PHP skript
-    // Vygeneruje to něco jako: qr.php?name=Jan%20Ptacek
-    const qrUrl = `qr.php?name=${encodeURIComponent(playerName)}`;
+    // 1. Očista jména (jen odstraníme háčky a čárky, mezery Paylibo zvládne)
+    const cleanName = playerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 15);
+    
+    // 2. OFICIÁLNÍ ČESKÉ API PRO QR PLATBU (Samo řeší IBAN, formát i Air Bank vrtochy)
+    const qrUrl = `https://api.paylibo.com/paylibo/generator/czech/image?accountNumber=295511827&bankCode=0300&amount=200.00&currency=CZK&message=${encodeURIComponent('WC26 ' + cleanName)}&size=400`;
 
-    // 2. Vykreslení (HTML i CSS zůstává zachováno, jak jsme ho vyladili)
     if (qrContainer) {
         qrContainer.innerHTML = `
             <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
