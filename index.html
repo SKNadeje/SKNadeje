@@ -815,7 +815,7 @@ function showPaymentModal(playerName) {
     const cleanName = playerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 15);
     
     // 2. OFICIÁLNÍ ČESKÉ API PRO QR PLATBU (Samo řeší IBAN, formát i Air Bank vrtochy)
-    const qrUrl = `https://api.paylibo.com/paylibo/generator/czech/image?accountNumber=295511827&bankCode=0300&amount=200.00&currency=CZK&message=${encodeURIComponent('WC26 ' + cleanName)}&size=400`;
+    const qrUrl = `https://api.paylibo.com/paylibo/generator/czech/image?accountNumber=305184832&bankCode=0300&amount=200.00&currency=CZK&message=${encodeURIComponent('WC26 ' + cleanName)}&size=400`;
 
     if (qrContainer) {
         qrContainer.innerHTML = `
