@@ -630,10 +630,14 @@
         <input type="email" id="auth-email" placeholder="Tvůj email" class="auth-input" autocomplete="username">
         <input type="password" id="auth-password" placeholder="Heslo (min. 6 znaků)" class="auth-input" autocomplete="current-password">
         
-        <div class="auth-buttons">
-            <button type="button" class="btn-login btn" onclick="loginUser()">Přihlásit</button>
-            <button type="button" class="btn-register btn" onclick="registerUser()">Vytvořit účet</button>
-        </div>
+      <div class="auth-buttons">
+    <button type="button" class="btn-login btn" onclick="loginUser()">Přihlásit</button>
+    <button type="button" class="btn-register btn" onclick="registerUser()">Vytvořit účet</button>
+</div>
+<button type="button" onclick="resetPassword()" 
+    style="background:none; border:none; color:#94a3b8; font-size:0.8rem; cursor:pointer; margin-top:8px; text-decoration:underline;">
+    Zapomněl jsem heslo
+</button>
     </form>
 </div>
 
@@ -807,6 +811,22 @@
     
 <script>
 
+async function resetPassword() {
+    const email = document.getElementById('auth-email').value;
+    if (!email) {
+        alert("Nejdřív zadej svůj email do políčka výše.");
+        return;
+    }
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.href // Po kliknutí na link v emailu se vrátí zpět na tvůj web
+    });
+    if (error) {
+        alert("Chyba: " + error.message);
+    } else {
+        alert("📧 Odeslali jsme ti email s odkazem pro reset hesla. Zkontroluj schránku!");
+    }
+}
+    
 function showPaymentModal(playerName) {
     const modal = document.getElementById('payment-modal-overlay');
     const qrContainer = document.getElementById('qr-code-container');
@@ -2567,8 +2587,18 @@ async function nactiUzivatelskyTip(userId) {
     }
 }
     
-supabaseClient.auth.onAuthStateChange((event, session) => {
+supabaseClient.auth.onAuthStateChange(async (event, session) => {
     console.log("🔔 AUTH EVENT:", event);
+
+    if (event === 'PASSWORD_RECOVERY') {
+        const newPassword = prompt("Zadej nové heslo (min. 6 znaků):");
+        if (newPassword && newPassword.length >= 6) {
+            const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+            if (error) alert("Chyba: " + error.message);
+            else alert("✅ Heslo bylo úspěšně změněno!");
+        }
+        return;
+    }
 
     // FÍGL: Dáme Supabase 100 milisekund pauzu, než začneme tahat data, 
     // aby se nezasekl na zpracování přihlášení (deadlock).
@@ -2584,26 +2614,23 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 
         const authSec = document.getElementById('auth-section');
 
-       if (session) {
+        if (session) {
             console.log("👤 Přihlášen ID:", session.user.id);
             try {
                 if (typeof nactiUzivatelskyTip === "function") {
                     await nactiUzivatelskyTip(session.user.id);
                 } else {
-                    // Tady na nás teď vyskočí obří chyba, pokud funkce chybí
                     console.error("❌ POZOR: Funkce nactiUzivatelskyTip() není v kódu k nalezení!");
                 }
             } catch (err) {
                 console.error("❌ Chyba v nactiUzivatelskyTip:", err);
             }
             if (authSec) authSec.classList.add('hidden');
-        }
-       
-    else {
+        } else {
             console.log("👤 Nepřihlášen.");
             if (authSec) authSec.classList.remove('hidden');
         }
-    }, 100); // <-- Těch 100ms je ten klíčový detail
+    }, 100);
 });
 
 // --- DYNAMICKÉ PŘESKLÁDÁNÍ NAVIGACE (MOBIL VS PC) ---
