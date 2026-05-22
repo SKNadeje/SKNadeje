@@ -22,6 +22,10 @@
 </header>
 
 <style>
+    @keyframes lsConfetti {
+    0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
 #toast-container {
     position: fixed;
     bottom: 30px;
@@ -1229,49 +1233,40 @@ input:focus {
 </style>
 </head>
 <body>
-<div id="loading-screen" style="position:fixed; inset:0; background:#05070f; display:flex; align-items:center; justify-content:center; z-index:999999; flex-direction:column;">
-    <div style="position:absolute; top:0; left:50%; transform:translateX(-50%); width:60%; height:1px; background:linear-gradient(90deg,transparent,#d4af37,transparent);"></div>
+<div id="loading-screen" style="position:fixed; inset:0; background:#05070f; display:flex; align-items:center; justify-content:center; z-index:999999; flex-direction:column; overflow:hidden;">
     
-    <div id="ls-inner" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding:40px 30px; animation:lsFadeIn 0.8s ease forwards;">
-        
-        <div style="font-size:9px; letter-spacing:4px; color:rgba(212,175,55,0.5); font-weight:700; font-family:Inter,sans-serif; text-transform:uppercase; margin-bottom:24px;">
-            SK Naděje presents
-        </div>
+    <div style="position:absolute; top:0; left:50%; transform:translateX(-50%); width:60%; height:1px; background:linear-gradient(90deg,transparent,#d4af37,transparent);"></div>
+    <div id="confetti-ls" style="position:absolute; inset:0; pointer-events:none; overflow:hidden;"></div>
 
-        <img src="logo-wc2026.png"
-             alt="FIFA World Cup 2026"
-             style="width:180px; height:180px; object-fit:contain; margin-bottom:28px; animation:lsPulse 3s ease-in-out infinite;"
-             onerror="this.style.display='none'">
-
-        <div style="font-size:12px; letter-spacing:3px; color:rgba(212,175,55,0.6); font-weight:700; font-family:Inter,sans-serif; text-transform:uppercase; margin-bottom:10px;">
-            Tipovačka
-        </div>
-
-        <div style="font-size:22px; font-weight:900; font-family:Inter,sans-serif; letter-spacing:2px; text-transform:uppercase; background:linear-gradient(135deg,#f0e6c8 0%,#d4af37 40%,#f0e6c8 70%,#b8901e 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:10px; line-height:1.3; max-width:360px;">
-            Mistrovství světa ve fotbale 2026
-        </div>
-
-        <div style="font-size:11px; color:rgba(212,175,55,0.4); font-family:Inter,sans-serif; letter-spacing:1px; margin-bottom:32px;">
-            United States · Mexico · Canada
-        </div>
-
+    <!-- SCREEN 1: Uvítací -->
+    <div id="ls-screen1" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding:40px 30px; animation:lsFadeIn 0.8s ease forwards;">
+        <div style="font-size:9px; letter-spacing:4px; color:rgba(212,175,55,0.5); font-weight:700; font-family:Inter,sans-serif; text-transform:uppercase; margin-bottom:24px;">SK Naděje presents</div>
+        <img src="logo-wc2026.avif" alt="FIFA World Cup 2026" style="width:180px; height:180px; object-fit:contain; margin-bottom:28px; animation:lsPulse 3s ease-in-out infinite;">
+        <div style="font-size:12px; letter-spacing:3px; color:rgba(212,175,55,0.6); font-weight:700; font-family:Inter,sans-serif; text-transform:uppercase; margin-bottom:10px;">Tipovačka</div>
+        <div style="font-size:22px; font-weight:900; font-family:Inter,sans-serif; letter-spacing:2px; text-transform:uppercase; background:linear-gradient(135deg,#f0e6c8 0%,#d4af37 40%,#f0e6c8 70%,#b8901e 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:10px; line-height:1.3; max-width:360px;">Mistrovství světa ve fotbale 2026</div>
+        <div style="font-size:11px; color:rgba(212,175,55,0.4); font-family:Inter,sans-serif; letter-spacing:1px; margin-bottom:32px;">United States · Mexico · Canada</div>
         <div style="width:60px; height:1px; background:linear-gradient(90deg,transparent,#d4af37,transparent); margin-bottom:32px;"></div>
+        <button onclick="kliknutiVstoupit()" style="background:linear-gradient(135deg,#d4af37,#9a7b1e); color:#05070f; border:none; padding:14px 48px; border-radius:10px; font-size:13px; font-weight:900; letter-spacing:3px; text-transform:uppercase; font-family:Inter,sans-serif; cursor:pointer; box-shadow:0 4px 20px rgba(212,175,55,0.3);">⚽ VSTOUPIT</button>
+        <div style="display:flex; gap:12px; margin-top:24px; align-items:center; justify-content:center;">
+            <img src="https://flagcdn.com/us.svg" alt="USA" style="height:18px; width:28px; max-width:28px; flex-shrink:0; object-fit:cover; border-radius:3px; opacity:0.5; border:1px solid rgba(212,175,55,0.2);">
+            <span style="color:rgba(212,175,55,0.25); font-size:10px; font-family:Inter,sans-serif;">·</span>
+            <img src="https://flagcdn.com/mx.svg" alt="Mexico" style="height:18px; width:28px; max-width:28px; flex-shrink:0; object-fit:cover; border-radius:3px; opacity:0.5; border:1px solid rgba(212,175,55,0.2);">
+            <span style="color:rgba(212,175,55,0.25); font-size:10px; font-family:Inter,sans-serif;">·</span>
+            <img src="https://flagcdn.com/ca.svg" alt="Canada" style="height:18px; width:28px; max-width:28px; flex-shrink:0; object-fit:cover; border-radius:3px; opacity:0.5; border:1px solid rgba(212,175,55,0.2);">
+        </div>
+    </div>
 
-        <button onclick="zavritLoadingScreen()" 
-                style="background:linear-gradient(135deg,#d4af37,#9a7b1e); color:#05070f; border:none; padding:14px 48px; border-radius:10px; font-size:13px; font-weight:900; letter-spacing:3px; text-transform:uppercase; font-family:Inter,sans-serif; cursor:pointer; box-shadow:0 4px 20px rgba(212,175,55,0.3); transition:all 0.3s;">
-            ⚽ VSTOUPIT
-        </button>
+    <!-- SCREEN 2: Stupně vítězů -->
+    <div id="ls-screen2" style="display:none; flex-direction:column; align-items:center; text-align:center; padding:40px 30px; width:100%; max-width:620px; animation:lsFadeIn 0.8s ease forwards;">
+        <div style="font-size:9px; letter-spacing:4px; color:rgba(212,175,55,0.5); font-weight:700; font-family:Inter,sans-serif; text-transform:uppercase; margin-bottom:8px;">SK Naděje · WC 2026</div>
+        <div style="font-size:26px; font-weight:900; letter-spacing:3px; text-transform:uppercase; background:linear-gradient(135deg,#f0e6c8 0%,#d4af37 40%,#f0e6c8 70%,#b8901e 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:6px;">🏆 Výsledky tipovačky</div>
+        <div style="font-size:10px; color:rgba(212,175,55,0.4); letter-spacing:2px; text-transform:uppercase; margin-bottom:40px; font-family:Inter,sans-serif;">Mistrovství světa ve fotbale 2026</div>
 
-    <div style="display:flex; gap:12px; margin-top:24px; align-items:center; justify-content:center;">
-    <img src="https://flagcdn.com/us.svg" alt="USA" 
-         style="height:18px; width:28px; max-width:28px; flex-shrink:0; object-fit:cover; border-radius:3px; opacity:0.5; border:1px solid rgba(212,175,55,0.2);">
-    <span style="color:rgba(212,175,55,0.25); font-size:10px; font-family:Inter,sans-serif;">·</span>
-    <img src="https://flagcdn.com/mx.svg" alt="Mexico" 
-         style="height:18px; width:28px; max-width:28px; flex-shrink:0; object-fit:cover; border-radius:3px; opacity:0.5; border:1px solid rgba(212,175,55,0.2);">
-    <span style="color:rgba(212,175,55,0.25); font-size:10px; font-family:Inter,sans-serif;">·</span>
-    <img src="https://flagcdn.com/ca.svg" alt="Canada" 
-         style="height:18px; width:28px; max-width:28px; flex-shrink:0; object-fit:cover; border-radius:3px; opacity:0.5; border:1px solid rgba(212,175,55,0.2);">
-</div>
+        <!-- Pódiové karty -->
+        <div id="ls-podium" style="display:flex; align-items:flex-end; justify-content:center; gap:12px; width:100%; margin-bottom:8px;"></div>
+        <div style="width:100%; max-width:556px; height:3px; background:linear-gradient(90deg,transparent,rgba(212,175,55,0.3),transparent); border-radius:2px; margin-bottom:36px;"></div>
+
+        <button onclick="zavritLoadingScreen()" style="background:linear-gradient(135deg,#d4af37,#9a7b1e); color:#05070f; border:none; padding:14px 48px; border-radius:10px; font-size:13px; font-weight:900; letter-spacing:3px; text-transform:uppercase; font-family:Inter,sans-serif; cursor:pointer; box-shadow:0 4px 20px rgba(212,175,55,0.3);">⚽ VSTOUPIT DO APLIKACE</button>
     </div>
 </div>
 <div class="app-wrapper">
@@ -1496,7 +1491,100 @@ input:focus {
 </div>
     
 <script>
+async function kliknutiVstoupit() {
+    // Zkontroluj jestli je vyplněno finále
+    const { data: real } = await supabaseClient
+        .from('admin_vysledky')
+        .select('winner, bronze')
+        .eq('id', 1)
+        .maybeSingle();
 
+    if (real?.winner && real.winner.trim() !== '') {
+        // Turnaj skončil – ukážeme stupně vítězů
+        await zobrazitPodivm();
+    } else {
+        // Turnaj ještě běží
+        zavritLoadingScreen();
+    }
+}
+
+async function zobrazitPodivm() {
+    // Načti tipy a spočítej body
+    const { data: real } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).maybeSingle();
+    const { data: tipy } = await supabaseClient.from('tipy').select('*');
+
+    if (!tipy || !real) { zavritLoadingScreen(); return; }
+
+    const r = {
+        groups: real.groups || [],
+        s32: real.s32 || [], s16: real.s16 || [],
+        s8: real.s8 || [], s4: real.s4 || [],
+        winner: real.winner || '', bronze: real.bronze || ''
+    };
+
+    const vysledky = tipy.map(row => {
+        let tip = row.tip_data;
+        if (typeof tip === 'string') { try { tip = JSON.parse(tip); } catch { tip = {}; } }
+        let pts = 0;
+        if (r.groups && tip.groups) {
+            r.groups.forEach((g, i) => {
+                const tipG = tip.groups[i] || [];
+                const aT = g.teams || g;
+                if (Array.isArray(aT)) aT.forEach((t, p) => { if (t && tipG[p] && String(t).trim() === String(tipG[p]).trim()) pts += 4; });
+            });
+        }
+        ['s32','s16','s8','s4'].forEach((sid, idx) => {
+            const body = [2,3,4,5][idx];
+            (r[sid]||[]).forEach(t => { if (t && (tip[sid]||[]).some(x => String(x).trim()===String(t).trim())) pts += body; });
+        });
+        if (r.winner && tip.winner && String(r.winner).trim()===String(tip.winner).trim()) pts += 12;
+        if (r.bronze && tip.bronze && String(r.bronze).trim()===String(tip.bronze).trim()) pts += 8;
+        return { name: row.name || 'Anonym', points: pts, paid: row.paid };
+    }).sort((a,b) => b.points - a.points);
+
+    // Spočítej bank
+    const paidCount = tipy.filter(p => p.paid === true || p.paid === 1 || String(p.paid) === 'true').length;
+    const bank = paidCount * 200;
+    const prizes = [Math.round(bank*0.6), Math.round(bank*0.3), Math.round(bank*0.1)];
+
+    const top3 = vysledky.slice(0, 3);
+    const cfg = [
+        { medal: '🥈', cls: 'silver', nameColor: '#cbd5e1', ptsColor: '#94a3b8', prizeColor: '#94a3b8', prizeBg: 'rgba(148,163,184,0.1)', prizeBorder: 'rgba(148,163,184,0.2)', blockH: '55px', blockBg: 'rgba(148,163,184,0.1)', blockBorder: 'rgba(148,163,184,0.2)', num: '2', idx: 1 },
+        { medal: '🏆', cls: 'gold',   nameColor: '#d4af37',  ptsColor: '#d4af37',  prizeColor: '#d4af37',  prizeBg: 'rgba(212,175,55,0.15)', prizeBorder: 'rgba(212,175,55,0.3)',  blockH: '80px', blockBg: 'rgba(212,175,55,0.2)',  blockBorder: 'rgba(212,175,55,0.3)',  num: '1', idx: 0 },
+        { medal: '🥉', cls: 'bronze', nameColor: '#d97b3a',  ptsColor: '#b46428',  prizeColor: '#d97b3a',  prizeBg: 'rgba(180,100,40,0.1)',  prizeBorder: 'rgba(180,100,40,0.2)', blockH: '35px', blockBg: 'rgba(180,100,40,0.1)',  blockBorder: 'rgba(180,100,40,0.2)', num: '3', idx: 2 },
+    ];
+
+    const podium = document.getElementById('ls-podium');
+    podium.innerHTML = cfg.map((c, i) => {
+        const p = top3[c.idx] || { name: '–', points: 0 };
+        const prize = prizes[c.idx] || 0;
+        return `
+            <div style="display:flex; flex-direction:column; align-items:center; opacity:0; animation:lsFadeIn 0.6s ease ${0.2 + i*0.2}s forwards;">
+                <div style="display:flex; flex-direction:column; align-items:center; padding:16px 12px 14px; border-radius:14px; width:170px; background:linear-gradient(145deg,${c.prizeBg},transparent); border:1px solid ${c.prizeBorder}; box-shadow:0 0 20px ${c.prizeBg}; margin-bottom:0;">
+                    <div style="font-size:32px; margin-bottom:10px;">${c.medal}</div>
+                    <div style="font-size:15px; font-weight:900; color:${c.nameColor}; margin-bottom:6px; font-family:Inter,sans-serif;">${p.name}</div>
+                    <div style="font-size:24px; font-weight:900; color:${c.ptsColor}; font-family:Inter,sans-serif;">${p.points}</div>
+                    <div style="font-size:8px; letter-spacing:2px; color:rgba(255,255,255,0.3); text-transform:uppercase; margin-bottom:12px; font-family:Inter,sans-serif;">bodů</div>
+                    <div style="font-size:14px; font-weight:800; padding:5px 14px; border-radius:20px; background:${c.prizeBg}; color:${c.prizeColor}; border:1px solid ${c.prizeBorder}; font-family:Inter,sans-serif;">${prize.toLocaleString('cs-CZ')} Kč</div>
+                </div>
+                <div style="width:170px; height:${c.blockH}; border-radius:8px 8px 0 0; background:${c.blockBg}; border:1px solid ${c.blockBorder}; border-bottom:none; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:900; color:${c.prizeColor}; font-family:Inter,sans-serif;">${c.num}</div>
+            </div>`;
+    }).join('');
+
+    // Konfety
+    const cont = document.getElementById('confetti-ls');
+    const colors = ['#d4af37','#f0e6c8','#94a3b8','#d97b3a','#ffffff'];
+    for (let i = 0; i < 80; i++) {
+        const el = document.createElement('div');
+        el.style.cssText = `position:absolute; left:${Math.random()*100}%; width:${4+Math.random()*6}px; height:${6+Math.random()*8}px; background:${colors[Math.floor(Math.random()*colors.length)]}; border-radius:${Math.random()>0.5?'50%':'0'}; opacity:0; animation:lsConfetti ${2.5+Math.random()*3}s linear ${Math.random()*4}s infinite;`;
+        cont.appendChild(el);
+    }
+
+    // Přepni screen
+    document.getElementById('ls-screen1').style.display = 'none';
+    document.getElementById('ls-screen2').style.display = 'flex';
+}
+    
 async function vlozitTestData() {
     if (!confirm("Vložit testovací data do admin výsledků? Přepíše stávající výsledky.")) return;
 
