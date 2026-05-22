@@ -1321,13 +1321,11 @@ if (bankEl) {
    async function togglePayment(rowId, currentStatus) {
     // --- 🔒 OCHRANA ADMIN HESLEM 🔒 ---
     // Zastavíme každého, kdo klikne, a vynutíme heslo
-    const heslo = prompt("Tato akce je pouze pro admina. Zadej heslo:");
-    
-    // TADY SI ZMĚŇ HESLO NA NĚJAKÉ SVOJE
-    if (heslo !== "Matysek.2019") {
-        alert("❌ Nesprávné heslo! Úprava platby zamítnuta.");
-        return; // Okamžitě ukončí funkci, zbytek kódu se vůbec nespustí
-    }
+   const { data: authData } = await supabaseClient.auth.getUser();
+if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+    alert("❌ Tato akce je pouze pro admina!");
+    return;
+}
     // ----------------------------------
 
     console.log("1. Kliknuto! Spouštím úpravu pro ID:", rowId, "Současný stav:", currentStatus);
@@ -2262,8 +2260,10 @@ function getTeamsForStage(id, fallbackTeams) {
 
 
 async function updateRankTrends() {
-    const heslo = prompt("Zadej administrátorské heslo pro trendy:");
-    if (heslo !== "Matysek.2019") return alert("Přístup zamítnut!");
+   const { data: authData } = await supabaseClient.auth.getUser();
+if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+    return alert("❌ Přístup zamítnut!");
+}
 
     const btn = document.getElementById('btn-update-trends');
     const originalText = btn.innerHTML;
