@@ -943,6 +943,14 @@ tr.player-row:hover { background: rgba(212,175,55,0.04); cursor: pointer; }
     margin-bottom: 8px;
     font-weight: 800;
 }
+    .det-stage-card h5 {
+    margin: 0 0 8px 0 !important;
+    color: rgba(212,175,55,0.7) !important;
+    font-size: 0.72rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    font-weight: 800 !important;
+}
 
 @media (max-width: 768px) {
     .det-playoff-stages { grid-template-columns: 1fr; gap: 16px; }
@@ -2060,31 +2068,31 @@ async function renderLeaderboard(data, real) {
 <div class="det-playoff-stages" style="margin-top:10px;">
     <div class="det-stage-column">
         <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);">
-            <h5 style="color:rgba(212,175,55,0.5);">1/16</h5>
+           <b>1/16</b>
             <div>${(player.tip.s32||[]).map(t => `<span class="det-team-tag ${getStatusClass('s32', t, 16)}">${t}</span>`).join('')}</div>
         </div>
         <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);">
-            <h5 style="color:rgba(212,175,55,0.5);">1/8</h5>
+            <b>1/8</b>
             <div>${(player.tip.s16||[]).map(t => `<span class="det-team-tag ${getStatusClass('s16', t, 8)}">${t}</span>`).join('')}</div>
         </div>
     </div>
     <div class="det-stage-column">
         <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);">
-            <h5 style="color:rgba(212,175,55,0.5);">1/4</h5>
+           <b>1/4</b>
             <div>${(player.tip.s8||[]).map(t => `<span class="det-team-tag ${getStatusClass('s8', t, 4)}">${t}</span>`).join('')}</div>
         </div>
         <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);">
-            <h5 style="color:rgba(212,175,55,0.5);">1/2</h5>
+            <b>1/2</b>
             <div>${(player.tip.s4||[]).map(t => `<span class="det-team-tag ${getStatusClass('s4', t, 4)}">${t}</span>`).join('')}</div>
         </div>
     </div>
     <div class="det-stage-column">
         <div class="det-stage-card" style="border-top:2px solid rgba(180,100,40,0.5); background:rgba(180,100,40,0.05);">
-            <h5 style="color:rgba(180,100,40,0.7);">🥉 3. Místo</h5>
+            <<b>🥉 3. Místo</b>
             <div class="det-team-tag ${getStatusClass('bronze', player.tip.bronze, 1)}">${player.tip.bronze || '--'}</div>
         </div>
         <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.5); margin-top:10px; background:rgba(212,175,55,0.05);">
-            <h5 style="color:rgba(212,175,55,0.7);">🥇 Vítěz</h5>
+            <b>>🥇 Vítěz</b>
             <div class="det-team-tag ${getStatusClass('winner', player.tip.winner, 1)}">${player.tip.winner || '--'}</div>
         </div>
     </div>
