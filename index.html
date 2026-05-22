@@ -11,9 +11,9 @@
 <header class="site-header">
     <div class="mini-host-bar">
         <div class="mini-flags">
-            <img src="https://flagcdn.com/us.svg" alt="USA" class="wave-1">
-            <img src="https://flagcdn.com/mx.svg" alt="Mexico" class="wave-2">
-            <img src="https://flagcdn.com/ca.svg" alt="Canada" class="wave-3">
+            <img src="https://flagcdn.com/us.svg" alt="USA">
+            <img src="https://flagcdn.com/mx.svg" alt="Mexico">
+            <img src="https://flagcdn.com/ca.svg" alt="Canada">
         </div>
         <span class="mini-text">UNITED STATES · MEXICO · CANADA 2026</span>
     </div>
@@ -108,14 +108,27 @@ body {
     border-radius: 5px;
     border: 1px solid rgba(212,175,55,0.25);
     box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 8px rgba(212,175,55,0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    filter: brightness(0.92) saturate(1.1);
+    transform-origin: left center;
+    animation: waveflag 3.5s ease-in-out infinite;
+    filter: brightness(0.95) saturate(1.1);
+    transition: box-shadow 0.3s;
 }
 
 .mini-flags img:hover {
-    transform: translateY(-4px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.6), 0 0 15px rgba(212,175,55,0.2);
     filter: brightness(1.05) saturate(1.2);
+}
+
+.mini-flags img:nth-child(2) { animation-delay: 0.7s; }
+.mini-flags img:nth-child(3) { animation-delay: 1.4s; }
+
+@keyframes waveflag {
+    0%   { transform: skewX(0deg) scaleX(1);        }
+    15%  { transform: skewX(-2.5deg) scaleX(0.97);  }
+    35%  { transform: skewX(2deg) scaleX(1.02);     }
+    55%  { transform: skewX(-1.5deg) scaleX(0.98);  }
+    75%  { transform: skewX(1.5deg) scaleX(1.01);   }
+    100% { transform: skewX(0deg) scaleX(1);        }
 }
 
 @media (min-width: 768px) {
@@ -132,15 +145,6 @@ body {
     margin-top: 4px;
 }
 
-/* --- VLAJKY ANIMACE --- */
-@keyframes flutter {
-    0%   { transform: rotate(-4deg) translateY(0px); }
-    50%  { transform: rotate(4deg) translateY(-2px); }
-    100% { transform: rotate(-4deg) translateY(0px); }
-}
-.wave-1 { animation: flutter 2.8s ease-in-out infinite; transform-origin: bottom center; }
-.wave-2 { animation: flutter 2.8s ease-in-out infinite; animation-delay: 0.4s; transform-origin: bottom center; }
-.wave-3 { animation: flutter 2.8s ease-in-out infinite; animation-delay: 0.8s; transform-origin: bottom center; }
 
 /* --- NADPIS --- */
 header { text-align: center; padding: 10px 0 5px; }
