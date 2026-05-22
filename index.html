@@ -15,586 +15,1078 @@
             <img src="https://flagcdn.com/mx.svg" alt="Mexico" class="wave-2">
             <img src="https://flagcdn.com/ca.svg" alt="Canada" class="wave-3">
         </div>
-        <span class="mini-text">UNITED STATES | MEXICO | CANADA 2026</span>
+        <span class="mini-text">UNITED STATES · MEXICO · CANADA 2026</span>
     </div>
 </header>
-    
-    <style>
-/* Celá obrazovka - pozadí */
+
+<style>
+/* ============================================================
+   PREMIUM GOLD REDESIGN – WC2026 TIPOVAČKA
+   Zachováno: veškerá responsivita PC vs Mobil
+   Změněno: barevná paleta modrá → gold/premium tmavá
+   ============================================================ */
+
+/* --- PROMĚNNÉ --- */
+:root {
+    --bg: #05070f;
+    --bg2: #0a0d1a;
+    --card: rgba(15, 20, 35, 0.75);
+    --card-solid: #0f1423;
+    --card-border: rgba(212, 175, 55, 0.12);
+    --accent: #d4af37;
+    --accent-dim: rgba(212, 175, 55, 0.15);
+    --accent-glow: rgba(212, 175, 55, 0.35);
+    --text: #f0e6c8;
+    --text-muted: #5a6480;
+    --winner: #22c55e;
+    --winner-glow: rgba(34, 197, 94, 0.4);
+    --lose: #ef4444;
+    --border: rgba(212, 175, 55, 0.15);
+    --silver: #94a3b8;
+    --bronze: #b46428;
+}
+
+/* --- CUSTOM SCROLLBAR --- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.2); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.5); }
+
+/* --- ZÁKLAD --- */
+body {
+    background: radial-gradient(ellipse at top center, #0d1022 0%, var(--bg) 70%);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+    width: 100%;
+}
+
+.app-wrapper { max-width: 1600px; margin: 0 auto; padding: 20px; }
+
+/* --- HEADER VLAJKY --- */
+.site-header {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 24px 0 10px;
+    box-sizing: border-box;
+}
+
+.mini-host-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    background: rgba(212, 175, 55, 0.03);
+    padding: 20px 32px;
+    border-radius: 20px;
+    border: 1px solid rgba(212, 175, 55, 0.1);
+    box-shadow: 0 0 40px rgba(212, 175, 55, 0.05), 0 4px 20px rgba(0,0,0,0.4);
+    max-width: 90%;
+    position: relative;
+}
+
+/* zlatá linka nahoře */
+.mini-host-bar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #d4af37, transparent);
+}
+
+.mini-flags { display: flex; gap: 16px; align-items: flex-end; }
+
+.mini-flags img {
+    height: 44px;
+    width: auto;
+    border-radius: 5px;
+    border: 1px solid rgba(212,175,55,0.25);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 8px rgba(212,175,55,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    filter: brightness(0.92) saturate(1.1);
+}
+
+.mini-flags img:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.6), 0 0 15px rgba(212,175,55,0.2);
+    filter: brightness(1.05) saturate(1.2);
+}
+
+@media (min-width: 768px) {
+    .mini-flags img { height: 160px; border-radius: 8px; }
+}
+
+.mini-text {
+    font-size: 0.7rem;
+    color: rgba(212,175,55,0.5);
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: 4px;
+}
+
+/* --- VLAJKY ANIMACE --- */
+@keyframes flutter {
+    0%   { transform: rotate(-4deg) translateY(0px); }
+    50%  { transform: rotate(4deg) translateY(-2px); }
+    100% { transform: rotate(-4deg) translateY(0px); }
+}
+.wave-1 { animation: flutter 2.8s ease-in-out infinite; transform-origin: bottom center; }
+.wave-2 { animation: flutter 2.8s ease-in-out infinite; animation-delay: 0.4s; transform-origin: bottom center; }
+.wave-3 { animation: flutter 2.8s ease-in-out infinite; animation-delay: 0.8s; transform-origin: bottom center; }
+
+/* --- NADPIS --- */
+header { text-align: center; padding: 10px 0 5px; }
+
+header h1 {
+    font-size: 2.4rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #f0e6c8 0%, #d4af37 40%, #f0e6c8 70%, #b8901e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 12px rgba(212,175,55,0.3));
+}
+
+/* --- ODPOČET --- */
+.countdown-wrapper {
+    background: rgba(212,175,55,0.04);
+    padding: 16px 20px;
+    border-radius: 14px;
+    text-align: center;
+    border: 1px solid rgba(212,175,55,0.18);
+    margin-bottom: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(212,175,55,0.1);
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.countdown-title {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.countdown-numbers {
+    color: var(--text);
+    font-size: 1.9rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.countdown-numbers span { color: var(--accent); }
+
+/* --- STEPPER --- */
+.step-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.step-dot {
+    padding: 7px 16px;
+    border-radius: 30px;
+    background: rgba(15, 20, 35, 0.6);
+    backdrop-filter: blur(5px);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    border: 1px solid rgba(212,175,55,0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 0.5px;
+}
+
+.step-dot.active {
+    background: linear-gradient(135deg, #d4af37, #b8901e) !important;
+    color: #0a0d1a !important;
+    border-color: #d4af37;
+    box-shadow: 0 0 16px rgba(212,175,55,0.4);
+    transform: scale(1.06);
+    font-weight: 800;
+}
+
+.step-dot.completed {
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    color: #fff !important;
+    border-color: var(--winner);
+    box-shadow: 0 0 12px var(--winner-glow);
+}
+
+/* --- DASHBOARD --- */
+.dashboard { display: grid; grid-template-columns: 480px 1fr; gap: 30px; align-items: start; }
+@media (max-width: 1200px) { .dashboard { grid-template-columns: 1fr; gap: 20px; } }
+
+/* --- SEKCE BOXY (Glassmorphism premium) --- */
+.section-box {
+    background: var(--card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    margin-bottom: 25px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,175,55,0.06);
+}
+
+.section-header {
+    padding: 16px 24px;
+    background: rgba(5, 8, 20, 0.7);
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: rgba(212,175,55,0.8);
+    border-bottom: 1px solid rgba(212,175,55,0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* --- AUTH --- */
+.auth-container {
+    background: var(--card);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(212,175,55,0.2);
+    padding: 30px;
+    border-radius: 18px;
+    max-width: 400px;
+    margin: 0 auto 30px auto;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.05);
+}
+
+.auth-container h3 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.auth-input {
+    width: 100%;
+    padding: 13px 16px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(212,175,55,0.15);
+    background: rgba(0,0,0,0.4);
+    color: var(--text);
+    font-size: 0.95rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    box-sizing: border-box;
+}
+
+.auth-input:focus {
+    outline: none;
+    border-color: rgba(212,175,55,0.5);
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.08);
+}
+
+.auth-buttons { display: flex; gap: 10px; justify-content: center; }
+
+.btn-login {
+    background: linear-gradient(135deg, #d4af37, #b8901e);
+    color: #0a0d1a;
+    flex: 1;
+    font-weight: 800;
+    box-shadow: 0 4px 15px rgba(212,175,55,0.25);
+}
+
+.btn-login:hover {
+    box-shadow: 0 6px 20px rgba(212,175,55,0.4);
+    filter: brightness(1.05);
+}
+
+.btn-register {
+    background: rgba(30, 40, 60, 0.8);
+    color: var(--text-muted);
+    flex: 1;
+    border: 1px solid rgba(212,175,55,0.15);
+}
+
+.btn-register:hover { background: rgba(212,175,55,0.08); color: var(--text); }
+
+/* --- TLAČÍTKA --- */
+.btn {
+    padding: 13px 22px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 1px;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #d4af37, #9a7b1e);
+    color: #050710;
+    width: 100%;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 16px rgba(212,175,55,0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(212,175,55,0.45);
+    filter: brightness(1.08);
+}
+
+.btn-back {
+    background: rgba(20, 28, 48, 0.7);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    padding: 7px 14px;
+    margin-top: 0;
+    border: 1px solid rgba(212,175,55,0.12);
+    backdrop-filter: blur(5px);
+}
+
+.btn-back:hover { background: rgba(212,175,55,0.08); color: var(--text); }
+
+/* --- KARTY SKUPIN --- */
+.groups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    padding: 8px 0;
+}
+
+.group-card {
+    background: linear-gradient(145deg, rgba(15,20,35,0.9), rgba(8,12,24,0.95));
+    border: 1px solid rgba(212,175,55,0.1);
+    padding: 18px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+/* jemná zlatá linka vlevo */
+.group-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 20%; bottom: 20%;
+    width: 2px;
+    background: rgba(212,175,55,0.15);
+    border-radius: 2px;
+    transition: background 0.3s;
+}
+
+.group-card:hover {
+    border-color: rgba(212,175,55,0.35);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.4), 0 0 20px rgba(212,175,55,0.08);
+}
+
+.group-card:hover::before { background: rgba(212,175,55,0.5); }
+
+.group-card.filled {
+    border-color: rgba(212,175,55,0.25);
+    background: linear-gradient(145deg, rgba(15,20,35,0.9), rgba(20,16,8,0.9));
+}
+
+.group-card.filled::before { background: rgba(212,175,55,0.4); }
+
+.group-card.selected {
+    background: rgba(212,175,55,0.1);
+    border-color: var(--accent);
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.g-card-header {
+    font-size: 0.72rem;
+    color: rgba(212,175,55,0.5);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-bottom: 1px solid rgba(212,175,55,0.07);
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.g-teams-row { display: flex; justify-content: space-between; align-items: center; }
+
+.g-team-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.g-pos-number {
+    color: var(--accent);
+    font-size: 0.8rem;
+    font-weight: 900;
+    background: rgba(212,175,55,0.1);
+    padding: 2px 7px;
+    border-radius: 5px;
+    border: 1px solid rgba(212,175,55,0.2);
+}
+
+/* --- TŘETÍ MÍSTA --- */
+.card-third {
+    position: relative;
+    background: rgba(10, 14, 26, 0.9);
+    border: 1px solid rgba(212,175,55,0.1);
+    padding: 20px 10px;
+    border-radius: 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.card-third:hover {
+    border-color: rgba(212,175,55,0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.4), 0 0 12px rgba(212,175,55,0.1);
+}
+
+.card-third.selected {
+    background: linear-gradient(135deg, rgba(212,175,55,0.12), rgba(180,144,30,0.2)) !important;
+    border: 2px solid var(--accent) !important;
+    color: white !important;
+    box-shadow: 0 0 20px rgba(212,175,55,0.2) !important;
+}
+
+.card-third small {
+    font-size: 0.65rem;
+    opacity: 0.5;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--accent);
+}
+
+.selection-order {
+    position: absolute;
+    top: -12px; right: -12px;
+    background: linear-gradient(135deg, #d4af37, #9a7b1e);
+    color: #050710;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 900;
+    border: 2px solid var(--bg);
+    box-shadow: 0 4px 12px rgba(212,175,55,0.4);
+    z-index: 10;
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0); }
+    80% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+/* --- PLAYOFF MATCHUPY --- */
+.playoff-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    padding: 22px;
+}
+
+.matchup {
+    background: rgba(8, 12, 22, 0.7);
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(212,175,55,0.07);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.playoff-team {
+    padding: 11px;
+    background: rgba(15, 20, 35, 0.9);
+    border-radius: 8px;
+    border: 1px solid rgba(212,175,55,0.08);
+    cursor: pointer;
+    text-align: center;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text);
+    transition: all 0.2s ease;
+}
+
+.playoff-team:hover {
+    border-color: rgba(212,175,55,0.35);
+    background: rgba(212,175,55,0.06);
+    color: #f0e6c8;
+}
+
+.playoff-team.selected {
+    background: linear-gradient(90deg, rgba(212,175,55,0.12), rgba(180,144,30,0.22)) !important;
+    border-color: rgba(212,175,55,0.6) !important;
+    color: var(--accent) !important;
+    font-weight: 800;
+    box-shadow: 0 0 12px rgba(212,175,55,0.15);
+}
+
+/* --- ŽEBŘÍČEK --- */
+table { width: 100%; border-collapse: collapse; }
+td { padding: 13px 12px; border-bottom: 1px solid rgba(255,255,255,0.02); }
+tr.player-row:hover { background: rgba(212,175,55,0.04); cursor: pointer; }
+
+#leaderboard {
+    border-collapse: separate;
+    border-spacing: 0 6px;
+    width: 100%;
+    padding: 0;
+    table-layout: fixed;
+}
+
+#leaderboard tbody tr {
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background: rgba(255,255,255,0.015);
+}
+
+#leaderboard tbody tr:hover {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    z-index: 10;
+    position: relative;
+}
+
+/* ZLATÝ – 1. místo */
+#leaderboard tbody tr:nth-child(1) {
+    background: linear-gradient(90deg, rgba(212,175,55,0.14), rgba(212,175,55,0.04) 60%, rgba(212,175,55,0.1)) !important;
+    color: #d4af37 !important;
+    border: 1px solid rgba(212,175,55,0.3);
+    box-shadow: 0 0 18px rgba(212,175,55,0.1);
+    transform: scale(1.015);
+}
+#leaderboard tbody tr:nth-child(1):hover {
+    transform: scale(1.02) translateY(-2px);
+    box-shadow: 0 10px 28px rgba(212,175,55,0.2);
+}
+
+/* STŘÍBRNÝ – 2. místo */
+#leaderboard tbody tr:nth-child(2) {
+    background: linear-gradient(90deg, rgba(148,163,184,0.1), rgba(148,163,184,0.02) 60%, rgba(148,163,184,0.08)) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(148,163,184,0.2);
+}
+
+/* BRONZOVÝ – 3. místo */
+#leaderboard tbody tr:nth-child(3) {
+    background: linear-gradient(90deg, rgba(180,100,40,0.12), rgba(180,100,40,0.02) 60%, rgba(180,100,40,0.1)) !important;
+    color: #d97b3a !important;
+    border: 1px solid rgba(180,100,40,0.25);
+}
+
+#leaderboard tbody tr:nth-child(n+4) { border: 1px solid rgba(255,255,255,0.025); }
+#leaderboard td { padding: 14px; vertical-align: middle; border: none; overflow: hidden; text-overflow: ellipsis; }
+#leaderboard td:first-child { width: 65px; text-align: center; }
+
+.rank-icon {
+    font-size: 1.3rem;
+    vertical-align: middle;
+    display: inline-block;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+#leaderboard tbody tr:hover .rank-icon { transform: scale(1.2) rotate(8deg); }
+
+.rank-pill {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 900;
+    font-size: 1rem;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(212,175,55,0.1);
+    backdrop-filter: blur(4px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+.pts-pill {
+    background: linear-gradient(145deg, #0d1020, #050710);
+    padding: 5px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(212,175,55,0.12);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+    display: inline-block;
+}
+
+/* --- BODOVÁNÍ --- */
+.scoring-legend {
+    background: var(--card);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.scoring-legend h3 {
+    color: var(--accent);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    margin-bottom: 18px;
+    font-weight: 800;
+}
+
+.legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+}
+
+.legend-item {
+    background: rgba(8, 12, 22, 0.7);
+    padding: 14px 8px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid rgba(212,175,55,0.07);
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.legend-item:hover {
+    transform: translateY(-2px);
+    border-color: rgba(212,175,55,0.2);
+    background: rgba(212,175,55,0.04);
+}
+
+.legend-item .label {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.legend-item .value {
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: var(--text);
+}
+
+.special-gold {
+    border-color: rgba(212,175,55,0.3) !important;
+    background: linear-gradient(180deg, rgba(10,14,26,0.7) 0%, rgba(212,175,55,0.08) 100%) !important;
+}
+.special-gold .value { color: var(--accent); }
+
+.special-bronze {
+    border-color: rgba(180,100,40,0.3) !important;
+    background: linear-gradient(180deg, rgba(10,14,26,0.7) 0%, rgba(180,100,40,0.08) 100%) !important;
+}
+.special-bronze .value { color: #d97b3a; }
+
+/* --- BANK --- */
+.bank-container {
+    color: white;
+    padding: 20px;
+    border-radius: 14px;
+    display: block;
+    max-width: 400px;
+    margin: 0 auto 25px auto;
+    box-sizing: border-box;
+    text-align: center;
+    background: rgba(8, 12, 22, 0.9);
+    border: 1px solid rgba(212,175,55,0.3);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4), 0 0 0 1px rgba(212,175,55,0.05), inset 0 1px 0 rgba(212,175,55,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.bank-container::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 50%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #d4af37, transparent);
+}
+
+.bank-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgba(212,175,55,0.6);
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.bank-amount {
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: var(--accent);
+}
+
+.bank-prizes {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(212,175,55,0.12);
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+/* --- BADGES & STATUS --- */
+.status-correct {
+    background: linear-gradient(135deg, #059669, #047857) !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(5,150,105,0.35);
+    border: none !important;
+}
+
+.status-wrong {
+    background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+    color: white !important;
+    opacity: 0.8;
+    border: none !important;
+}
+
+.status-pending {
+    background: rgba(20, 28, 48, 0.6) !important;
+    color: var(--text-muted) !important;
+    border: 1px solid rgba(212,175,55,0.07) !important;
+}
+
+.det-team-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    margin: 2px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: var(--card-solid);
+    border: 1px solid rgba(212,175,55,0.08);
+    color: var(--text);
+}
+
+/* --- DETAIL TIPU --- */
+.tip-detail-row { display: none; background: rgba(4, 6, 16, 0.9); }
+.detail-container { padding: 25px; border-left: 3px solid var(--accent); }
+
+.det-groups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.det-group-box {
+    background: rgba(10, 14, 26, 0.9);
+    padding: 11px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    border: 1px solid rgba(212,175,55,0.08);
+}
+
+.det-group-box b {
+    color: var(--accent);
+    display: block;
+    margin-bottom: 7px;
+    font-size: 0.72rem;
+}
+
+.det-playoff-stages {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+.det-stage-column { display: flex; flex-direction: column; gap: 14px; }
+
+.det-stage-card {
+    background: rgba(10, 14, 26, 0.9);
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(212,175,55,0.07);
+}
+
+.det-stage-card h5 {
+    margin: 0 0 10px 0;
+    font-size: 0.72rem;
+    color: rgba(212,175,55,0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+@media (max-width: 768px) {
+    .det-playoff-stages { grid-template-columns: 1fr; gap: 16px; }
+    .detail-container { padding: 14px; }
+    .det-team-tag { font-size: 0.72rem; padding: 3px 6px; }
+}
+
+/* --- TEAM ITEM (Editor skupin) --- */
+.team-item {
+    background: rgba(12, 16, 30, 0.9);
+    padding: 13px;
+    margin: 7px 0;
+    border-radius: 10px;
+    border: 1px solid rgba(212,175,55,0.1);
+    display: flex;
+    justify-content: space-between;
+    cursor: grab;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.team-item:hover {
+    transform: translateX(4px);
+    background: rgba(212,175,55,0.05);
+    border-color: rgba(212,175,55,0.25);
+}
+
+/* --- MODAL --- */
 .modal-overlay {
     position: fixed;
-    inset: 0; /* Pokryje celou plochu */
-    background: rgba(0, 0, 0, 0.9);
-    backdrop-filter: blur(8px); /* Rozmazání pozadí pro luxusní vzhled */
-    display: none; /* Zapne JS */
-    justify-content: center; /* Horizontální střed */
-    align-items: center;     /* Vertikální střed */
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    backdrop-filter: blur(10px);
+    display: none;
+    justify-content: center;
+    align-items: center;
     z-index: 99999;
     padding: 20px;
 }
 
-/* Ten tvůj tmavý "obdélník" */
-.payment-modal {
-    background: #0f172a; /* Tmavě modrá/černá */
-    border: 2px solid #fbbf24; /* Zlatý okraj */
-    border-radius: 24px;
-    padding: 30px;
-    max-width: 400px; /* Aby nebyl moc široký na PC */
-    width: 100%;
+.modal-content {
+    background: linear-gradient(145deg, #0f1423, #080c18);
+    padding: 40px;
+    border-radius: 22px;
+    border: 1px solid rgba(212,175,55,0.3);
     text-align: center;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* Srovná vše v modalu na střed */
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(212,175,55,0.05);
 }
-        #payment-modal-overlay {
+
+.modal-icon {
+    font-size: 3rem;
+    color: var(--accent);
+    margin-bottom: 18px;
+    filter: drop-shadow(0 0 12px rgba(212,175,55,0.5));
+}
+
+.modal-content h2 { color: var(--text); margin-bottom: 12px; font-size: 1.7rem; font-weight: 900; }
+.modal-content p { color: var(--text-muted); margin-bottom: 28px; font-size: 1rem; line-height: 1.6; }
+
+/* --- PLATEBNÍ MODAL --- */
+#payment-modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.9);
-    backdrop-filter: blur(8px);
-    display: none; /* JS přepne na flex */
-    justify-content: center; /* Horizontální střed */
-    align-items: center;     /* Vertikální střed */
+    background: rgba(0,0,0,0.92);
+    backdrop-filter: blur(10px);
+    display: none;
+    justify-content: center;
+    align-items: center;
     z-index: 10000;
 }
 
-.payment-modal h2 { color: #fbbf24; margin-bottom: 10px; }
-.payment-modal p { color: #f8fafc; font-size: 0.9rem; margin-bottom: 20px; }
-
-.qr-placeholder {
-    background: white;
-    padding: 15px;
-    border-radius: 12px;
-    margin: 0 auto 20px auto;
-    width: 200px; height: 200px;
+.payment-modal {
+    background: linear-gradient(145deg, #0f1423, #080c18);
+    border: 1px solid rgba(212,175,55,0.35);
+    border-radius: 24px;
+    padding: 32px;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(212,175,55,0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.payment-info {
-    background: rgba(255,255,255,0.05);
-    padding: 15px;
-    border-radius: 10px;
-    text-align: left;
-    font-family: monospace;
-    font-size: 0.95rem;
-    margin-bottom: 20px;
-}
+.payment-modal h2 { color: var(--accent); margin-bottom: 10px; }
+.payment-modal p { color: var(--text); font-size: 0.9rem; margin-bottom: 20px; }
 
 .close-payment-btn {
-    background: #fbbf24;
-    color: #0f172a;
+    background: linear-gradient(135deg, #d4af37, #9a7b1e);
+    color: #050710;
     border: none;
-    padding: 12px 25px;
+    padding: 13px 25px;
     border-radius: 10px;
     font-weight: 800;
     cursor: pointer;
     width: 100%;
-}
-        
-/* Samotný pohyb ve větru */
-@keyframes flutter {
-    0% { transform: rotate(-5deg) translateY(0px); }
-    50% { transform: rotate(5deg) translateY(-2px); }
-    100% { transform: rotate(-5deg) translateY(0px); }
-}
-
-/* Nastavení pro každou vlajku zvlášť (různé zpoždění animace) */
-.wave-1 {
-    animation: flutter 2.5s ease-in-out infinite;
-    transform-origin: bottom center;
-}
-
-.wave-2 {
-    animation: flutter 2.5s ease-in-out infinite;
-    animation-delay: 0.4s; /* Začne o trochu později */
-    transform-origin: bottom center;
-}
-
-.wave-3 {
-    animation: flutter 2.5s ease-in-out infinite;
-    animation-delay: 0.8s; /* Začne jako poslední */
-    transform-origin: bottom center;
-}
-        
-    /* --- VYLEPŠENÉ PROMĚNNÉ --- */
-    :root { 
-        --bg: #050810; /* Ještě hlubší a luxusnější černomodrá */
-        --card: rgba(30, 41, 59, 0.65); /* Poloprůhledná pro skleněný efekt */
-        --card-solid: #1e293b;
-        --accent: #38bdf8; 
-        --accent-glow: rgba(56, 189, 248, 0.4);
-        --text: #f8fafc; 
-        --text-muted: #94a3b8;
-        --winner: #22c55e; 
-        --winner-glow: rgba(34, 197, 94, 0.4);
-        --lose: #ef4444; 
-        --border: rgba(51, 65, 85, 0.8); 
-    }
-
-    /* --- CUSTOM SCROLLBAR --- */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: var(--bg); }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
-
-    /* --- ZÁKLAD --- */
-   body { 
-    background: radial-gradient(circle at top center, #111827 0%, var(--bg) 100%); 
-    color: var(--text); 
-    font-family: 'Inter', sans-serif; 
-    margin: 0; 
-    padding: 0; 
-    min-height: 100vh;
-    overflow-x: hidden; /* Zabrání horizontálnímu ujíždění */
-    width: 100%;
-}
-    
-    .app-wrapper { max-width: 1600px; margin: 0 auto; padding: 20px; }
-    
-    /* --- NÁDHERNÝ NADPIS --- */
-    header { text-align: center; padding: 15px 0; }
-    header h1 {
-        font-size: 2.5rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 20px;
-        background: linear-gradient(135deg, #fff 0%, #38bdf8 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0px 4px 10px rgba(56, 189, 248, 0.2));
-    }
-
-    /* --- STEPPER --- */
-    /* Najdi .step-indicator a přidej tam flex-wrap: wrap */
-.step-indicator { 
-    display: flex; 
-    justify-content: center; 
-    gap: 10px; 
-    margin-bottom: 30px; 
-    flex-wrap: wrap; /* TOTO OPRAVÍ ROZTAŽENÍ STRÁNKY */
-}
-    .step-dot { 
-        padding: 8px 18px; 
-        border-radius: 30px; 
-        background: rgba(36, 49, 71, 0.5); 
-        backdrop-filter: blur(5px);
-        font-size: 0.85rem; 
-        font-weight: 600;
-        color: var(--text-muted); 
-        border: 1px solid var(--border); 
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .step-dot.active { 
-        background: linear-gradient(135deg, #facc15, #eab308) !important; 
-        color: #000 !important; 
-        border-color: #facc15; 
-        box-shadow: 0 0 15px rgba(250, 204, 21, 0.4);
-        transform: scale(1.05);
-    }
-    .step-dot.completed { 
-        background: linear-gradient(135deg, #22c55e, #16a34a) !important; 
-        color: #fff !important; 
-        border-color: var(--winner); 
-        box-shadow: 0 0 15px var(--winner-glow);
-    }
-
-    .dashboard { display: grid; grid-template-columns: 480px 1fr; gap: 30px; align-items: start; }
-    @media (max-width: 1200px) { .dashboard { grid-template-columns: 1fr; gap: 20px;} }
-
-    /* --- SECTIONS & GLASSMORPHISM --- */
-    .section-box { 
-        background: var(--card); 
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.05); 
-        border-radius: 16px; 
-        margin-bottom: 25px; 
-        overflow: hidden; 
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    } 
-    .section-header { 
-        padding: 18px 25px; 
-        background: rgba(15, 23, 42, 0.8); 
-        font-weight: 800; 
-        letter-spacing: 1px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-    }
-
-    /* --- ŽEBŘÍČEK --- */
-    table { width: 100%; border-collapse: collapse; }
-    td { padding: 14px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
-    tr.player-row:hover { background: rgba(56, 189, 248, 0.08); cursor: pointer; }
-
-    /* --- LEVÝ SLOUPEC DETAIL --- */
-    .tip-detail-row { display: none; background: rgba(7, 10, 19, 0.8); }
-    .detail-container { padding: 25px; border-left: 4px solid var(--accent); }
-    .detail-section-title { color: var(--accent); font-size: 0.9rem; font-weight: 800; text-transform: uppercase; margin-bottom: 15px; display: block; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-    .det-groups-grid { 
-    display: grid; 
-    /* Místo natvrdo 3 sloupců dovolíme prohlížeči skládat je podle šířky */
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); 
-    gap: 12px; 
-    margin-bottom: 25px; 
-}
-    .det-group-box { background: rgba(22, 30, 46, 0.8); padding: 12px; border-radius: 10px; font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.05); }
-    .det-group-box b { color: var(--accent); display: block; margin-bottom: 8px; font-size: 0.75rem; }
-    /* Základní nastavení (pro velké obrazovky) */
-.det-playoff-stages { 
-    display: grid; 
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 15px; 
-}
-    .det-stage-column { display: flex; flex-direction: column; gap: 15px; }
-    .det-stage-card { background: rgba(22, 30, 46, 0.8); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
-    .det-stage-card h5 { margin: 0 0 12px 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-    .det-team-list { display: flex; flex-direction: column; gap: 6px; }
-        /* OPRAVA PRO MOBILY (šířka pod 768px) */
-@media (max-width: 768px) {
-    .det-playoff-stages {
-        grid-template-columns: 1fr; /* Všechno pod sebou */
-        gap: 20px;
-    }
-    
-    .detail-container {
-        padding: 15px; /* Menší padding, aby bylo víc místa na text */
-    }
-
-    .det-team-tag {
-        font-size: 0.75rem; /* Menší písmo týmů v detailu pro mobil */
-        padding: 4px 6px;
-    }
-}
-
-    #admin-panel { min-height: 800px; overflow-anchor: none; }
-    #leaderboard-section { contain: layout; }
-    html, body { overflow-anchor: none !important; scroll-behavior: auto !important; }
-
-    #admin-form-container { min-height: 100vh; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-
-    /* --- LUXUSNÍ TOP 3 ŽEBŘÍČEK (Síň slávy) --- */
-    #leaderboard { 
-    border-collapse: separate; 
-    border-spacing: 0 8px; 
-    width: 100%; 
-    padding: 0; 
-    table-layout: fixed; /* Nutí tabulku držet se šířky kontejneru */
-}
-    #leaderboard tbody tr { border-radius: 12px; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; background: rgba(255, 255, 255, 0.02); }
-    #leaderboard tbody tr:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4); z-index: 10; position: relative;}
-
-    #leaderboard tbody tr:nth-child(1), #leaderboard tbody tr:nth-child(2), #leaderboard tbody tr:nth-child(3) { font-weight: 800; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); }
-
-    .rank-icon { 
-    font-size: 1.4rem; /* Ikona byla zbytečně obří (1.8rem), tohle sedne lépe */
-    vertical-align: middle; 
-    display: inline-block; 
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-}
-    #leaderboard tbody tr:hover .rank-icon { transform: scale(1.2) rotate(10deg); }
-
-    #leaderboard tbody tr:nth-child(1) { background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.05) 50%, rgba(251, 191, 36, 0.2)) !important; color: #fbbf24 !important; border: 1px solid rgba(251, 191, 36, 0.4); box-shadow: 0 0 20px rgba(251, 191, 36, 0.15); transform: scale(1.02); }
-    #leaderboard tbody tr:nth-child(1):hover { transform: scale(1.03) translateY(-2px); box-shadow: 0 10px 30px rgba(251, 191, 36, 0.3); }
-    #leaderboard tbody tr:nth-child(1) .rank-icon { color: #fbbf24; filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8)); }
-
-    #leaderboard tbody tr:nth-child(2) { background: linear-gradient(135deg, rgba(148, 163, 184, 0.15), rgba(148, 163, 184, 0.02) 50%, rgba(148, 163, 184, 0.15)) !important; color: #f8fafc !important; border: 1px solid rgba(148, 163, 184, 0.3); }
-    #leaderboard tbody tr:nth-child(2) .rank-icon { color: #cbd5e1; filter: drop-shadow(0 0 6px rgba(148, 163, 184, 0.6)); }
-
-    #leaderboard tbody tr:nth-child(3) { background: linear-gradient(135deg, rgba(217, 119, 6, 0.15), rgba(217, 119, 6, 0.02) 50%, rgba(217, 119, 6, 0.15)) !important; color: #fb923c !important; border: 1px solid rgba(217, 119, 6, 0.3); }
-    #leaderboard tbody tr:nth-child(3) .rank-icon { color: #d97706; filter: drop-shadow(0 0 5px rgba(217, 119, 6, 0.5)); }
-
-    #leaderboard tbody tr:nth-child(n+4) { border: 1px solid rgba(255, 255, 255, 0.03); }
-    #leaderboard td { padding: 15px; vertical-align: middle; border: none; }
-    #leaderboard td:first-child { width: 60px; text-align: center; font-size: 1.2rem; }
-    #leaderboard td { 
-    overflow: hidden; 
-    text-overflow: ellipsis; /* Pokud by jméno bylo moc dlouhé, zkrátí ho tečkami */
-}
-
-    /* --- VLAJKY --- */
-    /* Najdi v CSS tyto třídy a uprav je takto: */
-.site-header { 
-    width: 100%; 
-    display: flex; 
-    justify-content: center; 
-    padding: 20px 0; 
-    box-sizing: border-box; /* Zajistí, že padding neudělá header širší */
-}
-    .mini-host-bar { 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    gap: 12px; 
-    background: rgba(255, 255, 255, 0.02); 
-    padding: 15px 20px; /* Trochu jsem zmenšil padding pro mobily */
-    border-radius: 16px; 
-    border: 1px solid rgba(255,255,255,0.05); 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    max-width: 90%; /* Aby na malých mobilech nelezl mimo */
-}
-    .mini-flags { display: flex; gap: 12px; }
-    /* Uprav tento blok */
-.mini-flags img { 
-    height: 40px; 
-    width: auto; 
-    border-radius: 4px; 
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4); 
-    transition: transform 0.3s ease, filter 0.3s ease; 
-    filter: brightness(0.9); 
-}
-    .mini-flags img:hover { transform: translateY(-3px); filter: brightness(1.1); }
-    @media (min-width: 768px) { .mini-flags img { height: 180px; border-radius: 8px; } }
-   /* A uprav tento text, aby se na mobilu nezalamoval ošklivě */
-.mini-text { 
-    font-size: 0.75rem; /* O trochu menší na mobilu */
-    color: var(--text-muted); 
-    font-weight: 800; 
-    letter-spacing: 2px; /* Trochu menší rozestupy */
-    text-transform: uppercase; 
-    text-align: center; 
-    margin-top: 5px;
-    line-height: 1.4;
-}
-
-    /* --- ŠIROKÉ KARTY SKUPIN (Nový vzhled) --- */
-    .groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; padding: 10px 0; }
-    .group-card { 
-        background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-        border: 1px solid rgba(255,255,255,0.05); 
-        padding: 18px; 
-        border-radius: 14px; 
-        cursor: pointer; 
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-        text-align: left; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    .group-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 12px 25px rgba(56, 189, 248, 0.15); }
-    .group-card.filled { border-color: var(--winner); background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(34, 197, 94, 0.08)); }
-    .group-card.selected { background: var(--accent); color: #000; border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
-    
-    .g-card-header { font-size: 0.8rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;}
-    .g-teams-row { display: flex; justify-content: space-between; align-items: center; }
-    .g-team-name { font-size: 1.05rem; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 8px; }
-    .g-pos-number { color: var(--accent); font-size: 0.85rem; opacity: 0.9; font-weight: 900; background: rgba(56,189,248,0.1); padding: 2px 6px; border-radius: 6px;}
-
-    /* --- TŘETÍ MÍSTA (Karty) --- */
-    .card-third { position: relative; background: var(--card-solid); border: 1px solid rgba(255,255,255,0.05); padding: 20px 10px; border-radius: 14px; text-align: center; cursor: pointer; transition: all 0.3s ease; min-height: 80px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);}
-    .card-third:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(56,189,248,0.15);}
-    .card-third.selected { background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(21, 128, 61, 0.4)) !important; border: 2px solid var(--winner) !important; color: white !important; box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
-    .card-third small { font-size: 0.7rem; opacity: 0.7; text-transform: uppercase; font-weight: 600; letter-spacing: 1px; }
-    .selection-order { position: absolute; top: -12px; right: -12px; background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; width: 32px; height: 32px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; border: 3px solid var(--bg); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); z-index: 10; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-    @keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
-
-    /* --- PLAYOFF MATCHUPY --- */
-    .playoff-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 18px; padding: 25px; }
-    .matchup { background: rgba(15, 23, 42, 0.6); padding: 15px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; gap: 8px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);}
-    .playoff-team { padding: 12px; background: rgba(30, 41, 59, 0.8); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; text-align: center; font-size: 0.9rem; font-weight: 600; transition: all 0.2s ease; }
-    .playoff-team:hover { border-color: var(--accent); background: rgba(56, 189, 248, 0.05); }
-    .playoff-team.selected { background: linear-gradient(90deg, rgba(34,197,94,0.15), rgba(34,197,94,0.3)) !important; border-color: var(--winner) !important; color: #fff !important; font-weight: 800; box-shadow: 0 0 15px rgba(34,197,94,0.2); }
-
-    /* --- TLAČÍTKA --- */
-    .btn { padding: 14px 24px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; margin-top: 10px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); letter-spacing: 1px; }
-    .btn-primary { background: linear-gradient(135deg, var(--accent), #0284c7); color: #fff; width: 100%; text-transform: uppercase; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4); text-shadow: 0 1px 2px rgba(0,0,0,0.3);}
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(2, 132, 199, 0.6); filter: brightness(1.1);}
-    .btn-back { background: rgba(71, 85, 105, 0.5); color: white; font-size: 0.75rem; padding: 8px 16px; margin-top: 0; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(5px);}
-    .btn-back:hover { background: rgba(100, 116, 139, 0.8); }
-
-    /* --- BADGES & STATUS --- */
-    .status-correct { background: linear-gradient(135deg, #059669, #047857) !important; color: white !important; box-shadow: 0 2px 8px rgba(5,150,105,0.4); border: none;}
-    .status-wrong { background: linear-gradient(135deg, #dc2626, #b91c1c) !important; color: white !important; opacity: 0.85; border: none;}
-    .status-pending { background: rgba(51, 65, 85, 0.5) !important; color: var(--text-muted) !important; border: 1px solid rgba(255,255,255,0.05);}
-    .det-team-tag { display: inline-block; padding: 4px 10px; margin: 2px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; background: var(--card-solid); border: 1px solid rgba(255,255,255,0.05); }
-   .rank-pill { 
-    padding: 4px 12px; 
-    border-radius: 20px; 
-    font-weight: 900; 
-    font-size: 1.1rem; /* Trochu jsem to zvětšil pro lepší čitelnost */
-    background: rgba(0,0,0,0.3); 
-    border: 1px solid rgba(255,255,255,0.02); 
-    backdrop-filter: blur(4px);
-    display: inline-flex; /* Kouzlo, které srovná prvky vedle sebe */
-    align-items: center; 
-    justify-content: center;
-    gap: 8px; /* Pevná mezera mezi číslem a ikonou */
-    white-space: nowrap; /* Zabrání zalomení na další řádek */
-}
-    .pts-pill { background: linear-gradient(145deg, #1e293b, #0f172a); padding: 6px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: inline-block; }
-    #thirds-counter { background: linear-gradient(135deg, #fbbf24, #d97706) !important; color: #000 !important; padding: 6px 20px; border-radius: 10px; font-weight: 900; font-size: 1.3rem; min-width: 80px; text-align: center; display: inline-block; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);}
-
-    /* --- AUTH & LEGEND --- */
-    .auth-container { background: var(--card); backdrop-filter: blur(12px); border: 1px solid rgba(251, 191, 36, 0.2); padding: 30px; border-radius: 16px; max-width: 400px; margin: 0 auto 30px auto; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
-    .auth-container h3 { font-size: 1.5rem; font-weight: 800; margin-bottom: 20px; color: #fff; }
-    .auth-input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white; font-size: 1rem; transition: border-color 0.3s; }
-    .auth-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
-    .auth-buttons { display: flex; gap: 12px; justify-content: center; }
-    .btn-login { background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; flex: 1; text-shadow: none; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);}
-    .btn-register { background: rgba(51, 65, 85, 0.8); color: white; flex: 1; border: 1px solid rgba(255,255,255,0.1);}
-    
-    .scoring-legend { background: var(--card); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 25px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);}
-    .scoring-legend h3 { color: var(--accent); font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; font-weight: 900;}
-    .legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; }
-    .legend-item { background: rgba(15, 23, 42, 0.6); padding: 15px 10px; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.02); transition: transform 0.2s; }
-    .legend-item:hover { transform: translateY(-2px); background: rgba(30, 41, 59, 0.8); }
-    .legend-item .label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; margin-bottom: 6px; }
-    .legend-item .value { font-size: 1.0rem; font-weight: 900; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3);}
-
-    .special-gold { border-color: rgba(251, 191, 36, 0.4) !important; background: linear-gradient(180deg, rgba(30,41,59,0.5) 0%, rgba(251, 191, 36, 0.1) 100%); }
-    .special-gold .value { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
-    .special-bronze { border-color: rgba(205, 127, 50, 0.4) !important; background: linear-gradient(180deg, rgba(30,41,59,0.5) 0%, rgba(205, 127, 50, 0.1) 100%); }
-    .special-bronze .value { color: #fb923c; }
-
-    /* --- MODAL --- */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-    .modal-content { background: linear-gradient(145deg, #1e293b, #0f172a); padding: 40px; border-radius: 20px; border: 1px solid rgba(251, 191, 36, 0.4); text-align: center; max-width: 450px; width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
-    .modal-icon { font-size: 3.5rem; color: #fbbf24; margin-bottom: 20px; filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.5));}
-    .modal-content h2 { color: white; margin-bottom: 15px; font-size: 1.8rem; font-weight: 900;}
-    .modal-content p { color: var(--text-muted); margin-bottom: 30px; font-size: 1.1rem; line-height: 1.5;}
-
-    /* --- OSTATNÍ UTILITKY A FIXY --- */
-    .hidden { display: none !important; }
-    .admin-trigger { position: fixed; bottom: 20px; right: 20px; opacity: 0.1; cursor: pointer; transition: opacity 0.3s; z-index: 1000;}
-    .admin-trigger:hover { opacity: 0.8; }
-    input { width: 100%; padding: 14px; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; box-sizing: border-box; font-family: inherit;}
-    input:focus { outline: none; border-color: var(--accent); }
-    .team-item { background: rgba(30, 41, 59, 0.8); padding: 14px; margin: 8px 0; border-radius: 10px; border-left: 4px solid var(--accent); display: flex; justify-content: space-between; cursor: grab; border: 1px solid rgba(255,255,255,0.05); transition: transform 0.2s;}
-    .team-item:hover { transform: translateX(5px); background: rgba(56, 189, 248, 0.05); }
-    
-   /* --- TŘETÍ MÍSTA (Opravený Header) --- */
-.thirds-header-row { 
-    display: flex !important; 
-    align-items: center !important; 
-    justify-content: flex-start !important; 
-    gap: 10px !important; /* Menší mezera pro mobily */
-    width: 100% !important; 
-    padding: 10px 0 25px 0 !important; 
-    border-bottom: 1px solid rgba(255,255,255,0.05) !important; 
-    margin-bottom: 25px !important; 
-    flex-wrap: wrap !important; /* Povolí zalomení, pokud je nadpis dlouhý */
-}
-
-.thirds-title-text { 
-    font-size: 1.1rem !important; /* Mírně menší písmo */
-    font-weight: 800 !important; 
-    color: #fff !important; 
-    white-space: normal !important; /* ZMĚNA: Text se teď na mobilu zalomí na dva řádky */
-    text-transform: uppercase; 
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
     letter-spacing: 1px;
+    transition: all 0.3s;
+}
+
+.close-payment-btn:hover {
+    box-shadow: 0 6px 20px rgba(212,175,55,0.4);
+    filter: brightness(1.05);
+}
+
+/* --- TŘETÍ MÍSTA HEADER --- */
+.thirds-header-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    width: 100% !important;
+    padding: 10px 0 22px 0 !important;
+    border-bottom: 1px solid rgba(212,175,55,0.08) !important;
+    margin-bottom: 22px !important;
+    flex-wrap: wrap !important;
+}
+
+.thirds-title-text {
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+    color: var(--text) !important;
+    white-space: normal !important;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
     line-height: 1.3;
 }
 
-/* --- GRID (Opravené sloupce pro mobily) --- */
-#thirds-actual-grid { 
-    display: grid !important; 
-    grid-template-columns: repeat(4, 1fr) !important; 
-    gap: 15px; 
-    width: 100%; 
-}
-
-/* Tablet - 3 sloupce */
-@media (max-width: 1000px) { 
-    #thirds-actual-grid { grid-template-columns: repeat(3, 1fr) !important; } 
-}
-
-/* Mobil - 2 sloupce (tady byla ta chyba!) */
-@media (max-width: 600px) { 
-    #thirds-actual-grid { 
-        grid-template-columns: repeat(2, 1fr) !important; 
-        gap: 10px !important; 
-    } 
-    
-    .thirds-wrapper {
-        padding: 10px !important; /* Menší padding, aby zbylo víc místa pro karty */
-    }
-}
-
-/* --- ZBYTEK NAVIGATION --- */
-.phase-navigation { 
-    display: block !important; 
-    text-align: center !important; 
-    width: 100% !important; 
-    max-width: 100vw !important; 
-    padding: 10px !important; 
-    box-sizing: border-box !important; 
-    overflow: hidden !important; 
-}
-    
-    @keyframes winner-glow { 0% { filter: drop-shadow(0 0 4px #fbbf24); } 50% { filter: drop-shadow(0 0 15px #fbbf24); } 100% { filter: drop-shadow(0 0 4px #fbbf24); } }
-    .winner-icon { animation: winner-glow 2s infinite; font-size: 1.4rem; }
-
-        .bank-container {
-    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); /* Tvá fotbalová modrá */
-    color: white;
-    padding: 20px;
-    border-radius: 12px;
-    
-    /* KLÍČOVÉ ZMĚNY PRO ZAROVNÁNÍ: */
-    display: block;               /* Změna z inline-block na block */
-    max-width: 400px;             /* Stejná šířka jako odpočet */
-    margin: 0 auto 25px auto;    /* Středění a mezera pod boxem */
-    box-sizing: border-box;       /* Padding se počítá do šířky */
-    
-    text-align: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    border: 2px solid #ffd700;    /* Zlatý rámeček */
-}
-
-.bank-label {
-    font-size: 20px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    opacity: 0.9;
-    margin-bottom: 8px;
-    font-weight: 600;
-}
-
-.bank-amount {
-    font-size: 28px;
-    font-weight: 900;
-    letter-spacing: 1px;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-}
-
-/* Styl pro rozpis výher pod hlavní částkou */
-.bank-prizes {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255,255,255,0.2);
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-        .countdown-wrapper {
-    background: #1e293b;
-    padding: 15px 20px;
+#thirds-counter {
+    background: linear-gradient(135deg, #d4af37, #9a7b1e) !important;
+    color: #050710 !important;
+    padding: 5px 18px;
     border-radius: 10px;
-    text-align: center;
-    border: 2px solid #38bdf8;
-    margin-bottom: 25px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-.countdown-title {
-    color: #94a3b8;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
-    font-weight: bold;
-}
-.countdown-numbers {
-    color: #fff;
-    font-size: 1.8rem;
     font-weight: 900;
-    letter-spacing: 2px;
+    font-size: 1.2rem;
+    min-width: 75px;
+    text-align: center;
+    display: inline-block;
+    box-shadow: 0 4px 14px rgba(212,175,55,0.3);
 }
-.countdown-numbers span {
-    color: #38bdf8; /* Modrá barva pro samotná čísla */
+
+/* --- THIRDS GRID --- */
+#thirds-actual-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 14px;
+    width: 100%;
 }
-    </style>
+
+@media (max-width: 1000px) {
+    #thirds-actual-grid { grid-template-columns: repeat(3, 1fr) !important; }
+}
+
+@media (max-width: 600px) {
+    #thirds-actual-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 9px !important; }
+    .thirds-wrapper { padding: 10px !important; }
+}
+
+/* --- FINÁLNÍ BOX --- */
+#final-box {
+    border: 1px solid rgba(212,175,55,0.3) !important;
+    background: linear-gradient(180deg, rgba(15,20,35,0.9) 0%, rgba(30,22,6,0.5) 100%) !important;
+}
+
+/* --- WINNER ANIMACE --- */
+@keyframes winner-glow {
+    0%   { filter: drop-shadow(0 0 4px #d4af37); }
+    50%  { filter: drop-shadow(0 0 14px #d4af37); }
+    100% { filter: drop-shadow(0 0 4px #d4af37); }
+}
+.winner-icon { animation: winner-glow 2s infinite; font-size: 1.3rem; }
+
+/* --- ADMIN --- */
+#admin-panel { min-height: 800px; overflow-anchor: none; }
+#leaderboard-section { contain: layout; }
+html, body { overflow-anchor: none !important; scroll-behavior: auto !important; }
+#admin-form-container { min-height: 100vh; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+
+/* --- INPUT --- */
+input {
+    width: 100%;
+    padding: 13px;
+    background: rgba(0,0,0,0.4);
+    color: var(--text);
+    border: 1px solid rgba(212,175,55,0.15);
+    border-radius: 10px;
+    box-sizing: border-box;
+    font-family: inherit;
+    transition: border-color 0.3s;
+}
+
+input:focus {
+    outline: none;
+    border-color: rgba(212,175,55,0.45);
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.07);
+}
+
+/* --- HIDDEN & MISC --- */
+.hidden { display: none !important; }
+
+.admin-trigger {
+    position: fixed;
+    bottom: 20px; right: 20px;
+    opacity: 0.08;
+    cursor: pointer;
+    transition: opacity 0.3s;
+    z-index: 1000;
+    color: var(--accent);
+    font-size: 1.2rem;
+}
+.admin-trigger:hover { opacity: 0.7; }
+
+/* --- NAVIGATION --- */
+.phase-navigation {
+    display: block !important;
+    text-align: center !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    padding: 10px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+/* --- HLAS LIDU --- */
+#hlas-lidu-container > div {
+    background: rgba(212,175,55,0.03) !important;
+    border: 1px solid rgba(212,175,55,0.12) !important;
+    border-radius: 14px !important;
+}
+</style>
 </head>
 <body>
 
