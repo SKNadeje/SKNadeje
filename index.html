@@ -1339,6 +1339,12 @@ input:focus {
         🧪 VLOŽIT TESTOVACÍ DATA
     </button>
 </div>
+        <div style="padding: 0 20px 10px;">
+    <button type="button" class="btn" onclick="resetVysledky()" 
+        style="background:rgba(100,116,139,0.15); border:1px solid rgba(100,116,139,0.3); color:#94a3b8; width:100%; font-size:0.8rem;">
+        🔄 RESET VŠECH VÝSLEDKŮ
+    </button>
+</div>
     <div style="padding: 20px;"><button type="button" class="btn btn-primary" onclick="saveAdminResults()">ULOŽIT VÝSLEDKY</button></div>
 </div>
 
@@ -1491,6 +1497,37 @@ input:focus {
 </div>
     
 <script>
+async function resetVysledky() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+        showToast("Tato akce je pouze pro admina!", 'error');
+        return;
+    }
+
+    if (!confirm("Opravdu vymazat všechny výsledky? Žebříček se vynuluje a stupně vítězů zmizí.")) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('admin_vysledky')
+            .upsert({
+                id: 1,
+                groups: [],
+                s32: [], s16: [], s8: [], s4: [],
+                winner: "",
+                bronze: ""
+            });
+
+        if (error) throw error;
+
+        window.currentResults = { groups: [], s32: [], s16: [], s8: [], s4: [], winner: "", bronze: "" };
+        showToast("✅ Výsledky vymazány! Turnaj resetován.", 'success');
+        if (typeof loadAll === "function") await loadAll();
+
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
+    
 async function kliknutiVstoupit() {
     // Zkontroluj jestli je vyplněno finále
     const { data: real } = await supabaseClient
