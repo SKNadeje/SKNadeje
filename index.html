@@ -1673,11 +1673,10 @@ async function vlozitTestData() {
     }
 }
     
-    async function generatePDF() {
+   async function generatePDF() {
     const { data: authData } = await supabaseClient.auth.getUser();
     const userId = authData?.user?.id;
     
-    // Načteme jméno hráče
     const { data: tipData } = await supabaseClient
         .from('tipy')
         .select('name, tip_data')
@@ -1688,16 +1687,15 @@ async function vlozitTestData() {
     const tip = tipData?.tip_data || state;
     const dnes = new Date().toLocaleDateString('cs-CZ');
 
-    // Sestavíme HTML šablonu
     const skupiny = (tip.groups || state.groups.map(g => g.teams));
     const skupinyHTML = skupiny.map((tymy, i) => {
         const pismeno = String.fromCharCode(65 + i);
         return `
-            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(212,175,55,0.15);border-radius:8px;padding:10px;">
-                <div style="font-size:9px;color:rgba(212,175,55,0.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700;">Skupina ${pismeno}</div>
+            <div style="background:rgba(255,255,255,0.02); border-left:2px solid rgba(212,175,55,0.4); border-radius:0 8px 8px 0; padding:10px;">
+                <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; font-weight:800; margin-bottom:7px;">Skupina ${pismeno}</div>
                 ${(Array.isArray(tymy) ? tymy : []).map((t, p) => `
-                    <div style="font-size:10px;color:#f0e6c8;margin-bottom:2px;">
-                        <span style="color:#d4af37;font-weight:900;margin-right:4px;">${p+1}.</span>${t}
+                    <div style="font-size:10px; color:${p===0?'#d4af37':'#f0e6c8'}; font-weight:${p===0?'700':'400'}; margin-bottom:2px;">
+                        <span style="color:#d4af37; font-size:8px; font-weight:900; margin-right:5px;">${p+1}.</span>${t}
                     </div>`).join('')}
             </div>`;
     }).join('');
@@ -1708,54 +1706,60 @@ async function vlozitTestData() {
         { key: 's8',  label: 'Čtvrtfinále' },
         { key: 's4',  label: 'Semifinále' },
     ];
-
     const playoffHTML = playoffFaze.map(f => {
         const tymy = tip[f.key] || [];
         return `
-            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(212,175,55,0.15);border-radius:8px;padding:10px;">
-                <div style="font-size:9px;color:rgba(212,175,55,0.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700;">${f.label}</div>
-                ${tymy.map(t => `<div style="font-size:10px;color:#f0e6c8;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.03);">${t}</div>`).join('')}
+            <div style="background:rgba(255,255,255,0.02); border-left:2px solid rgba(212,175,55,0.4); border-radius:0 8px 8px 0; padding:10px;">
+                <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1px; text-transform:uppercase; font-weight:800; margin-bottom:7px;">${f.label}</div>
+                ${tymy.map(t => `<div style="font-size:9px; color:#e8dcc0; padding:2px 0;">${t}</div>`).join('')}
             </div>`;
     }).join('');
 
+    const sec = (title) => `<div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; font-weight:700; text-align:center; margin:22px 0 12px;">${title}</div>`;
+
     const html = `
-        <div id="pdf-content" style="width:794px;background:#05070f;padding:40px;font-family:Arial,sans-serif;color:#f0e6c8;">
-            
-            <div style="text-align:center;padding-bottom:24px;border-bottom:1px solid rgba(212,175,55,0.2);margin-bottom:24px;">
-                <div style="font-size:10px;letter-spacing:3px;color:rgba(212,175,55,0.5);text-transform:uppercase;margin-bottom:6px;">SK Naděje · Tipovačka WC2026</div>
-                <div style="font-size:24px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:#d4af37;margin-bottom:6px;">Mistrovství světa 2026</div>
-                <div style="font-size:13px;color:rgba(212,175,55,0.6);">Tip: ${jméno} · ${dnes}</div>
-            </div>
-
-            <div style="margin-bottom:24px;">
-                <div style="font-size:9px;letter-spacing:2px;color:rgba(212,175,55,0.5);text-transform:uppercase;font-weight:700;border-bottom:1px solid rgba(212,175,55,0.1);padding-bottom:6px;margin-bottom:12px;">Pořadí ve skupinách</div>
-                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">${skupinyHTML}</div>
-            </div>
-
-            <div style="margin-bottom:24px;">
-                <div style="font-size:9px;letter-spacing:2px;color:rgba(212,175,55,0.5);text-transform:uppercase;font-weight:700;border-bottom:1px solid rgba(212,175,55,0.1);padding-bottom:6px;margin-bottom:12px;">Play-off postup</div>
-                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">${playoffHTML}</div>
-            </div>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
-                <div style="background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.3);border-radius:10px;padding:16px;text-align:center;">
-                    <div style="font-size:24px;margin-bottom:6px;">🏆</div>
-                    <div style="font-size:9px;color:rgba(212,175,55,0.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Vítěz turnaje</div>
-                    <div style="font-size:18px;font-weight:900;color:#d4af37;">${tip.winner || '–'}</div>
+        <div id="pdf-content" style="width:794px; background:#05070f; padding:44px; font-family:Arial,sans-serif; color:#f0e6c8;">
+            <div style="text-align:center; padding-bottom:20px; border-bottom:1px solid rgba(212,175,55,0.15); margin-bottom:8px;">
+                <div style="width:72px; height:72px; border-radius:50%; background:radial-gradient(circle, rgba(212,175,55,0.2), transparent); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; border:1px solid rgba(212,175,55,0.25);">
+                    <img src="logo-wc2026.png" style="width:54px; height:54px; object-fit:contain;" crossorigin="anonymous">
                 </div>
-                <div style="background:rgba(180,100,40,0.08);border:1px solid rgba(180,100,40,0.3);border-radius:10px;padding:16px;text-align:center;">
-                    <div style="font-size:24px;margin-bottom:6px;">🥉</div>
-                    <div style="font-size:9px;color:rgba(180,100,40,0.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">3. místo</div>
-                    <div style="font-size:18px;font-weight:900;color:#d97b3a;">${tip.bronze || '–'}</div>
+                <div style="font-size:9px; letter-spacing:4px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:8px;">SK Naděje presents</div>
+                <div style="font-size:22px; font-weight:900; letter-spacing:3px; text-transform:uppercase; color:#d4af37; margin-bottom:8px;">Mistrovství světa 2026</div>
+                <div style="display:flex; gap:8px; justify-content:center; align-items:center; margin:10px 0;">
+                    <img src="https://flagcdn.com/us.svg" style="height:13px; border-radius:2px; opacity:0.7;" crossorigin="anonymous">
+                    <span style="color:rgba(212,175,55,0.3); font-size:9px;">·</span>
+                    <img src="https://flagcdn.com/mx.svg" style="height:13px; border-radius:2px; opacity:0.7;" crossorigin="anonymous">
+                    <span style="color:rgba(212,175,55,0.3); font-size:9px;">·</span>
+                    <img src="https://flagcdn.com/ca.svg" style="height:13px; border-radius:2px; opacity:0.7;" crossorigin="anonymous">
+                </div>
+                <div style="display:inline-block; margin-top:10px; padding:6px 20px; border-radius:20px; background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.25); font-size:13px; color:#d4af37; font-weight:700;">Tip: ${jméno} · ${dnes}</div>
+            </div>
+
+            ${sec('Pořadí ve skupinách')}
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px;">${skupinyHTML}</div>
+
+            ${sec('Play-off postup')}
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px;">${playoffHTML}</div>
+
+            ${sec('Finálové tipy')}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div style="background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.3); border-radius:10px; padding:16px; text-align:center;">
+                    <div style="font-size:22px; margin-bottom:6px;">🏆</div>
+                    <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:2px; text-transform:uppercase; margin-bottom:5px;">Vítěz turnaje</div>
+                    <div style="font-size:16px; font-weight:900; color:#d4af37;">${tip.winner || '–'}</div>
+                </div>
+                <div style="background:rgba(180,100,40,0.08); border:1px solid rgba(180,100,40,0.3); border-radius:10px; padding:16px; text-align:center;">
+                    <div style="font-size:22px; margin-bottom:6px;">🥉</div>
+                    <div style="font-size:8px; color:rgba(180,100,40,0.6); letter-spacing:2px; text-transform:uppercase; margin-bottom:5px;">3. místo</div>
+                    <div style="font-size:16px; font-weight:900; color:#d97b3a;">${tip.bronze || '–'}</div>
                 </div>
             </div>
 
-            <div style="text-align:center;padding-top:12px;border-top:1px solid rgba(212,175,55,0.1);font-size:9px;color:rgba(212,175,55,0.3);letter-spacing:1px;text-transform:uppercase;">
+            <div style="text-align:center; margin-top:24px; padding-top:14px; border-top:1px solid rgba(212,175,55,0.1); font-size:8px; color:rgba(212,175,55,0.3); letter-spacing:1.5px; text-transform:uppercase;">
                 sknadeje.github.io/SKNadeje · World Cup 2026 Tipovačka
             </div>
         </div>`;
 
-    // Vložíme dočasně do DOM
     const container = document.createElement('div');
     container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
     container.innerHTML = html;
@@ -1763,24 +1767,16 @@ async function vlozitTestData() {
 
     try {
         showToast('Generuji PDF...', 'info', 2000);
-        
         const canvas = await html2canvas(container.querySelector('#pdf-content'), {
-            scale: 2,
-            backgroundColor: '#05070f',
-            useCORS: true,
-            logging: false
+            scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false
         });
-
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' });
-        
         const imgData = canvas.toDataURL('image/png');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         pdf.save(`WC2026-tip-${jméno}.pdf`);
-        
         showToast(`PDF staženo! Tip: ${jméno}`, 'success');
     } catch (err) {
         showToast('Chyba při generování PDF: ' + err.message, 'error');
