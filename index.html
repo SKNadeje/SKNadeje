@@ -2034,7 +2034,15 @@ async function renderLeaderboard(data, real) {
 
     // --- 📦 DATA ADMINA A VÝPOČET BODŮ ---
     const adminData = real || window.currentResults || {};
-    const r = adminData.playoff ? { ...adminData.playoff, groups: adminData.groups } : adminData;
+   const r = {
+    groups: adminData.groups || adminData.playoff?.groups || [],
+    s32:    adminData.s32    || adminData.playoff?.s32    || [],
+    s16:    adminData.s16    || adminData.playoff?.s16    || [],
+    s8:     adminData.s8     || adminData.playoff?.s8     || [],
+    s4:     adminData.s4     || adminData.playoff?.s4     || [],
+    winner: adminData.winner || adminData.playoff?.winner || "",
+    bronze: adminData.bronze || adminData.playoff?.bronze || "",
+};
 
     const processed = (data || []).map(row => {
         let tip = row.tip_data;
