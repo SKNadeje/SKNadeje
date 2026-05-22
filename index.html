@@ -2076,14 +2076,26 @@ async function renderLeaderboard(data, real) {
     }).sort((a, b) => b.points - a.points);
 
     // --- 🎨 POMOCNÉ FUNKCE PRO BARVY ---
-    const getStatusClass = (stageId, teamName, stageCount) => {
-        const aS = r[stageId] || [];
-        if (!teamName) return ''; 
-        const valid = Array.isArray(aS) ? aS.filter(t => t && t.trim() !== "") : [];
-        if (valid.length === 0) return 'status-pending';
-        if (valid.some(t => String(t).trim() === String(teamName).trim())) return 'status-correct';
-        return (valid.length >= stageCount) ? 'status-wrong' : 'status-pending';
-    };
+   const getStatusClass = (stageId, teamName, stageCount) => {
+    if (!teamName) return '';
+    
+    // Speciální případ pro vítěze a bronz (string, ne pole)
+    if (stageId === 'winner') {
+        if (!r.winner || r.winner.trim() === '') return 'status-pending';
+        return String(r.winner).trim() === String(teamName).trim() ? 'status-correct' : 'status-wrong';
+    }
+    if (stageId === 'bronze') {
+        if (!r.bronze || r.bronze.trim() === '') return 'status-pending';
+        return String(r.bronze).trim() === String(teamName).trim() ? 'status-correct' : 'status-wrong';
+    }
+    
+    // Playoff kola (pole týmů)
+    const aS = r[stageId] || [];
+    const valid = Array.isArray(aS) ? aS.filter(t => t && t.trim() !== "") : [];
+    if (valid.length === 0) return 'status-pending';
+    if (valid.some(t => String(t).trim() === String(teamName).trim())) return 'status-correct';
+    return (valid.length >= stageCount) ? 'status-wrong' : 'status-pending';
+};
 
     // --- 🖌️ RENDEROVÁNÍ TABULKY ---
     let lastPoints = -1;
