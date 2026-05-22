@@ -970,11 +970,11 @@ tr.player-row:hover { background: rgba(212,175,55,0.04); cursor: pointer; }
     margin-bottom: 8px;
     font-weight: 800;
 }
-   .det-stage-card div {
-    color: var(--text) !important;
-    background: none !important;
-    border: none !important;
-    padding: 0 !important;
+.det-stage-card div:not(.status-correct):not(.status-wrong):not(.status-pending) {
+    color: var(--text);
+    background: none;
+    border: none;
+    padding: 0;
 }
     .det-stage-card {
     color: var(--text);
