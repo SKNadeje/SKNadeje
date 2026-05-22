@@ -1338,6 +1338,12 @@ input:focus {
         ZMRAZIT AKTUÁLNÍ POŘADÍ
     </button>
 </div>
+        <div style="padding: 0 20px 10px;">
+    <button type="button" class="btn" onclick="vlozitTestData()" 
+        style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#ef4444; width:100%; font-size:0.8rem;">
+        🧪 VLOŽIT TESTOVACÍ DATA
+    </button>
+</div>
     <div style="padding: 20px;"><button type="button" class="btn btn-primary" onclick="saveAdminResults()">ULOŽIT VÝSLEDKY</button></div>
 </div>
 
@@ -1491,6 +1497,48 @@ input:focus {
     
 <script>
 
+async function vlozitTestData() {
+    if (!confirm("Vložit testovací data do admin výsledků? Přepíše stávající výsledky.")) return;
+
+    const testData = {
+        groups: [
+            ["Mexico", "Jižní Korea", "Jihoafrická republica", "Česko"],
+            ["Kanada", "Švýcarsko", "Bosna a Hercegovina", "Katar"],
+            ["Brazílie", "Maroko", "Skotsko", "Haiti"],
+            ["USA", "Turecko", "Paraguay", "Austrálie"],
+            ["Německo", "Ekvádor", "Pobřeží slonoviny", "Curacao"],
+            ["Nizozemsko", "Japonsko", "Švédsko", "Tunisko"],
+            ["Belgie", "Egypt", "Írán", "Nový Zéland"],
+            ["Španělsko", "Uruguay", "Kapverdy", "Saúdská Arábie"],
+            ["Francie", "Norsko", "Senegal", "Irák"],
+            ["Argentina", "Rakousko", "Alžírsko", "Jordánsko"],
+            ["Portugalsko", "Kolumbie", "DR Kongo", "Uzbekistán"],
+            ["Anglie", "Ghana", "Chorvatsko", "Panama"]
+        ],
+        s32: ["Mexico","Jižní Korea","Kanada","Švýcarsko","Brazílie","Maroko","USA","Turecko","Německo","Ekvádor","Nizozemsko","Japonsko","Belgie","Egypt","Španělsko","Uruguay"],
+        s16: ["Mexico","Brazílie","Německo","Španělsko","Francie","Argentina","Portugalsko","Anglie"],
+        s8:  ["Brazílie","Španělsko","Francie","Portugalsko"],
+        s4:  ["Španělsko","Francie"],
+        winner: "Španělsko",
+        bronze: "Francie"
+    };
+
+    try {
+        const { error } = await supabaseClient
+            .from('admin_vysledky')
+            .upsert({ id: 1, ...testData });
+
+        if (error) throw error;
+
+        window.currentResults = testData;
+        showToast("✅ Test data vložena! Přepočítávám žebříček...", 'success');
+        if (typeof loadAll === "function") await loadAll();
+
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
+    
     async function generatePDF() {
     const { data: authData } = await supabaseClient.auth.getUser();
     const userId = authData?.user?.id;
