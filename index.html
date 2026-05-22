@@ -1912,23 +1912,12 @@ function cfS(sid, count) {
 
     // TADY BYLO window.scrollTo(0,0) - SMAZÁNO!
 }
-    function checkAdmin() {
-    const now = new Date().getTime();
-    const adminLoginTime = localStorage.getItem('adminLoginTime');
-    const tenMinutes = 10 * 60 * 1000;
-
-    // Pokud je uživatel už přihlášený a neuběhlo 10 minut, jen přepneme panel
-    if (adminLoginTime && (now - adminLoginTime < tenMinutes)) {
-        toggleAdminPanel();
-        return;
-    }
-
-    // Pokud není přihlášen nebo vypršel čas, chce to heslo
-    if (prompt("Heslo:") === "Matysek.2019") {
-        localStorage.setItem('adminLoginTime', now);
+   async function checkAdmin() {
+    const { data } = await supabaseClient.auth.getUser();
+    if (data?.user?.id === "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
         toggleAdminPanel();
     } else {
-        alert("Špatné heslo!");
+        alert("❌ Přístup pouze pro admina!");
     }
 }
     function toggleAdminPanel() {
