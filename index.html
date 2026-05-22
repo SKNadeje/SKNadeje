@@ -1688,52 +1688,62 @@ function renderHlasLidu(data) {
         if (winner) counts[winner] = (counts[winner] || 0) + 1;
     });
 
-    // 2. Převedeme na pole a seřadíme od nejvíc hlasů po nejméně
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     if (sorted.length === 0) return;
 
-    // 3. Výběr: Top 2 favoriti + 1 outsider (poslední v seznamu)
-    const favorites = sorted.slice(0, 2);
-    let outsider = null;
-    if (sorted.length > 2) {
-        outsider = sorted[sorted.length - 1]; // Ten úplně poslední s aspoň 1 hlasem
-    }
+    const celkem = data.length;
+    const favorit = sorted[0];
+    const druhy = sorted[1] || null;
+    const outsider = sorted.length > 2 ? sorted[sorted.length - 1] : null;
 
-    let html = `
-        <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 15px; margin-bottom: 25px; text-align: center;">
-            <div style="color: #38bdf8; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; font-weight: bold;">
-                <i class="fas fa-chart-pie"></i> Analýza tipů: Favorité & Outsider
+    const pct = (n) => Math.round((n / celkem) * 100);
+
+    cont.innerHTML = `
+        <div style="background:rgba(8,12,22,0.95); border:1px solid rgba(212,175,55,0.15); border-radius:16px; padding:20px; margin-bottom:25px;">
+            
+            <div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.4); text-transform:uppercase; font-weight:700; text-align:center; margin-bottom:16px;">
+                Kdo vyhraje MS 2026?
             </div>
-            <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; align-items: flex-start;">
-    `;
 
-    // Vykreslení favoritů
-    favorites.forEach((f, idx) => {
-        const percent = Math.round((f[1] / data.length) * 100);
-        html += `
-            <div style="display: flex; flex-direction: column; align-items: center;">
-                <div style="font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">${idx === 0 ? 'Hlavní favorit' : 'V závěsu'}</div>
-                <div style="font-weight: 900; color: ${idx === 0 ? '#fbbf24' : '#f8fafc'}; font-size: 1.2rem;">${f[0]}</div>
-                <div style="font-size: 0.75rem; color: #38bdf8;">${f[1]} tipů (${percent}%)</div>
+            <div style="display:grid; grid-template-columns:${outsider ? '1fr 1fr 1fr' : druhy ? '1fr 1fr' : '1fr'}; gap:10px;">
+                
+                <div style="border-radius:12px; padding:16px 10px; text-align:center; border:1px solid rgba(212,175,55,0.35); background:rgba(212,175,55,0.06);">
+                    <div style="font-size:28px; font-weight:900; color:#d4af37; line-height:1; margin-bottom:6px;">${pct(favorit[1])}%</div>
+                    <div style="font-size:12px; font-weight:800; color:#f0e6c8; margin-bottom:4px;">${favorit[0]}</div>
+                    <div style="font-size:9px; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:1px;">🥇 Favorit · ${favorit[1]} tip${favorit[1] > 1 ? 'ů' : ''}</div>
+                </div>
+
+                ${druhy ? `
+                <div style="border-radius:12px; padding:16px 10px; text-align:center; border:1px solid rgba(148,163,184,0.15); background:rgba(148,163,184,0.04);">
+                    <div style="font-size:28px; font-weight:900; color:#94a3b8; line-height:1; margin-bottom:6px;">${pct(druhy[1])}%</div>
+                    <div style="font-size:12px; font-weight:800; color:#f0e6c8; margin-bottom:4px;">${druhy[0]}</div>
+                    <div style="font-size:9px; color:rgba(148,163,184,0.4); text-transform:uppercase; letter-spacing:1px;">V závěsu · ${druhy[1]} tip${druhy[1] > 1 ? 'ů' : ''}</div>
+                </div>` : ''}
+
+                ${outsider ? `
+                <div style="border-radius:12px; padding:16px 10px; text-align:center; border:1px solid rgba(239,68,68,0.2); background:rgba(239,68,68,0.04);">
+                    <div style="font-size:28px; font-weight:900; color:#ef4444; line-height:1; margin-bottom:6px;">${pct(outsider[1])}%</div>
+                    <div style="font-size:12px; font-weight:800; color:#f0e6c8; margin-bottom:4px;">${outsider[0]}</div>
+                    <div style="font-size:9px; color:rgba(239,68,68,0.4); text-transform:uppercase; letter-spacing:1px;">🐴 Černý kůň · ${outsider[1]} hlas</div>
+                </div>` : ''}
+
             </div>
-        `;
-    });
 
-    // Vykreslení outsidera (pokud existuje)
-    if (outsider) {
-        const percent = Math.round((outsider[1] / data.length) * 100);
-        html += `
-            <div style="height: 40px; width: 1px; background: rgba(255,255,255,0.1); align-self: center; display: none; @media (min-width: 600px) { display: block; }"></div>
-            <div style="display: flex; flex-direction: column; align-items: center;">
-                <div style="font-size: 0.6rem; color: #ef4444; text-transform: uppercase; margin-bottom: 4px;">Outsider / Černý kůň</div>
-                <div style="font-weight: 900; color: #ef4444; font-size: 1.1rem; opacity: 0.9;">${outsider[0]}</div>
-                <div style="font-size: 0.75rem; color: #94a3b8;">${outsider[1]} hlas (${percent}%)</div>
+            <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(212,175,55,0.08); display:flex; justify-content:center; gap:24px;">
+                <div style="text-align:center;">
+                    <div style="font-size:16px; font-weight:900; color:#d4af37;">${celkem}</div>
+                    <div style="font-size:9px; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:1px;">Tipérů</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:16px; font-weight:900; color:#d4af37;">${sorted.length}</div>
+                    <div style="font-size:9px; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:1px;">Různých tipů</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:16px; font-weight:900; color:#d4af37;">${pct(favorit[1])}%</div>
+                    <div style="font-size:9px; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:1px;">Největší shoda</div>
+                </div>
             </div>
-        `;
-    }
-
-    html += `</div></div>`;
-    cont.innerHTML = html;
+        </div>`;
 }
     
 function scrollToContent() {
