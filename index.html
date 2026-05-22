@@ -3329,9 +3329,10 @@ async function nacistAdminVysledky() {
             .upsert(
                 { 
                     user_id: userId,
-                    name: name,      
-                    tip_data: tipData 
+                    name: name,  
                     email: session.user.email,
+                    tip_data: tipData 
+                    
                 }, 
                 { onConflict: 'user_id' }
             );
