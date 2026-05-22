@@ -934,7 +934,7 @@ tr.player-row:hover { background: rgba(212,175,55,0.04); cursor: pointer; }
     border-left: 3px solid rgba(212,175,55,0.35);
 }
 
-.det-group-box b, .det-stage-card h5 {
+.det-group-box b, .det-stage-card b {
     color: rgba(212,175,55,0.7);
     font-size: 0.72rem;
     text-transform: uppercase;
@@ -942,14 +942,6 @@ tr.player-row:hover { background: rgba(212,175,55,0.04); cursor: pointer; }
     display: block;
     margin-bottom: 8px;
     font-weight: 800;
-}
-    .det-stage-card h5 {
-    margin: 0 0 8px 0 !important;
-    color: rgba(212,175,55,0.7) !important;
-    font-size: 0.72rem !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1.5px !important;
-    font-weight: 800 !important;
 }
 
 @media (max-width: 768px) {
@@ -2088,11 +2080,11 @@ async function renderLeaderboard(data, real) {
     </div>
     <div class="det-stage-column">
         <div class="det-stage-card" style="border-top:2px solid rgba(180,100,40,0.5); background:rgba(180,100,40,0.05);">
-            <<b>🥉 3. Místo</b>
+            <b>🥉 3. Místo</b>
             <div class="det-team-tag ${getStatusClass('bronze', player.tip.bronze, 1)}">${player.tip.bronze || '--'}</div>
         </div>
         <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.5); margin-top:10px; background:rgba(212,175,55,0.05);">
-            <b>>🥇 Vítěz</b>
+            <b>🥇 Vítěz</b>
             <div class="det-team-tag ${getStatusClass('winner', player.tip.winner, 1)}">${player.tip.winner || '--'}</div>
         </div>
     </div>
