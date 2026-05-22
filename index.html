@@ -1345,6 +1345,12 @@ input:focus {
         🔄 RESET VŠECH VÝSLEDKŮ
     </button>
 </div>
+        <div style="padding: 0 20px 10px;">
+    <button type="button" class="btn" onclick="otevritNotifikace()" 
+        style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; width:100%; font-size:0.8rem;">
+        📧 ODESLAT NOTIFIKACI HRÁČŮM
+    </button>
+</div>
     <div style="padding: 20px;"><button type="button" class="btn btn-primary" onclick="saveAdminResults()">ULOŽIT VÝSLEDKY</button></div>
 </div>
 
@@ -1497,6 +1503,91 @@ input:focus {
 </div>
     
 <script>
+
+let notifPlayers = [];
+
+async function otevritNotifikace() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+        showToast("Pouze pro admina!", 'error');
+        return;
+    }
+
+    const { data, error } = await supabaseClient
+        .from('tipy')
+        .select('name, email, paid');
+
+    if (error) { showToast("Chyba: " + error.message, 'error'); return; }
+
+    notifPlayers = (data || []).filter(p => p.email);
+    renderNotifList();
+    document.getElementById('notif-modal').style.display = 'flex';
+}
+
+function renderNotifList(filter = 'all') {
+    const cont = document.getElementById('notif-player-list');
+    let list = notifPlayers;
+    if (filter === 'unpaid') list = notifPlayers.filter(p => !(p.paid === true || p.paid === 1 || String(p.paid) === 'true'));
+
+    cont.innerHTML = list.map((p, i) => {
+        const isPaid = p.paid === true || p.paid === 1 || String(p.paid) === 'true';
+        return `
+            <label style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; background:rgba(255,255,255,0.02); border:1px solid rgba(212,175,55,0.08); cursor:pointer; margin-bottom:6px;">
+                <input type="checkbox" class="notif-cb" value="${p.email}" checked style="width:18px; height:18px; accent-color:#d4af37; cursor:pointer;">
+                <div style="flex:1;">
+                    <div style="font-size:0.9rem; font-weight:700; color:#f0e6c8;">${p.name || 'Anonym'}</div>
+                    <div style="font-size:0.7rem; color:#5a6480;">${p.email}</div>
+                </div>
+                <span style="font-size:0.6rem; padding:2px 8px; border-radius:4px; background:${isPaid ? '#10b981' : '#ef4444'}; color:white;">${isPaid ? 'ZAPLACENO' : 'DLUŽÍ'}</span>
+            </label>`;
+    }).join('');
+
+    aktualizujPocetVybranych();
+}
+
+function aktualizujPocetVybranych() {
+    const checked = document.querySelectorAll('.notif-cb:checked').length;
+    const el = document.getElementById('notif-count');
+    if (el) el.innerText = checked;
+}
+
+function toggleVsechny(checked) {
+    document.querySelectorAll('.notif-cb').forEach(cb => cb.checked = checked);
+    aktualizujPocetVybranych();
+}
+
+async function odeslatNotifikace() {
+    const subject = document.getElementById('notif-subject').value.trim();
+    const message = document.getElementById('notif-message').value.trim();
+    const emails = [...document.querySelectorAll('.notif-cb:checked')].map(cb => cb.value);
+
+    if (!subject) return showToast("Zadej předmět!", 'error');
+    if (!message) return showToast("Zadej text zprávy!", 'error');
+    if (emails.length === 0) return showToast("Vyber alespoň jednoho příjemce!", 'error');
+
+    if (!confirm(`Odeslat e-mail ${emails.length} hráčům?`)) return;
+
+    const btn = document.getElementById('notif-send-btn');
+    btn.disabled = true;
+    btn.innerText = "Odesílám...";
+
+    try {
+        const { data, error } = await supabaseClient.functions.invoke('send-notif', {
+            body: { emails, subject, message }
+        });
+
+        if (error) throw error;
+
+        showToast(`✅ Odesláno ${data.sent} z ${data.total} e-mailů!`, 'success');
+        document.getElementById('notif-modal').style.display = 'none';
+    } catch (err) {
+        showToast("Chyba při odesílání: " + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "📧 ODESLAT";
+    }
+}
+    
 async function resetVysledky() {
     const { data: authData } = await supabaseClient.auth.getUser();
     if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
@@ -3240,6 +3331,7 @@ async function nacistAdminVysledky() {
                     user_id: userId,
                     name: name,      
                     tip_data: tipData 
+                    email: session.user.email,
                 }, 
                 { onConflict: 'user_id' }
             );
@@ -3730,5 +3822,40 @@ window.addEventListener('DOMContentLoaded', checkUserSession);
     </div>
 </div>
    <div id="toast-container"></div> 
+<div id="notif-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); z-index:100000; justify-content:center; align-items:center; padding:20px;">
+    <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; padding:28px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.7);">
+        
+        <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:6px;">Admin · Notifikace</div>
+            <div style="font-size:18px; font-weight:900; color:#d4af37; text-transform:uppercase; letter-spacing:2px;">📧 Odeslat e-mail</div>
+        </div>
+
+        <input type="text" id="notif-subject" placeholder="Předmět e-mailu" style="width:100%; margin-bottom:10px; padding:12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.15); border-radius:10px; box-sizing:border-box;">
+
+        <textarea id="notif-message" placeholder="Text zprávy... (můžeš psát na více řádků)" rows="5" style="width:100%; margin-bottom:16px; padding:12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.15); border-radius:10px; box-sizing:border-box; font-family:inherit; resize:vertical;"></textarea>
+
+        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center;">
+            <button onclick="renderNotifList('all')" class="btn" style="flex:1; background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.25); color:#d4af37; font-size:0.75rem; padding:8px; margin:0;">Všichni</button>
+            <button onclick="renderNotifList('unpaid')" class="btn" style="flex:1; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); color:#ef4444; font-size:0.75rem; padding:8px; margin:0;">Jen dlužníci</button>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <button onclick="toggleVsechny(true)" style="flex:1; background:none; border:1px solid rgba(212,175,55,0.2); color:#94a3b8; font-size:0.7rem; padding:6px; border-radius:6px; cursor:pointer;">✓ Vybrat vše</button>
+            <button onclick="toggleVsechny(false)" style="flex:1; background:none; border:1px solid rgba(212,175,55,0.2); color:#94a3b8; font-size:0.7rem; padding:6px; border-radius:6px; cursor:pointer;">✕ Zrušit výběr</button>
+        </div>
+
+        <div id="notif-player-list" onchange="aktualizujPocetVybranych()" style="max-height:240px; overflow-y:auto; margin-bottom:16px; padding-right:4px;"></div>
+
+        <div style="text-align:center; font-size:0.8rem; color:#5a6480; margin-bottom:16px;">
+            Vybráno: <b style="color:#d4af37;" id="notif-count">0</b> příjemců
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <button onclick="document.getElementById('notif-modal').style.display='none'" class="btn" style="flex:1; background:rgba(30,40,60,0.8); color:#94a3b8; border:1px solid rgba(212,175,55,0.12); margin:0;">Zrušit</button>
+            <button id="notif-send-btn" onclick="odeslatNotifikace()" class="btn btn-primary" style="flex:2; margin:0;">📧 ODESLAT</button>
+        </div>
+    </div>
+</div>
+    
 </body>
 </html>
