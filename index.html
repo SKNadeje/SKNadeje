@@ -1720,11 +1720,12 @@ async function vlozitTestData() {
     const html = `
         <div id="pdf-content" style="width:794px; background:#05070f; padding:44px; font-family:Arial,sans-serif; color:#f0e6c8;">
             <div style="text-align:center; padding-bottom:20px; border-bottom:1px solid rgba(212,175,55,0.15); margin-bottom:8px;">
-                <div style="width:72px; height:72px; border-radius:50%; background:radial-gradient(circle, rgba(212,175,55,0.2), transparent); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; border:1px solid rgba(212,175,55,0.25);">
-                    <img src="logo-wc2026.png" style="width:54px; height:54px; object-fit:contain;" crossorigin="anonymous">
-                </div>
-                <div style="font-size:9px; letter-spacing:4px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:8px;">SK Naděje presents</div>
-                <div style="font-size:22px; font-weight:900; letter-spacing:3px; text-transform:uppercase; color:#d4af37; margin-bottom:8px;">Mistrovství světa 2026</div>
+               <div style="font-size:9px; letter-spacing:4px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:14px;">SK Naděje presents</div>
+<div style="display:flex; align-items:center; justify-content:center; gap:18px; margin-bottom:8px;">
+    <img src="logo-wc2026.png" style="width:64px; height:64px; object-fit:contain;">
+    <div style="font-size:22px; font-weight:900; letter-spacing:3px; text-transform:uppercase; color:#d4af37;">Mistrovství<br>světa 2026</div>
+    <img src="logo-wc2026.png" style="width:64px; height:64px; object-fit:contain;">
+</div>
                 <div style="display:flex; gap:8px; justify-content:center; align-items:center; margin:10px 0;">
                     <img src="https://flagcdn.com/us.svg" style="height:13px; border-radius:2px; opacity:0.7;" crossorigin="anonymous">
                     <span style="color:rgba(212,175,55,0.3); font-size:9px;">·</span>
@@ -1765,17 +1766,24 @@ async function vlozitTestData() {
     container.innerHTML = html;
     document.body.appendChild(container);
 
-    try {
+  try {
         showToast('Generuji PDF...', 'info', 2000);
         const canvas = await html2canvas(container.querySelector('#pdf-content'), {
             scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false
         });
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' });
         const imgData = canvas.toDataURL('image/png');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+
+        // PDF přesně podle výšky obsahu (žádné bílé místo dole)
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'px',
+            format: [imgWidth / 2, imgHeight / 2]  // /2 protože scale:2
+        });
+
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth / 2, imgHeight / 2);
         pdf.save(`WC2026-tip-${jméno}.pdf`);
         showToast(`PDF staženo! Tip: ${jméno}`, 'success');
     } catch (err) {
