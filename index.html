@@ -1833,6 +1833,11 @@ async function renderLeaderboard(data, real) {
         else if (currentRank === 2) { nameStyle = "color:#cbd5e1;"; rowStyle = "border-left:4px solid #cbd5e1;"; }
         else if (currentRank === 3) { nameStyle = "color:#cd7f32;"; rowStyle = "border-left:4px solid #cd7f32;"; }
 
+        if (isOwn) {
+    rowStyle += "outline: 1px solid rgba(212,175,55,0.4); box-shadow: inset 0 0 20px rgba(212,175,55,0.06);";
+    nameStyle = "color:#d4af37;";
+}
+        
         return `
             <tr class="player-row" ${canSee ? `onclick="toggleDetail('det-${rowId}')"` : ""} style="cursor:${canSee ? 'pointer':'default'}; ${rowStyle}">
                 <td style="width:75px; padding-left:15px; font-weight:bold; ${nameStyle}">${currentRank}.${trend}</td>
