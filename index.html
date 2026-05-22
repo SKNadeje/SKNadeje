@@ -2056,36 +2056,36 @@ async function renderLeaderboard(data, real) {
                             }).join('')}
                         </div>
 
-                       <span style="color:rgba(212,175,55,0.6); font-weight:bold; font-size:0.72rem; text-transform:uppercase; letter-spacing:2px; display:block; margin-top:20px; margin-bottom:12px; border-bottom:1px solid rgba(212,175,55,0.08); padding-bottom:6px;">Play-off</span>
+                   <span style="color:rgba(212,175,55,0.6); font-weight:bold; font-size:0.72rem; text-transform:uppercase; letter-spacing:2px; display:block; margin-top:20px; margin-bottom:12px; border-bottom:1px solid rgba(212,175,55,0.08); padding-bottom:6px;">Play-off</span>
 <div class="det-playoff-stages" style="margin-top:10px;">
     <div class="det-stage-column">
         <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);">
            <b>1/16</b>
-            <div>${(player.tip.s32||[]).map(t => `<span class="det-team-tag ${getStatusClass('s32', t, 16)}">${t}</span>`).join('')}</div>
+            <div>${(player.tip.s32||[]).map(t => `<div class="${getStatusClass('s32', t, 16)}" style="font-size:0.8rem; margin:1px 0;">${t}</div>`).join('')}</div>
         </div>
         <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);">
             <b>1/8</b>
-            <div>${(player.tip.s16||[]).map(t => `<span class="det-team-tag ${getStatusClass('s16', t, 8)}">${t}</span>`).join('')}</div>
+            <div>${(player.tip.s16||[]).map(t => `<div class="${getStatusClass('s16', t, 8)}" style="font-size:0.8rem; margin:1px 0;">${t}</div>`).join('')}</div>
         </div>
     </div>
     <div class="det-stage-column">
         <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);">
            <b>1/4</b>
-            <div>${(player.tip.s8||[]).map(t => `<span class="det-team-tag ${getStatusClass('s8', t, 4)}">${t}</span>`).join('')}</div>
+            <div>${(player.tip.s8||[]).map(t => `<div class="${getStatusClass('s8', t, 4)}" style="font-size:0.8rem; margin:1px 0;">${t}</div>`).join('')}</div>
         </div>
         <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);">
             <b>1/2</b>
-            <div>${(player.tip.s4||[]).map(t => `<span class="det-team-tag ${getStatusClass('s4', t, 4)}">${t}</span>`).join('')}</div>
+            <div>${(player.tip.s4||[]).map(t => `<div class="${getStatusClass('s4', t, 4)}" style="font-size:0.8rem; margin:1px 0;">${t}</div>`).join('')}</div>
         </div>
     </div>
     <div class="det-stage-column">
         <div class="det-stage-card" style="border-top:2px solid rgba(180,100,40,0.5); background:rgba(180,100,40,0.05);">
             <b>🥉 3. Místo</b>
-            <div class="det-team-tag ${getStatusClass('bronze', player.tip.bronze, 1)}">${player.tip.bronze || '--'}</div>
+            <div class="${getStatusClass('bronze', player.tip.bronze, 1)}" style="font-size:0.8rem; margin:1px 0;">${player.tip.bronze || '--'}</div>
         </div>
         <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.5); margin-top:10px; background:rgba(212,175,55,0.05);">
             <b>🥇 Vítěz</b>
-            <div class="det-team-tag ${getStatusClass('winner', player.tip.winner, 1)}">${player.tip.winner || '--'}</div>
+            <div class="${getStatusClass('winner', player.tip.winner, 1)}" style="font-size:0.8rem; margin:1px 0;">${player.tip.winner || '--'}</div>
         </div>
     </div>
 </div>
