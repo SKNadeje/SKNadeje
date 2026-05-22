@@ -875,6 +875,7 @@ tr.player-row:hover { background: rgba(212,175,55,0.04); cursor: pointer; }
 }
 
 /* --- BADGES & STATUS --- */
+
 .status-correct {
     background: rgba(5,150,105,0.06) !important;
     color: #a7f3d0 !important;
@@ -882,9 +883,12 @@ tr.player-row:hover { background: rgba(212,175,55,0.04); cursor: pointer; }
     border-top: none !important;
     border-right: none !important;
     border-bottom: none !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
     opacity: 1 !important;
     padding-left: 6px !important;
+    display: block !important;
+    margin: 1px 0 !important;
 }
 
 .status-wrong {
@@ -894,9 +898,12 @@ tr.player-row:hover { background: rgba(212,175,55,0.04); cursor: pointer; }
     border-top: none !important;
     border-right: none !important;
     border-bottom: none !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
     opacity: 1 !important;
     padding-left: 6px !important;
+    display: block !important;
+    margin: 1px 0 !important;
 }
 
 .status-pending {
@@ -904,7 +911,17 @@ tr.player-row:hover { background: rgba(212,175,55,0.04); cursor: pointer; }
     color: rgba(255,255,255,0.35) !important;
     border: none !important;
     padding-left: 8px !important;
+    display: block !important;
+    margin: 1px 0 !important;
 }
+.status-correct,
+.status-wrong,
+.status-pending {
+    display: block;
+    border-radius: 4px;
+    margin: 1px 0;
+}
+    
 .det-team-tag {
     display: inline-block;
     padding: 4px 10px;
