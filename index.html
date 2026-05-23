@@ -1538,6 +1538,7 @@ function skocNaFazi(faze) {
         const stageDiv = document.getElementById(`sec-${sid}`);
         
         if (stageDiv) {
+            document.getElementById('playoff-container')?.classList.remove('hidden');
             stageDiv.classList.remove('hidden');
             stageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } else {
