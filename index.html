@@ -3023,8 +3023,8 @@ function genStage(title, teams, count, id, prevPhase, prevDot) {
                     <span>${id === 's2' ? 'FINÁLE' : (id === 's3' ? 'O 3. MÍSTO' : 'ZÁPAS ' + (i+1))}</span>
                     <i class="fas fa-sitemap" style="opacity: 0.3;"></i>
                 </div>
-                <div class="playoff-team ${sel1}" onclick="pk('${id}',${i},0)">${t1}</div>
-                <div class="playoff-team ${sel2}" onclick="pk('${id}',${i},1)">${t2}</div>
+                <div class="playoff-team ${sel1}" onclick="pk('${id}',${i},0)">${flagImg(t1, 18)}${t1}</div>
+<div class="playoff-team ${sel2}" onclick="pk('${id}',${i},1)">${flagImg(t2, 18)}${t2}</div>
             </div>`;
     }
     
