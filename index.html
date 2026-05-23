@@ -1416,7 +1416,10 @@ input:focus {
            <div id="hlas-lidu-container"></div>
 
 <div class="section-box" id="section-leaderboard">
-    <div class="section-header">📊 ŽEBŘÍČEK HRÁČŮ</div>
+   <div class="section-header">
+    <span>📊 ŽEBŘÍČEK HRÁČŮ</span>
+    <button onclick="exportZebricek()" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.25); color:#d4af37; font-size:0.65rem; font-weight:700; padding:5px 12px; border-radius:6px; cursor:pointer; letter-spacing:1px; text-transform:uppercase;">📷 Export</button>
+</div>
     <table id="leaderboard">
         <tbody id="public-body"></tbody>
     </table>
@@ -1505,6 +1508,112 @@ input:focus {
 </div>
     
 <script>
+async function exportZebricek() {
+    // Načti aktuální data
+    const { data: tipy } = await supabaseClient.from('tipy').select('*');
+    const r = window.currentResults || {};
+
+    if (!tipy || tipy.length === 0) {
+        showToast("Žádní hráči k exportu.", 'error');
+        return;
+    }
+
+    // Spočítej body (stejná logika jako žebříček)
+    const rr = {
+        groups: r.groups || [], s32: r.s32 || [], s16: r.s16 || [],
+        s8: r.s8 || [], s4: r.s4 || [], winner: r.winner || '', bronze: r.bronze || ''
+    };
+
+    const vysledky = tipy.map(row => {
+        let tip = row.tip_data;
+        if (typeof tip === 'string') { try { tip = JSON.parse(tip); } catch { tip = {}; } }
+        let pts = 0;
+        if (rr.groups && tip.groups) {
+            rr.groups.forEach((g, i) => {
+                const tipG = tip.groups[i] || [];
+                const aT = g.teams || g;
+                if (Array.isArray(aT)) aT.forEach((t, p) => { if (t && tipG[p] && String(t).trim() === String(tipG[p]).trim()) pts += 4; });
+            });
+        }
+        ['s32','s16','s8','s4'].forEach((sid, idx) => {
+            const body = [2,3,4,5][idx];
+            (rr[sid]||[]).forEach(t => { if (t && (tip[sid]||[]).some(x => String(x).trim()===String(t).trim())) pts += body; });
+        });
+        if (rr.winner && tip.winner && String(rr.winner).trim()===String(tip.winner).trim()) pts += 12;
+        if (rr.bronze && tip.bronze && String(rr.bronze).trim()===String(tip.bronze).trim()) pts += 8;
+        return { name: row.name || 'Anonym', points: pts, previous_rank: row.previous_rank };
+    }).sort((a,b) => b.points - a.points);
+
+    // Sestav řádky s pořadím + trendy
+    let lastPoints = -1, currentRank = 0;
+    const radky = vysledky.map((p, i) => {
+        if (p.points !== lastPoints) currentRank = i + 1;
+        lastPoints = p.points;
+
+        // Trend šipka
+        let trend = '<span style="color:#5a6480; font-size:11px; margin-left:6px;">–</span>';
+        if (p.previous_rank) {
+            const diff = p.previous_rank - currentRank;
+            if (diff > 0) trend = `<span style="color:#22c55e; font-size:11px; margin-left:6px;">▲${diff}</span>`;
+            else if (diff < 0) trend = `<span style="color:#ef4444; font-size:11px; margin-left:6px;">▼${Math.abs(diff)}</span>`;
+        }
+
+        let medal = `<div style="width:24px; text-align:center; color:rgba(255,255,255,0.3); font-size:13px; font-weight:700;">${currentRank}</div>`;
+        let rowBg = 'rgba(255,255,255,0.02)', rowBorder = 'rgba(255,255,255,0.04)', nameColor = '#f0e6c8', ptsColor = '#d4af37';
+
+        if (currentRank === 1) { medal = '<div style="font-size:20px; width:24px; text-align:center;">🥇</div>'; rowBg = 'linear-gradient(90deg,rgba(212,175,55,0.14),rgba(212,175,55,0.04))'; rowBorder = 'rgba(212,175,55,0.3)'; nameColor = '#d4af37'; ptsColor = '#d4af37'; }
+        else if (currentRank === 2) { medal = '<div style="font-size:20px; width:24px; text-align:center;">🥈</div>'; rowBg = 'linear-gradient(90deg,rgba(148,163,184,0.1),rgba(148,163,184,0.02))'; rowBorder = 'rgba(148,163,184,0.2)'; nameColor = '#cbd5e1'; ptsColor = '#cbd5e1'; }
+        else if (currentRank === 3) { medal = '<div style="font-size:20px; width:24px; text-align:center;">🥉</div>'; rowBg = 'linear-gradient(90deg,rgba(180,100,40,0.12),rgba(180,100,40,0.02))'; rowBorder = 'rgba(180,100,40,0.25)'; nameColor = '#d97b3a'; ptsColor = '#d97b3a'; }
+
+        return `
+            <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; background:${rowBg}; border:1px solid ${rowBorder}; margin-bottom:6px;">
+                ${medal}
+                <div style="flex:1; font-weight:700; color:${nameColor}; font-size:14px;">${p.name}${trend}</div>
+                <div style="font-weight:900; color:${ptsColor}; font-size:14px;">${p.points}</div>
+            </div>`;
+    }).join('');
+
+    const dnes = new Date().toLocaleDateString('cs-CZ');
+
+    const html = `
+        <div id="export-content" style="width:480px; background:#05070f; padding:28px; font-family:Arial,sans-serif;">
+            <div style="text-align:center; padding-bottom:18px; border-bottom:1px solid rgba(212,175,55,0.15); margin-bottom:18px;">
+                <div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:6px;">SK Naděje · WC 2026</div>
+                <div style="font-size:20px; font-weight:900; letter-spacing:2px; text-transform:uppercase; color:#d4af37;">Žebříček tipovačky</div>
+                <div style="font-size:10px; color:rgba(212,175,55,0.4); letter-spacing:1px; margin-top:4px;">stav k ${dnes}</div>
+            </div>
+            ${radky}
+            <div style="text-align:center; margin-top:18px; padding-top:14px; border-top:1px solid rgba(212,175,55,0.1); font-size:9px; color:rgba(212,175,55,0.3); letter-spacing:1.5px; text-transform:uppercase;">
+                sknadeje.github.io/SKNadeje
+            </div>
+        </div>`;
+
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
+    container.innerHTML = html;
+    document.body.appendChild(container);
+
+    try {
+        showToast('Generuji obrázek...', 'info', 2000);
+        const canvas = await html2canvas(container.querySelector('#export-content'), {
+            scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false
+        });
+        canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `WC2026-zebricek-${dnes.replace(/\. /g, '-').replace(/\./g, '')}.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Žebříček stažen jako obrázek!', 'success');
+        }, 'image/png');
+    } catch (err) {
+        showToast('Chyba při exportu: ' + err.message, 'error');
+    } finally {
+        document.body.removeChild(container);
+    }
+}
+    
 function spocitejBodyVeHre() {
     const r = window.currentResults || {};
     const MAX = 294;
