@@ -1395,7 +1395,9 @@ input:focus {
             <span class="value">+12 b.</span>
             <small>přesný tip</small>
         </div>
-      
+      </div>
+        <div id="body-ve-hre"></div>
+    </div>
     </div>
 </div>
 <div class="bank-container" style="max-width: 400px; margin: 0 auto 25px auto; background: #0f172a; padding: 20px; border-radius: 10px; border: 2px solid #fbbf24; box-shadow: 0 10px 25px rgba(251,191,36,0.1); text-align: center; box-sizing: border-box;">
@@ -1503,6 +1505,65 @@ input:focus {
 </div>
     
 <script>
+function spocitejBodyVeHre() {
+    const r = window.currentResults || {};
+    const MAX = 294; // celkové maximum
+
+    let rozdeleno = 0;
+
+    // Skupiny: 192 b (12×4×4) – počítáme za každou vyplněnou skupinu zvlášť
+    const groups = r.groups || [];
+    groups.forEach(g => {
+        const teams = g.teams || g;
+        if (Array.isArray(teams) && teams.some(t => t && String(t).trim() !== "")) {
+            rozdeleno += 16; // jedna skupina = 4 týmy × 4 b
+        }
+    });
+
+    // Playoff fáze
+    const faze = [
+        { key: 's32', bodyZaTym: 2, pocet: 16 },
+        { key: 's16', bodyZaTym: 3, pocet: 8 },
+        { key: 's8',  bodyZaTym: 4, pocet: 4 },
+        { key: 's4',  bodyZaTym: 5, pocet: 2 },
+    ];
+    faze.forEach(f => {
+        const arr = r[f.key] || [];
+        if (Array.isArray(arr) && arr.some(t => t && String(t).trim() !== "")) {
+            rozdeleno += f.bodyZaTym * f.pocet;
+        }
+    });
+
+    // Bronz a vítěz
+    if (r.bronze && String(r.bronze).trim() !== "") rozdeleno += 8;
+    if (r.winner && String(r.winner).trim() !== "") rozdeleno += 12;
+
+    const zbyva = MAX - rozdeleno;
+    return { max: MAX, rozdeleno, zbyva };
+}
+
+function renderBodyVeHre() {
+    const el = document.getElementById('body-ve-hre');
+    if (!el) return;
+    const { max, rozdeleno, zbyva } = spocitejBodyVeHre();
+
+    el.innerHTML = `
+        <div style="display:flex; gap:8px; margin-top:18px;">
+            <div style="flex:1; text-align:center; padding:12px 6px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px;">
+                <div style="font-size:1.3rem; font-weight:900; color:#d4af37;">${max}</div>
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:4px;">Maximum</div>
+            </div>
+            <div style="flex:1; text-align:center; padding:12px 6px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); border-radius:10px;">
+                <div style="font-size:1.3rem; font-weight:900; color:#22c55e;">${rozdeleno}</div>
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:4px;">Rozděleno</div>
+            </div>
+            <div style="flex:1; text-align:center; padding:12px 6px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.15); border-radius:10px;">
+                <div style="font-size:1.3rem; font-weight:900; color:#38bdf8;">${zbyva}</div>
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:4px;">Ve hře</div>
+            </div>
+        </div>`;
+}
+    
 function skocNaFazi(faze) {
     // Schováme všechny formulářové sekce
     document.querySelectorAll('.section-box:not(#section-leaderboard)').forEach(d => d.classList.add('hidden'));
@@ -2283,30 +2344,29 @@ async function loadAll() {
             return;
         }
 
-        // 3. VYKRESLÍME KOMPONENTY (Pokud existují data)
+    // 3. VYKRESLÍME KOMPONENTY (Pokud existují data)
         if (t && t.length > 0) {
             
             // --- A. HLAS LIDU ---
-            // Tato funkce spočítá, komu lidi nejvíc věří na titul
             if (typeof renderHlasLidu === "function") {
                 renderHlasLidu(t);
             }
-
             // --- B. ŽEBŘÍČEK A BANK ---
-            // Tato funkce spočítá body a vykreslí tabulku i bank s odměnami
             if (typeof renderLeaderboard === "function") {
                 await renderLeaderboard(t, window.currentResults || {});
             }
+            // --- C. BODY VE HŘE ---
+            if (typeof renderBodyVeHre === "function") renderBodyVeHre();
 
             console.log("✅ Všechny komponenty vykresleny.");
         } else {
             console.warn("⚠️ Zatím nebyly nalezeny žádné tipy v databázi.");
-            // I když nejsou tipy, vykreslíme prázdný žebříček, aby nezůstal viset loading
             if (typeof renderLeaderboard === "function") {
                 renderLeaderboard([], window.currentResults || {});
             }
+            // --- C. BODY VE HŘE (i bez tipů) ---
+            if (typeof renderBodyVeHre === "function") renderBodyVeHre();
         }
-
     } catch (error) {
         console.error("❌ Kritická chyba v loadAll:", error);
     }
