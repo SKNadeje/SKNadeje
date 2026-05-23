@@ -1507,30 +1507,34 @@ input:focus {
 <script>
 function spocitejBodyVeHre() {
     const r = window.currentResults || {};
-    const MAX = 294; // celkové maximum
+    const MAX = 294;
 
     let rozdeleno = 0;
 
-    // Skupiny: 192 b (12×4×4) – počítáme za každou vyplněnou skupinu zvlášť
+    // Skupiny: za každou vyplněnou pozici +4 b (12 skupin × 4 pozice)
     const groups = r.groups || [];
     groups.forEach(g => {
         const teams = g.teams || g;
-        if (Array.isArray(teams) && teams.some(t => t && String(t).trim() !== "")) {
-            rozdeleno += 16; // jedna skupina = 4 týmy × 4 b
+        if (Array.isArray(teams)) {
+            teams.forEach(t => {
+                if (t && String(t).trim() !== "") rozdeleno += 4;
+            });
         }
     });
 
-    // Playoff fáze
+    // Playoff: za každý vyplněný tým × body dané fáze
     const faze = [
-        { key: 's32', bodyZaTym: 2, pocet: 16 },
-        { key: 's16', bodyZaTym: 3, pocet: 8 },
-        { key: 's8',  bodyZaTym: 4, pocet: 4 },
-        { key: 's4',  bodyZaTym: 5, pocet: 2 },
+        { key: 's32', bodyZaTym: 2 },
+        { key: 's16', bodyZaTym: 3 },
+        { key: 's8',  bodyZaTym: 4 },
+        { key: 's4',  bodyZaTym: 5 },
     ];
     faze.forEach(f => {
         const arr = r[f.key] || [];
-        if (Array.isArray(arr) && arr.some(t => t && String(t).trim() !== "")) {
-            rozdeleno += f.bodyZaTym * f.pocet;
+        if (Array.isArray(arr)) {
+            arr.forEach(t => {
+                if (t && String(t).trim() !== "") rozdeleno += f.bodyZaTym;
+            });
         }
     });
 
@@ -1541,7 +1545,6 @@ function spocitejBodyVeHre() {
     const zbyva = MAX - rozdeleno;
     return { max: MAX, rozdeleno, zbyva };
 }
-
 function renderBodyVeHre() {
     const el = document.getElementById('body-ve-hre');
     if (!el) return;
