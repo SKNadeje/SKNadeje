@@ -2183,7 +2183,29 @@ let state = {
     playoff: {},
     history: {} 
 };
+// Mapování názvů týmů na kódy vlajek (flagcdn.com)
+const FLAG_CODES = {
+    "Mexico": "mx", "Jihoafrická republica": "za", "Jižní Korea": "kr", "Česko": "cz",
+    "Kanada": "ca", "Bosna a Hercegovina": "ba", "Katar": "qa", "Švýcarsko": "ch",
+    "Brazílie": "br", "Maroko": "ma", "Haiti": "ht", "Skotsko": "gb-sct",
+    "USA": "us", "Paraguay": "py", "Austrálie": "au", "Turecko": "tr",
+    "Německo": "de", "Curacao": "cw", "Pobřeží slonoviny": "ci", "Ekvádor": "ec",
+    "Nizozemsko": "nl", "Japonsko": "jp", "Švédsko": "se", "Tunisko": "tn",
+    "Belgie": "be", "Egypt": "eg", "Írán": "ir", "Nový Zéland": "nz",
+    "Španělsko": "es", "Kapverdy": "cv", "Saúdská Arábie": "sa", "Uruguay": "uy",
+    "Francie": "fr", "Senegal": "sn", "Irák": "iq", "Norsko": "no",
+    "Argentina": "ar", "Alžírsko": "dz", "Rakousko": "at", "Jordánsko": "jo",
+    "Portugalsko": "pt", "DR Kongo": "cd", "Uzbekistán": "uz", "Kolumbie": "co",
+    "Anglie": "gb-eng", "Chorvatsko": "hr", "Ghana": "gh", "Panama": "pa"
+};
 
+// Pomocná funkce – vrátí HTML img tag s vlajkou pro daný tým
+function flagImg(teamName, size = 16) {
+    const code = FLAG_CODES[String(teamName).trim()];
+    if (!code) return ''; // neznámý tým = bez vlajky
+    return `<img src="https://flagcdn.com/${code}.svg" alt="" style="width:${size}px; height:${Math.round(size*0.7)}px; object-fit:cover; border-radius:2px; vertical-align:middle; margin-right:6px; box-shadow:0 1px 3px rgba(0,0,0,0.3);">`;
+}
+    
 let currentResults = { groups: [], s32: [], s16: [], s8: [], s4: [], winner: "", bronze: "" };
 
 /* --- 3. INICIALIZACE SKUPIN (Grid karet) --- */
@@ -2196,8 +2218,8 @@ async function init() {
     state.groups.forEach(g => { 
         // Kontrola, jestli už je skupina hotová, abychom ukázali týmy místo nápisu
         const teamsPreview = g.done 
-            ? g.teams.slice(0, 4).map((t, i) => `<div style="font-size:0.75rem;">${i+1}. ${t}</div>`).join('')
-            : `<span style="color:#64748b; font-size:0.85rem; width:100%; text-align:center;">Klikni pro úpravu</span>`;
+    ? g.teams.slice(0, 4).map((t, i) => `<div style="font-size:0.75rem;">${i+1}. ${flagImg(t, 16)}${t}</div>`).join('')
+    : `<span style="color:#64748b; font-size:0.85rem; width:100%; text-align:center;">Klikni pro úpravu</span>`;
 
         grid.innerHTML += `
         <div class="group-card ${g.done ? 'completed' : ''}" id="dot-${g.id}" onclick="editGroup('${g.id}')">
@@ -2226,10 +2248,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (g && g.done && teamsContainer && card) {
         card.classList.add('filled');
         // Vykreslí 1. a 2. místo vedle sebe
-        teamsContainer.innerHTML = `
-            <div class="g-team-name"><span class="g-pos-number">1.</span> ${g.teams[0] || '?'}</div>
-            <div class="g-team-name"><span class="g-pos-number">2.</span> ${g.teams[1] || '?'}</div>
-        `;
+      teamsContainer.innerHTML = `
+    <div class="g-team-name"><span class="g-pos-number">1.</span> ${flagImg(g.teams[0], 18)}${g.teams[0] || '?'}</div>
+    <div class="g-team-name"><span class="g-pos-number">2.</span> ${flagImg(g.teams[1], 18)}${g.teams[1] || '?'}</div>
+`;
     }
 }
 
@@ -2653,8 +2675,8 @@ function renderTeamList(gid) {
                  style="display:flex; justify-content:space-between; align-items:center;">
                 
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <span style="color:var(--accent); font-weight:bold; min-width:20px;">${i+1}.</span>
-                    <span>${t}</span>
+                   <span style="color:var(--accent); font-weight:bold; min-width:20px;">${i+1}.</span>
+<span>${flagImg(t, 20)}${t}</span>
                 </div>
 
                 <div class="team-controls" style="display:flex; gap:5px;">
