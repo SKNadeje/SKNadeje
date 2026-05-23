@@ -3777,6 +3777,14 @@ const groupsDiv = document.getElementById('phase-groups');
                     if (playoffCont) playoffCont.classList.add('hidden');
                     
                     if (typeof updateStepper === "function") updateStepper('dot-s1');
+                    
+                    // 🔧 EXPLICITNÍ RESET ZOBRAZENÍ – schovej vše krom skupin
+                    document.querySelectorAll('.section-box:not(#section-leaderboard)').forEach(d => d.classList.add('hidden'));
+                    document.getElementById('phase-groups')?.classList.remove('hidden');
+                    document.getElementById('phase-thirds')?.classList.add('hidden');
+                    document.getElementById('playoff-container')?.classList.add('hidden');
+                    
+                    window.scrollTo(0, 0);
                     window.scrollTo(0, 0);
                     
                     console.log("✅ [Tip] 4. HOTOVO!");
