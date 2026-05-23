@@ -1515,12 +1515,16 @@ function skocNaFazi(faze) {
         document.getElementById('phase-groups')?.classList.remove('hidden');
     } 
     else if (faze === 'dot-s2') {
-        // 3. místa – musí být hotové skupiny
-        if (state.groups.filter(g => g.done).length < 12) {
-            return showToast("Nejdřív vyplň všech 12 skupin!", 'error');
-        }
-        confirmAllGroups();
-    } 
+    // 3. místa – musí být hotové skupiny
+    if (state.groups.filter(g => g.done).length < 12) {
+        return showToast("Nejdřív vyplň všech 12 skupin!", 'error');
+    }
+    const thirdsDiv = document.getElementById('phase-thirds');
+    if (thirdsDiv) {
+        thirdsDiv.classList.remove('hidden');
+        thirdsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
     else {
         // Playoff fáze – musí existovat data
         const mapFaze = {
