@@ -3748,10 +3748,34 @@ async function nactiUzivatelskyTip(userId) {
                         });
                     });
                     
-                    if (typeof confirmThirds === "function") confirmThirds();
-                    
-                    // --- NÁVRAT ZPĚT NA SKUPINY ---
-                    const groupsDiv = document.getElementById('phase-groups');
+                   if (typeof confirmThirds === "function") confirmThirds();
+
+// --- 🔄 PŘEHRÁNÍ CELÉHO PAVOUKA (aby existovaly všechny sec-* divy) ---
+if (tip.s32 && tip.s32.length === 16) {
+    state.playoff.s32 = tip.s32;
+    if (tip.s16 && tip.s16.length === 8) {
+        genStage('Osmifinále (1/8)', tip.s32, 8, 's16', 'sec-s32', 'dot-s32');
+        state.playoff.s16 = tip.s16;
+    }
+    if (tip.s8 && tip.s8.length === 4) {
+        genStage('Čtvrtfinále', tip.s16, 4, 's8', 'sec-s16', 'dot-s16');
+        state.playoff.s8 = tip.s8;
+    }
+    if (tip.s4 && tip.s4.length === 2) {
+        genStage('Semifinále', tip.s8, 2, 's4', 'sec-s8', 'dot-s8');
+        state.playoff.s4 = tip.s4;
+    }
+    if (tip.bronze) {
+        // dopočítáme poražené ze semifinále pro zápas o 3. místo
+        genStage('O 3. Místo', [], 1, 's3', 'sec-s4', 'dot-s4');
+    }
+    if (tip.winner) {
+        genStage('Finále', tip.s4, 1, 's2', 'sec-s3', 'dot-s3');
+    }
+}
+
+// --- NÁVRAT ZPĚT NA SKUPINY ---
+const groupsDiv = document.getElementById('phase-groups');
                     const thirdsDiv = document.getElementById('phase-thirds') || document.getElementById('sec-thirds');
                     const playoffCont = document.getElementById('playoff-container');
                     
