@@ -3131,14 +3131,14 @@ function genStage(title, teams, count, id, prevPhase, prevDot) {
     if (!cont) return;
 
     // --- MAPOVÁNÍ STEPPERU (Aktualizace barev nahoře) ---
-    const dotMap = {
-        's32': 'dot-s32',
-        's16': 'dot-s16',
-        's8':  'dot-s8',
-        's4':  'dot-s4',
-        's3':  'dot-fin',
-        's2':  'dot-fin'
-    };
+   const dotMap = {
+    's32': 'dot-s32',
+    's16': 'dot-s16',
+    's8':  'dot-s8',
+    's4':  'dot-s4',
+    's3':  'dot-s3',
+    's2':  'dot-fin'
+};
     
     if (dotMap[id] && typeof updateStepper === "function") {
         updateStepper(dotMap[id]);
@@ -3608,15 +3608,16 @@ function closeModalAndReload() {
 }
     
 function updateStepper(activeId) {
-    const steps = [
-        { id: 'dot-s1',  check: () => state.groups.every(g => g.done) },
-        { id: 'dot-s2',  check: () => state.thirds.length === 8 },
-        { id: 'dot-s32', check: () => state.playoff.s32 && state.playoff.s32.length === 16 },
-        { id: 'dot-s16', check: () => state.playoff.s16 && state.playoff.s16.length === 8 },
-        { id: 'dot-s8',  check: () => state.playoff.s8 && state.playoff.s8.length === 4 },
-        { id: 'dot-s4',  check: () => state.playoff.s4 && state.playoff.s4.length === 2 },
-        { id: 'dot-fin', check: () => state.playoff.winner }
-    ];
+   const steps = [
+    { id: 'dot-s1',  check: () => state.groups.every(g => g.done) },
+    { id: 'dot-s2',  check: () => state.thirds.length === 8 },
+    { id: 'dot-s32', check: () => state.playoff.s32 && state.playoff.s32.length === 16 },
+    { id: 'dot-s16', check: () => state.playoff.s16 && state.playoff.s16.length === 8 },
+    { id: 'dot-s8',  check: () => state.playoff.s8 && state.playoff.s8.length === 4 },
+    { id: 'dot-s4',  check: () => state.playoff.s4 && state.playoff.s4.length === 2 },
+    { id: 'dot-s3',  check: () => state.playoff.bronze && state.playoff.bronze !== "" },
+    { id: 'dot-fin', check: () => state.playoff.winner }
+];
 
     steps.forEach(step => {
         const el = document.getElementById(step.id);
