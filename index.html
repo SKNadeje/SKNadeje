@@ -1561,10 +1561,9 @@ async function exportZebricek() {
         let medal = `<div style="width:24px; text-align:center; color:rgba(255,255,255,0.3); font-size:13px; font-weight:700;">${currentRank}</div>`;
         let rowBg = 'rgba(255,255,255,0.02)', rowBorder = 'rgba(255,255,255,0.04)', nameColor = '#f0e6c8', ptsColor = '#d4af37';
 
-        if (currentRank === 1) { medal = '<div style="font-size:20px; width:24px; text-align:center;">🥇</div>'; rowBg = 'linear-gradient(90deg,rgba(212,175,55,0.14),rgba(212,175,55,0.04))'; rowBorder = 'rgba(212,175,55,0.3)'; nameColor = '#d4af37'; ptsColor = '#d4af37'; }
-        else if (currentRank === 2) { medal = '<div style="font-size:20px; width:24px; text-align:center;">🥈</div>'; rowBg = 'linear-gradient(90deg,rgba(148,163,184,0.1),rgba(148,163,184,0.02))'; rowBorder = 'rgba(148,163,184,0.2)'; nameColor = '#cbd5e1'; ptsColor = '#cbd5e1'; }
-        else if (currentRank === 3) { medal = '<div style="font-size:20px; width:24px; text-align:center;">🥉</div>'; rowBg = 'linear-gradient(90deg,rgba(180,100,40,0.12),rgba(180,100,40,0.02))'; rowBorder = 'rgba(180,100,40,0.25)'; nameColor = '#d97b3a'; ptsColor = '#d97b3a'; }
-
+        if (currentRank === 1 && p.points > 0) { medal = '<div style="font-size:20px; width:24px; text-align:center;">🥇</div>'; rowBg = 'linear-gradient(90deg,rgba(212,175,55,0.14),rgba(212,175,55,0.04))'; rowBorder = 'rgba(212,175,55,0.3)'; nameColor = '#d4af37'; ptsColor = '#d4af37'; }
+else if (currentRank === 2 && p.points > 0) { medal = '<div style="font-size:20px; width:24px; text-align:center;">🥈</div>'; rowBg = 'linear-gradient(90deg,rgba(148,163,184,0.1),rgba(148,163,184,0.02))'; rowBorder = 'rgba(148,163,184,0.2)'; nameColor = '#cbd5e1'; ptsColor = '#cbd5e1'; }
+else if (currentRank === 3 && p.points > 0) { medal = '<div style="font-size:20px; width:24px; text-align:center;">🥉</div>'; rowBg = 'linear-gradient(90deg,rgba(180,100,40,0.12),rgba(180,100,40,0.02))'; rowBorder = 'rgba(180,100,40,0.25)'; nameColor = '#d97b3a'; ptsColor = '#d97b3a'; }
         return `
             <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; background:${rowBg}; border:1px solid ${rowBorder}; margin-bottom:6px;">
                 ${medal}
