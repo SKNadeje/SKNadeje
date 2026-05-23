@@ -4057,21 +4057,20 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 // --- DYNAMICKÉ PŘESKLÁDÁNÍ NAVIGACE (MOBIL VS PC) ---
 function srovnejNavigaci() {
  // 1. Najdeme správné prvky
-    const navigace = document.querySelector('.step-indicator'); 
+const navigace = document.querySelector('.step-indicator'); 
     const dashboard = document.querySelector('.dashboard');
     const spravnaHlavicka = document.querySelector('.app-wrapper header'); 
 
     if (!navigace || !dashboard || !spravnaHlavicka) return;
 
-    // 2. Kontrola šířky (1200px je tvůj zlomový bod v CSS)
     if (window.innerWidth <= 1200) {
-        // Na mobilu: bubliny těsně nad dashboard
+        // Na mobilu: bubliny nad celý dashboard (= nad obsah)
         dashboard.parentNode.insertBefore(navigace, dashboard);
         navigace.style.marginTop = '20px'; 
     } else {
-        // Na počítači: bubliny taky nad dashboard (nad tabulky)
-        dashboard.parentNode.insertBefore(navigace, dashboard);
-        navigace.style.marginTop = '20px';
+        // Na počítači: bubliny zpět pod nadpis
+        spravnaHlavicka.appendChild(navigace);
+        navigace.style.marginTop = '0';
     }
 }
 
