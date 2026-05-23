@@ -1284,14 +1284,14 @@ input:focus {
         <i class="fas fa-lock"></i> Tipování je uzavřeno! Turnaj začal.
     </div>
 </div>
-       <div class="step-indicator">
-    <span class="step-dot active" id="dot-s1">Skupiny</span>
-    <span class="step-dot" id="dot-s2">3. místa</span>
-    <span class="step-dot" id="dot-s32">1/16</span>
-    <span class="step-dot" id="dot-s16">1/8</span>
-    <span class="step-dot" id="dot-s8">Čtvrtfinále</span>
-    <span class="step-dot" id="dot-s4">Semifinále</span>
-    <span class="step-dot" id="dot-fin">Finále/3 místo</span>
+      <div class="step-indicator">
+    <span class="step-dot active" id="dot-s1" onclick="skocNaFazi('dot-s1')" style="cursor:pointer;">Skupiny</span>
+    <span class="step-dot" id="dot-s2" onclick="skocNaFazi('dot-s2')" style="cursor:pointer;">3. místa</span>
+    <span class="step-dot" id="dot-s32" onclick="skocNaFazi('dot-s32')" style="cursor:pointer;">1/16</span>
+    <span class="step-dot" id="dot-s16" onclick="skocNaFazi('dot-s16')" style="cursor:pointer;">1/8</span>
+    <span class="step-dot" id="dot-s8" onclick="skocNaFazi('dot-s8')" style="cursor:pointer;">Čtvrtfinále</span>
+    <span class="step-dot" id="dot-s4" onclick="skocNaFazi('dot-s4')" style="cursor:pointer;">Semifinále</span>
+    <span class="step-dot" id="dot-fin" onclick="skocNaFazi('dot-fin')" style="cursor:pointer;">Finále/3 místo</span>
 </div>
     </header>
 
@@ -1503,7 +1503,47 @@ input:focus {
 </div>
     
 <script>
+function skocNaFazi(faze) {
+    // Schováme všechny formulářové sekce
+    document.querySelectorAll('.section-box:not(#section-leaderboard)').forEach(d => d.classList.add('hidden'));
+    const finalBox = document.getElementById('final-box');
+    if (finalBox) finalBox.classList.add('hidden');
 
+    // Mapování fází na akce
+    if (faze === 'dot-s1') {
+        // Skupiny
+        document.getElementById('phase-groups')?.classList.remove('hidden');
+    } 
+    else if (faze === 'dot-s2') {
+        // 3. místa – musí být hotové skupiny
+        if (state.groups.filter(g => g.done).length < 12) {
+            return showToast("Nejdřív vyplň všech 12 skupin!", 'error');
+        }
+        confirmAllGroups();
+    } 
+    else {
+        // Playoff fáze – musí existovat data
+        const mapFaze = {
+            'dot-s32': 's32',
+            'dot-s16': 's16',
+            'dot-s8':  's8',
+            'dot-s4':  's4',
+            'dot-fin': 's2'
+        };
+        const sid = mapFaze[faze];
+        const stageDiv = document.getElementById(`sec-${sid}`);
+        
+        if (stageDiv) {
+            stageDiv.classList.remove('hidden');
+            stageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            return showToast("Tato fáze ještě není vygenerovaná – projdi tipování postupně.", 'info');
+        }
+    }
+
+    updateStepper(faze);
+}
+    
 let notifPlayers = [];
 
 async function otevritNotifikace() {
