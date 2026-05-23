@@ -1291,8 +1291,9 @@ input:focus {
     <span class="step-dot" id="dot-s16" onclick="skocNaFazi('dot-s16')" style="cursor:pointer;">1/8</span>
     <span class="step-dot" id="dot-s8" onclick="skocNaFazi('dot-s8')" style="cursor:pointer;">Čtvrtfinále</span>
     <span class="step-dot" id="dot-s4" onclick="skocNaFazi('dot-s4')" style="cursor:pointer;">Semifinále</span>
-    <span class="step-dot" id="dot-fin" onclick="skocNaFazi('dot-fin')" style="cursor:pointer;">Finále/3 místo</span>
-</div>
+   <span class="step-dot" id="dot-s3" onclick="skocNaFazi('dot-s3')" style="cursor:pointer;">3. místo</span>
+<span class="step-dot" id="dot-fin" onclick="skocNaFazi('dot-fin')" style="cursor:pointer;">Finále</span>
+      </div>
     </header>
 
  <div id="auth-section" class="auth-container">
@@ -1698,12 +1699,13 @@ function skocNaFazi(faze) {
     else {
         // Playoff fáze – musí existovat data
         const mapFaze = {
-            'dot-s32': 's32',
-            'dot-s16': 's16',
-            'dot-s8':  's8',
-            'dot-s4':  's4',
-            'dot-fin': 's2'
-        };
+    'dot-s32': 's32',
+    'dot-s16': 's16',
+    'dot-s8':  's8',
+    'dot-s4':  's4',
+    'dot-s3':  's3',
+    'dot-fin': 's2'
+};
         const sid = mapFaze[faze];
         const stageDiv = document.getElementById(`sec-${sid}`);
         
@@ -4041,24 +4043,22 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 
 // --- DYNAMICKÉ PŘESKLÁDÁNÍ NAVIGACE (MOBIL VS PC) ---
 function srovnejNavigaci() {
-    // 1. Najdeme správné prvky
+ // 1. Najdeme správné prvky
     const navigace = document.querySelector('.step-indicator'); 
-    const mainSekce = document.querySelector('main'); 
-    
-    // TADY JE OPRAVA: Hledáme header, který je uvnitř tvé hlavní aplikace, ne ten s vlajkami!
+    const dashboard = document.querySelector('.dashboard');
     const spravnaHlavicka = document.querySelector('.app-wrapper header'); 
 
-    if (!navigace || !mainSekce || !spravnaHlavicka) return;
+    if (!navigace || !dashboard || !spravnaHlavicka) return;
 
     // 2. Kontrola šířky (1200px je tvůj zlomový bod v CSS)
     if (window.innerWidth <= 1200) {
-        // Na mobilu: Přesuneme bubliny těsně nad <main> 
-        mainSekce.parentNode.insertBefore(navigace, mainSekce);
+        // Na mobilu: bubliny těsně nad dashboard
+        dashboard.parentNode.insertBefore(navigace, dashboard);
         navigace.style.marginTop = '20px'; 
     } else {
-        // Na počítači: Vrátíme bubliny zpět pod nadpis MS 2026 TIPOVAČKA
-        spravnaHlavicka.appendChild(navigace);
-        navigace.style.marginTop = '0';
+        // Na počítači: bubliny taky nad dashboard (nad tabulky)
+        dashboard.parentNode.insertBefore(navigace, dashboard);
+        navigace.style.marginTop = '20px';
     }
 }
 
