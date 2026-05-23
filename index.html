@@ -4069,8 +4069,8 @@ const navigace = document.querySelector('.step-indicator');
         navigace.style.marginTop = '20px'; 
     } else {
         // Na počítači: bubliny zpět pod nadpis
-        spravnaHlavicka.appendChild(navigace);
-        navigace.style.marginTop = '0';
+        dashboard.parentNode.insertBefore(navigace, dashboard);
+        navigace.style.marginTop = '20px';
     }
 }
 
