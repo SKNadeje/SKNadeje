@@ -2767,13 +2767,12 @@ function confirmAllGroups() {
         const selectedClass = isSelected ? 'selected' : '';
         
         // Vytvoříme kartu
-        const cardHtml = `
-            <div class="card-third ${selectedClass}" onclick="selectThird(this, '${teamName}')">
-                <span style="font-size: 0.75rem; opacity: 0.6; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Skupina ${g.id}</span>
-                <span style="font-weight: 800; font-size: 1.1rem; color: #fff;">${teamName}</span>
-                ${isSelected ? `<div class="selection-order" style="display: flex;">${selectedIndex + 1}</div>` : ''}
-            </div>`;
-        
+       const cardHtml = `
+    <div class="card-third ${selectedClass}" onclick="selectThird(this, '${teamName}')">
+        <span style="font-size: 0.75rem; opacity: 0.6; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Skupina ${g.id}</span>
+        <span style="font-weight: 800; font-size: 1.1rem; color: #fff; display:flex; align-items:center; gap:4px;">${flagImg(teamName, 20)}${teamName}</span>
+        ${isSelected ? `<div class="selection-order" style="display: flex;">${selectedIndex + 1}</div>` : ''}
+    </div>`;
         actualGrid.insertAdjacentHTML('beforeend', cardHtml);
     });
 
