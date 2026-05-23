@@ -1415,9 +1415,9 @@ input:focus {
            <div id="hlas-lidu-container"></div>
 
 <div class="section-box" id="section-leaderboard">
-   <div class="section-header">
-    <span>📊 ŽEBŘÍČEK HRÁČŮ</span>
-    <button onclick="exportZebricek()" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.25); color:#d4af37; font-size:0.65rem; font-weight:700; padding:5px 12px; border-radius:6px; cursor:pointer; letter-spacing:1px; text-transform:uppercase;">📷 Export</button>
+  <div class="section-header" style="cursor:pointer;">
+    <span onclick="toggleZebricek()" style="flex:1;">📊 ŽEBŘÍČEK HRÁČŮ</span>
+    <button onclick="event.stopPropagation(); exportZebricek()" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.25); color:#d4af37; font-size:0.65rem; font-weight:700; padding:5px 12px; border-radius:6px; cursor:pointer; letter-spacing:1px; text-transform:uppercase;">📷 Export</button>
 </div>
     <table id="leaderboard">
         <tbody id="public-body"></tbody>
@@ -1507,6 +1507,12 @@ input:focus {
 </div>
     
 <script>
+function toggleZebricek() {
+    const table = document.getElementById('leaderboard');
+    if (!table) return;
+    table.style.display = (table.style.display === 'none') ? 'table' : 'none';
+}
+    
 async function exportZebricek() {
     // Načti aktuální data
     const { data: tipy } = await supabaseClient.from('tipy').select('*');
@@ -3960,8 +3966,14 @@ if (tip.s32 && tip.s32.length === 16) {
     // Vygenerujeme všechna kola za sebou (history se naplní uvnitř genStage)
     if (tip.s16 && tip.s16.length === 8) genStage('Osmifinále (1/8)', tip.s32, 8, 's16', 'sec-s32', 'dot-s32');
     if (tip.s8 && tip.s8.length === 4)   genStage('Čtvrtfinále', tip.s16, 4, 's8', 'sec-s16', 'dot-s16');
-    if (tip.s4 && tip.s4.length === 2)   genStage('Semifinále', tip.s8, 2, 's4', 'sec-s8', 'dot-s8');
-    if (tip.bronze)                       genStage('O 3. Místo', tip.s4, 1, 's3', 'sec-s4', 'dot-s4');
+   if (tip.s4 && tip.s4.length === 2)   genStage('Semifinále', tip.s8, 2, 's4', 'sec-s8', 'dot-s8');
+    if (tip.bronze) {
+        // Poražení ze semifinále = týmy v s4-vstupu (semifinalisté), které nejsou vítězi (tip.s4)
+        const semifinaliste = tip.s8 || [];   // 4 týmy co hrály semifinále
+        const vitezoveSemi = tip.s4 || [];     // 2 vítězové (jdou do finále)
+        const porazeni = semifinaliste.filter(t => !vitezoveSemi.includes(t));
+        genStage('O 3. Místo', porazeni, 1, 's3', 'sec-s4', 'dot-s4');
+    }
     if (tip.winner)                       genStage('Finále', tip.s4, 1, 's2', 'sec-s3', 'dot-s3');
 }
 
