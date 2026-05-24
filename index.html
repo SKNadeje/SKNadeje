@@ -1443,6 +1443,7 @@ input:focus {
 </div>
            <div id="hlas-lidu-container"></div>
             <div id="anketa-container"></div>
+            <div id="turnaj-zabava"></div>
 
 <div class="section-box" id="section-leaderboard">
   <div class="section-header" style="cursor:pointer;">
@@ -1537,6 +1538,110 @@ input:focus {
 </div>
     
 <script>
+function renderTurnajZabava(processed) {
+    const el = document.getElementById('turnaj-zabava');
+    if (!el) return;
+
+    // processed = seřazení hráči s body (z renderLeaderboard)
+    if (!processed || processed.length === 0) { el.innerHTML = ''; return; }
+
+    // Spočítej pořadí (s remízami)
+    let lastPoints = -1, currentRank = 0;
+    const ranked = processed.map((p, i) => {
+        if (p.points !== lastPoints) currentRank = i + 1;
+        lastPoints = p.points;
+        return { ...p, rank: currentRank };
+    });
+
+    // Jsou vůbec nějaké body? (turnaj začal?)
+    const maBody = ranked.some(p => p.points > 0);
+    if (!maBody) {
+        el.innerHTML = `
+            <div style="background:rgba(8,12,22,0.95); border:1px solid rgba(212,175,55,0.15); border-radius:14px; padding:16px; margin-bottom:18px; text-align:center;">
+                <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:8px;"><i class="fas fa-fire"></i> Co se děje v turnaji</div>
+                <div style="font-size:0.85rem; color:#5a6480;">Turnaj ještě nezačal – jakmile admin zadá první výsledky, objeví se tu dění! ⚽</div>
+            </div>`;
+        return;
+    }
+
+    // --- SOUBOJ O 1. MÍSTO ---
+    const prvni = ranked[0];
+    const druhy = ranked.find(p => p.rank === 2);
+    let soubojHtml = '';
+    if (druhy) {
+        const naskok = prvni.points - druhy.points;
+        soubojHtml = `
+            <div style="display:flex; align-items:center; justify-content:center; gap:12px; padding:10px; background:rgba(212,175,55,0.06); border-radius:10px; margin-bottom:10px;">
+                <div style="text-align:center;">
+                    <div style="font-size:0.6rem; color:#5a6480; text-transform:uppercase;">🥇 Vede</div>
+                    <div style="font-size:0.85rem; font-weight:800; color:#d4af37;">${prvni.name}</div>
+                </div>
+                <div style="text-align:center; padding:0 8px;">
+                    <div style="font-size:1.1rem; font-weight:900; color:#f0e6c8;">${naskok === 0 ? '=' : '+' + naskok}</div>
+                    <div style="font-size:0.55rem; color:#5a6480;">${naskok === 0 ? 'remíza' : 'náskok'}</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:0.6rem; color:#5a6480; text-transform:uppercase;">🥈 Stíhá</div>
+                    <div style="font-size:0.85rem; font-weight:800; color:#94a3b8;">${druhy.name}</div>
+                </div>
+            </div>`;
+    }
+
+    // --- SKOKAN KOLA ---
+    let skokanHtml = '';
+    let nejskokan = null, nejpropad = null;
+    ranked.forEach(p => {
+        if (p.previous_rank) {
+            const diff = p.previous_rank - p.rank;
+            if (diff > 0 && (!nejskokan || diff > nejskokan.diff)) nejskokan = { name: p.name, diff };
+            if (diff < 0 && (!nejpropad || diff < nejpropad.diff)) nejpropad = { name: p.name, diff };
+        }
+    });
+    if (nejskokan || nejpropad) {
+        skokanHtml = `<div style="display:flex; gap:8px; margin-bottom:10px;">`;
+        if (nejskokan) skokanHtml += `
+            <div style="flex:1; text-align:center; padding:8px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.2); border-radius:8px;">
+                <div style="font-size:0.55rem; color:#22c55e; text-transform:uppercase;">📈 Skokan</div>
+                <div style="font-size:0.8rem; font-weight:700; color:#f0e6c8;">${nejskokan.name}</div>
+                <div style="font-size:0.7rem; color:#22c55e; font-weight:800;">↑ ${nejskokan.diff}</div>
+            </div>`;
+        if (nejpropad) skokanHtml += `
+            <div style="flex:1; text-align:center; padding:8px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); border-radius:8px;">
+                <div style="font-size:0.55rem; color:#ef4444; text-transform:uppercase;">📉 Propad</div>
+                <div style="font-size:0.8rem; font-weight:700; color:#f0e6c8;">${nejpropad.name}</div>
+                <div style="font-size:0.7rem; color:#ef4444; font-weight:800;">↓ ${Math.abs(nejpropad.diff)}</div>
+            </div>`;
+        skokanHtml += `</div>`;
+    }
+
+    // --- ZAJÍMAVOSTI ---
+    const prumer = Math.round(ranked.reduce((s, p) => s + p.points, 0) / ranked.length);
+    const nejlepsi = ranked[0].points;
+    const zajimavostiHtml = `
+        <div style="display:flex; justify-content:center; gap:20px; padding-top:10px; border-top:1px solid rgba(212,175,55,0.08);">
+            <div style="text-align:center;">
+                <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">${nejlepsi}</div>
+                <div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase;">Nejvíc bodů</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">${prumer}</div>
+                <div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase;">Průměr</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">${ranked.length}</div>
+                <div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase;">Hráčů</div>
+            </div>
+        </div>`;
+
+    el.innerHTML = `
+        <div style="background:rgba(8,12,22,0.95); border:1px solid rgba(212,175,55,0.15); border-radius:14px; padding:16px; margin-bottom:18px;">
+            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; text-align:center; margin-bottom:12px;"><i class="fas fa-fire"></i> Co se děje v turnaji</div>
+            ${soubojHtml}
+            ${skokanHtml}
+            ${zajimavostiHtml}
+        </div>`;
+}
+    
 function renderProgress() {
     const el = document.getElementById('progress-container');
     if (!el) return;
@@ -3005,6 +3110,9 @@ if (bankEl) {
         const target = parseInt(el.getAttribute('data-pts')) || 0;
         if (target > 0) animateCountUp(el, target, 1200);
     });
+
+    // Zábavný panel turnaje
+    if (typeof renderTurnajZabava === "function") renderTurnajZabava(processed);
 
     console.log("✅ ŽEBŘÍČEK HOTOV (Full + Bank)");
 }
