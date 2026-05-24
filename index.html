@@ -1396,22 +1396,23 @@ input:focus {
             <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">+12</div>
         </div>
     </div>
-    <div id="body-ve-hre"></div>
 </div>
-<div class="bank-container" style="margin: 0 0 18px 0; background: rgba(8,12,22,0.9); padding: 16px; border-radius: 14px; border: 1px solid rgba(212,175,55,0.3); box-shadow: 0 8px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,175,55,0.1); text-align: center; box-sizing: border-box; position: relative; overflow: hidden;">
-    
-    <div style="position:absolute; top:0; left:50%; transform:translateX(-50%); width:50%; height:1px; background:linear-gradient(90deg,transparent,#d4af37,transparent);"></div>
-
-    <div class="bank-label" style="color: rgba(212,175,55,0.6); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; font-weight: 700;">
-        <i class="fas fa-trophy"></i> Aktuální bank
+<div class="section-box" style="margin-bottom:18px;">
+    <div class="section-header" style="cursor:pointer;" onclick="toggleBankBody()">
+        <span><i class="fas fa-coins" style="margin-right:6px;"></i> BANK & BODY</span>
+        <i class="fas fa-chevron-up" id="bankbody-chevron" style="font-size:0.7rem; transition:transform 0.3s;"></i>
     </div>
-
-    <div id="currentBank">
-        <div class="bank-amount" style="font-size: 1.8rem; font-weight: 900; color: #d4af37;">
-            1 000 Kč
+    <div id="bankbody-content" style="padding:16px;">
+        <!-- Bank -->
+        <div style="text-align:center; padding-bottom:14px; border-bottom:1px solid rgba(212,175,55,0.1); margin-bottom:14px;">
+            <div style="color:rgba(212,175,55,0.6); font-size:0.7rem; text-transform:uppercase; letter-spacing:2px; font-weight:700; margin-bottom:6px;"><i class="fas fa-trophy"></i> Aktuální bank</div>
+            <div id="currentBank">
+                <div class="bank-amount" style="font-size:1.8rem; font-weight:900; color:#d4af37;">0 Kč</div>
+            </div>
         </div>
+        <!-- Body ve hře -->
+        <div id="body-ve-hre"></div>
     </div>
-
 </div>
            <div id="hlas-lidu-container"></div>
 
@@ -1508,6 +1509,16 @@ input:focus {
 </div>
     
 <script>
+
+    function toggleBankBody() {
+    const content = document.getElementById('bankbody-content');
+    const chevron = document.getElementById('bankbody-chevron');
+    if (!content) return;
+    const skryto = content.style.display === 'none';
+    content.style.display = skryto ? 'block' : 'none';
+    if (chevron) chevron.style.transform = skryto ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+    
 function toggleZebricek() {
     const table = document.getElementById('leaderboard');
     if (!table) return;
@@ -2706,15 +2717,12 @@ if (bankEl) {
     const p2 = Math.round(celkovyBank * 0.30);
     const p3 = Math.round(celkovyBank * 0.10);
 
-    bankEl.innerHTML = `
-        <div>${celkovyBank.toLocaleString('cs-CZ')} Kč</div>
-        <div class="bank-prizes">
-            <span style="color: #ffd700;">🥇 ${p1.toLocaleString('cs-CZ')}</span>
-            <span style="color: #e5e7eb;">🥈 ${p2.toLocaleString('cs-CZ')}</span>
-            <span style="color: #d97706;">🥉 ${p3.toLocaleString('cs-CZ')}</span>
-        </div>
-        <div style="font-size: 0.65rem; opacity: 0.7; margin-top: 8px; text-transform: uppercase;">
-            Aktuálně zaplatilo: ${paidPlayers.length} z ${processed.length} hráčů
+  bankEl.innerHTML = `
+        <div class="bank-amount" style="font-size:1.8rem; font-weight:900; color:#d4af37;">${celkovyBank.toLocaleString('cs-CZ')} Kč</div>
+        <div class="bank-prizes" style="margin-top:10px;">
+            <span style="color: #d4af37;">🥇 ${p1.toLocaleString('cs-CZ')}</span>
+            <span style="color: #94a3b8;">🥈 ${p2.toLocaleString('cs-CZ')}</span>
+            <span style="color: #d97b3a;">🥉 ${p3.toLocaleString('cs-CZ')}</span>
         </div>
     `;
 }
