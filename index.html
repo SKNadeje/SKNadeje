@@ -1516,6 +1516,24 @@ input:focus {
 </div>
     
 <script>
+    // Vytvoří barevný kroužek s iniciálami podle jména
+function avatarHtml(name, size = 32) {
+    const jmeno = (name || 'Anonym').trim();
+    // Iniciály – první písmena ze slov (max 2)
+    const parts = jmeno.split(/\s+/);
+    let init = parts[0]?.[0] || '?';
+    if (parts.length > 1) init += parts[1][0];
+    init = init.toUpperCase();
+
+    // Barva podle jména (stabilní – stejné jméno = stejná barva)
+    let hash = 0;
+    for (let i = 0; i < jmeno.length; i++) hash = jmeno.charCodeAt(i) + ((hash << 5) - hash);
+    const hue = Math.abs(hash) % 360;
+    const bg = `hsl(${hue}, 45%, 35%)`;
+    const bg2 = `hsl(${hue}, 45%, 25%)`;
+
+    return `<div style="width:${size}px; height:${size}px; min-width:${size}px; border-radius:50%; background:linear-gradient(135deg,${bg},${bg2}); display:inline-flex; align-items:center; justify-content:center; font-size:${Math.round(size*0.38)}px; font-weight:800; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.3);">${init}</div>`;
+}
 
     async function renderAnketa() {
     const cont = document.getElementById('anketa-container');
@@ -2776,8 +2794,9 @@ async function renderLeaderboard(data, real) {
         return `
             <tr class="player-row" ${canSee ? `onclick="toggleDetail('det-${rowId}')"` : ""} style="cursor:${canSee ? 'pointer':'default'}; ${rowStyle}">
                 <td style="width:75px; padding-left:15px; font-weight:bold; ${nameStyle}">${currentRank}.${trend}</td>
-                <td style="padding:12px 0;">
+               <td style="padding:12px 0;">
                     <div style="font-weight:800; ${nameStyle} display:flex; align-items:center; gap:8px;">
+                        ${avatarHtml(player.name, 30)}
                         ${player.name || 'Anonym'} ${!canSee ? '🔒' : ''}
                         ${isOwn ? `<button onclick="event.stopPropagation(); generatePDF()" style="margin-left:6px; padding:3px 10px; background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.25); border-radius:6px; color:#d4af37; font-size:0.65rem; font-weight:700; cursor:pointer; letter-spacing:1px;">PDF</button>` : ''}
                         <span onclick="event.stopPropagation(); togglePayment('${rowId}', ${isPaid})" 
