@@ -2180,9 +2180,16 @@ function showPaymentModal(playerName) {
                         <b style="font-family: monospace; letter-spacing: 0.5px;">305184832 / 0300</b>
                     </div>
                     
-                    <div style="display: flex; flex-direction: column;">
+               <div style="display: flex; flex-direction: column;">
                         <span style="opacity: 0.7; font-size: 0.8rem;">Zpráva (Poznámka):</span>
                         <b style="color: #fff; font-size: 1.1rem; border-left: 3px solid #fbbf24; padding-left: 8px; margin-top: 4px;">WC26 ${playerName}</b>
+                    </div>
+                </div>
+
+                <div style="background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.3); padding: 14px 16px; border-radius: 12px; width: 100%; max-width: 340px; margin-top: 16px; box-sizing: border-box;">
+                    <div style="color: #38bdf8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; margin-bottom: 6px;">📧 Zkontroluj e-mail</div>
+                    <div style="color: rgba(255,255,255,0.8); font-size: 0.8rem; line-height: 1.5;">
+                        Poslali jsme ti potvrzení na e-mail. Během turnaje ti budeme posílat informace – pokud zpráva spadla do <b>hromadné/promo</b> složky, přesuň ji do <b>Doručené</b>, ať ti nic neunikne.
                     </div>
                 </div>
             </div>
@@ -3624,7 +3631,20 @@ async function nacistAdminVysledky() {
             const email = userDisplay.innerText.split(' ')[0]; 
             userDisplay.innerText = `${email} (${name})`;
         }
+if (error) throw error;
 
+        // --- 📧 UVÍTACÍ E-MAIL ---
+        try {
+            await supabaseClient.functions.invoke('send-notif', {
+                body: {
+                    emails: [session.user.email],
+                    subject: '⚽ Tvůj tip je uložen! WC2026 Tipovačka',
+                    message: `Ahoj ${name},\n\ntvůj tip do tipovačky MS 2026 byl úspěšně uložen! 🎉\n\nNezapomeň zaplatit startovné 200 Kč, ať jsi zařazen do hry o výhru.\n\nBěhem turnaje ti sem budeme posílat důležité informace – výsledky, připomínky a novinky. Pokud ti tento e-mail spadl do hromadné/promo složky, přesuň ho prosím do Doručené, ať ti nic neunikne.\n\nDrž si palce a ať to vyjde!\nSK Naděje`
+                }
+            });
+        } catch (e) { console.warn('Uvítací e-mail se nepodařilo odeslat:', e); }
+
+        // 5. AKTUALIZACE JMÉNA V HLAVIČCE
         // 6. ZOBRAZENÍ PLATEBNÍHO OKNA (Místo starého alertu)
         showPaymentModal(name);
 
