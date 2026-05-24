@@ -3077,52 +3077,95 @@ function confirmThirds() {
         return typeof team === 'object' ? team.name : team;
     };
 
-    // POŘADÍ PODLE OFICIÁLNÍHO PAVOUKA FIFA
-    const s32Teams = [
-         // SEKCE 3 (W90 v R16)
-        getT('E', 0), vybrane3[0], // Z74 (1E vs 3ABCDF) Německo  Z89        ok
-        getT('I', 0), vybrane3[1], // Z77 (1I vs 3CDFGH) Francie
+    // Zjistíme ze které skupiny pochází každé vybrané 3. místo
+    // (porovnáme název týmu s týmem na 3. pozici v každé skupině)
+    const tretiMista = vybrane3.map(teamName => {
+        const grp = state.groups.find(group => String(group.teams[2]).trim() === String(teamName).trim());
+        return { team: teamName, group: grp ? grp.id : null };
+    });
 
-          // SEKCE 5 (W93 v R16)
-        getT('A', 1), getT('B', 1), // Z73 (2A vs 2B) Baráž D   Z90          ok  Z97
-        getT('F', 0), getT('C', 1), // Z75 (1F vs 2C) Nizozemsko
-
-            // SEKCE 6 (W94 v R16)
-        getT('H', 0), getT('J', 1), // Z84 (1H vs 2J)  Španělsko  Z93
-        getT('K', 1), getT('L', 1),  // Z88 (2K vs 2L) Kolumbie 
-      //  getT('E', 1), getT('I', 1), // Z78 (2E vs 2I) Ekvádor    má být kolumbie
-        //getT('D', 1), getT('G', 1), // Z83 (2D vs 2G)
-
-          // SEKCE 4 (W92 v R16)
-        getT('D', 0), vybrane3[4], // Z81 (1D vs 3BEFIJ) Baráž C  Z94     ok     Z98
-        getT('G', 0), vybrane3[5], // Z82 (1G vs 3AEHIJ) Belgie            ok
-
-          // SEKCE 2 (W91 v R16)
-        getT('C', 0), getT('F', 1), // Z76 (1C vs 2F) Brazílie  Z91        ok
-        getT('E', 1), getT('I', 1), // Z78 (2E vs 2I) Ekvádor
-       // getT('D', 1), getT('G', 1), // Z83 (2D vs 2G) USA                má být ekvádor
-        //getT('E', 1), getT('I', 1), // Z78 (2E vs 2I)
-        
-        // SEKCE 1 (W89 v R16)
-        getT('A', 0), vybrane3[2], // Z79 (1A vs 3CEFHI)  Mexico  Z92        ok  Z99
-        getT('L', 0), vybrane3[3], // Z80 (1L vs 3EHIJK) Anglie                ok   
-
-       
-          // SEKCE 8 (W96 v R16)
-        getT('J', 0), getT('H', 1), // Z86 (1J vs 2H) Argentina   Z95        ok
-        getT('D', 1), getT('G', 1), // Z83 (2D vs 2G) USA
-        //getT('K', 1), getT('L', 1),  // Z88 (2K vs 2L) Kolumbie            má být USA
-
-
-        // SEKCE 7 (W95 v R16)
-        getT('B', 0), vybrane3[6], // Z85 (1B vs 3EFGIJ)  Švýcarsko  Z96        Z100        ok
-        getT('K', 0), vybrane3[7], // Z87 (1K vs 3DEIJL) Portugalsko                        ok
+    // Definice 8 zápasů které berou 3. místo (podle oficiálního FIFA pavouka)
+    // allowed = ze kterých skupin smí přijít 3. místo do tohoto zápasu
+    const sloty3M = [
+        { matchId: 74, winner: getT('E', 0), allowed: ['A','B','C','D','F'] },
+        { matchId: 77, winner: getT('I', 0), allowed: ['C','D','F','G','H'] },
+        { matchId: 79, winner: getT('A', 0), allowed: ['C','E','F','H','I'] },
+        { matchId: 80, winner: getT('L', 0), allowed: ['E','H','I','J','K'] },
+        { matchId: 81, winner: getT('D', 0), allowed: ['B','E','F','I','J'] },
+        { matchId: 82, winner: getT('G', 0), allowed: ['A','E','H','I','J'] },
+        { matchId: 85, winner: getT('B', 0), allowed: ['E','F','G','I','J'] },
+        { matchId: 87, winner: getT('K', 0), allowed: ['D','E','I','J','L'] },
     ];
 
-    /*genStage('Šestnáctifinále', s32Teams, 16, 's32', 'phase-thirds', 'dot-s32');*/
-     // Původní: genStage('Šestnáctifinále', s32Teams, 16, 's32', 'phase-thirds', 'dot-s32');
-// Opravené:
-genStage('Šestnáctifinále', s32Teams, 16, 's32', 'phase-thirds', 'dot-s2');
+    // Algoritmus přiřazení (hladový s backtrackingem):
+    // přiřadíme každé 3. místo do slotu kde je jeho skupina povolená
+    const prirazeni = {};      // matchId -> team
+    const pouzite = new Set(); // už přiřazené týmy
+
+    // Seřadíme sloty podle počtu možností (nejvíc omezené první) – lepší úspěšnost
+    function najdiPrirazeni(sloty, mista) {
+        if (sloty.length === 0) return {};
+        // vyber slot s nejmenším počtem vyhovujících míst
+        let bestSlot = null, bestCands = null;
+        for (const s of sloty) {
+            const cands = mista.filter(m => m.group && s.allowed.includes(m.group));
+            if (bestCands === null || cands.length < bestCands.length) {
+                bestSlot = s; bestCands = cands;
+            }
+        }
+        if (bestCands.length === 0) return null; // slepá ulička
+        for (const cand of bestCands) {
+            const zbyleSloty = sloty.filter(s => s.matchId !== bestSlot.matchId);
+            const zbylaMista = mista.filter(m => m.team !== cand.team);
+            const vysledek = najdiPrirazeni(zbyleSloty, zbylaMista);
+            if (vysledek !== null) {
+                vysledek[bestSlot.matchId] = cand.team;
+                return vysledek;
+            }
+        }
+        return null;
+    }
+
+    const mapaPrir = najdiPrirazeni(sloty3M, tretiMista) || {};
+
+    // Pomocná: vrať 3. místo pro daný zápas (nebo fallback podle pořadí)
+    let fallbackIdx = 0;
+    const get3M = (matchId) => {
+        if (mapaPrir[matchId]) return mapaPrir[matchId];
+        // fallback – kdyby algoritmus selhal, vezmi po pořadí
+        while (fallbackIdx < vybrane3.length && Object.values(mapaPrir).includes(vybrane3[fallbackIdx])) fallbackIdx++;
+        return vybrane3[fallbackIdx++] || "??";
+    };
+
+    // POŘADÍ PODLE OFICIÁLNÍHO PAVOUKA FIFA
+    const s32Teams = [
+        // SEKCE 3
+        getT('E', 0), get3M(74),
+        getT('I', 0), get3M(77),
+        // SEKCE 5
+        getT('A', 1), getT('B', 1),
+        getT('F', 0), getT('C', 1),
+        // SEKCE 6
+        getT('H', 0), getT('J', 1),
+        getT('K', 1), getT('L', 1),
+        // SEKCE 4
+        getT('D', 0), get3M(81),
+        getT('G', 0), get3M(82),
+        // SEKCE 2
+        getT('C', 0), getT('F', 1),
+        getT('E', 1), getT('I', 1),
+        // SEKCE 1
+        getT('A', 0), get3M(79),
+        getT('L', 0), get3M(80),
+        // SEKCE 8
+        getT('J', 0), getT('H', 1),
+        getT('D', 1), getT('G', 1),
+        // SEKCE 7
+        getT('B', 0), get3M(85),
+        getT('K', 0), get3M(87),
+    ];
+
+    genStage('Šestnáctifinále', s32Teams, 16, 's32', 'phase-thirds', 'dot-s2');
 }
  // 3. KOMPLETNĚ PŘEPSANÁ genStage (včetně fixu pro mobilní scrollování)
 function genStage(title, teams, count, id, prevPhase, prevDot) {
