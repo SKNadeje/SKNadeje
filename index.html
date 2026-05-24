@@ -1318,12 +1318,10 @@ input:focus {
     </form>
 </div>
 
-<div id="logged-in-section" class="hidden" style="position:fixed; top:12px; right:12px; z-index:9999; display:flex; align-items:center; gap:10px; padding:7px 12px; background:rgba(10,13,26,0.92); backdrop-filter:blur(8px); border:1px solid rgba(212,175,55,0.2); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
-    <span style="font-size:0.72rem; color:var(--text-muted); white-space:nowrap;">
-        <i class="fas fa-user-circle" style="color:var(--accent); margin-right:5px;"></i>
-        <strong id="user-email-display" style="color:var(--accent); font-weight:600;"></strong>
-    </span>
-    <button onclick="logoutUser()" style="background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.2); color:#94a3b8; font-size:0.68rem; padding:4px 12px; border-radius:7px; cursor:pointer; font-weight:600; white-space:nowrap;">Odhlásit</button>
+<div id="logged-in-section" class="hidden" style="position:absolute; top:12px; right:12px; z-index:50;">
+    <button onclick="logoutUser()" title="Odhlásit se" style="background:rgba(10,13,26,0.85); border:1px solid rgba(212,175,55,0.2); color:#94a3b8; font-size:0.72rem; padding:7px 16px; border-radius:9px; cursor:pointer; font-weight:600; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+        <i class="fas fa-sign-out-alt" style="margin-right:5px; color:var(--accent);"></i>Odhlásit
+    </button>
 </div>
     
     <div id="admin-panel" class="hidden section-box" style="border-color: var(--lose);">
