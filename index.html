@@ -22,6 +22,20 @@
 </header>
 
 <style>
+/* Pozadí Messi - napevno přes celý web */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url('messi.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.06;
+    z-index: 0;
+    pointer-events: none;
+}
+    
 /* Postranní dekorace - jen PC */
 .side-decor {
     display: none;
