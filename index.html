@@ -2243,49 +2243,49 @@ function renderHlasLidu(data) {
 
     const pct = (n) => Math.round((n / celkem) * 100);
 
-    cont.innerHTML = `
-        <div style="background:rgba(8,12,22,0.95); border:1px solid rgba(212,175,55,0.15); border-radius:16px; padding:20px; margin-bottom:25px;">
+   cont.innerHTML = `
+        <div style="background:rgba(8,12,22,0.95); border:1px solid rgba(212,175,55,0.15); border-radius:14px; padding:16px; margin-bottom:18px;">
             
-            <div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.4); text-transform:uppercase; font-weight:700; text-align:center; margin-bottom:16px;">
-                Kdo vyhraje MS 2026?
+            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; text-align:center; margin-bottom:14px;">
+                <i class="fas fa-poll" style="margin-right:6px;"></i> Kdo vyhraje MS 2026?
             </div>
 
-            <div style="display:grid; grid-template-columns:${outsider ? '1fr 1fr 1fr' : druhy ? '1fr 1fr' : '1fr'}; gap:10px;">
+            <div style="display:flex; gap:8px;">
                 
-                <div style="border-radius:12px; padding:16px 10px; text-align:center; border:1px solid rgba(212,175,55,0.35); background:rgba(212,175,55,0.06);">
-                    <div style="font-size:28px; font-weight:900; color:#d4af37; line-height:1; margin-bottom:6px;">${pct(favorit[1])}%</div>
-                    <div style="font-size:12px; font-weight:800; color:#f0e6c8; margin-bottom:4px;">${favorit[0]}</div>
-                    <div style="font-size:9px; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:1px;">🥇 Favorit · ${favorit[1]} tip${favorit[1] > 1 ? 'ů' : ''}</div>
+                <div style="flex:1; border-radius:10px; padding:12px 8px; text-align:center; border:1px solid rgba(212,175,55,0.3); background:rgba(212,175,55,0.06);">
+                    <div style="font-size:1.4rem; font-weight:900; color:#d4af37; line-height:1;">${pct(favorit[1])}%</div>
+                    <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; margin:5px 0 3px;">${favorit[0]}</div>
+                    <div style="font-size:0.55rem; color:rgba(212,175,55,0.5); text-transform:uppercase; letter-spacing:0.5px;">🥇 ${favorit[1]} tip${favorit[1] > 1 ? 'ů' : ''}</div>
                 </div>
 
                 ${druhy ? `
-                <div style="border-radius:12px; padding:16px 10px; text-align:center; border:1px solid rgba(148,163,184,0.15); background:rgba(148,163,184,0.04);">
-                    <div style="font-size:28px; font-weight:900; color:#94a3b8; line-height:1; margin-bottom:6px;">${pct(druhy[1])}%</div>
-                    <div style="font-size:12px; font-weight:800; color:#f0e6c8; margin-bottom:4px;">${druhy[0]}</div>
-                    <div style="font-size:9px; color:rgba(148,163,184,0.4); text-transform:uppercase; letter-spacing:1px;">V závěsu · ${druhy[1]} tip${druhy[1] > 1 ? 'ů' : ''}</div>
+                <div style="flex:1; border-radius:10px; padding:12px 8px; text-align:center; border:1px solid rgba(148,163,184,0.15); background:rgba(148,163,184,0.04);">
+                    <div style="font-size:1.4rem; font-weight:900; color:#94a3b8; line-height:1;">${pct(druhy[1])}%</div>
+                    <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; margin:5px 0 3px;">${druhy[0]}</div>
+                    <div style="font-size:0.55rem; color:rgba(148,163,184,0.5); text-transform:uppercase; letter-spacing:0.5px;">${druhy[1]} tip${druhy[1] > 1 ? 'ů' : ''}</div>
                 </div>` : ''}
 
                 ${outsider ? `
-                <div style="border-radius:12px; padding:16px 10px; text-align:center; border:1px solid rgba(239,68,68,0.2); background:rgba(239,68,68,0.04);">
-                    <div style="font-size:28px; font-weight:900; color:#ef4444; line-height:1; margin-bottom:6px;">${pct(outsider[1])}%</div>
-                    <div style="font-size:12px; font-weight:800; color:#f0e6c8; margin-bottom:4px;">${outsider[0]}</div>
-                    <div style="font-size:9px; color:rgba(239,68,68,0.4); text-transform:uppercase; letter-spacing:1px;">🐴 Černý kůň · ${outsider[1]} hlas</div>
+                <div style="flex:1; border-radius:10px; padding:12px 8px; text-align:center; border:1px solid rgba(239,68,68,0.2); background:rgba(239,68,68,0.04);">
+                    <div style="font-size:1.4rem; font-weight:900; color:#ef4444; line-height:1;">${pct(outsider[1])}%</div>
+                    <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; margin:5px 0 3px;">${outsider[0]}</div>
+                    <div style="font-size:0.55rem; color:rgba(239,68,68,0.5); text-transform:uppercase; letter-spacing:0.5px;">🐴 ${outsider[1]} hlas</div>
                 </div>` : ''}
 
             </div>
 
-            <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(212,175,55,0.08); display:flex; justify-content:center; gap:24px;">
+            <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(212,175,55,0.08); display:flex; justify-content:center; gap:20px;">
                 <div style="text-align:center;">
-                    <div style="font-size:16px; font-weight:900; color:#d4af37;">${celkem}</div>
-                    <div style="font-size:9px; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:1px;">Tipérů</div>
+                    <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">${celkem}</div>
+                    <div style="font-size:0.55rem; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:0.5px;">Tipérů</div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="font-size:16px; font-weight:900; color:#d4af37;">${sorted.length}</div>
-                    <div style="font-size:9px; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:1px;">Různých tipů</div>
+                    <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">${sorted.length}</div>
+                    <div style="font-size:0.55rem; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:0.5px;">Různých</div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="font-size:16px; font-weight:900; color:#d4af37;">${pct(favorit[1])}%</div>
-                    <div style="font-size:9px; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:1px;">Největší shoda</div>
+                    <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">${pct(favorit[1])}%</div>
+                    <div style="font-size:0.55rem; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:0.5px;">Shoda</div>
                 </div>
             </div>
         </div>`;
