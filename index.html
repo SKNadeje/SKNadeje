@@ -1516,6 +1516,22 @@ input:focus {
 </div>
     
 <script>
+// Animované naskakování čísla od 0 do cílové hodnoty
+function animateCountUp(el, target, duration = 1000) {
+    if (!el) return;
+    const start = 0;
+    const startTime = performance.now();
+    function tick(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        // easing (zpomalení na konci)
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.innerText = Math.round(start + (target - start) * eased) + ' PTS';
+        if (progress < 1) requestAnimationFrame(tick);
+        else el.innerText = target + ' PTS';
+    }
+    requestAnimationFrame(tick);
+}
+    
     // Vytvoří barevný kroužek s iniciálami podle jména
 function avatarHtml(name, size = 32) {
     const jmeno = (name || 'Anonym').trim();
@@ -2805,7 +2821,7 @@ async function renderLeaderboard(data, real) {
                         </span>
                     </div>
                 </td>
-                <td style="text-align:right; padding-right:15px; font-weight:900; color:var(--accent);">${player.points} PTS</td>
+                 <td style="text-align:right; padding-right:15px; font-weight:900; color:var(--accent);"><span class="pts-cell" data-pts="${player.points}">${player.points} PTS</span></td>
             </tr>
             ${canSee ? `
             <tr id="det-${rowId}" class="tip-detail-row" style="display:none; background:#0f172a;">
@@ -2892,6 +2908,12 @@ if (bankEl) {
         </div>
     `;
 }
+
+   // Spusť count-up animaci bodů
+    document.querySelectorAll('.pts-cell').forEach(el => {
+        const target = parseInt(el.getAttribute('data-pts')) || 0;
+        if (target > 0) animateCountUp(el, target, 1200);
+    });
 
     console.log("✅ ŽEBŘÍČEK HOTOV (Full + Bank)");
 }
