@@ -1421,6 +1421,7 @@ input:focus {
     </div>
 </div>
            <div id="hlas-lidu-container"></div>
+            <div id="anketa-container"></div>
 
 <div class="section-box" id="section-leaderboard">
   <div class="section-header" style="cursor:pointer;">
@@ -1515,6 +1516,92 @@ input:focus {
 </div>
     
 <script>
+
+    async function renderAnketa() {
+    const cont = document.getElementById('anketa-container');
+    if (!cont) return;
+
+    // Načti anketu
+    const { data: anketa } = await supabaseClient.from('anketa').select('*').eq('id', 1).maybeSingle();
+    if (!anketa || !anketa.aktivni || !anketa.otazka) { cont.innerHTML = ''; return; }
+
+    const moznosti = anketa.moznosti || [];
+
+    // Načti hlasy
+    const { data: hlasy } = await supabaseClient.from('anketa_hlasy').select('*');
+    const vsechnyHlasy = hlasy || [];
+
+    // Zjisti jestli přihlášený už hlasoval
+    let mujHlas = null;
+    const { data: authData } = await supabaseClient.auth.getUser();
+    const userId = authData?.user?.id;
+    if (userId) {
+        const m = vsechnyHlasy.find(h => h.user_id === userId);
+        if (m) mujHlas = m.volba;
+    }
+
+    // Spočítej hlasy pro každou možnost
+    const counts = {};
+    moznosti.forEach(m => counts[m] = 0);
+    vsechnyHlasy.forEach(h => { if (counts[h.volba] !== undefined) counts[h.volba]++; });
+    const celkem = vsechnyHlasy.length;
+
+    let html = `
+        <div style="background:rgba(8,12,22,0.95); border:1px solid rgba(168,139,250,0.2); border-radius:14px; padding:16px; margin-bottom:18px;">
+            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(168,139,250,0.6); text-transform:uppercase; font-weight:700; text-align:center; margin-bottom:6px;">
+                <i class="fas fa-poll"></i> Anketa
+            </div>
+            <div style="font-size:0.95rem; font-weight:800; color:#f0e6c8; text-align:center; margin-bottom:14px;">${anketa.otazka}</div>`;
+
+    if (mujHlas) {
+        // Už hlasoval → ukážeme výsledky
+        html += moznosti.map(m => {
+            const pct = celkem > 0 ? Math.round((counts[m] / celkem) * 100) : 0;
+            const jeMuj = m === mujHlas;
+            return `
+                <div style="margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:3px;">
+                        <span style="color:${jeMuj ? '#a78bfa' : '#f0e6c8'}; font-weight:${jeMuj ? '800' : '400'};">${jeMuj ? '✓ ' : ''}${m}</span>
+                        <span style="color:#a78bfa; font-weight:700;">${pct}%</span>
+                    </div>
+                    <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden;">
+                        <div style="height:100%; width:${pct}%; background:${jeMuj ? 'linear-gradient(90deg,#a78bfa,#7c5cd6)' : 'rgba(168,139,250,0.3)'}; border-radius:3px; transition:width 0.5s;"></div>
+                    </div>
+                </div>`;
+        }).join('');
+        html += `<div style="text-align:center; font-size:0.65rem; color:#5a6480; margin-top:10px;">Celkem hlasů: ${celkem}</div>`;
+    } else {
+        // Ještě nehlasoval → tlačítka
+        html += moznosti.map(m => `
+            <button onclick="hlasovatAnketa('${m.replace(/'/g, "\\'")}')" style="display:block; width:100%; margin-bottom:8px; padding:11px; background:rgba(168,139,250,0.08); border:1px solid rgba(168,139,250,0.25); border-radius:10px; color:#f0e6c8; font-size:0.85rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(168,139,250,0.18)'" onmouseout="this.style.background='rgba(168,139,250,0.08)'">${m}</button>
+        `).join('');
+        html += `<div style="text-align:center; font-size:0.65rem; color:#5a6480; margin-top:6px;">Klikni pro hlasování · ${celkem} hlasů</div>`;
+    }
+
+    html += `</div>`;
+    cont.innerHTML = html;
+}
+
+async function hlasovatAnketa(volba) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    const userId = authData?.user?.id;
+    if (!userId) { showToast("Pro hlasování se musíš přihlásit!", 'error'); return; }
+
+    // Načti jméno hráče
+    const { data: tipData } = await supabaseClient.from('tipy').select('name').eq('user_id', userId).maybeSingle();
+    const name = tipData?.name || 'Anonym';
+
+    try {
+        const { error } = await supabaseClient
+            .from('anketa_hlasy')
+            .upsert({ user_id: userId, volba, name }, { onConflict: 'user_id' });
+        if (error) throw error;
+        showToast("✅ Hlas zaznamenán!", 'success');
+        renderAnketa();
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
 
     async function otevritAnketuAdmin() {
     const { data: authData } = await supabaseClient.auth.getUser();
@@ -2550,6 +2637,7 @@ async function loadAll() {
             }
             // --- C. BODY VE HŘE ---
             if (typeof renderBodyVeHre === "function") renderBodyVeHre();
+            if (typeof renderAnketa === "function") renderAnketa();
 
             console.log("✅ Všechny komponenty vykresleny.");
         } else {
@@ -2559,6 +2647,7 @@ async function loadAll() {
             }
             // --- C. BODY VE HŘE (i bez tipů) ---
             if (typeof renderBodyVeHre === "function") renderBodyVeHre();
+            if (typeof renderAnketa === "function") renderAnketa();
         }
     } catch (error) {
         console.error("❌ Kritická chyba v loadAll:", error);
