@@ -1054,6 +1054,9 @@ tr.player-row:hover { background: rgba(212,175,55,0.04); cursor: pointer; }
     justify-content: center;
     align-items: center;
     z-index: 10000;
+    padding: 20px;
+    overflow-y: auto;
+    box-sizing: border-box;
 }
 
 .payment-modal {
@@ -1063,6 +1066,8 @@ tr.player-row:hover { background: rgba(212,175,55,0.04); cursor: pointer; }
     padding: 32px;
     max-width: 400px;
     width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
     text-align: center;
     box-shadow: 0 25px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(212,175,55,0.05);
     display: flex;
