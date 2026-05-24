@@ -22,6 +22,25 @@
 </header>
 
 <style>
+/* Postranní dekorace - jen PC */
+.side-decor {
+    display: none;
+}
+@media (min-width: 1200px) {
+    .side-decor {
+        display: block;
+        position: absolute;
+        top: 180px;
+        width: 200px;
+        opacity: 0.12;
+        pointer-events: none;
+        z-index: 0;
+        filter: drop-shadow(0 0 30px rgba(212,175,55,0.3));
+    }
+    .side-decor.left { left: 20px; }
+    .side-decor.right { right: 20px; }
+}
+    
 @keyframes sparkleFloat {
     0%   { transform: translateY(0) scale(1); opacity: 0; }
     10%  { opacity: 0.6; }
@@ -1272,6 +1291,9 @@ input:focus {
 </style>
 </head>
 <body>
+<img src="logo-wc2026.png" class="side-decor left" alt="">
+<img src="logo-wc2026.png" class="side-decor right" alt="">
+    
     <div id="sparkle-bg"></div>
 <div id="loading-screen" style="position:fixed; inset:0; background:#05070f; display:flex; align-items:center; justify-content:center; z-index:999999; flex-direction:column; overflow:hidden;">
     
