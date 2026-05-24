@@ -1358,6 +1358,12 @@ input:focus {
         📧 ODESLAT NOTIFIKACI HRÁČŮM
     </button>
 </div>
+        <div style="padding: 0 20px 10px;">
+    <button type="button" class="btn" onclick="otevritAnketuAdmin()" 
+        style="background:rgba(168,139,250,0.15); border:1px solid rgba(168,139,250,0.3); color:#a78bfa; width:100%; font-size:0.8rem;">
+        📊 SPRAVOVAT ANKETU
+    </button>
+</div>
     <div style="padding: 20px;"><button type="button" class="btn btn-primary" onclick="saveAdminResults()">ULOŽIT VÝSLEDKY</button></div>
 </div>
 
@@ -1509,6 +1515,58 @@ input:focus {
 </div>
     
 <script>
+
+    async function otevritAnketuAdmin() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+        showToast("Pouze pro admina!", 'error');
+        return;
+    }
+
+    // Načti aktuální anketu
+    const { data } = await supabaseClient.from('anketa').select('*').eq('id', 1).maybeSingle();
+    
+    document.getElementById('anketa-otazka-input').value = data?.otazka || '';
+    const moznosti = data?.moznosti || [];
+    document.getElementById('anketa-moznosti-input').value = Array.isArray(moznosti) ? moznosti.join('\n') : '';
+    document.getElementById('anketa-aktivni-check').checked = data?.aktivni || false;
+    
+    document.getElementById('anketa-admin-modal').style.display = 'flex';
+}
+
+async function ulozitAnketu() {
+    const otazka = document.getElementById('anketa-otazka-input').value.trim();
+    const moznostiText = document.getElementById('anketa-moznosti-input').value.trim();
+    const aktivni = document.getElementById('anketa-aktivni-check').checked;
+
+    if (!otazka) return showToast("Zadej otázku!", 'error');
+    const moznosti = moznostiText.split('\n').map(m => m.trim()).filter(m => m);
+    if (moznosti.length < 2) return showToast("Zadej alespoň 2 možnosti (každou na nový řádek)!", 'error');
+
+    try {
+        const { error } = await supabaseClient
+            .from('anketa')
+            .upsert({ id: 1, otazka, moznosti, aktivni });
+        if (error) throw error;
+        showToast("✅ Anketa uložena!", 'success');
+        document.getElementById('anketa-admin-modal').style.display = 'none';
+        if (typeof renderAnketa === "function") renderAnketa();
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
+
+async function smazatHlasyAnkety() {
+    if (!confirm("Smazat všechny hlasy? (otázka zůstane, jen se vynulují hlasy)")) return;
+    try {
+        const { error } = await supabaseClient.from('anketa_hlasy').delete().neq('user_id', '00000000-0000-0000-0000-000000000000');
+        if (error) throw error;
+        showToast("✅ Hlasy vymazány!", 'success');
+        if (typeof renderAnketa === "function") renderAnketa();
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
 
     function toggleBankBody() {
     const content = document.getElementById('bankbody-content');
@@ -4197,6 +4255,30 @@ window.addEventListener('DOMContentLoaded', checkUserSession);
         </div>
     </div>
 </div>
-    
+    <div id="anketa-admin-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); z-index:100000; justify-content:center; align-items:center; padding:20px;">
+    <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(168,139,250,0.3); border-radius:20px; padding:28px; max-width:480px; width:100%; max-height:90vh; overflow-y:auto;">
+        <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size:9px; letter-spacing:3px; color:rgba(168,139,250,0.5); text-transform:uppercase; margin-bottom:6px;">Admin · Anketa</div>
+            <div style="font-size:18px; font-weight:900; color:#a78bfa; text-transform:uppercase; letter-spacing:2px;">📊 Spravovat anketu</div>
+        </div>
+
+        <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:6px;">Otázka:</label>
+        <input type="text" id="anketa-otazka-input" placeholder="Např. Kdo dá první gól turnaje?" style="width:100%; margin-bottom:14px; padding:12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(168,139,250,0.2); border-radius:10px; box-sizing:border-box;">
+
+        <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:6px;">Možnosti (každou na nový řádek):</label>
+        <textarea id="anketa-moznosti-input" rows="5" placeholder="Mbappé&#10;Haaland&#10;Kane&#10;Jiný" style="width:100%; margin-bottom:14px; padding:12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(168,139,250,0.2); border-radius:10px; box-sizing:border-box; font-family:inherit; resize:vertical;"></textarea>
+
+        <label style="display:flex; align-items:center; gap:10px; margin-bottom:18px; cursor:pointer;">
+            <input type="checkbox" id="anketa-aktivni-check" style="width:18px; height:18px; accent-color:#a78bfa;">
+            <span style="font-size:0.85rem; color:#f0e6c8;">Anketa je aktivní (zobrazí se hráčům)</span>
+        </label>
+
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <button onclick="document.getElementById('anketa-admin-modal').style.display='none'" class="btn" style="flex:1; background:rgba(30,40,60,0.8); color:#94a3b8; border:1px solid rgba(168,139,250,0.12); margin:0;">Zrušit</button>
+            <button onclick="ulozitAnketu()" class="btn" style="flex:2; background:linear-gradient(135deg,#a78bfa,#7c5cd6); color:#fff; margin:0;">💾 ULOŽIT</button>
+        </div>
+        <button onclick="smazatHlasyAnkety()" style="width:100%; background:none; border:1px solid rgba(239,68,68,0.3); color:#ef4444; font-size:0.72rem; padding:8px; border-radius:8px; cursor:pointer;">🗑️ Vymazat všechny hlasy</button>
+    </div>
+</div>
 </body>
 </html>
