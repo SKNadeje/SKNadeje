@@ -1397,7 +1397,7 @@ input:focus {
         </div>
     </div>
 </div>
-<div class="section-box" style="margin-bottom:18px;">
+<div class="section-box bankbody-box" id="bankbody-section" style="margin-bottom:18px;">
     <div class="section-header" style="cursor:pointer;" onclick="toggleBankBody()">
         <span><i class="fas fa-coins" style="margin-right:6px;"></i> BANK & BODY</span>
         <i class="fas fa-chevron-up" id="bankbody-chevron" style="font-size:0.7rem; transition:transform 0.3s;"></i>
@@ -1694,7 +1694,7 @@ function renderBodyVeHre() {
     
 function skocNaFazi(faze) {
     // Schováme všechny formulářové sekce
-    document.querySelectorAll('.section-box:not(#section-leaderboard)').forEach(d => d.classList.add('hidden'));
+   document.querySelectorAll('.section-box:not(#section-leaderboard):not(#bankbody-section)').forEach(d => d.classList.add('hidden'));
     const finalBox = document.getElementById('final-box');
     if (finalBox) finalBox.classList.add('hidden');
 
@@ -4054,7 +4054,7 @@ const groupsDiv = document.getElementById('phase-groups');
                     if (typeof updateStepper === "function") updateStepper('dot-s1');
                     
                     // 🔧 EXPLICITNÍ RESET ZOBRAZENÍ – schovej vše krom skupin
-                    document.querySelectorAll('.section-box:not(#section-leaderboard)').forEach(d => d.classList.add('hidden'));
+                   document.querySelectorAll('.section-box:not(#section-leaderboard):not(#bankbody-section)').forEach(d => d.classList.add('hidden'));
                     document.getElementById('phase-groups')?.classList.remove('hidden');
                     document.getElementById('phase-thirds')?.classList.add('hidden');
                     document.getElementById('playoff-container')?.classList.add('hidden');
