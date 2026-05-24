@@ -1389,6 +1389,7 @@ input:focus {
 
     <div class="dashboard">
         <aside>
+            <div id="progress-container"></div>
 
       <div class="scoring-legend" style="padding:16px;">
     <h3 style="margin-bottom:12px;"><i class="fas fa-info-circle"></i> Bodování turnaje</h3>
@@ -1536,6 +1537,47 @@ input:focus {
 </div>
     
 <script>
+function renderProgress() {
+    const el = document.getElementById('progress-container');
+    if (!el) return;
+
+    // Fáze a kontrola jejich dokončení
+    const faze = [
+        { nazev: 'Skupiny', hotovo: state.groups.every(g => g.done) },
+        { nazev: '3.místa', hotovo: state.thirds.length === 8 },
+        { nazev: '1/16', hotovo: state.playoff.s32 && state.playoff.s32.length === 16 },
+        { nazev: '1/8', hotovo: state.playoff.s16 && state.playoff.s16.length === 8 },
+        { nazev: '1/4', hotovo: state.playoff.s8 && state.playoff.s8.length === 4 },
+        { nazev: 'Semi', hotovo: state.playoff.s4 && state.playoff.s4.length === 2 },
+        { nazev: 'Finále', hotovo: state.playoff.winner && state.playoff.winner !== '' },
+    ];
+
+    const hotovych = faze.filter(f => f.hotovo).length;
+    const pct = Math.round((hotovych / faze.length) * 100);
+
+    // najdi index první nedokončené (aktuální)
+    const aktualni = faze.findIndex(f => !f.hotovo);
+
+    el.innerHTML = `
+        <div style="background:rgba(8,12,22,0.95); border:1px solid rgba(212,175,55,0.15); border-radius:14px; padding:14px 16px; margin-bottom:18px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <span style="font-size:0.7rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700; white-space:nowrap;"><i class="fas fa-flag-checkered"></i> Tvůj postup</span>
+                <div style="flex:1; height:8px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden;">
+                    <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,#d4af37,#9a7b1e); border-radius:4px; transition:width 0.6s;"></div>
+                </div>
+                <span style="color:#d4af37; font-size:0.85rem; font-weight:900;">${pct}%</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; gap:2px;">
+                ${faze.map((f, i) => {
+                    let color = '#5a6480'; let prefix = '';
+                    if (f.hotovo) { color = '#22c55e'; prefix = '✓ '; }
+                    else if (i === aktualni) { color = '#d4af37'; prefix = '● '; }
+                    return `<span style="font-size:0.55rem; color:${color}; white-space:nowrap;">${prefix}${f.nazev}</span>`;
+                }).join('')}
+            </div>
+        </div>`;
+}
+    
 function initSparkles() {
     const cont = document.getElementById('sparkle-bg');
     if (!cont) return;
@@ -2713,6 +2755,7 @@ async function loadAll() {
             // --- C. BODY VE HŘE ---
             if (typeof renderBodyVeHre === "function") renderBodyVeHre();
             if (typeof renderAnketa === "function") renderAnketa();
+            if (typeof renderProgress === "function") renderProgress();
 
             console.log("✅ Všechny komponenty vykresleny.");
         } else {
@@ -3931,6 +3974,8 @@ function updateStepper(activeId) {
             el.classList.add('completed'); // Zelená (Mám hotovo)
         }
     });
+    if (typeof renderProgress === "function") renderProgress();
+}
 }
     
     // 2. Tuhle funkci vlož do scriptu - zajistí, že se data neztratí
