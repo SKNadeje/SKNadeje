@@ -4056,21 +4056,22 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 
 // --- DYNAMICKÉ PŘESKLÁDÁNÍ NAVIGACE (MOBIL VS PC) ---
 function srovnejNavigaci() {
- // 1. Najdeme správné prvky
-const navigace = document.querySelector('.step-indicator'); 
+    // 1. Najdeme správné prvky
+    const navigace = document.querySelector('.step-indicator'); 
+    const mainSekce = document.querySelector('main');
     const dashboard = document.querySelector('.dashboard');
     const spravnaHlavicka = document.querySelector('.app-wrapper header'); 
 
-    if (!navigace || !dashboard || !spravnaHlavicka) return;
+    if (!navigace || !mainSekce || !dashboard || !spravnaHlavicka) return;
 
     if (window.innerWidth <= 1200) {
-        // Na mobilu: bubliny nad celý dashboard (= nad obsah)
-        dashboard.parentNode.insertBefore(navigace, dashboard);
+        // Na mobilu: bubliny nad sekcí skupin (main)
+        mainSekce.parentNode.insertBefore(navigace, mainSekce);
         navigace.style.marginTop = '20px'; 
     } else {
-        // Na počítači: bubliny zpět pod nadpis
-        dashboard.parentNode.insertBefore(navigace, dashboard);
-        navigace.style.marginTop = '20px';
+        // Na počítači: bubliny zpět pod nadpis (do hlavičky)
+        spravnaHlavicka.appendChild(navigace);
+        navigace.style.marginTop = '0';
     }
 }
 
