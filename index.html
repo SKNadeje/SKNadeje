@@ -1696,11 +1696,10 @@ function skocNaFazi(faze) {
     if (state.groups.filter(g => g.done).length < 12) {
         return showToast("Nejdřív vyplň všech 12 skupin!", 'error');
     }
-    const thirdsDiv = document.getElementById('phase-thirds');
-    if (thirdsDiv) {
-        thirdsDiv.classList.remove('hidden');
-        thirdsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+   const thirdsDiv = document.getElementById('phase-thirds');
+if (thirdsDiv) {
+    thirdsDiv.classList.remove('hidden');
+}
 }
     else {
         // Playoff fáze – musí existovat data
@@ -1716,10 +1715,10 @@ function skocNaFazi(faze) {
         const stageDiv = document.getElementById(`sec-${sid}`);
         
         if (stageDiv) {
-            document.getElementById('playoff-container')?.classList.remove('hidden');
-            stageDiv.classList.remove('hidden');
-            stageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else {
+    document.getElementById('playoff-container')?.classList.remove('hidden');
+    stageDiv.classList.remove('hidden');
+}
+        else {
             return showToast("Tato fáze ještě není vygenerovaná – projdi tipování postupně.", 'info');
         }
     }
