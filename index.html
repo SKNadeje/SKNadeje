@@ -2994,7 +2994,8 @@ async function renderLeaderboard(data, real) {
 
         const rowId = player.user_id || player.id;
         const isOwn = loggedUserId && String(loggedUserId) === String(rowId);
-        const canSee = !isBeforeDeadline || isOwn;
+        const isAdmin = loggedUserId === "92a1e51b-e03c-48d7-99df-76c2f60a455f";
+        const canSee = isOwn;
         const isPaid = player.paid === true || player.paid === 1 || String(player.paid) === 'true';
 
         // Trendy (Šipky)
