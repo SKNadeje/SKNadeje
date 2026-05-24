@@ -2824,19 +2824,13 @@ if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
         updateStepper(prevDot);
     }
 }
-  function editGroup(id) { 
+ function editGroup(id) { 
     const editor = document.getElementById('group-editor');
     if (!editor) return;
 
     editor.classList.remove('hidden'); 
     document.getElementById('edit-title').innerText = `Pořadí ve Skupině ${id}`; 
     renderTeamList(id); 
-
-    // --- 🚀 FIX PRO MOBILY ---
-    // Scrollne na editor plynule, aby byl hned vidět na začátku obrazovky
-    setTimeout(() => {
-        editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 50);
 }
 
 function renderTeamList(gid) {
