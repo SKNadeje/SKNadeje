@@ -1541,27 +1541,34 @@ function renderProgress() {
     const el = document.getElementById('progress-container');
     if (!el) return;
 
-    // Fáze a kontrola jejich dokončení
+    const r = window.currentResults || {};
+
+    // Pomocná: je fáze vyplněná adminem?
+    const maData = (arr) => Array.isArray(arr) && arr.some(t => t && String(t).trim() !== "");
+    const maSkupiny = Array.isArray(r.groups) && r.groups.some(g => {
+        const t = g.teams || g;
+        return Array.isArray(t) && t.some(x => x && String(x).trim() !== "");
+    });
+
+    // Fáze a kontrola jejich vyhodnocení adminem
     const faze = [
-        { nazev: 'Skupiny', hotovo: state.groups.every(g => g.done) },
-        { nazev: '3.místa', hotovo: state.thirds.length === 8 },
-        { nazev: '1/16', hotovo: state.playoff.s32 && state.playoff.s32.length === 16 },
-        { nazev: '1/8', hotovo: state.playoff.s16 && state.playoff.s16.length === 8 },
-        { nazev: '1/4', hotovo: state.playoff.s8 && state.playoff.s8.length === 4 },
-        { nazev: 'Semi', hotovo: state.playoff.s4 && state.playoff.s4.length === 2 },
-        { nazev: 'Finále', hotovo: state.playoff.winner && state.playoff.winner !== '' },
+        { nazev: 'Skupiny', hotovo: maSkupiny },
+        { nazev: '1/16', hotovo: maData(r.s32) },
+        { nazev: '1/8', hotovo: maData(r.s16) },
+        { nazev: '1/4', hotovo: maData(r.s8) },
+        { nazev: 'Semi', hotovo: maData(r.s4) },
+        { nazev: 'Bronz', hotovo: r.bronze && r.bronze !== '' },
+        { nazev: 'Finále', hotovo: r.winner && r.winner !== '' },
     ];
 
     const hotovych = faze.filter(f => f.hotovo).length;
     const pct = Math.round((hotovych / faze.length) * 100);
-
-    // najdi index první nedokončené (aktuální)
     const aktualni = faze.findIndex(f => !f.hotovo);
 
     el.innerHTML = `
         <div style="background:rgba(8,12,22,0.95); border:1px solid rgba(212,175,55,0.15); border-radius:14px; padding:14px 16px; margin-bottom:18px;">
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                <span style="font-size:0.7rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700; white-space:nowrap;"><i class="fas fa-flag-checkered"></i> Tvůj postup</span>
+                <span style="font-size:0.7rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700; white-space:nowrap;"><i class="fas fa-flag-checkered"></i> Postup turnaje</span>
                 <div style="flex:1; height:8px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden;">
                     <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,#d4af37,#9a7b1e); border-radius:4px; transition:width 0.6s;"></div>
                 </div>
