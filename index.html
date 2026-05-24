@@ -22,6 +22,25 @@
 </header>
 
 <style>
+@keyframes sparkleFloat {
+    0%   { transform: translateY(0) scale(1); opacity: 0; }
+    10%  { opacity: 0.6; }
+    90%  { opacity: 0.6; }
+    100% { transform: translateY(-120px) scale(0.5); opacity: 0; }
+}
+#sparkle-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+}
+.sparkle {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, #d4af37, transparent);
+}
+    
     @keyframes lsConfetti {
     0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
     100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
@@ -1238,6 +1257,7 @@ input:focus {
 </style>
 </head>
 <body>
+    <div id="sparkle-bg"></div>
 <div id="loading-screen" style="position:fixed; inset:0; background:#05070f; display:flex; align-items:center; justify-content:center; z-index:999999; flex-direction:column; overflow:hidden;">
     
     <div style="position:absolute; top:0; left:50%; transform:translateX(-50%); width:60%; height:1px; background:linear-gradient(90deg,transparent,#d4af37,transparent);"></div>
@@ -1516,6 +1536,27 @@ input:focus {
 </div>
     
 <script>
+function initSparkles() {
+    const cont = document.getElementById('sparkle-bg');
+    if (!cont) return;
+    const pocet = window.innerWidth < 600 ? 15 : 30; // míň na mobilu
+    for (let i = 0; i < pocet; i++) {
+        const s = document.createElement('div');
+        s.className = 'sparkle';
+        const size = 2 + Math.random() * 4;
+        s.style.width = size + 'px';
+        s.style.height = size + 'px';
+        s.style.left = Math.random() * 100 + '%';
+        s.style.bottom = '-10px';
+        const doba = 6 + Math.random() * 8;
+        s.style.animation = `sparkleFloat ${doba}s linear ${Math.random() * doba}s infinite`;
+        cont.appendChild(s);
+    }
+}
+
+// Spustíme po načtení
+window.addEventListener('DOMContentLoaded', initSparkles);
+    
 // Animované naskakování čísla od 0 do cílové hodnoty
 function animateCountUp(el, target, duration = 1000) {
     if (!el) return;
