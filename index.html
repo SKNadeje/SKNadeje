@@ -1671,6 +1671,42 @@ input:focus {
     
 <script>
 
+    function ziskejOdznaky(p) {
+    const odznaky = [];
+    const tip = p.tip || {};
+    // Odeslal tip
+    odznaky.push({ icon: '🎯', label: 'Odeslal tip', aktivni: true });
+    // Kompletní tip (má vítěze)
+    odznaky.push({ icon: '✅', label: 'Kompletní tip', aktivni: !!(tip.winner && tip.winner !== '') });
+    // Zaplaceno
+    odznaky.push({ icon: '💰', label: 'Zaplaceno', aktivni: p.isPaid });
+    // Vedoucí / Top 3
+    odznaky.push({ icon: '👑', label: 'Vede žebříček', aktivni: p.rank === 1 && p.points > 0 });
+    odznaky.push({ icon: '🔥', label: 'Top 3', aktivni: p.rank <= 3 && p.points > 0 });
+    return odznaky;
+}
+function spocitejFazeProfil(tip) {
+    const r = window.currentResults || {};
+    if (!tip) tip = {};
+    const out = { skupiny: 0, s32: 0, s16: 0, s8: 0, s4: 0, bronze: 0, winner: 0 };
+
+    // Skupiny
+    const rg = r.groups || [];
+    if (tip.groups) rg.forEach((g, i) => {
+        const tipG = tip.groups[i] || [];
+        const aT = g.teams || g;
+        if (Array.isArray(aT)) aT.forEach((t, p) => { if (t && tipG[p] && String(t).trim() === String(tipG[p]).trim()) out.skupiny += 4; });
+    });
+    // Playoff
+    const ck = (sid, body) => {
+        (r[sid] || []).forEach(t => { if (t && (tip[sid] || []).some(x => String(x).trim() === String(t).trim())) out[sid] += body; });
+    };
+    ck('s32', 2); ck('s16', 3); ck('s8', 4); ck('s4', 5);
+    if (r.winner && tip.winner && String(r.winner).trim() === String(tip.winner).trim()) out.winner += 12;
+    if (r.bronze && tip.bronze && String(r.bronze).trim() === String(tip.bronze).trim()) out.bronze += 8;
+    return out;
+}
+    
     let profilData = []; // sem uložíme hráče pro profily
 
 function otevritProfil(rowId) {
@@ -1703,6 +1739,52 @@ function otevritProfil(rowId) {
                 <div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase;">Lepší než</div>
             </div>
         </div>
+        <!-- ÚSPĚŠNOST PO FÁZÍCH -->
+        ${(() => {
+            const f = spocitejFazeProfil(p.tip);
+            const maxy = { skupiny: 192, s32: 32, s16: 24, s8: 16, s4: 10, bronze: 8, winner: 12 };
+            const faze = [
+                { key: 'skupiny', n: 'Skupiny' }, { key: 's32', n: '1/16' }, { key: 's16', n: '1/8' },
+                { key: 's8', n: '1/4' }, { key: 's4', n: 'Semi' }, { key: 'bronze', n: 'Bronz' }, { key: 'winner', n: 'Vítěz' }
+            ];
+            const maData = profilData.some(x => x.points > 0);
+            if (!maData) return '';
+            return `
+                <div style="margin-bottom:16px;">
+                    <div style="font-size:0.65rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:8px;">Úspěšnost po fázích</div>
+                    ${faze.map(ff => {
+                        const ziskal = f[ff.key];
+                        const max = maxy[ff.key];
+                        const pct = max > 0 ? Math.round((ziskal / max) * 100) : 0;
+                        return `
+                            <div style="margin-bottom:5px;">
+                                <div style="display:flex; justify-content:space-between; font-size:0.65rem; margin-bottom:2px;">
+                                    <span style="color:#94a3b8;">${ff.n}</span>
+                                    <span style="color:#d4af37; font-weight:700;">${ziskal}/${max} (${pct}%)</span>
+                                </div>
+                                <div style="height:4px; background:rgba(255,255,255,0.05); border-radius:2px; overflow:hidden;">
+                                    <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,#d4af37,#9a7b1e); border-radius:2px;"></div>
+                                </div>
+                            </div>`;
+                    }).join('')}
+                </div>`;
+        })()}
+
+        <!-- ODZNAKY -->
+        ${(() => {
+            const odznaky = ziskejOdznaky(p);
+            return `
+                <div style="margin-bottom:16px;">
+                    <div style="font-size:0.65rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:8px;">Odznaky</div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
+                        ${odznaky.map(o => `
+                            <div title="${o.label}" style="text-align:center; padding:8px; border-radius:10px; width:60px; background:${o.aktivni ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${o.aktivni ? 'rgba(212,175,55,0.25)' : 'rgba(255,255,255,0.05)'}; opacity:${o.aktivni ? '1' : '0.35'};">
+                                <div style="font-size:18px;">${o.icon}</div>
+                                <div style="font-size:0.5rem; color:#94a3b8; margin-top:3px;">${o.label}</div>
+                            </div>`).join('')}
+                    </div>
+                </div>`;
+        })()}
 
         <div style="text-align:center; padding:10px; background:rgba(8,12,22,0.7); border-radius:10px;">
             <span style="font-size:0.75rem; color:#5a6480;">Stav platby: </span>
@@ -3174,7 +3256,7 @@ async function renderLeaderboard(data, real) {
         const isPaidProfil = player.paid === true || player.paid === 1 || String(player.paid) === 'true';
         // ulož data pro profil (mimo žebříček, ať jdou otevřít)
         if (i === 0) profilData = [];
-        profilData.push({ rowId, name: player.name, full_name: player.full_name, points: player.points, rank: currentRank, isPaid: isPaidProfil });
+        profilData.push({ rowId, name: player.name, full_name: player.full_name, points: player.points, rank: currentRank, isPaid: isPaidProfil, tip: player.tip });
         const isAdmin = loggedUserId === "92a1e51b-e03c-48d7-99df-76c2f60a455f";
         const canSee = isOwn;
         const isPaid = player.paid === true || player.paid === 1 || String(player.paid) === 'true';
