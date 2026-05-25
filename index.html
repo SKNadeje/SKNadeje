@@ -44,6 +44,13 @@ body::before {
     z-index: 0;
     pointer-events: none;
 }
+
+/* Menší Messi na mobilu */
+@media (max-width: 768px) {
+    body::before {
+        background-size: 400px auto;
+    }
+}
     
 /* Postranní dekorace - jen PC */
 .side-decor {
