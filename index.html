@@ -1670,6 +1670,28 @@ input:focus {
 </div>
     
 <script>
+function ziskejHlasku(rank, total, points, maBody) {
+    // Turnaj nezačal (všichni 0)
+    if (!maBody) {
+        const pred = [
+            "Zatím čeká na svou šanci ⏳",
+            "Tip odeslán, teď už jen modlit 🙏",
+            "Klid před bouří 🌩️",
+            "Připraven dobýt žebříček 🚀"
+        ];
+        return pred[rank % pred.length];
+    }
+    // Podle pozice
+    const pct = total > 1 ? (rank - 1) / (total - 1) : 0; // 0 = první, 1 = poslední
+    if (rank === 1) return "Král tipovačky 👑";
+    if (rank === 2) return "Kousek od trůnu 🥈";
+    if (rank === 3) return "Bronz chutná taky 🥉";
+    if (pct <= 0.33) return "Šlape jak hodinky ⚡";
+    if (pct <= 0.66) return "Drží se ve středu pole 🎯";
+    if (rank === total) return "Hlavně že se účastní 😅";
+    return "Ještě není nic ztraceno 💪";
+}
+    
 function renderTurnajZabava(processed) {
     const el = document.getElementById('turnaj-zabava');
     if (!el) return;
@@ -3153,11 +3175,27 @@ async function renderLeaderboard(data, real) {
                  <td style="text-align:right; padding-right:15px; font-weight:900; color:var(--accent);"><span class="pts-cell" data-pts="${player.points}">${player.points} PTS</span></td>
             </tr>
             ${canSee ? `
+            ${canSee ? `
             <tr id="det-${rowId}" class="tip-detail-row" style="display:none; background:#0f172a;">
                 <td colspan="3" style="padding:20px;">
                     <div style="border-left:4px solid #1e293b; padding-left:20px;">
+                        
+                        <!-- PROFIL HRÁČE -->
+                        <div style="display:flex; align-items:center; gap:14px; padding:14px; background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.12); border-radius:12px; margin-bottom:20px; flex-wrap:wrap;">
+                            ${avatarHtml(player.name, 48)}
+                            <div style="flex:1; min-width:150px;">
+                                <div style="font-size:1.1rem; font-weight:800; color:#f0e6c8;">${player.name || 'Anonym'}</div>
+                                ${player.full_name ? `<div style="font-size:0.8rem; color:#5a6480;">${player.full_name}</div>` : ''}
+                                <div style="font-size:0.8rem; color:#d4af37; font-style:italic; margin-top:4px;">"${ziskejHlasku(currentRank, processed.length, player.points, processed.some(p=>p.points>0))}"</div>
+                            </div>
+                            <div style="display:flex; gap:16px; text-align:center;">
+                                <div><div style="font-size:1.2rem; font-weight:900; color:#d4af37;">${currentRank}.</div><div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase;">Pořadí</div></div>
+                                <div><div style="font-size:1.2rem; font-weight:900; color:#d4af37;">${player.points}</div><div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase;">Bodů</div></div>
+                            </div>
+                        </div>
+
                         <span style="color:var(--accent); font-weight:bold; font-size:0.75rem; text-transform:uppercase;">Skupiny</span>
-                        <div class="det-groups-grid" style="margin-top:10px;">
+            <div class="det-groups-grid" style="margin-top:10px;">
                             ${(player.tip.groups||[]).map((g, idx) => {
                                 const adminG = r.groups && r.groups[idx];
                                 const aTeams = adminG?.teams || adminG;
