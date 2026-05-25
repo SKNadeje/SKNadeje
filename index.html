@@ -22,6 +22,48 @@
 </header>
 
 <style>
+
+    @media (max-width: 768px) {
+    /* Žebříček mobil - kompaktní řádek */
+    #leaderboard td:first-child {
+        width: 52px !important;
+        padding-left: 8px !important;
+        font-size: 0.8rem !important;
+    }
+    #leaderboard td:nth-child(2) {
+        padding: 10px 4px !important;
+    }
+    #leaderboard td:nth-child(2) > div {
+        gap: 5px !important;
+        font-size: 0.82rem !important;
+        flex-wrap: nowrap !important;
+    }
+    /* Avatar menší */
+    #leaderboard td:nth-child(2) > div > div:first-child {
+        width: 26px !important;
+        height: 26px !important;
+        min-width: 26px !important;
+        font-size: 10px !important;
+    }
+    /* Jméno - ať se zkrátí s ... místo roztahování */
+    #leaderboard td:nth-child(2) > div {
+        overflow: hidden;
+    }
+    /* Tlačítka profil a PDF menší */
+    #leaderboard td:nth-child(2) button {
+        padding: 2px 6px !important;
+        font-size: 0.55rem !important;
+        margin-left: 2px !important;
+        flex-shrink: 0;
+    }
+    /* Body - těsně u pravého kraje, menší */
+    #leaderboard td:last-child {
+        padding-right: 8px !important;
+        font-size: 0.82rem !important;
+        white-space: nowrap;
+    }
+    .pts-cell { font-size: 0.82rem !important; }
+}
 @media (min-width: 769px) {
     /* Žebříček na PC - srovnání řádku */
     #leaderboard .player-row td:nth-child(2) > div {
