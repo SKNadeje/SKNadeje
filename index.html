@@ -22,7 +22,28 @@
 </header>
 
 <style>
-
+@media (min-width: 769px) {
+    /* Žebříček na PC - srovnání řádku */
+    #leaderboard .player-row td:nth-child(2) > div {
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        align-items: center !important;
+    }
+    /* Jméno - ať se nezalomí a má prostor */
+    #leaderboard .player-row td:nth-child(2) > div {
+        font-size: 0.9rem !important;
+    }
+    /* Štítky ZAPLACENO/DLUŽÍ - ať se neořezávají */
+    #leaderboard .player-row td:nth-child(2) span {
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+    }
+    /* Zámek vedle, ne pod */
+    #leaderboard .player-row td:nth-child(2) > div {
+        line-height: 1.2 !important;
+    }
+}
+    
 @media (max-width: 768px) {
     /* Žebříček na mobilu - menší písmo a kompaktnější */
     #leaderboard td { padding: 10px 6px !important; }
