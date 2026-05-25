@@ -3171,8 +3171,6 @@ async function renderLeaderboard(data, real) {
 
         const rowId = player.user_id || player.id;
         const isOwn = loggedUserId && String(loggedUserId) === String(rowId);
-        const rowId = player.user_id || player.id;
-        const isOwn = loggedUserId && String(loggedUserId) === String(rowId);
         const isPaidProfil = player.paid === true || player.paid === 1 || String(player.paid) === 'true';
         // ulož data pro profil (mimo žebříček, ať jdou otevřít)
         if (i === 0) profilData = [];
