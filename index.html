@@ -23,6 +23,46 @@
 
 <style>
 
+@media (max-width: 768px) {
+    /* Žebříček na mobilu - menší písmo a kompaktnější */
+    #leaderboard td { padding: 10px 6px !important; }
+    #leaderboard td:first-child { width: 48px !important; }
+    
+    /* Jméno + prvky pod sebe ať se vejdou */
+    #leaderboard .player-row td:nth-child(2) > div {
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    /* Menší avatar */
+    #leaderboard .player-row td:nth-child(2) > div > div:first-child {
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+        font-size: 10px !important;
+    }
+    
+    /* Menší štítky a tlačítka */
+    #leaderboard .player-row td:nth-child(2) span,
+    #leaderboard .player-row td:nth-child(2) button {
+        font-size: 0.55rem !important;
+        padding: 2px 6px !important;
+    }
+    
+    /* Body */
+    #leaderboard td:last-child {
+        font-size: 0.8rem !important;
+        padding-right: 8px !important;
+    }
+    
+    /* Pořadí + šipka */
+    #leaderboard td:first-child {
+        font-size: 0.8rem !important;
+        padding-left: 8px !important;
+    }
+}
+    
     @media (min-width: 768px) {
     .ls-screen1 .ls-presents { font-size: 12px !important; letter-spacing: 6px !important; margin-bottom: 32px !important; }
     .ls-screen1 .ls-logo { width: 280px !important; height: 280px !important; margin-bottom: 36px !important; }
