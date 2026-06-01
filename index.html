@@ -3614,83 +3614,98 @@ async function renderLeaderboard(data, real) {
     return (valid.length >= stageCount) ? 'status-wrong' : 'status-pending';
 };
 
-    // --- 🖌️ RENDEROVÁNÍ TABULKY ---
+  // --- 🖌️ RENDEROVÁNÍ TABULKY (Podium + Gradient řádky) ---
     let lastPoints = -1;
     let currentRank = 0;
+    profilData = [];
 
-    body.innerHTML = processed.map((player, i) => {
+    // Spočítej ranky pro všechny hráče + uložení do profilData
+    const allRanked = processed.map((player, i) => {
         if (player.points !== lastPoints) { currentRank = i + 1; }
         lastPoints = player.points;
-
         const rowId = player.user_id || player.id;
         const isOwn = loggedUserId && String(loggedUserId) === String(rowId);
         const isPaidProfil = player.paid === true || player.paid === 1 || String(player.paid) === 'true';
-        // ulož data pro profil (mimo žebříček, ať jdou otevřít)
-        if (i === 0) profilData = [];
-        profilData.push({ rowId, name: player.name, full_name: player.full_name, points: player.points, rank: currentRank, isPaid: isPaidProfil, tip: player.tip });
-        const isAdmin = loggedUserId === "92a1e51b-e03c-48d7-99df-76c2f60a455f";
-        const canSee = isOwn;
-        const isPaid = player.paid === true || player.paid === 1 || String(player.paid) === 'true';
+        profilData.push({ rowId, name: player.name, full_name: player.full_name, points: player.points, rank: currentRank, isPaid: isPaidProfil, tip: player.tip, previous_rank: player.previous_rank });
+        return { ...player, rowId, isOwn, isPaid: isPaidProfil, rank: currentRank };
+    });
+    window.loggedUserIdGlobal = loggedUserId;
 
-        // Trendy (Šipky)
-        let trend = '<span style="color:#64748b; margin-left:8px; font-size:0.75rem;">-</span>';
-        if (player.previous_rank) {
-            const diff = player.previous_rank - currentRank;
-            if (diff > 0) trend = `<span style="color:#10b981; margin-left:8px; font-size:0.75rem;"><i class="fas fa-arrow-up"></i> ${diff}</span>`;
-            else if (diff < 0) trend = `<span style="color:#ef4444; margin-left:8px; font-size:0.75rem;"><i class="fas fa-arrow-down"></i> ${Math.abs(diff)}</span>`;
-        }
+    // Trend šipka
+    const trendHtml = (p) => {
+        if (!p.previous_rank) return '<span style="color:#64748b; font-size:0.7rem; margin-left:6px;">-</span>';
+        const diff = p.previous_rank - p.rank;
+        if (diff > 0) return `<span style="color:#22c55e; font-size:0.7rem; margin-left:6px;"><i class="fas fa-arrow-up"></i>${diff}</span>`;
+        if (diff < 0) return `<span style="color:#ef4444; font-size:0.7rem; margin-left:6px;"><i class="fas fa-arrow-down"></i>${Math.abs(diff)}</span>`;
+        return '<span style="color:#64748b; font-size:0.7rem; margin-left:6px;">-</span>';
+    };
 
-        // Barvy pro top 3
-        let nameStyle = "color:#f8fafc;";
-        let rowStyle = "";
-        if (currentRank === 1) { nameStyle = "color:#fbbf24;"; rowStyle = "background:rgba(251,191,36,0.05); border-left:4px solid #fbbf24;"; }
-        else if (currentRank === 2) { nameStyle = "color:#cbd5e1;"; rowStyle = "border-left:4px solid #cbd5e1;"; }
-        else if (currentRank === 3) { nameStyle = "color:#cd7f32;"; rowStyle = "border-left:4px solid #cd7f32;"; }
+    // === PODIUM PRO TOP 3 ===
+    const prvni = allRanked.find(p => p.rank === 1);
+    const druhy = allRanked.find(p => p.rank === 2);
+    const treti = allRanked.find(p => p.rank === 3);
+    const zbytek = allRanked.filter(p => p.rank > 3);
 
-        if (isOwn) {
-    rowStyle += "outline: 1px solid rgba(212,175,55,0.4); box-shadow: inset 0 0 20px rgba(212,175,55,0.06);";
-    nameStyle = "color:#d4af37;";
-            if (isOwn) {
-    rowStyle += "outline: 1px solid rgba(212,175,55,0.4); box-shadow: inset 0 0 20px rgba(212,175,55,0.06);";
-    nameStyle = "color:#d4af37;";
-    // PDF tlačítko se přidá přímo do HTML řádku níže
-}
-}
+    const podiumPlace = (p, medal, stageStyle, stageHeight, nameColor, isMid) => {
+        if (!p) return '<div style="flex:1; max-width:130px;"></div>';
+        const pdfBtn = p.isOwn ? `<button onclick="event.stopPropagation(); generatePDF()" style="padding:3px 7px; background:rgba(212,175,55,0.12); border:1px solid rgba(212,175,55,0.3); border-radius:5px; color:#d4af37; font-size:0.55rem; font-weight:700; cursor:pointer; letter-spacing:0.5px;">PDF</button>` : '';
+        return `
+            <div style="text-align:center; flex:1; max-width:130px;">
+                <div style="font-size:${isMid ? '36px' : '28px'}; margin-bottom:4px; ${isMid ? 'filter:drop-shadow(0 4px 12px rgba(212,175,55,0.4));' : ''}">${medal}</div>
+                <div style="font-size:${isMid ? '14px' : '13px'}; font-weight:800; color:${nameColor}; margin-bottom:4px;">${p.name || 'Anonym'} ${trendHtml(p)}</div>
+                <div style="font-size:${isMid ? '18px' : '16px'}; font-weight:900; color:${nameColor}; margin-bottom:6px;"><span class="pts-cell" data-pts="${p.points}">${p.points}</span><span style="font-size:9px; opacity:0.6;">b</span></div>
+                <div style="display:flex; gap:4px; justify-content:center; margin-bottom:8px;">
+                    <button onclick="event.stopPropagation(); otevritProfil('${p.rowId}')" title="Profil hráče" style="padding:3px 7px; background:rgba(168,139,250,0.12); border:1px solid rgba(168,139,250,0.3); border-radius:5px; color:#a78bfa; font-size:0.6rem; font-weight:700; cursor:pointer;">👤</button>
+                    ${pdfBtn}
+                </div>
+                <div style="${stageStyle} height:${stageHeight}px; border-radius:8px 8px 0 0; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:900; color:rgba(255,255,255,0.5);">${p.rank}.</div>
+            </div>`;
+    };
+
+    const podiumHtml = (prvni || druhy || treti) ? `
+        <tr><td colspan="3" style="padding:14px 8px 0;">
+            <div style="display:flex; align-items:flex-end; justify-content:center; gap:8px;">
+                ${podiumPlace(druhy, '🥈', 'background:linear-gradient(180deg,rgba(148,163,184,0.4),rgba(148,163,184,0.08)); border:1px solid rgba(148,163,184,0.4);', 60, '#cbd5e1', false)}
+                ${podiumPlace(prvni, '🥇', 'background:linear-gradient(180deg,rgba(212,175,55,0.45),rgba(212,175,55,0.08)); border:1px solid rgba(212,175,55,0.5); box-shadow:0 0 24px rgba(212,175,55,0.15);', 80, '#d4af37', true)}
+                ${podiumPlace(treti, '🥉', 'background:linear-gradient(180deg,rgba(180,100,40,0.4),rgba(180,100,40,0.08)); border:1px solid rgba(180,100,40,0.4);', 42, '#d97b3a', false)}
+            </div>
+            ${zbytek.length > 0 ? `
+            <div style="display:flex; align-items:center; gap:10px; margin:14px 4px 6px;">
+                <div style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(212,175,55,0.2),transparent);"></div>
+                <div style="font-size:9px; color:rgba(212,175,55,0.4); letter-spacing:2px; text-transform:uppercase; font-weight:700;">Ostatní hráči</div>
+                <div style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(212,175,55,0.2),transparent);"></div>
+            </div>` : ''}
+        </td></tr>` : '';
+
+    // === ŘÁDKY 4+ S GRADIENTEM ===
+    const rowsHtml = zbytek.map(player => {
+        const isLast = player.rank === allRanked.length;
+        const bgStyle = isLast 
+            ? 'background:linear-gradient(90deg,rgba(239,68,68,0.08) 0%,rgba(239,68,68,0.01) 60%,transparent 100%); border:1px solid rgba(239,68,68,0.15);'
+            : 'background:linear-gradient(90deg,rgba(56,189,248,0.08) 0%,rgba(56,189,248,0.01) 60%,transparent 100%); border:1px solid rgba(56,189,248,0.12);';
+        const ownStyle = player.isOwn ? 'background:linear-gradient(90deg,rgba(212,175,55,0.14) 0%,rgba(212,175,55,0.02) 60%,transparent 100%); border:1px solid rgba(212,175,55,0.3);' : bgStyle;
+        const ptsColor = isLast ? '#ef4444' : (player.isOwn ? '#d4af37' : '#38bdf8');
+        const nameColor = player.isOwn ? '#d4af37' : '#f0e6c8';
+        const pdfBtn = player.isOwn ? `<button onclick="event.stopPropagation(); generatePDF()" style="padding:3px 7px; background:rgba(212,175,55,0.12); border:1px solid rgba(212,175,55,0.3); border-radius:5px; color:#d4af37; font-size:0.55rem; font-weight:700; cursor:pointer; letter-spacing:0.5px;">PDF</button>` : '';
         
         return `
-            <tr class="player-row" ${canSee ? `onclick="toggleDetail('det-${rowId}')"` : ""} style="cursor:${canSee ? 'pointer':'default'}; ${rowStyle}">
-                <td style="width:75px; padding-left:15px; font-weight:bold; ${nameStyle}">${currentRank}.${trend}</td>
-               <td style="padding:12px 0;">
-                    <div style="font-weight:800; ${nameStyle} display:flex; align-items:center; gap:8px;">
-                        ${avatarHtml(player.name, 30)}
-                       ${player.name || 'Anonym'} ${!canSee ? '🔒' : ''}
-                        <button onclick="event.stopPropagation(); otevritProfil('${rowId}')" title="Profil hráče" style="margin-left:4px; padding:3px 8px; background:rgba(168,139,250,0.1); border:1px solid rgba(168,139,250,0.25); border-radius:6px; color:#a78bfa; font-size:0.6rem; font-weight:700; cursor:pointer;">👤</button>
-                        ${isOwn ? `<button onclick="event.stopPropagation(); generatePDF()" style="margin-left:6px; padding:3px 10px; background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.25); border-radius:6px; color:#d4af37; font-size:0.65rem; font-weight:700; cursor:pointer; letter-spacing:1px;">PDF</button>` : ''}
-                         </div>
+            <tr class="player-row" ${player.isOwn ? `onclick="toggleDetail('det-${player.rowId}')"` : ""} style="cursor:${player.isOwn ? 'pointer' : 'default'};">
+                <td colspan="3" style="padding:3px 6px;">
+                    <div style="display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:10px; ${ownStyle}">
+                        <div style="font-size:18px; font-weight:900; width:28px; text-align:center; color:#5a6480; flex-shrink:0;">${player.rank}</div>
+                        <span style="flex:1; font-weight:700; font-size:14px; color:${nameColor}; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${player.name || 'Anonym'}${trendHtml(player)}</span>
+                        <button onclick="event.stopPropagation(); otevritProfil('${player.rowId}')" title="Profil hráče" style="padding:3px 7px; background:rgba(168,139,250,0.12); border:1px solid rgba(168,139,250,0.3); border-radius:5px; color:#a78bfa; font-size:0.6rem; font-weight:700; cursor:pointer; flex-shrink:0;">👤</button>
+                        ${pdfBtn}
+                        <span style="font-weight:900; font-size:16px; color:${ptsColor}; flex-shrink:0;"><span class="pts-cell" data-pts="${player.points}">${player.points}</span><span style="font-size:10px; opacity:0.6; margin-left:3px;">b</span></span>
+                    </div>
                 </td>
-                 <td style="text-align:right; padding-right:15px; font-weight:900; color:var(--accent);"><span class="pts-cell" data-pts="${player.points}">${player.points} PTS</span></td>
             </tr>
-            ${canSee ? `
-            <tr id="det-${rowId}" class="tip-detail-row" style="display:none; background:#0f172a;">
+            ${player.isOwn ? `
+            <tr id="det-${player.rowId}" class="tip-detail-row" style="display:none; background:#0f172a;">
                 <td colspan="3" style="padding:20px;">
                     <div style="border-left:4px solid #1e293b; padding-left:20px;">
-                        
-                        <!-- PROFIL HRÁČE -->
-                        <div style="display:flex; align-items:center; gap:14px; padding:14px; background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.12); border-radius:12px; margin-bottom:20px; flex-wrap:wrap;">
-                            ${avatarHtml(player.name, 48)}
-                            <div style="flex:1; min-width:150px;">
-                                <div style="font-size:1.1rem; font-weight:800; color:#f0e6c8;">${player.name || 'Anonym'}</div>
-                                ${player.full_name ? `<div style="font-size:0.8rem; color:#5a6480;">${player.full_name}</div>` : ''}
-                                <div style="font-size:0.8rem; color:#d4af37; font-style:italic; margin-top:4px;">"${ziskejHlasku(currentRank, processed.length, player.points, processed.some(p=>p.points>0))}"</div>
-                            </div>
-                            <div style="display:flex; gap:16px; text-align:center;">
-                                <div><div style="font-size:1.2rem; font-weight:900; color:#d4af37;">${currentRank}.</div><div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase;">Pořadí</div></div>
-                                <div><div style="font-size:1.2rem; font-weight:900; color:#d4af37;">${player.points}</div><div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase;">Bodů</div></div>
-                            </div>
-                        </div>
-
-                        <span style="color:var(--accent); font-weight:bold; font-size:0.75rem; text-transform:uppercase;">Skupiny</span>
-            <div class="det-groups-grid" style="margin-top:10px;">
+                        <span style="color:var(--accent); font-weight:bold; font-size:0.75rem; text-transform:uppercase;">Tvůj tip - Skupiny</span>
+                        <div class="det-groups-grid" style="margin-top:10px;">
                             ${(player.tip.groups||[]).map((g, idx) => {
                                 const adminG = r.groups && r.groups[idx];
                                 const aTeams = adminG?.teams || adminG;
@@ -3705,73 +3720,50 @@ async function renderLeaderboard(data, real) {
                                     </div>`;
                             }).join('')}
                         </div>
-
-                   <span style="color:rgba(212,175,55,0.6); font-weight:bold; font-size:0.72rem; text-transform:uppercase; letter-spacing:2px; display:block; margin-top:20px; margin-bottom:12px; border-bottom:1px solid rgba(212,175,55,0.08); padding-bottom:6px;">Play-off</span>
-<div class="det-playoff-stages" style="margin-top:10px;">
-    <div class="det-stage-column">
-        <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);">
-           <b>1/16</b>
-            <div>${(player.tip.s32||[]).map(t => `<div class="${getStatusClass('s32', t, 16)}" style="font-size:0.8rem; margin:1px 0;">${t}</div>`).join('')}</div>
-        </div>
-        <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);">
-            <b>1/8</b>
-            <div>${(player.tip.s16||[]).map(t => `<div class="${getStatusClass('s16', t, 8)}" style="font-size:0.8rem; margin:1px 0;">${t}</div>`).join('')}</div>
-        </div>
-    </div>
-    <div class="det-stage-column">
-        <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);">
-           <b>1/4</b>
-            <div>${(player.tip.s8||[]).map(t => `<div class="${getStatusClass('s8', t, 4)}" style="font-size:0.8rem; margin:1px 0;">${t}</div>`).join('')}</div>
-        </div>
-        <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);">
-            <b>1/2</b>
-            <div>${(player.tip.s4||[]).map(t => `<div class="${getStatusClass('s4', t, 2)}" style="font-size:0.8rem; margin:1px 0;">${t}</div>`).join('')}</div>
-        </div>
-    </div>
-    <div class="det-stage-column">
-        <div class="det-stage-card" style="border-top:2px solid rgba(180,100,40,0.5); background:rgba(180,100,40,0.05);">
-            <b>🥉 3. Místo</b>
-            <div class="${getStatusClass('bronze', player.tip.bronze, 1)}" style="font-size:0.8rem; margin:1px 0;">${player.tip.bronze || '--'}</div>
-        </div>
-        <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.5); margin-top:10px; background:rgba(212,175,55,0.05);">
-            <b>🥇 Vítěz</b>
-            <div class="${getStatusClass('winner', player.tip.winner, 1)}" style="font-size:0.8rem; margin:1px 0;">${player.tip.winner || '--'}</div>
-        </div>
-    </div>
-</div>
+                        <span style="color:rgba(212,175,55,0.6); font-weight:bold; font-size:0.72rem; text-transform:uppercase; letter-spacing:2px; display:block; margin-top:20px; margin-bottom:12px; border-bottom:1px solid rgba(212,175,55,0.08); padding-bottom:6px;">Play-off</span>
+                        <div class="det-playoff-stages" style="margin-top:10px;">
+                            <div class="det-stage-column">
+                                <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);"><b>1/16</b><div>${(player.tip.s32||[]).map(t => `<div class="${getStatusClass('s32', t, 16)}" style="font-size:0.8rem; margin:1px 0;">${t}</div>`).join('')}</div></div>
+                                <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);"><b>1/8</b><div>${(player.tip.s16||[]).map(t => `<div class="${getStatusClass('s16', t, 8)}" style="font-size:0.8rem; margin:1px 0;">${t}</div>`).join('')}</div></div>
+                            </div>
+                            <div class="det-stage-column">
+                                <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);"><b>1/4</b><div>${(player.tip.s8||[]).map(t => `<div class="${getStatusClass('s8', t, 4)}" style="font-size:0.8rem; margin:1px 0;">${t}</div>`).join('')}</div></div>
+                                <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.3);"><b>1/2</b><div>${(player.tip.s4||[]).map(t => `<div class="${getStatusClass('s4', t, 2)}" style="font-size:0.8rem; margin:1px 0;">${t}</div>`).join('')}</div></div>
+                            </div>
+                            <div class="det-stage-column">
+                                <div class="det-stage-card" style="border-top:2px solid rgba(180,100,40,0.5); background:rgba(180,100,40,0.05);"><b>🥉 3. Místo</b><div class="${getStatusClass('bronze', player.tip.bronze, 1)}" style="font-size:0.8rem; margin:1px 0;">${player.tip.bronze || '--'}</div></div>
+                                <div class="det-stage-card" style="border-top:2px solid rgba(212,175,55,0.5); margin-top:10px; background:rgba(212,175,55,0.05);"><b>🥇 Vítěz</b><div class="${getStatusClass('winner', player.tip.winner, 1)}" style="font-size:0.8rem; margin:1px 0;">${player.tip.winner || '--'}</div></div>
+                            </div>
+                        </div>
                     </div>
                 </td>
             </tr>` : ''}
         `;
     }).join('');
 
+    body.innerHTML = podiumHtml + rowsHtml;
+
     // --- 💰 AKTUALIZACE BANKU (Jen od zaplacených hráčů) ---
-const bankEl = document.getElementById('currentBank');
-if (bankEl) {
-    // Filtr: Spočítáme jen ty, kteří mají paid: true / 1 / "true"
-    const paidPlayers = processed.filter(p => 
-        p.paid === true || p.paid === 1 || String(p.paid) === 'true'
-    );
-    
-    const vklad = 200; // Částka za jednoho hráče
-    const celkovyBank = paidPlayers.length * vklad;
-    
-    // Výpočet odměn pro bednu
-    const p1 = Math.round(celkovyBank * 0.60);
-    const p2 = Math.round(celkovyBank * 0.30);
-    const p3 = Math.round(celkovyBank * 0.10);
+    const bankEl = document.getElementById('currentBank');
+    if (bankEl) {
+        const paidPlayers = processed.filter(p => p.paid === true || p.paid === 1 || String(p.paid) === 'true');
+        const vklad = 200;
+        const celkovyBank = paidPlayers.length * vklad;
+        const p1 = Math.round(celkovyBank * 0.60);
+        const p2 = Math.round(celkovyBank * 0.30);
+        const p3 = Math.round(celkovyBank * 0.10);
 
-  bankEl.innerHTML = `
-        <div class="bank-amount" style="font-size:1.8rem; font-weight:900; color:#d4af37;">${celkovyBank.toLocaleString('cs-CZ')} Kč</div>
-        <div class="bank-prizes" style="margin-top:10px;">
-            <span style="color: #d4af37;">🥇 ${p1.toLocaleString('cs-CZ')}</span>
-            <span style="color: #94a3b8;">🥈 ${p2.toLocaleString('cs-CZ')}</span>
-            <span style="color: #d97b3a;">🥉 ${p3.toLocaleString('cs-CZ')}</span>
-        </div>
-    `;
-}
+        bankEl.innerHTML = `
+            <div class="bank-amount" style="font-size:1.8rem; font-weight:900; color:#d4af37;">${celkovyBank.toLocaleString('cs-CZ')} Kč</div>
+            <div class="bank-prizes" style="margin-top:10px;">
+                <span style="color: #d4af37;">🥇 ${p1.toLocaleString('cs-CZ')}</span>
+                <span style="color: #94a3b8;">🥈 ${p2.toLocaleString('cs-CZ')}</span>
+                <span style="color: #d97b3a;">🥉 ${p3.toLocaleString('cs-CZ')}</span>
+            </div>
+        `;
+    }
 
-   // Spusť count-up animaci bodů
+    // Spusť count-up animaci bodů
     document.querySelectorAll('.pts-cell').forEach(el => {
         const target = parseInt(el.getAttribute('data-pts')) || 0;
         if (target > 0) animateCountUp(el, target, 1200);
@@ -3780,7 +3772,7 @@ if (bankEl) {
     // Zábavný panel turnaje
     if (typeof renderTurnajZabava === "function") renderTurnajZabava(processed);
 
-    console.log("✅ ŽEBŘÍČEK HOTOV (Full + Bank)");
+    console.log("✅ ŽEBŘÍČEK HOTOV (Podium + Gradient)");
 }
     
    async function togglePayment(rowId, currentStatus) {
