@@ -1667,9 +1667,10 @@ input:focus {
             <div id="turnaj-zabava"></div>
 
 <div class="section-box" id="section-leaderboard">
-  <div class="section-header" style="cursor:pointer;">
-    <span onclick="toggleZebricek()" style="flex:1;">📊 ŽEBŘÍČEK HRÁČŮ</span>
-    <button onclick="event.stopPropagation(); exportZebricek()" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.25); color:#d4af37; font-size:0.65rem; font-weight:700; padding:5px 12px; border-radius:6px; cursor:pointer; letter-spacing:1px; text-transform:uppercase;">📷 Export</button>
+  <div class="section-header" style="cursor:pointer;" onclick="toggleZebricek()">
+    <span style="flex:1;">📊 ŽEBŘÍČEK HRÁČŮ</span>
+    <button onclick="event.stopPropagation(); exportZebricek()" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.25); color:#d4af37; font-size:0.65rem; font-weight:700; padding:5px 12px; border-radius:6px; cursor:pointer; letter-spacing:1px; text-transform:uppercase; margin-right:10px;">📷 Export</button>
+    <i class="fas fa-chevron-up" id="zebricek-chevron" style="font-size:0.7rem; transition:transform 0.3s; color:#d4af37;"></i>
 </div>
     <table id="leaderboard">
         <tbody id="public-body"></tbody>
@@ -2488,8 +2489,11 @@ async function smazatHlasyAnkety() {
     
 function toggleZebricek() {
     const table = document.getElementById('leaderboard');
+    const chevron = document.getElementById('zebricek-chevron');
     if (!table) return;
-    table.style.display = (table.style.display === 'none') ? 'table' : 'none';
+    const skryto = table.style.display === 'none';
+    table.style.display = skryto ? 'table' : 'none';
+    if (chevron) chevron.style.transform = skryto ? 'rotate(0deg)' : 'rotate(180deg)';
 }
     
 async function exportZebricek() {
