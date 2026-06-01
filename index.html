@@ -3640,11 +3640,12 @@ async function renderLeaderboard(data, real) {
         return '<span style="color:#64748b; font-size:0.7rem; margin-left:6px;">-</span>';
     };
 
-    // === PODIUM PRO TOP 3 ===
-    const prvni = allRanked.find(p => p.rank === 1);
-    const druhy = allRanked.find(p => p.rank === 2);
-    const treti = allRanked.find(p => p.rank === 3);
-    const zbytek = allRanked.filter(p => p.rank > 3);
+   // === PODIUM PRO TOP 3 (jen když turnaj běží) ===
+    const maBody = allRanked.some(p => p.points > 0);
+    const prvni = maBody ? allRanked.find(p => p.rank === 1) : null;
+    const druhy = maBody ? allRanked.find(p => p.rank === 2) : null;
+    const treti = maBody ? allRanked.find(p => p.rank === 3) : null;
+    const zbytek = maBody ? allRanked.filter(p => p.rank > 3) : allRanked;
 
     const podiumPlace = (p, medal, stageStyle, stageHeight, nameColor, isMid) => {
         if (!p) return '<div style="flex:1; max-width:130px;"></div>';
