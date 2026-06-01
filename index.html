@@ -4704,13 +4704,93 @@ async function nacistAdminVysledky() {
         }
 if (error) throw error;
 
-        // --- 📧 UVÍTACÍ E-MAIL ---
+       // --- 📧 UVÍTACÍ E-MAIL S PRAVIDLY ---
         try {
+            const welcomeMessage = `🏆 VÍTEJ V TIPOVAČCE MS 2026
+
+Ahoj ${name},
+
+děkujeme, že ses zapojil/a do tipovačky SK Naděje na Mistrovství světa ve fotbale 2026! Tvůj tip byl úspěšně uložen. 🎉
+
+═════════════════════════════
+
+📋 JAK TO FUNGUJE
+
+1️⃣ NA WEBU sis vyplnil/a svůj tip:
+   • Pořadí 4 týmů v každé z 12 skupin
+   • 8 postupujících ze 3. míst
+   • Pavouka playoff (1/16 → finále)
+   • Vítěze a 3. místo
+
+2️⃣ ZAPLAŤ startovné 200 Kč
+   • Bankovní převod (info najdeš na webu)
+   • Variabilní symbol: "WC26 ${name}"
+
+3️⃣ SLEDUJ turnaj a žebříček 
+   až do velkého finále! 🎉
+
+═════════════════════════════
+
+⏰ DEADLINE: 11. 6. 2026 ve 21:00
+Po tomto čase už nejde tip měnit!
+
+═════════════════════════════
+
+🎯 BODOVÁNÍ
+
+- Skupiny: +4 body za přesné pořadí
+- 1/16 finále: +2 body za každý tým
+- 1/8 finále: +3 body za každý tým
+- Čtvrtfinále: +4 body za každý tým
+- Semifinále: +5 bodů za každý tým
+- 🥉 3. místo: +8 bodů (přesný tip)
+- 🥇 Vítěz: +12 bodů (přesný tip)
+
+MAXIMUM = 294 BODŮ
+
+═════════════════════════════
+
+💰 BANK A VÝHRY
+
+Celkový bank = počet hráčů × 200 Kč
+Rozdělení podle pořadí:
+🥇 1. místo: 60% banku
+🥈 2. místo: 30% banku
+🥉 3. místo: 10% banku
+
+═════════════════════════════
+
+🔥 CO NA WEBU NAJDEŠ
+
+- 📊 Žebříček s avatary a body
+- 👤 Profil hráče (klik na ikonu)
+- 📡 LIVE výsledky (admin aktualizuje)
+- 🗳️ Hlas lidu (favorit na vítěze)
+- 📊 Anketa (občas otázka navíc)
+- 🔥 Co se děje v turnaji
+- 📄 Stáhni svůj tip jako PDF
+
+═════════════════════════════
+
+📧 BUDEME TI PSÁT
+
+Během turnaje občas přijdou informace o postupu, žebříčku a důležitých událostech.
+
+Pokud ti tento e-mail spadl do PROMO/HROMADNÉ složky, přesuň ho prosím do Doručené, ať ti nic neunikne! 📬
+
+═════════════════════════════
+
+🌐 WEB: sknadeje.github.io/SKNadeje
+
+Tipuj srdcem, sleduj turnaj a bav se! ⚽
+
+SK Naděje`;
+
             await supabaseClient.functions.invoke('send-notif', {
                 body: {
                     emails: [session.user.email],
-                    subject: '⚽ Tvůj tip je uložen! WC2026 Tipovačka',
-                    message: `Ahoj ${name},\n\ntvůj tip do tipovačky MS 2026 byl úspěšně uložen! 🎉\n\nNezapomeň zaplatit startovné 200 Kč, ať jsi zařazen do hry o výhru.\n\nBěhem turnaje ti sem budeme posílat důležité informace – výsledky, připomínky a novinky. Pokud ti tento e-mail spadl do hromadné/promo složky, přesuň ho prosím do Doručené, ať ti nic neunikne.\n\nDrž si palce a ať to vyjde!\nSK Naděje`
+                    subject: '⚽ Vítej v tipovačce MS 2026 – pravidla a info!',
+                    message: welcomeMessage
                 }
             });
         } catch (e) { console.warn('Uvítací e-mail se nepodařilo odeslat:', e); }
