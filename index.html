@@ -3640,12 +3640,13 @@ async function renderLeaderboard(data, real) {
         return '<span style="color:#64748b; font-size:0.7rem; margin-left:6px;">-</span>';
     };
 
-   // === PODIUM PRO TOP 3 (jen když turnaj běží) ===
+  // === PODIUM PRO TOP 3 (jen když turnaj běží) ===
     const maBody = allRanked.some(p => p.points > 0);
-    const prvni = maBody ? allRanked.find(p => p.rank === 1) : null;
-    const druhy = maBody ? allRanked.find(p => p.rank === 2) : null;
-    const treti = maBody ? allRanked.find(p => p.rank === 3) : null;
-    const zbytek = maBody ? allRanked.filter(p => p.rank > 3) : allRanked;
+    // Vezmeme první 3 hráče podle pořadí v poli (s remízami)
+    const prvni = maBody ? allRanked[0] : null;
+    const druhy = maBody ? allRanked[1] : null;
+    const treti = maBody ? allRanked[2] : null;
+    const zbytek = maBody ? allRanked.slice(3) : allRanked;
 
     const podiumPlace = (p, medal, stageStyle, stageHeight, nameColor, isMid) => {
         if (!p) return '<div style="flex:1; max-width:130px;"></div>';
