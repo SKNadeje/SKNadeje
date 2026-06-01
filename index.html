@@ -22,6 +22,51 @@
 </header>
 
 <style>
+    /* LIVE badge - pulsující červená tečka */
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+}
+@keyframes liveBgPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
+    50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+}
+.live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-radius: 12px;
+    animation: liveBgPulse 1.8s infinite;
+    box-shadow: 0 2px 8px rgba(239,68,68,0.3);
+}
+.live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #fff;
+    animation: livePulse 1s infinite;
+}
+.final-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    background: linear-gradient(135deg, #22c55e, #15803d);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(34,197,94,0.2);
+}
 
     @media (max-width: 768px) {
     /* Žebříček mobil - kompaktní řádek */
@@ -1521,6 +1566,7 @@ input:focus {
     
     <div id="admin-panel" class="hidden section-box" style="border-color: var(--lose);">
     <div class="section-header" style="background: var(--lose)">🔧 ADMIN PANEL</div>
+        <div id="status-panel" style="padding:20px 20px 0 20px;"></div>
     <div class="section-content" id="admin-form-container" style="padding:20px; display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:15px;"></div>
     <div style="grid-column: 1 / -1; margin: 10px 0 20px 0; padding: 20px; background: rgba(56, 189, 248, 0.05); border: 2px dashed rgba(56, 189, 248, 0.3); border-radius: 12px; text-align: center;">
     <h4 style="color: #38bdf8; margin: 0 0 10px 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
@@ -1713,6 +1759,104 @@ input:focus {
 </div>
     
 <script>
+function renderStatusPanel() {
+    const el = document.getElementById('status-panel');
+    if (!el) return;
+
+    const skupiny = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+    const faze = [
+        { k: 's32', n: '1/16' },
+        { k: 's16', n: '1/8' },
+        { k: 's8', n: '1/4' },
+        { k: 's4', n: 'Semi' },
+        { k: 'bronze', n: 'Bronz' },
+        { k: 'winner', n: 'Vítěz' }
+    ];
+
+    const tlacitkoHtml = (klic, label) => {
+        const status = getFazeStatus(klic);
+        let bg, color, text;
+        if (status === 'live') { bg = 'linear-gradient(135deg,#ef4444,#b91c1c)'; color = '#fff'; text = `🔴 ${label}`; }
+        else if (status === 'final') { bg = 'linear-gradient(135deg,#22c55e,#15803d)'; color = '#fff'; text = `✓ ${label}`; }
+        else { bg = 'rgba(255,255,255,0.04)'; color = '#94a3b8'; text = label; }
+        return `<button onclick="prepniStatus('${klic}')" style="background:${bg}; color:${color}; border:1px solid rgba(212,175,55,0.15); padding:6px 10px; border-radius:8px; font-size:0.7rem; font-weight:700; cursor:pointer; min-width:55px;">${text}</button>`;
+    };
+
+    el.innerHTML = `
+        <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(212,175,55,0.15); border-radius:12px; padding:16px; margin-bottom:16px;">
+            <div style="font-size:0.75rem; color:#d4af37; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:10px;">📡 STATUS FÁZÍ (klik cyklí: none → 🔴 LIVE → ✓ FINAL)</div>
+            
+            <div style="font-size:0.65rem; color:#5a6480; text-transform:uppercase; margin-bottom:6px;">Skupiny:</div>
+            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:14px;">
+                ${skupiny.map(s => tlacitkoHtml(s, `Sk. ${s}`)).join('')}
+            </div>
+
+            <div style="font-size:0.65rem; color:#5a6480; text-transform:uppercase; margin-bottom:6px;">Playoff:</div>
+            <div style="display:flex; flex-wrap:wrap; gap:5px;">
+                ${faze.map(f => tlacitkoHtml(f.k, f.n)).join('')}
+            </div>
+        </div>`;
+}
+    
+// Přepne status fáze (none → live → final → none)
+async function prepniStatus(klic) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+        showToast("Pouze pro admina!", 'error');
+        return;
+    }
+
+    // Načti aktuální status
+    const { data: row } = await supabaseClient.from('admin_vysledky').select('faze_status').eq('id', 1).maybeSingle();
+    const fs = row?.faze_status || { groups: {} };
+
+    // Zjisti aktuální status
+    let current;
+    const jeSkupina = (klic.length === 1 && klic >= 'A' && klic <= 'L');
+    if (jeSkupina) {
+        if (!fs.groups) fs.groups = {};
+        current = fs.groups[klic] || 'none';
+    } else {
+        current = fs[klic] || 'none';
+    }
+
+    // Cykluj: none → live → final → none
+    const next = current === 'none' ? 'live' : (current === 'live' ? 'final' : 'none');
+    if (jeSkupina) fs.groups[klic] = next;
+    else fs[klic] = next;
+
+    // Ulož
+    try {
+        const { error } = await supabaseClient.from('admin_vysledky').update({ faze_status: fs }).eq('id', 1);
+        if (error) throw error;
+        showToast(`${klic}: ${next.toUpperCase()}`, 'success', 1500);
+        if (typeof loadAll === "function") await loadAll();
+        renderStatusPanel(); // překreslí admin panel
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
+    
+// Získá status fáze (groups per skupina, ostatní per fáze)
+function getFazeStatus(klic) {
+    const r = window.currentResults || {};
+    const fs = r.faze_status || {};
+    
+    // Skupiny: klic je "A", "B", ... -> jdeme do fs.groups[klic]
+    if (klic.length === 1 && klic >= 'A' && klic <= 'L') {
+        return (fs.groups && fs.groups[klic]) || 'none';
+    }
+    // Ostatní fáze (s32, s16, s8, s4, bronze, winner)
+    return fs[klic] || 'none';
+}
+
+// Vrátí HTML pro badge LIVE/FINAL/nic
+function statusBadgeHtml(status) {
+    if (status === 'live') return `<span class="live-badge"><span class="live-dot"></span>LIVE</span>`;
+    if (status === 'final') return `<span class="final-badge">✓ FINÁLNÍ</span>`;
+    return '';
+}
+    
 async function togglePaymentProfil(rowId, currentStatus) {
     const { data: authData } = await supabaseClient.auth.getUser();
     if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
@@ -3256,6 +3400,7 @@ async function loadAll() {
             if (typeof renderBodyVeHre === "function") renderBodyVeHre();
             if (typeof renderAnketa === "function") renderAnketa();
             if (typeof renderProgress === "function") renderProgress();
+            if (typeof renderStatusPanel === "function") renderStatusPanel();
 
             console.log("✅ Všechny komponenty vykresleny.");
         } else {
@@ -3266,6 +3411,7 @@ async function loadAll() {
             // --- C. BODY VE HŘE (i bez tipů) ---
             if (typeof renderBodyVeHre === "function") renderBodyVeHre();
             if (typeof renderAnketa === "function") renderAnketa();
+            if (typeof renderStatusPanel === "function") renderStatusPanel();
         }
     } catch (error) {
         console.error("❌ Kritická chyba v loadAll:", error);
