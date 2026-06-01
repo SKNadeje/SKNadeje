@@ -3323,16 +3323,18 @@ async function init() {
     ? g.teams.slice(0, 4).map((t, i) => `<div style="font-size:0.75rem;">${i+1}. ${flagImg(t, 16)}${t}</div>`).join('')
     : `<span style="color:#64748b; font-size:0.85rem; width:100%; text-align:center;">Klikni pro úpravu</span>`;
 
+      const grpBadge = (typeof statusBadgeHtml === 'function' && typeof getFazeStatus === 'function') 
+            ? statusBadgeHtml(getFazeStatus(g.id)) : '';
         grid.innerHTML += `
         <div class="group-card ${g.done ? 'completed' : ''}" id="dot-${g.id}" onclick="editGroup('${g.id}')">
             <div class="g-card-header">
-                <span>Skupina ${g.id}</span>
+                <span>Skupina ${g.id} ${grpBadge}</span>
                 <i class="fas ${g.done ? 'fa-check-circle' : 'fa-edit'}" style="opacity: ${g.done ? '1' : '0.5'}; color: ${g.done ? '#22c55e' : 'inherit'};"></i>
             </div>
             <div class="g-teams-row" id="teams-${g.id}">
                 ${teamsPreview}
             </div>
-        </div>`; 
+        </div>`;
     });
 }
 
@@ -3401,17 +3403,18 @@ async function loadAll() {
             if (typeof renderAnketa === "function") renderAnketa();
             if (typeof renderProgress === "function") renderProgress();
             if (typeof renderStatusPanel === "function") renderStatusPanel();
-
+            if (typeof init === "function") init();
             console.log("✅ Všechny komponenty vykresleny.");
         } else {
             console.warn("⚠️ Zatím nebyly nalezeny žádné tipy v databázi.");
             if (typeof renderLeaderboard === "function") {
                 renderLeaderboard([], window.currentResults || {});
             }
-            // --- C. BODY VE HŘE (i bez tipů) ---
+           // --- C. BODY VE HŘE (i bez tipů) ---
             if (typeof renderBodyVeHre === "function") renderBodyVeHre();
             if (typeof renderAnketa === "function") renderAnketa();
             if (typeof renderStatusPanel === "function") renderStatusPanel();
+            if (typeof init === "function") init();
         }
     } catch (error) {
         console.error("❌ Kritická chyba v loadAll:", error);
