@@ -2130,31 +2130,46 @@ function renderProgress() {
     const fs = r.faze_status || {};
     const grpStatus = fs.groups || {};
 
-    // Pomocná: status pro skupiny celkem (live když aspoň 1 live a žádná final-only, final když všech 12 final)
+    // === VÁHY ZÁPASŮ ===
+    const zapasyVeSkupine = 6;         // 12 skupin × 6 = 72
+    const zapasyPO = { s32:16, s16:8, s8:4, s4:2, bronze:1, winner:1 }; // 32 celkem
+    const zapasuCelkem = 12 * zapasyVeSkupine + Object.values(zapasyPO).reduce((a,b)=>a+b, 0); // 72+32 = 104
+
+    // === ZÁPASY ODEHRANÉ ===
+    const statusToVaha = (s) => s === 'final' ? 1 : (s === 'live' ? 0.5 : 0);
+    let zapasuHotovo = 0;
+
+    // Skupiny (per skupina)
+    ['A','B','C','D','E','F','G','H','I','J','K','L'].forEach(s => {
+        zapasuHotovo += zapasyVeSkupine * statusToVaha(grpStatus[s] || 'none');
+    });
+
+    // Playoff fáze
+    Object.entries(zapasyPO).forEach(([klic, pocet]) => {
+        zapasuHotovo += pocet * statusToVaha(fs[klic] || 'none');
+    });
+
+    const pct = Math.round((zapasuHotovo / zapasuCelkem) * 100);
+
+    // === STATUS PRO ZOBRAZENÍ JEDNOTLIVÝCH FÁZÍ V ŘÁDKU ===
     const skupinyStatusy = ['A','B','C','D','E','F','G','H','I','J','K','L'].map(s => grpStatus[s] || 'none');
     const vsechnyFinal = skupinyStatusy.every(s => s === 'final');
     const aspoNejakaLive = skupinyStatusy.some(s => s === 'live');
     const aspoNejakaVyplnena = skupinyStatusy.some(s => s !== 'none');
     let skupinyStatus = 'none';
     if (vsechnyFinal) skupinyStatus = 'final';
-    else if (aspoNejakaLive) skupinyStatus = 'live';
-    else if (aspoNejakaVyplnena) skupinyStatus = 'live'; // něco zadané, ale ne final
+    else if (aspoNejakaLive || aspoNejakaVyplnena) skupinyStatus = 'live';
 
     const faze = [
         { nazev: 'Skupiny', status: skupinyStatus },
-        { nazev: '1/16',   status: fs.s32 || 'none' },
-        { nazev: '1/8',    status: fs.s16 || 'none' },
-        { nazev: '1/4',    status: fs.s8  || 'none' },
-        { nazev: 'Semi',   status: fs.s4  || 'none' },
-        { nazev: 'Bronz',  status: fs.bronze || 'none' },
-        { nazev: 'Finále', status: fs.winner || 'none' },
+        { nazev: '1/16',    status: fs.s32 || 'none' },
+        { nazev: '1/8',     status: fs.s16 || 'none' },
+        { nazev: '1/4',     status: fs.s8  || 'none' },
+        { nazev: 'Semi',    status: fs.s4  || 'none' },
+        { nazev: 'Bronz',   status: fs.bronze || 'none' },
+        { nazev: 'Finále',  status: fs.winner || 'none' },
     ];
 
-    // Pro progress %: počítáme jen final fáze
-    const finalCount = faze.filter(f => f.status === 'final').length;
-    const pct = Math.round((finalCount / faze.length) * 100);
-
-    // Aktuální fáze = první live nebo první none po finalu
     let aktualni = faze.findIndex(f => f.status === 'live');
     if (aktualni === -1) aktualni = faze.findIndex(f => f.status === 'none');
 
