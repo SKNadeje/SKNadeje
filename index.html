@@ -1875,19 +1875,54 @@ async function togglePaymentProfil(rowId, currentStatus) {
     }
 }
     
-    function ziskejOdznaky(p) {
+   function ziskejOdznaky(p) {
     const odznaky = [];
     const tip = p.tip || {};
-    // Odeslal tip
-    odznaky.push({ icon: '🎯', label: 'Odeslal tip', aktivni: true });
-    // Kompletní tip (má vítěze)
+    const total = profilData.length;
+    const maBody = profilData.some(x => x.points > 0);
+
+    // Hlas lidu - oblíbený vítěz (kdo zvolil oblíbeného)
+    const hlasy = {};
+    profilData.forEach(pl => {
+        const w = pl.tip?.winner;
+        if (w) hlasy[w] = (hlasy[w] || 0) + 1;
+    });
+    const sortHlasy = Object.entries(hlasy).sort((a,b) => b[1]-a[1]);
+    const oblibeny = sortHlasy[0]?.[0];
+    const outsider = sortHlasy[sortHlasy.length-1]?.[0];
+
+    // 1. Kompletní tip
     odznaky.push({ icon: '✅', label: 'Kompletní tip', aktivni: !!(tip.winner && tip.winner !== '') });
-    // Zaplaceno
-    // Zaplaceno (klikací pro admina)
+    
+    // 2. Zaplaceno
     odznaky.push({ icon: '💰', label: p.isPaid ? 'Zaplaceno' : 'Nezaplaceno', aktivni: p.isPaid, klik: `togglePaymentProfil('${p.rowId}', ${p.isPaid})` });
-    // Vedoucí / Top 3
-    odznaky.push({ icon: '👑', label: 'Vede žebříček', aktivni: p.rank === 1 && p.points > 0 });
+
+    // 3. Král (1. místo + body)
+    odznaky.push({ icon: '👑', label: 'Král', aktivni: p.rank === 1 && p.points > 0 });
+
+    // 4. Top 3
     odznaky.push({ icon: '🔥', label: 'Top 3', aktivni: p.rank <= 3 && p.points > 0 });
+
+    // 5. Černý kůň (poslední s tipy + má body)
+    odznaky.push({ icon: '🐴', label: 'Černý kůň', aktivni: p.rank === total && p.points > 0 && total > 3 });
+
+    // 6. Sázkař (vsadil na outsidera)
+    odznaky.push({ icon: '🎰', label: 'Sázkař', aktivni: !!(tip.winner && tip.winner === outsider && oblibeny !== outsider) });
+
+    // 7. S davem (vsadil na favorita)
+    odznaky.push({ icon: '🐑', label: 'S davem', aktivni: !!(tip.winner && tip.winner === oblibeny && sortHlasy[0]?.[1] > 1) });
+
+    // 8. Šťastlivec (skočil nahoru o 3+)
+    const skok = p.previous_rank ? p.previous_rank - p.rank : 0;
+    odznaky.push({ icon: '🍀', label: 'Šťastlivec', aktivni: skok >= 3 });
+
+    // 9. Propadák (spadl o 3+)
+    odznaky.push({ icon: '💀', label: 'Propadák', aktivni: skok <= -3 });
+
+    // 10. Účastník (jen pokud nemá žádný jiný)
+    const maJinyOdznak = odznaky.some(o => o.aktivni && o.label !== 'Nezaplaceno');
+    odznaky.push({ icon: '🦥', label: 'Pohodář', aktivni: !maJinyOdznak });
+
     return odznaky;
 }
 function spocitejFazeProfil(tip) {
@@ -1996,26 +2031,79 @@ function otevritProfil(rowId) {
     document.getElementById('profil-modal').style.display = 'flex';
 }
 function ziskejHlasku(rank, total, points, maBody) {
-    // Turnaj nezačal (všichni 0)
+    let pool = [];
+    
+    // Turnaj nezačal
     if (!maBody) {
-        const pred = [
-            "Zatím čeká na svou šanci ⏳",
-            "Tip odeslán, teď už se jen modlit 🙏",
+        pool = [
+            "Tip odeslán, teď už jen modlit 🙏",
             "Klid před bouří 🌩️",
-            "Připraven dobýt žebříček 🚀"
+            "Připraven dobýt žebříček 🚀",
+            "Tipuje jako šaman 🔮",
+            "Věří svým střevům 💪",
+            "Konzultoval s křišťálovou koulí 🔮",
+            "Sázel podle nálady kočky 🐱",
+            "Tip schovaný pod polštářem 🛏️",
+            "Náhoda nehraje roli (prý) 🎲",
+            "Hlavně že je v tom 🎉"
         ];
-        return pred[rank % pred.length];
+    } else if (rank === 1) {
+        pool = [
+            "Král tipovačky 👑",
+            "Nedotknutelný vůdce 🏆",
+            "Tip jako od jasnovidce 🔮",
+            "Ostatní jen koukají 🎯",
+            "Mistr predikcí 🧠",
+            "Dotyk Midase 💛"
+        ];
+    } else if (rank === 2) {
+        pool = [
+            "Kousek od trůnu 🥈",
+            "Dýchá lídrovi na záda 💨",
+            "Druhý je první z poražených 😏",
+            "Tak blízko a přitom daleko ⚔️"
+        ];
+    } else if (rank === 3) {
+        pool = [
+            "Bronz chutná taky 🥉",
+            "Stupně vítězů ✨",
+            "Třetí je taky cool 😎"
+        ];
+    } else {
+        const pct = total > 1 ? (rank - 1) / (total - 1) : 0;
+        if (pct <= 0.33) {
+            pool = [
+                "Šlape jak hodinky ⚡",
+                "V první polovině pelotonu 🚴",
+                "Solidní tipař 💪",
+                "Mezi elitou 🎯"
+            ];
+        } else if (pct <= 0.66) {
+            pool = [
+                "Drží se ve středu pole 🎯",
+                "Průměrný hrdina 🦸",
+                "Bez bláta a bez slávy 🌿",
+                "Klidný v pozadí 😌"
+            ];
+        } else if (rank === total) {
+            pool = [
+                "Hlavně že se účastní 😅",
+                "Někdo musí být poslední 🦥",
+                "Spodek tabulky, vrchol srandy 🤡",
+                "Černý kůň co zatím nezaběhal 🐴",
+                "Z téhle pozice se dá jen nahoru ⬆️"
+            ];
+        } else {
+            pool = [
+                "Ještě není nic ztraceno 💪",
+                "Boj o čest pokračuje ⚔️",
+                "Comeback ve hvězdách 🌟",
+                "Pomalu ale jistě? 🐢"
+            ];
+        }
     }
-    // Podle pozice
-    const pct = total > 1 ? (rank - 1) / (total - 1) : 0; // 0 = první, 1 = poslední
-    if (rank === 1) return "Král tipovačky 👑";
-    if (rank === 2) return "Kousek od trůnu 🥈";
-    if (rank === 3) return "Bronz chutná taky 🥉";
-    if (pct <= 0.33) return "Šlape jak hodinky ⚡";
-    if (pct <= 0.66) return "Drží se ve středu pole 🎯";
-    if (pct <= 0.77) return "Sponzor 😅";
-    if (rank === total) return "Hlavně že se účastní 😅";
-    return "Ještě není nic ztraceno 💪";
+
+    return pool[Math.floor(Math.random() * pool.length)];
 }
     
 function renderTurnajZabava(processed) {
