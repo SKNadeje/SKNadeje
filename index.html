@@ -1756,9 +1756,12 @@ input:focus {
 </div>
     
 <script>
-    function ukazPopisOdznaku(label, popis, aktivni) {
-    const stav = aktivni ? '✓ Získáno' : '✗ Ještě nezískáno';
-    showToast(`${label} – ${stav}: ${popis}`, 'info', 4500);
+   function ukazPopisOdznaku(label, popis, aktivni) {
+    const box = document.getElementById('odznak-popis');
+    if (!box) return;
+    const stav = aktivni ? '<span style="color:#22c55e;">✓ Získáno</span>' : '<span style="color:#5a6480;">✗ Ještě nezískáno</span>';
+    box.innerHTML = `<b style="color:#d4af37;">${label}</b> · ${stav}<br><span style="color:#94a3b8;">${popis}</span>`;
+    box.style.display = 'block';
 }
 function renderStatusPanel() {
     const el = document.getElementById('status-panel');
@@ -2003,13 +2006,17 @@ function otevritProfil(rowId) {
                 </div>`;
         })()}
 
-        <!-- ODZNAKY -->
+       <!-- ODZNAKY -->
         ${(() => {
             const odznaky = ziskejOdznaky(p);
             return `
                 <div style="margin-bottom:16px;">
-                    <div style="font-size:0.65rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:8px;">Odznaky</div>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <div style="font-size:0.65rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700;">Odznaky</div>
+                        <div style="font-size:0.6rem; color:#5a6480;">↓ Klepni pro popis</div>
+                    </div>
+                    <div id="odznak-popis" style="display:none; padding:10px 12px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.2); border-radius:8px; margin-bottom:10px; font-size:0.75rem; color:#f0e6c8;"></div>
+       <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
                         ${odznaky.map(o => `
                             <div title="${o.label}: ${o.popis || ''}" ${o.klik ? `onclick="${o.klik}"` : `onclick="ukazPopisOdznaku('${o.label.replace(/'/g, "\\'")}', '${(o.popis||'').replace(/'/g, "\\'")}', ${o.aktivni})"`} style="text-align:center; padding:8px; border-radius:10px; width:60px; background:${o.aktivni ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${o.aktivni ? 'rgba(212,175,55,0.25)' : 'rgba(255,255,255,0.05)'}; opacity:${o.aktivni ? '1' : '0.35'}; cursor:pointer;">
                                 <div style="font-size:18px;">${o.icon}</div>
