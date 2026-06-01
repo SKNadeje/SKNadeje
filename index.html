@@ -1682,10 +1682,7 @@ input:focus {
                 <div class="section-header">1. POŘADÍ VE SKUPINÁCH</div>
                 <div class="section-content" style="padding: 25px;">
                     <div class="groups-grid" id="groups-grid"></div>
-                    <div id="group-editor" class="hidden" style="margin-top:25px; padding:25px; background:rgba(0,0,0,0.3); border-radius:16px; border:1px solid var(--accent); box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
-                        <h3 id="edit-title" style="text-align:center; margin:0 0 20px 0; font-size: 1.2rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 1px;"></h3>
-                        <div id="team-list-container"></div>
-                    </div>
+                  
                     <button class="btn btn-primary" style="margin-top:25px; font-size: 1.1rem; padding: 16px;" onclick="confirmAllGroups()">Pokračovat na 3. místa <i class="fas fa-arrow-right" style="margin-left: 8px;"></i></button>
                 </div>
             </div>
@@ -3344,18 +3341,16 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 });
 
-    function aktualizujVzhledKarty(gid) {
+   function aktualizujVzhledKarty(gid) {
     const g = state.groups.find(x => x.id === gid);
     const teamsContainer = document.getElementById(`teams-${gid}`);
     const card = document.getElementById(`dot-${gid}`);
-
     if (g && g.done && teamsContainer && card) {
         card.classList.add('filled');
-        // Vykreslí 1. a 2. místo vedle sebe
-      teamsContainer.innerHTML = `
-    <div class="g-team-name"><span class="g-pos-number">1.</span> ${flagImg(g.teams[0], 18)}${g.teams[0] || '?'}</div>
-    <div class="g-team-name"><span class="g-pos-number">2.</span> ${flagImg(g.teams[1], 18)}${g.teams[1] || '?'}</div>
-`;
+        // Vykreslí všechny 4 týmy pod sebou (jako v init)
+        teamsContainer.innerHTML = g.teams.slice(0, 4).map((t, i) => 
+            `<div style="font-size:0.75rem;">${i+1}. ${flagImg(t, 16)}${t}</div>`
+        ).join('');
     }
 }
 
@@ -3784,10 +3779,19 @@ if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
  function editGroup(id) { 
     const editor = document.getElementById('group-editor');
     if (!editor) return;
-
+    editor.style.display = 'flex';
     editor.classList.remove('hidden'); 
     document.getElementById('edit-title').innerText = `Pořadí ve Skupině ${id}`; 
     renderTeamList(id); 
+}
+
+function zavritEditor() {
+    const editor = document.getElementById('group-editor');
+    if (!editor) return;
+    editor.style.display = 'none';
+    editor.classList.add('hidden');
+    // Překresli karty skupin (ať se aktualizuje pořadí)
+    if (typeof init === "function") init();
 }
 
 function renderTeamList(gid) {
@@ -5171,6 +5175,9 @@ window.addEventListener('DOMContentLoaded', checkUserSession);
         <button onclick="document.getElementById('profil-modal').style.display='none'" class="btn" style="width:100%; margin-top:16px; background:rgba(30,40,60,0.8); color:#94a3b8; border:1px solid rgba(212,175,55,0.12);">Zavřít</button>
     </div>
 </div>
-    
+    <div id="group-editor" class="hidden" style="margin-top:25px; padding:25px; background:rgba(0,0,0,0.3); border-radius:16px; border:1px solid var(--accent); box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+                        <h3 id="edit-title" style="text-align:center; margin:0 0 20px 0; font-size: 1.2rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 1px;"></h3>
+                        <div id="team-list-container"></div>
+                    </div>  
 </body>
 </html>
