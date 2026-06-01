@@ -4185,10 +4185,14 @@ function genStage(title, teams, count, id, prevPhase, prevDot) {
         cont.appendChild(stageDiv);
     }
 
-    // Sestavení HTML šablony
+// Status badge pro tuto fázi
+    const klicStatus = { 's32': 's32', 's16': 's16', 's8': 's8', 's4': 's4', 's3': 'bronze', 's2': 'winner' }[id];
+    const statusBadge = (klicStatus && typeof statusBadgeHtml === 'function' && typeof getFazeStatus === 'function') 
+        ? statusBadgeHtml(getFazeStatus(klicStatus)) : '';
+
     let h = `
         <div class="section-header">
-            <span style="font-size: 1.2rem; font-weight: 800;">${title}</span>
+            <span style="font-size: 1.2rem; font-weight: 800; display:inline-flex; align-items:center; gap:10px;">${title} ${statusBadge}</span>
             <button class="btn btn-back" onclick="goBack('sec-${id}', '${prevPhase}', '${prevDot}')">
                 <i class="fas fa-arrow-left"></i> ZPĚT
             </button>
