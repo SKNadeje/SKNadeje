@@ -2181,7 +2181,7 @@ function ziskejHlasku(rank, total, points, maBody) {
     // Turnaj nezačal
     if (!maBody) {
         pool = [
-            "Tip odeslán, teď už jen modlit 🙏",
+            "Tip odeslán, teď už se jen modlit 🙏",
             "Klid před bouří 🌩️",
             "Připraven dobýt žebříček 🚀",
             "Tipuje jako šaman 🔮",
@@ -2458,9 +2458,9 @@ function animateCountUp(el, target, duration = 1000) {
         const progress = Math.min((now - startTime) / duration, 1);
         // easing (zpomalení na konci)
         const eased = 1 - Math.pow(1 - progress, 3);
-        el.innerText = Math.round(start + (target - start) * eased) + ' PTS';
+        el.innerText = Math.round(start + (target - start) * eased);
         if (progress < 1) requestAnimationFrame(tick);
-        else el.innerText = target + ' PTS';
+        else el.innerText = target;
     }
     requestAnimationFrame(tick);
 }
