@@ -4456,7 +4456,7 @@ async function renderLeaderboard(data, real) {
         return `
             <div style="text-align:center; flex:1; max-width:130px;">
                 <div style="font-size:${isMid ? '36px' : '28px'}; margin-bottom:4px; ${isMid ? 'filter:drop-shadow(0 4px 12px rgba(212,175,55,0.4));' : ''}">${medal}</div>
-                <div style="font-size:${isMid ? '14px' : '13px'}; font-weight:800; color:${nameColor}; margin-bottom:4px;">${p.name || 'Anonym'}${typeof mvpBadgeHtml === 'function' ? mvpBadgeHtml(p.rowId, 'small') : ''} ${trendHtml(p)}</div> A v stejné funkci níže najdi ostatní řádky (zbytek hráčů, 4. místo dolů):
+                <div style="font-size:${isMid ? '14px' : '13px'}; font-weight:800; color:${nameColor}; margin-bottom:4px;">${p.name || 'Anonym'}${typeof mvpBadgeHtml === 'function' ? mvpBadgeHtml(p.rowId, 'small') : ''} ${trendHtml(p)}</div>:
                 <div style="font-size:${isMid ? '18px' : '16px'}; font-weight:900; color:${nameColor}; margin-bottom:6px;"><span class="pts-cell" data-pts="${p.points}">${p.points}</span><span style="font-size:9px; opacity:0.6;">b</span></div>
                 <div style="display:flex; gap:4px; justify-content:center; margin-bottom:8px;">
                     <button onclick="event.stopPropagation(); otevritProfil('${p.rowId}')" title="Profil hráče" style="padding:3px 7px; background:rgba(168,139,250,0.12); border:1px solid rgba(168,139,250,0.3); border-radius:5px; color:#a78bfa; font-size:0.6rem; font-weight:700; cursor:pointer;">👤</button>
