@@ -4097,12 +4097,12 @@ function moveTeam(gid, index, direction) {
     const g = state.groups.find(x => x.id === gid);
     const newIndex = index + direction;
     
-    // Kontrola, jestli nevyskakujeme z pole (0-3)
     if (newIndex >= 0 && newIndex < g.teams.length) {
         const temp = g.teams[index];
         g.teams[index] = g.teams[newIndex];
         g.teams[newIndex] = temp;
-        renderTeamList(gid); // Znovu vykreslíme se změněným pořadím
+        vycistiTretiMista();
+        renderTeamList(gid);
     }
 }
     let dEl = null; 
@@ -4114,12 +4114,28 @@ function dO(e) {
     let n = s.find(x => e.clientY <= x.getBoundingClientRect().top + x.getBoundingClientRect().height/2); 
     l.insertBefore(dEl, n); 
 }
+function vycistiTretiMista() {
+    // Sesbírej všechny týmy, které jsou aktuálně na 3. místě ve skupinách
+    const aktualniTretiMista = state.groups.map(g => g.teams[2]).filter(t => t);
+    // Vyhoď z thirds ty, co už nejsou na 3. místě
+    const puvodniPocet = state.thirds.length;
+    state.thirds = state.thirds.filter(t => aktualniTretiMista.includes(t));
+    
+    // Pokud něco zmizelo, dej hráči vědět
+    if (state.thirds.length < puvodniPocet) {
+        const odebrano = puvodniPocet - state.thirds.length;
+        if (typeof showToast === "function") {
+            showToast(`⚠️ Odebrán${odebrano > 1 ? 'o ' + odebrano + ' týmů' : ' 1 tým'} z výběru 3. míst (změnilo se pořadí ve skupině)`, 'info', 3000);
+        }
+    }
+}
+    
 function dE(e, gid) { 
     dEl.style.opacity = '1';
-    // Najdeme všechny spany s názvy týmů (jsou to vždy ty druhé v pořadí v každém itemu)
     const n = [...document.querySelectorAll(`#L-${gid} .team-item span:nth-of-type(2)`)].map(x => x.innerText); 
     state.groups.find(x => x.id === gid).teams = n; 
-    renderTeamList(gid); // Překreslíme, aby se opravila čísla 1-4
+    vycistiTretiMista();
+    renderTeamList(gid);
 }
     
 
