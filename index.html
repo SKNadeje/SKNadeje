@@ -1489,7 +1489,111 @@ input:focus {
     border-color: rgba(212,175,55,0.45);
     box-shadow: 0 0 0 3px rgba(212,175,55,0.07);
 }
+/* --- CHAT STYLY --- */
+.chat-msg {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(212,175,55,0.08);
+    position: relative;
+    animation: chatFadeIn 0.3s ease;
+}
 
+.chat-msg.own {
+    background: rgba(212,175,55,0.06);
+    border-color: rgba(212,175,55,0.2);
+    align-self: flex-end;
+    max-width: 85%;
+}
+
+.chat-msg-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3px;
+    gap: 8px;
+}
+
+.chat-msg-name {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #d4af37;
+    letter-spacing: 0.5px;
+}
+
+.chat-msg.own .chat-msg-name { color: #f0e6c8; }
+
+.chat-msg-time {
+    font-size: 0.6rem;
+    color: #5a6480;
+}
+
+.chat-msg-text {
+    font-size: 0.85rem;
+    color: #f0e6c8;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+.chat-msg-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.chat-reaction {
+    background: rgba(212,175,55,0.08);
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 12px;
+    padding: 2px 7px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    color: #f0e6c8;
+    transition: all 0.2s;
+}
+
+.chat-reaction:hover { background: rgba(212,175,55,0.15); }
+.chat-reaction.mine { background: rgba(212,175,55,0.2); border-color: rgba(212,175,55,0.4); }
+
+.chat-react-btn, .chat-delete-btn {
+    background: none;
+    border: none;
+    color: #5a6480;
+    cursor: pointer;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.chat-msg:hover .chat-react-btn, .chat-msg:hover .chat-delete-btn { opacity: 1; }
+.chat-react-btn:hover, .chat-delete-btn:hover { color: #d4af37; background: rgba(212,175,55,0.08); }
+.chat-delete-btn:hover { color: #ef4444; background: rgba(239,68,68,0.08); }
+
+.emoji-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(212,175,55,0.1);
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.emoji-btn:hover { background: rgba(212,175,55,0.15); transform: scale(1.1); }
+
+@keyframes chatFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#chat-trigger:hover { transform: scale(1.1); }
+    
 /* --- HIDDEN & MISC --- */
 .hidden { display: none !important; }
 
@@ -1846,7 +1950,319 @@ input:focus {
 </div>
     
 <script>
+// ════════════════════════════════════════════
+// 💬 CHAT - REAL-TIME KOMUNIKACE
+// ════════════════════════════════════════════
 
+const CHAT_EMOJI = ['😀','😂','🤣','😍','🥰','😎','🤩','🤔','😏','😴','🤯','🥳','😭','😡','🙄','🤡','💪','👍','👎','👌','🙏','🔥','⚽','🏆','🥇','🥈','🥉','🎯','💰','💎','⭐','✨','💯','❤️','💔','🇨🇿','🇪🇸','🇧🇷','🇫🇷','🇩🇪','🇦🇷','🇵🇹','🇮🇹'];
+const REACTION_EMOJI = ['❤️','😂','🔥','👍','👎','⚽','🏆'];
+
+let chatOpen = false;
+let chatUnread = 0;
+let chatLastSent = 0;
+let chatSubscription = null;
+let chatReactionsSubscription = null;
+let chatMessagesCache = [];
+let chatReactionsCache = [];
+
+// Otevření/zavření chatu
+function toggleChat() {
+    const panel = document.getElementById('chat-panel');
+    chatOpen = !chatOpen;
+    if (chatOpen) {
+        panel.style.display = 'flex';
+        chatUnread = 0;
+        updateUnreadBadge();
+        nactiChat();
+        setTimeout(() => {
+            const msgs = document.getElementById('chat-messages');
+            if (msgs) msgs.scrollTop = msgs.scrollHeight;
+        }, 100);
+    } else {
+        panel.style.display = 'none';
+        document.getElementById('emoji-picker').style.display = 'none';
+    }
+}
+
+// Zobrazení ikony jen pro přihlášené
+async function ukazatChatIkonu() {
+    const { data } = await supabaseClient.auth.getUser();
+    const trigger = document.getElementById('chat-trigger');
+    if (!trigger) return;
+    trigger.style.display = data?.user ? 'flex' : 'none';
+    if (data?.user) {
+        nastavRealtimeChat();
+        await nactiChatPocet();
+    }
+}
+
+// Načtení zpráv z DB
+async function nactiChat() {
+    try {
+        const { data: zpravy, error } = await supabaseClient
+            .from('chat_zpravy')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+        if (error) throw error;
+
+        const { data: reakce } = await supabaseClient
+            .from('chat_reakce')
+            .select('*')
+            .in('zprava_id', (zpravy || []).map(z => z.id));
+
+        chatMessagesCache = (zpravy || []).reverse();
+        chatReactionsCache = reakce || [];
+        vykreslitChat();
+    } catch (err) {
+        console.error('Chat load error:', err);
+        document.getElementById('chat-messages').innerHTML = 
+            '<div style="text-align:center; color:#ef4444; font-size:0.75rem; padding:20px;">Chyba při načítání zpráv</div>';
+    }
+}
+
+// Vykreslení zpráv
+async function vykreslitChat() {
+    const cont = document.getElementById('chat-messages');
+    if (!cont) return;
+
+    const { data: authData } = await supabaseClient.auth.getUser();
+    const myId = authData?.user?.id;
+    const isAdmin = myId === '92a1e51b-e03c-48d7-99df-76c2f60a455f';
+
+    if (chatMessagesCache.length === 0) {
+        cont.innerHTML = '<div style="text-align:center; color:#5a6480; font-size:0.75rem; padding:30px;">💬 Zatím žádné zprávy. Buď první!</div>';
+        return;
+    }
+
+    cont.innerHTML = chatMessagesCache.map(z => {
+        const isMine = z.user_id === myId;
+        const time = new Date(z.created_at).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+
+        // Reakce na tuto zprávu
+        const myReakce = chatReactionsCache.filter(r => r.zprava_id === z.id);
+        const counts = {};
+        myReakce.forEach(r => {
+            if (!counts[r.emoji]) counts[r.emoji] = { count: 0, mine: false };
+            counts[r.emoji].count++;
+            if (r.user_id === myId) counts[r.emoji].mine = true;
+        });
+
+        const reakceHtml = Object.entries(counts).map(([emoji, info]) => 
+            `<span class="chat-reaction ${info.mine ? 'mine' : ''}" onclick="reagovatNaZpravu(${z.id}, '${emoji}')">${emoji} ${info.count}</span>`
+        ).join('');
+
+        const muzuMazat = isMine || isAdmin;
+        const escaped = String(z.message).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const escapedName = String(z.name || 'Anonym').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+        return `
+            <div class="chat-msg ${isMine ? 'own' : ''}" data-id="${z.id}">
+                <div class="chat-msg-header">
+                    <span class="chat-msg-name">${escapedName}</span>
+                    <span class="chat-msg-time">${time}</span>
+                </div>
+                <div class="chat-msg-text">${escaped}</div>
+                <div class="chat-msg-actions">
+                    ${reakceHtml}
+                    <button class="chat-react-btn" onclick="otevritReakce(${z.id}, this)">😊+</button>
+                    ${muzuMazat ? `<button class="chat-delete-btn" onclick="smazatZpravu(${z.id})">🗑️</button>` : ''}
+                </div>
+            </div>`;
+    }).join('');
+
+    // Scroll dolů
+    cont.scrollTop = cont.scrollHeight;
+}
+
+// Odeslání zprávy
+async function odeslatChatZpravu() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    // Anti-spam
+    const now = Date.now();
+    if (now - chatLastSent < 3000) {
+        showToast('Počkej chvilku, píšeš moc rychle 😅', 'info', 2000);
+        return;
+    }
+
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (!authData?.user) {
+        showToast('Musíš být přihlášen!', 'error');
+        return;
+    }
+
+    // Načti jméno
+    const { data: tipData } = await supabaseClient
+        .from('tipy')
+        .select('name')
+        .eq('user_id', authData.user.id)
+        .maybeSingle();
+    const name = tipData?.name || authData.user.email?.split('@')[0] || 'Anonym';
+
+    const btn = document.getElementById('chat-send-btn');
+    btn.disabled = true;
+
+    try {
+        const { error } = await supabaseClient
+            .from('chat_zpravy')
+            .insert({ user_id: authData.user.id, name, message: text });
+        if (error) throw error;
+        input.value = '';
+        chatLastSent = now;
+        document.getElementById('emoji-picker').style.display = 'none';
+    } catch (err) {
+        showToast('Chyba: ' + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        input.focus();
+    }
+}
+
+// Smazání zprávy
+async function smazatZpravu(id) {
+    if (!confirm('Smazat tuto zprávu?')) return;
+    try {
+        const { error } = await supabaseClient.from('chat_zpravy').delete().eq('id', id);
+        if (error) throw error;
+        showToast('Zpráva smazána', 'success', 1500);
+    } catch (err) {
+        showToast('Chyba: ' + err.message, 'error');
+    }
+}
+
+// Reakce na zprávu
+async function reagovatNaZpravu(zpravaId, emoji) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (!authData?.user) return;
+    const myId = authData.user.id;
+
+    // Zkontroluj jestli už reaguju tímto emoji
+    const existuje = chatReactionsCache.find(r => 
+        r.zprava_id === zpravaId && r.user_id === myId && r.emoji === emoji
+    );
+
+    try {
+        if (existuje) {
+            // Odeber reakci
+            await supabaseClient.from('chat_reakce').delete()
+                .eq('zprava_id', zpravaId).eq('user_id', myId).eq('emoji', emoji);
+        } else {
+            // Přidej reakci
+            await supabaseClient.from('chat_reakce')
+                .insert({ zprava_id: zpravaId, user_id: myId, emoji });
+        }
+    } catch (err) {
+        console.error('Reakce error:', err);
+    }
+}
+
+// Otevření menu pro výběr reakce
+function otevritReakce(zpravaId, btnEl) {
+    // Smaž jakékoliv existující menu
+    document.querySelectorAll('.reaction-menu').forEach(m => m.remove());
+
+    const menu = document.createElement('div');
+    menu.className = 'reaction-menu';
+    menu.style.cssText = 'position:absolute; background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; padding:6px; display:flex; gap:4px; box-shadow:0 8px 24px rgba(0,0,0,0.6); z-index:10000;';
+    menu.innerHTML = REACTION_EMOJI.map(e => 
+        `<button onclick="reagovatNaZpravu(${zpravaId}, '${e}'); this.parentElement.remove();" style="background:none; border:none; font-size:1.2rem; cursor:pointer; padding:4px 6px; border-radius:50%; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'">${e}</button>`
+    ).join('');
+
+    const rect = btnEl.getBoundingClientRect();
+    menu.style.top = (rect.top - 50) + 'px';
+    menu.style.left = rect.left + 'px';
+    document.body.appendChild(menu);
+
+    // Klik mimo = zavřít
+    setTimeout(() => {
+        document.addEventListener('click', function close(e) {
+            if (!menu.contains(e.target)) {
+                menu.remove();
+                document.removeEventListener('click', close);
+            }
+        });
+    }, 10);
+}
+
+// Emoji picker pro zprávy
+function toggleEmojiPicker() {
+    const picker = document.getElementById('emoji-picker');
+    const list = document.getElementById('emoji-list');
+    if (picker.style.display === 'none') {
+        list.innerHTML = CHAT_EMOJI.map(e => 
+            `<button class="emoji-btn" onclick="vlozitEmoji('${e}')">${e}</button>`
+        ).join('');
+        picker.style.display = 'block';
+    } else {
+        picker.style.display = 'none';
+    }
+}
+
+function vlozitEmoji(emoji) {
+    const input = document.getElementById('chat-input');
+    input.value += emoji;
+    input.focus();
+}
+
+// Real-time subscription
+function nastavRealtimeChat() {
+    if (chatSubscription) return;
+
+    chatSubscription = supabaseClient
+        .channel('chat-channel')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_zpravy' }, async (payload) => {
+            if (payload.eventType === 'INSERT') {
+                chatMessagesCache.push(payload.new);
+                if (chatMessagesCache.length > 50) chatMessagesCache.shift();
+                if (!chatOpen) {
+                    const { data } = await supabaseClient.auth.getUser();
+                    if (payload.new.user_id !== data?.user?.id) {
+                        chatUnread++;
+                        updateUnreadBadge();
+                    }
+                }
+            } else if (payload.eventType === 'DELETE') {
+                chatMessagesCache = chatMessagesCache.filter(z => z.id !== payload.old.id);
+            }
+            if (chatOpen) vykreslitChat();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_reakce' }, async (payload) => {
+            if (payload.eventType === 'INSERT') chatReactionsCache.push(payload.new);
+            else if (payload.eventType === 'DELETE') {
+                chatReactionsCache = chatReactionsCache.filter(r => r.id !== payload.old.id);
+            }
+            if (chatOpen) vykreslitChat();
+        })
+        .subscribe();
+}
+
+// Badge s nepřečtenými
+function updateUnreadBadge() {
+    const badge = document.getElementById('chat-unread-badge');
+    if (!badge) return;
+    if (chatUnread > 0) {
+        badge.style.display = 'block';
+        badge.innerText = chatUnread > 99 ? '99+' : chatUnread;
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// Načti počet zpráv pro info v hlavičce
+async function nactiChatPocet() {
+    const { count } = await supabaseClient
+        .from('chat_zpravy')
+        .select('*', { count: 'exact', head: true });
+    const el = document.getElementById('chat-online-count');
+    if (el) el.innerText = `${count || 0} zpráv celkem`;
+}
+
+// Spuštění po načtení
+window.addEventListener('DOMContentLoaded', ukazatChatIkonu);
+    
 function toggleHlasLidu() {
     const content = document.getElementById('hlaslidu-content');
     const chevron = document.getElementById('hlaslidu-chevron');
@@ -5406,6 +5822,9 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
             if (typeof loadAll === "function") {
                 await loadAll();
             }
+            if (typeof ukazatChatIkonu === "function") {
+                await ukazatChatIkonu();
+            }
         } catch (err) {
             console.error("❌ Chyba v loadAll:", err);
         }
@@ -5474,6 +5893,42 @@ window.addEventListener('DOMContentLoaded', checkUserSession);
         <button onclick="closeModalAndReload()" class="modal-btn">OK</button>
     </div>
 </div>
+
+    <!-- 💬 CHAT IKONA + PANEL -->
+<div id="chat-trigger" onclick="toggleChat()" style="display:none; position:fixed; top:12px; left:12px; width:48px; height:48px; background:linear-gradient(135deg,#d4af37,#9a7b1e); border:1px solid rgba(212,175,55,0.5); border-radius:50%; cursor:pointer; z-index:9998; box-shadow:0 6px 20px rgba(212,175,55,0.4); display:flex; align-items:center; justify-content:center; transition:transform 0.2s;">
+    <i class="fas fa-comments" style="color:#05070f; font-size:1.2rem;"></i>
+    <span id="chat-unread-badge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:white; font-size:0.65rem; font-weight:900; padding:2px 6px; border-radius:10px; border:2px solid #05070f; min-width:18px; text-align:center;">0</span>
+</div>
+
+<div id="chat-panel" style="display:none; position:fixed; top:70px; left:12px; width:340px; max-width:calc(100vw - 24px); height:480px; max-height:calc(100vh - 90px); background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:18px; z-index:9999; box-shadow:0 20px 60px rgba(0,0,0,0.7); flex-direction:column; overflow:hidden;">
+    
+    <!-- Hlavička chatu -->
+    <div style="padding:12px 16px; border-bottom:1px solid rgba(212,175,55,0.15); background:rgba(5,8,20,0.5); display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <div style="font-size:0.85rem; font-weight:900; color:#d4af37; letter-spacing:1.5px; text-transform:uppercase;">💬 Chat hráčů</div>
+            <div id="chat-online-count" style="font-size:0.65rem; color:#5a6480; margin-top:2px;">Načítám...</div>
+        </div>
+        <button onclick="toggleChat()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer; padding:4px 8px;"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Zprávy -->
+    <div id="chat-messages" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;">
+        <div style="text-align:center; color:#5a6480; font-size:0.75rem; padding:20px;">Načítám zprávy...</div>
+    </div>
+
+    <!-- Emoji picker (skrytý) -->
+    <div id="emoji-picker" style="display:none; padding:10px; border-top:1px solid rgba(212,175,55,0.1); background:rgba(0,0,0,0.3); max-height:120px; overflow-y:auto;">
+        <div style="display:flex; flex-wrap:wrap; gap:4px;" id="emoji-list"></div>
+    </div>
+
+    <!-- Vstup -->
+    <div style="padding:10px; border-top:1px solid rgba(212,175,55,0.15); background:rgba(5,8,20,0.4); display:flex; gap:6px; align-items:center;">
+        <button onclick="toggleEmojiPicker()" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.25); color:#d4af37; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:1rem;">😊</button>
+        <input type="text" id="chat-input" placeholder="Napiš zprávu..." maxlength="200" onkeypress="if(event.key==='Enter') odeslatChatZpravu()" style="flex:1; padding:9px 12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.85rem; outline:none;">
+        <button onclick="odeslatChatZpravu()" id="chat-send-btn" style="background:linear-gradient(135deg,#d4af37,#9a7b1e); color:#05070f; border:none; padding:9px 14px; border-radius:8px; cursor:pointer; font-weight:800;"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+    
    <div id="toast-container"></div> 
 <div id="notif-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); z-index:100000; justify-content:center; align-items:center; padding:20px;">
     <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; padding:28px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.7);">
