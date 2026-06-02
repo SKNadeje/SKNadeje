@@ -22,6 +22,23 @@
 </header>
 
 <style>
+/* --- MVP ODZNÁČEK ANIMACE --- */
+@keyframes mvpGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(212,175,55,0.5); }
+    50% { box-shadow: 0 0 16px rgba(212,175,55,0.9); }
+}
+
+@keyframes mvpPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(212,175,55,0.6); }
+    50% { transform: scale(1.08); box-shadow: 0 0 18px rgba(212,175,55,1); }
+}
+
+@keyframes mvpLegendary {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+    
     /* === WELCOME STRÁNKA ANIMACE === */
 
 /* 1. Plávající pohár - jemně se vznáší */
@@ -1763,6 +1780,19 @@ input:focus {
     <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 15px;">
         Kliknutím uložíš aktuální pozice hráčů jako "minulé". Žebříček pak ukáže zelené/červené šipky posunu.
     </p>
+        <div style="grid-column: 1 / -1; margin: 10px 0 20px 0; padding: 20px; background: rgba(212, 175, 55, 0.05); border: 2px dashed rgba(212, 175, 55, 0.3); border-radius: 12px; text-align: center;">
+    <h4 style="color: #d4af37; margin: 0 0 10px 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+        🌟 MVP týdne
+    </h4>
+    <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 15px;">
+        Klikni 1× týdně (např. každé pondělí). Spočítá přírůstky bodů od minulého snapshotu a vyhlasí hráče(e) s největším skokem. První klik uloží jen základní snapshot.
+    </p>
+    <button type="button" class="btn" 
+        style="background: #d4af37; color: #050710; font-weight: 800; padding: 10px 20px; font-size: 0.85rem;" 
+        onclick="vyhlasitMVPTydne()">
+        🌟 VYHLÁSIT MVP TÝDNE
+    </button>
+</div>
     <button id="btn-update-trends" type="button" class="btn" 
             style="background: #38bdf8; color: #0f172a; font-weight: 800; padding: 10px 20px; font-size: 0.85rem;" 
             onclick="updateRankTrends()">
@@ -1950,6 +1980,208 @@ input:focus {
 </div>
     
 <script>
+
+// ════════════════════════════════════════════
+// 🌟 MVP TÝDNE – výpočet a vyhlášení
+// ════════════════════════════════════════════
+
+let mvpCacheGlobal = {}; // { user_id: počet MVP titulů }
+
+// Helper: spočítá body hráče z jeho tipu a admin výsledků
+function spocitejBodyHrace(tip, real) {
+    if (!tip || !real) return 0;
+    let pts = 0;
+    
+    if (real.groups && tip.groups) {
+        real.groups.forEach((g, i) => {
+            const tipG = tip.groups[i] || [];
+            const aT = g.teams || g;
+            if (Array.isArray(aT)) {
+                aT.forEach((t, p) => {
+                    if (t && tipG[p] && String(t).trim() === String(tipG[p]).trim()) pts += 4;
+                });
+            }
+        });
+    }
+    
+    const ck = (sid, b) => {
+        const rt = real[sid] || [];
+        const tt = tip[sid] || [];
+        if (Array.isArray(rt)) rt.forEach(t => {
+            if (t && Array.isArray(tt) && tt.some(x => String(x).trim() === String(t).trim())) pts += b;
+        });
+    };
+    ck('s32', 2); ck('s16', 3); ck('s8', 4); ck('s4', 5);
+    if (real.winner && tip.winner && String(real.winner).trim() === String(tip.winner).trim()) pts += 12;
+    if (real.bronze && tip.bronze && String(real.bronze).trim() === String(tip.bronze).trim()) pts += 8;
+    
+    return pts;
+}
+
+// Hlavní admin funkce: vyhlásí MVP týdne
+async function vyhlasitMVPTydne() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+        showToast("Pouze pro admina!", 'error');
+        return;
+    }
+
+    if (!confirm("Vyhlásit MVP uplynulého týdne?\n\nUloží snapshot bodů, spočítá přírůstky a vyhlasí hráče s největším skokem.")) return;
+
+    try {
+        // 1. Načti aktuální body všech hráčů
+        const { data: tipy } = await supabaseClient.from('tipy').select('*');
+        const { data: real } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).maybeSingle();
+        if (!tipy || !real) throw new Error("Nepodařilo se načíst data");
+
+        const aktualniBody = tipy.map(row => {
+            let tip = row.tip_data;
+            if (typeof tip === 'string') { try { tip = JSON.parse(tip); } catch { tip = {}; } }
+            return {
+                user_id: row.user_id,
+                name: row.name || 'Anonym',
+                body: spocitejBodyHrace(tip, real)
+            };
+        });
+
+        // 2. Načti POSLEDNÍ snapshot (pokud existuje)
+        const { data: posledniSnap } = await supabaseClient
+            .from('mvp_snapshoty')
+            .select('*')
+            .order('snapshot_date', { ascending: false })
+            .limit(100);
+
+        const dnes = new Date().toISOString().slice(0, 10);
+        
+        // Pokud už dnes byl snapshot, zeptej se
+        if (posledniSnap && posledniSnap.length > 0 && posledniSnap[0].snapshot_date === dnes) {
+            if (!confirm("Dnes už byl snapshot proveden. Pokračovat a přepsat?")) return;
+        }
+
+        // 3. Najdi nejnovější předchozí snapshot (jiné datum než dnes)
+        const predchoziSnap = (posledniSnap || []).filter(s => s.snapshot_date !== dnes);
+        const datumPredchoziho = predchoziSnap[0]?.snapshot_date;
+
+        if (!datumPredchoziho) {
+            // PRVNÍ snapshot – jen ulož současné body, žádný MVP zatím
+            for (const h of aktualniBody) {
+                await supabaseClient.from('mvp_snapshoty').upsert({
+                    user_id: h.user_id, name: h.name, body: h.body, snapshot_date: dnes
+                }, { onConflict: 'user_id,snapshot_date' });
+            }
+            showToast("📸 První snapshot uložen! MVP se vyhlásí příští týden.", 'success', 4000);
+            return;
+        }
+
+        // 4. Spočítej přírůstky
+        const mapaPredchozich = {};
+        predchoziSnap.filter(s => s.snapshot_date === datumPredchoziho).forEach(s => {
+            mapaPredchozich[s.user_id] = s.body;
+        });
+
+        const prirustky = aktualniBody.map(h => ({
+            ...h,
+            body_zacatek: mapaPredchozich[h.user_id] || 0,
+            body_konec: h.body,
+            prirustek: h.body - (mapaPredchozich[h.user_id] || 0)
+        })).sort((a, b) => b.prirustek - a.prirustek);
+
+        const maxPrirustek = prirustky[0]?.prirustek || 0;
+        if (maxPrirustek <= 0) {
+            showToast("Žádný hráč nezískal body za uplynulý týden – MVP nelze vyhlásit.", 'info', 5000);
+            return;
+        }
+
+        // 5. Najdi všechny hráče s max přírůstkem (sdílené vítězství)
+        const viteziTydne = prirustky.filter(p => p.prirustek === maxPrirustek);
+
+        // 6. Zapiš do mvp_tydne
+        for (const v of viteziTydne) {
+            await supabaseClient.from('mvp_tydne').insert({
+                user_id: v.user_id,
+                name: v.name,
+                body_zacatek: v.body_zacatek,
+                body_konec: v.body_konec,
+                prirustek: v.prirustek,
+                tyden_od: datumPredchoziho,
+                tyden_do: dnes
+            });
+        }
+
+        // 7. Ulož nový snapshot pro příští týden
+        for (const h of aktualniBody) {
+            await supabaseClient.from('mvp_snapshoty').upsert({
+                user_id: h.user_id, name: h.name, body: h.body, snapshot_date: dnes
+            }, { onConflict: 'user_id,snapshot_date' });
+        }
+
+        const jmenaVitezu = viteziTydne.map(v => v.name).join(', ');
+        showToast(`🌟 MVP týdne: ${jmenaVitezu} (+${maxPrirustek} bodů)!`, 'success', 6000);
+        
+        await nactiMVPCache();
+        if (typeof loadAll === "function") await loadAll();
+
+    } catch (err) {
+        console.error("Chyba MVP:", err);
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
+
+// Načte počet MVP pro každého hráče do cache
+async function nactiMVPCache() {
+    const { data, error } = await supabaseClient
+        .from('mvp_tydne')
+        .select('user_id, name');
+    
+    if (error) { console.error(error); return; }
+
+    mvpCacheGlobal = {};
+    (data || []).forEach(row => {
+        mvpCacheGlobal[row.user_id] = (mvpCacheGlobal[row.user_id] || 0) + 1;
+    });
+}
+
+// Vrátí HTML odznáčku podle počtu MVP titulů
+function mvpBadgeHtml(userId, size = 'normal') {
+    const pocet = mvpCacheGlobal[userId] || 0;
+    if (pocet === 0) return '';
+
+    // Velikosti
+    const sizes = {
+        small: { fs: '0.55rem', pad: '1px 5px', ico: '0.65rem' },
+        normal: { fs: '0.6rem', pad: '2px 7px', ico: '0.7rem' },
+        large: { fs: '0.85rem', pad: '5px 12px', ico: '1rem' }
+    };
+    const s = sizes[size] || sizes.normal;
+
+    // Úrovně
+    let icon, bg, color, glow, animace = '';
+    if (pocet === 1) {
+        icon = '🌱'; bg = 'rgba(34,197,94,0.15)'; color = '#22c55e'; glow = 'rgba(34,197,94,0.3)';
+    } else if (pocet === 2) {
+        icon = '⭐'; bg = 'rgba(148,163,184,0.18)'; color = '#cbd5e1'; glow = 'rgba(148,163,184,0.4)';
+    } else if (pocet === 3) {
+        icon = '💫'; bg = 'rgba(212,175,55,0.18)'; color = '#d4af37'; glow = 'rgba(212,175,55,0.5)';
+        animace = 'animation: mvpGlow 2.5s ease-in-out infinite;';
+    } else if (pocet >= 4 && pocet <= 5) {
+        icon = '👑'; bg = 'linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.1))'; color = '#d4af37'; glow = 'rgba(212,175,55,0.6)';
+        animace = 'animation: mvpPulse 2s ease-in-out infinite;';
+    } else {
+        // 6+ legendary
+        icon = '🏆'; bg = 'linear-gradient(135deg, #d4af37, #f0e6c8, #d4af37)'; color = '#05070f'; glow = 'rgba(212,175,55,0.9)';
+        animace = 'animation: mvpLegendary 3s linear infinite; background-size: 200% 200%;';
+    }
+
+    const pocetText = pocet > 1 ? `<span style="margin-left:3px; opacity:0.85;">×${pocet}</span>` : '';
+
+    return `<span class="mvp-badge" title="MVP týdne ${pocet}× ${pocet === 6 ? '🏆 LEGENDA!' : ''}" style="display:inline-flex; align-items:center; gap:2px; padding:${s.pad}; background:${bg}; border:1px solid ${glow}; border-radius:10px; font-size:${s.fs}; font-weight:900; color:${color}; box-shadow:0 0 8px ${glow}; ${animace} margin-left:5px; white-space:nowrap;"><span style="font-size:${s.ico};">${icon}</span>${pocetText}</span>`;
+}
+
+// Načtení MVP cache při startu
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(nactiMVPCache, 500);
+});
+    
 // ════════════════════════════════════════════
 // 💬 CHAT - REAL-TIME KOMUNIKACE
 // ════════════════════════════════════════════
