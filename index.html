@@ -1696,36 +1696,41 @@ input:focus {
         <aside>
             <div id="progress-container"></div>
 
-      <div class="scoring-legend" style="padding:16px;">
-    <h3 style="margin-bottom:12px;"><i class="fas fa-info-circle"></i> Bodování turnaje</h3>
-    <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:space-between;">
-        <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(8,12,22,0.7); border:1px solid rgba(212,175,55,0.07); border-radius:8px;">
-            <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">Skupiny</div>
-            <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+4</div>
-        </div>
-        <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(8,12,22,0.7); border:1px solid rgba(212,175,55,0.07); border-radius:8px;">
-            <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">1/16</div>
-            <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+2</div>
-        </div>
-        <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(8,12,22,0.7); border:1px solid rgba(212,175,55,0.07); border-radius:8px;">
-            <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">1/8</div>
-            <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+3</div>
-        </div>
-        <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(8,12,22,0.7); border:1px solid rgba(212,175,55,0.07); border-radius:8px;">
-            <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">1/4</div>
-            <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+4</div>
-        </div>
-        <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(8,12,22,0.7); border:1px solid rgba(212,175,55,0.07); border-radius:8px;">
-            <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">Semi</div>
-            <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+5</div>
-        </div>
-        <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(180,100,40,0.1); border:1px solid rgba(180,100,40,0.3); border-radius:8px;">
-            <div style="font-size:0.6rem; color:rgba(217,123,58,0.7); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">Bronz</div>
-            <div style="font-size:0.95rem; font-weight:900; color:#d97b3a;">+8</div>
-        </div>
-        <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); border-radius:8px;">
-            <div style="font-size:0.6rem; color:rgba(212,175,55,0.7); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">Vítěz</div>
-            <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">+12</div>
+     <div class="scoring-legend" style="padding:16px; background:rgba(15,20,35,0.6); border:1px solid rgba(212,175,55,0.15); border-radius:14px; margin-bottom:18px;">
+    <h3 style="margin-bottom:12px; cursor:pointer; display:flex; align-items:center; justify-content:space-between;" onclick="toggleBodovani()">
+        <span><i class="fas fa-info-circle"></i> Bodování turnaje</span>
+        <i class="fas fa-chevron-up" id="bodovani-chevron" style="font-size:0.7rem; transition:transform 0.3s; color:#d4af37;"></i>
+    </h3>
+    <div id="bodovani-content">
+        <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:space-between;">
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(8,12,22,0.7); border:1px solid rgba(212,175,55,0.07); border-radius:8px;">
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">Skupiny</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+4</div>
+            </div>
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(8,12,22,0.7); border:1px solid rgba(212,175,55,0.07); border-radius:8px;">
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">1/16</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+2</div>
+            </div>
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(8,12,22,0.7); border:1px solid rgba(212,175,55,0.07); border-radius:8px;">
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">1/8</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+3</div>
+            </div>
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(8,12,22,0.7); border:1px solid rgba(212,175,55,0.07); border-radius:8px;">
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">1/4</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+4</div>
+            </div>
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(8,12,22,0.7); border:1px solid rgba(212,175,55,0.07); border-radius:8px;">
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">Semi</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+5</div>
+            </div>
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(180,100,40,0.1); border:1px solid rgba(180,100,40,0.3); border-radius:8px;">
+                <div style="font-size:0.6rem; color:rgba(217,123,58,0.7); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">Bronz</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#d97b3a;">+8</div>
+            </div>
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); border-radius:8px;">
+                <div style="font-size:0.6rem; color:rgba(212,175,55,0.7); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">Vítěz</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">+12</div>
+            </div>
         </div>
     </div>
 </div>
@@ -1841,6 +1846,24 @@ input:focus {
 </div>
     
 <script>
+
+function toggleHlasLidu() {
+    const content = document.getElementById('hlaslidu-content');
+    const chevron = document.getElementById('hlaslidu-chevron');
+    if (!content) return;
+    const skryto = content.style.display === 'none';
+    content.style.display = skryto ? 'block' : 'none';
+    if (chevron) chevron.style.transform = skryto ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+    function toggleBodovani() {
+    const content = document.getElementById('bodovani-content');
+    const chevron = document.getElementById('bodovani-chevron');
+    if (!content) return;
+    const skryto = content.style.display === 'none';
+    content.style.display = skryto ? 'block' : 'none';
+    if (chevron) chevron.style.transform = skryto ? 'rotate(0deg)' : 'rotate(180deg)';
+}
 function spawnWelcomeSparkles() {
     const cont = document.getElementById('ls-sparkles');
     if (!cont) return;
@@ -2324,8 +2347,8 @@ function renderTurnajZabava(processed) {
         </div>`;
 
     el.innerHTML = `
-        <div style="background:rgba(8,12,22,0.95); border:1px solid rgba(212,175,55,0.15); border-radius:14px; padding:16px; margin-bottom:18px;">
-            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; text-align:center; margin-bottom:12px;"><i class="fas fa-fire"></i> Co se děje v turnaji</div>
+       <div style="background:rgba(8,12,22,0.6); border:1px solid rgba(212,175,55,0.15); border-radius:14px; padding:16px; margin-bottom:18px;">
+        <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; text-align:center; margin-bottom:12px;"><i class="fas fa-fire"></i> Co se děje v turnaji</div>
             ${soubojHtml}
             ${skokanHtml}
             ${zajimavostiHtml}
@@ -3384,50 +3407,54 @@ function renderHlasLidu(data) {
 
     const pct = (n) => Math.round((n / celkem) * 100);
 
-   cont.innerHTML = `
-        <div style="background:rgba(8,12,22,0.95); border:1px solid rgba(212,175,55,0.15); border-radius:14px; padding:16px; margin-bottom:18px;">
+    cont.innerHTML = `
+        <div style="background:rgba(15,20,35,0.6); border:1px solid rgba(212,175,55,0.15); border-radius:14px; padding:16px; margin-bottom:18px;">
             
-            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; text-align:center; margin-bottom:14px;">
-                <i class="fas fa-poll" style="margin-right:6px;"></i> Kdo vyhraje MS 2026?
+            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:14px; cursor:pointer; display:flex; align-items:center; justify-content:space-between;" onclick="toggleHlasLidu()">
+                <span><i class="fas fa-poll" style="margin-right:6px;"></i> Kdo vyhraje MS 2026?</span>
+                <i class="fas fa-chevron-up" id="hlaslidu-chevron" style="font-size:0.7rem; transition:transform 0.3s; color:#d4af37;"></i>
             </div>
+            <div id="hlaslidu-content">
 
-            <div style="display:flex; gap:8px;">
-                
-                <div style="flex:1; border-radius:10px; padding:12px 8px; text-align:center; border:1px solid rgba(212,175,55,0.3); background:rgba(212,175,55,0.06);">
-                    <div style="font-size:1.4rem; font-weight:900; color:#d4af37; line-height:1;">${pct(favorit[1])}%</div>
-                    <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; margin:5px 0 3px;">${favorit[0]}</div>
-                    <div style="font-size:0.55rem; color:rgba(212,175,55,0.5); text-transform:uppercase; letter-spacing:0.5px;">🥇 ${favorit[1]} tip${favorit[1] > 1 ? 'ů' : ''}</div>
+                <div style="display:flex; gap:8px;">
+                    
+                    <div style="flex:1; border-radius:10px; padding:12px 8px; text-align:center; border:1px solid rgba(212,175,55,0.3); background:rgba(212,175,55,0.06);">
+                        <div style="font-size:1.4rem; font-weight:900; color:#d4af37; line-height:1;">${pct(favorit[1])}%</div>
+                        <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; margin:5px 0 3px;">${favorit[0]}</div>
+                        <div style="font-size:0.55rem; color:rgba(212,175,55,0.5); text-transform:uppercase; letter-spacing:0.5px;">🥇 ${favorit[1]} tip${favorit[1] > 1 ? 'ů' : ''}</div>
+                    </div>
+
+                    ${druhy ? `
+                    <div style="flex:1; border-radius:10px; padding:12px 8px; text-align:center; border:1px solid rgba(148,163,184,0.15); background:rgba(148,163,184,0.04);">
+                        <div style="font-size:1.4rem; font-weight:900; color:#94a3b8; line-height:1;">${pct(druhy[1])}%</div>
+                        <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; margin:5px 0 3px;">${druhy[0]}</div>
+                        <div style="font-size:0.55rem; color:rgba(148,163,184,0.5); text-transform:uppercase; letter-spacing:0.5px;">${druhy[1]} tip${druhy[1] > 1 ? 'ů' : ''}</div>
+                    </div>` : ''}
+
+                    ${outsider ? `
+                    <div style="flex:1; border-radius:10px; padding:12px 8px; text-align:center; border:1px solid rgba(239,68,68,0.2); background:rgba(239,68,68,0.04);">
+                        <div style="font-size:1.4rem; font-weight:900; color:#ef4444; line-height:1;">${pct(outsider[1])}%</div>
+                        <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; margin:5px 0 3px;">${outsider[0]}</div>
+                        <div style="font-size:0.55rem; color:rgba(239,68,68,0.5); text-transform:uppercase; letter-spacing:0.5px;">🐴 ${outsider[1]} hlas</div>
+                    </div>` : ''}
+
                 </div>
 
-                ${druhy ? `
-                <div style="flex:1; border-radius:10px; padding:12px 8px; text-align:center; border:1px solid rgba(148,163,184,0.15); background:rgba(148,163,184,0.04);">
-                    <div style="font-size:1.4rem; font-weight:900; color:#94a3b8; line-height:1;">${pct(druhy[1])}%</div>
-                    <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; margin:5px 0 3px;">${druhy[0]}</div>
-                    <div style="font-size:0.55rem; color:rgba(148,163,184,0.5); text-transform:uppercase; letter-spacing:0.5px;">${druhy[1]} tip${druhy[1] > 1 ? 'ů' : ''}</div>
-                </div>` : ''}
-
-                ${outsider ? `
-                <div style="flex:1; border-radius:10px; padding:12px 8px; text-align:center; border:1px solid rgba(239,68,68,0.2); background:rgba(239,68,68,0.04);">
-                    <div style="font-size:1.4rem; font-weight:900; color:#ef4444; line-height:1;">${pct(outsider[1])}%</div>
-                    <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; margin:5px 0 3px;">${outsider[0]}</div>
-                    <div style="font-size:0.55rem; color:rgba(239,68,68,0.5); text-transform:uppercase; letter-spacing:0.5px;">🐴 ${outsider[1]} hlas</div>
-                </div>` : ''}
-
-            </div>
-
-            <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(212,175,55,0.08); display:flex; justify-content:center; gap:20px;">
-                <div style="text-align:center;">
-                    <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">${celkem}</div>
-                    <div style="font-size:0.55rem; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:0.5px;">Tipérů</div>
+                <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(212,175,55,0.08); display:flex; justify-content:center; gap:20px;">
+                    <div style="text-align:center;">
+                        <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">${celkem}</div>
+                        <div style="font-size:0.55rem; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:0.5px;">Tipérů</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">${sorted.length}</div>
+                        <div style="font-size:0.55rem; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:0.5px;">Různých</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">${pct(favorit[1])}%</div>
+                        <div style="font-size:0.55rem; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:0.5px;">Shoda</div>
+                    </div>
                 </div>
-                <div style="text-align:center;">
-                    <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">${sorted.length}</div>
-                    <div style="font-size:0.55rem; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:0.5px;">Různých</div>
-                </div>
-                <div style="text-align:center;">
-                    <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">${pct(favorit[1])}%</div>
-                    <div style="font-size:0.55rem; color:rgba(212,175,55,0.4); text-transform:uppercase; letter-spacing:0.5px;">Shoda</div>
-                </div>
+
             </div>
         </div>`;
 }
