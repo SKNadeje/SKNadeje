@@ -22,6 +22,89 @@
 </header>
 
 <style>
+    /* === WELCOME STRÁNKA ANIMACE === */
+
+/* 1. Plávající pohár - jemně se vznáší */
+@keyframes lsFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+}
+
+/* 2. Pulsující zlatá záře kolem poháru */
+@keyframes lsGlow {
+    0%, 100% { 
+        filter: drop-shadow(0 0 30px rgba(212,175,55,0.4)) drop-shadow(0 0 60px rgba(212,175,55,0.2));
+    }
+    50% { 
+        filter: drop-shadow(0 0 50px rgba(212,175,55,0.7)) drop-shadow(0 0 100px rgba(212,175,55,0.4));
+    }
+}
+
+/* 3. Postupné objevení prvků (fade-in + posun nahoru) */
+@keyframes lsFadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 4. Třpyt textu (nadpis se "blyští") */
+@keyframes lsShimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* 5. Pulsující tlačítko VSTOUPIT */
+@keyframes lsBtnPulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(212,175,55,0.3), 0 0 0 0 rgba(212,175,55,0.4); }
+    50% { box-shadow: 0 4px 25px rgba(212,175,55,0.5), 0 0 0 12px rgba(212,175,55,0); }
+}
+
+/* Aplikace animací */
+.ls-screen1 .ls-presents { 
+    animation: lsFadeUp 0.6s ease 0.2s both;
+}
+.ls-screen1 .ls-logo { 
+    animation: lsFadeUp 0.8s ease 0.4s both, lsFloat 4s ease-in-out 1s infinite, lsGlow 3s ease-in-out 1s infinite;
+}
+.ls-screen1 .ls-tip { 
+    animation: lsFadeUp 0.6s ease 0.6s both;
+}
+.ls-screen1 .ls-title { 
+    animation: lsFadeUp 0.6s ease 0.8s both;
+    background-size: 200% auto !important;
+    animation: lsFadeUp 0.6s ease 0.8s both, lsShimmer 4s ease infinite 1.5s;
+}
+.ls-screen1 .ls-host { 
+    animation: lsFadeUp 0.6s ease 1s both;
+}
+.ls-screen1 .ls-btn { 
+    animation: lsFadeUp 0.6s ease 1.2s both, lsBtnPulse 2.5s ease-in-out 2s infinite;
+}
+
+/* Vlajky pod tlačítkem */
+.ls-screen1 > div:last-child {
+    animation: lsFadeUp 0.6s ease 1.4s both;
+}
+
+/* === JISKŘIČKY KOLEM POHÁRU === */
+.ls-sparkles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+.ls-sparkle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: radial-gradient(circle, #d4af37, transparent);
+    border-radius: 50%;
+    opacity: 0;
+}
+@keyframes lsSparkleFly {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+    20% { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
+}
     /* LIVE badge - pulsující červená tečka */
 @keyframes livePulse {
     0%, 100% { opacity: 1; transform: scale(1); }
@@ -1480,8 +1563,9 @@ input:focus {
     <div id="confetti-ls" style="position:absolute; inset:0; pointer-events:none; overflow:hidden;"></div>
 
     <!-- SCREEN 1: Uvítací -->
-    <div id="ls-screen1" class="ls-screen1" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding:40px 30px; animation:lsFadeIn 0.8s ease forwards;">
-        <div class="ls-presents" style="font-size:9px; letter-spacing:4px; color:rgba(212,175,55,0.5); font-weight:700; font-family:Inter,sans-serif; text-transform:uppercase; margin-bottom:24px;">SK Naděje presents</div>
+    <div id="ls-screen1" class="ls-screen1" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding:40px 30px; position:relative; animation:lsFadeIn 0.8s ease forwards;">
+    <div class="ls-sparkles" id="ls-sparkles"></div>
+    <div class="ls-presents" style="font-size:9px; letter-spacing:4px; color:rgba(212,175,55,0.5); font-weight:700; font-family:Inter,sans-serif; text-transform:uppercase; margin-bottom:24px;">SK Naděje presents</div>
         <img src="logo-wc2026.png" alt="FIFA World Cup 2026" class="ls-logo" style="width:180px; height:180px; object-fit:contain; margin-bottom:28px; animation:lsPulse 3s ease-in-out infinite;">
         <div class="ls-tip" style="font-size:12px; letter-spacing:3px; color:rgba(212,175,55,0.6); font-weight:700; font-family:Inter,sans-serif; text-transform:uppercase; margin-bottom:10px;">Tipovačka</div>
         <div class="ls-title" style="font-size:22px; font-weight:900; font-family:Inter,sans-serif; letter-spacing:2px; text-transform:uppercase; background:linear-gradient(135deg,#f0e6c8 0%,#d4af37 40%,#f0e6c8 70%,#b8901e 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:10px; line-height:1.3; max-width:360px;">Mistrovství světa ve fotbale 2026</div>
@@ -1757,6 +1841,43 @@ input:focus {
 </div>
     
 <script>
+function spawnWelcomeSparkles() {
+    const cont = document.getElementById('ls-sparkles');
+    if (!cont) return;
+    
+    setInterval(() => {
+        // Pokud welcome screen není viditelný, neplýtvej
+        const screen = document.getElementById('ls-screen1');
+        if (!screen || screen.offsetParent === null) return;
+        
+        const s = document.createElement('div');
+        s.className = 'ls-sparkle';
+        // Náhodná pozice startu blízko poháru (uprostřed nahoře)
+        const cx = 50 + (Math.random() - 0.5) * 30; // % šířky
+        const cy = 30 + Math.random() * 30; // % výšky
+        s.style.left = cx + '%';
+        s.style.top = cy + '%';
+        // Náhodný směr letu
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 50 + Math.random() * 80;
+        s.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+        s.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+        // Náhodná velikost
+        const size = 3 + Math.random() * 5;
+        s.style.width = size + 'px';
+        s.style.height = size + 'px';
+        // Animace
+        const doba = 1.5 + Math.random() * 1.5;
+        s.style.animation = `lsSparkleFly ${doba}s ease-out forwards`;
+        
+        cont.appendChild(s);
+        setTimeout(() => s.remove(), doba * 1000);
+    }, 200); // nová jiskřička každých 200ms
+}
+
+// Spustíme po načtení
+window.addEventListener('DOMContentLoaded', spawnWelcomeSparkles);
+    
    function ukazPopisOdznaku(label, popis, aktivni) {
     const box = document.getElementById('odznak-popis');
     if (!box) return;
