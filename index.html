@@ -2291,7 +2291,7 @@ async function vykreslitChat() {
         return `
             <div class="chat-msg ${isMine ? 'own' : ''}" data-id="${z.id}">
                 <div class="chat-msg-header">
-                    <span class="chat-msg-name">${escapedName}</span>
+                    <span class="chat-msg-name">${escapedName}${typeof mvpBadgeHtml === 'function' ? mvpBadgeHtml(z.user_id, 'small') : ''}</span>
                     <span class="chat-msg-time">${time}</span>
                 </div>
                 <div class="chat-msg-text">${escaped}</div>
@@ -2749,7 +2749,7 @@ function otevritProfil(rowId) {
     document.getElementById('profil-obsah').innerHTML = `
         <div style="text-align:center; margin-bottom:20px;">
             <div style="display:flex; justify-content:center; margin-bottom:12px;">${avatarHtml(p.name, 64)}</div>
-            <div style="font-size:1.4rem; font-weight:900; color:#f0e6c8;">${p.name || 'Anonym'}</div>
+            <div style="font-size:1.4rem; font-weight:900; color:#f0e6c8;">${p.name || 'Anonym'}${typeof mvpBadgeHtml === 'function' ? mvpBadgeHtml(p.rowId, 'large') : ''}</div>
             ${p.full_name ? `<div style="font-size:0.85rem; color:#5a6480; margin-top:2px;">${p.full_name}</div>` : ''}
             <div style="font-size:0.9rem; color:#d4af37; font-style:italic; margin-top:8px;">"${hlaska}"</div>
         </div>
@@ -4456,7 +4456,7 @@ async function renderLeaderboard(data, real) {
         return `
             <div style="text-align:center; flex:1; max-width:130px;">
                 <div style="font-size:${isMid ? '36px' : '28px'}; margin-bottom:4px; ${isMid ? 'filter:drop-shadow(0 4px 12px rgba(212,175,55,0.4));' : ''}">${medal}</div>
-                <div style="font-size:${isMid ? '14px' : '13px'}; font-weight:800; color:${nameColor}; margin-bottom:4px;">${p.name || 'Anonym'} ${trendHtml(p)}</div>
+                <div style="font-size:${isMid ? '14px' : '13px'}; font-weight:800; color:${nameColor}; margin-bottom:4px;">${p.name || 'Anonym'}${typeof mvpBadgeHtml === 'function' ? mvpBadgeHtml(p.rowId, 'small') : ''} ${trendHtml(p)}</div> A v stejné funkci níže najdi ostatní řádky (zbytek hráčů, 4. místo dolů):
                 <div style="font-size:${isMid ? '18px' : '16px'}; font-weight:900; color:${nameColor}; margin-bottom:6px;"><span class="pts-cell" data-pts="${p.points}">${p.points}</span><span style="font-size:9px; opacity:0.6;">b</span></div>
                 <div style="display:flex; gap:4px; justify-content:center; margin-bottom:8px;">
                     <button onclick="event.stopPropagation(); otevritProfil('${p.rowId}')" title="Profil hráče" style="padding:3px 7px; background:rgba(168,139,250,0.12); border:1px solid rgba(168,139,250,0.3); border-radius:5px; color:#a78bfa; font-size:0.6rem; font-weight:700; cursor:pointer;">👤</button>
@@ -4497,7 +4497,7 @@ async function renderLeaderboard(data, real) {
                 <td colspan="3" style="padding:3px 6px;">
                     <div style="display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:10px; ${ownStyle}">
                         <div style="font-size:18px; font-weight:900; width:28px; text-align:center; color:#5a6480; flex-shrink:0;">${player.rank}</div>
-                        <span style="flex:1; font-weight:700; font-size:14px; color:${nameColor}; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${player.name || 'Anonym'}${trendHtml(player)}</span>
+                        <span style="flex:1; font-weight:700; font-size:14px; color:${nameColor}; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${player.name || 'Anonym'}${typeof mvpBadgeHtml === 'function' ? mvpBadgeHtml(player.rowId, 'small') : ''}${trendHtml(player)}</span>
                         <button onclick="event.stopPropagation(); otevritProfil('${player.rowId}')" title="Profil hráče" style="padding:3px 7px; background:rgba(168,139,250,0.12); border:1px solid rgba(168,139,250,0.3); border-radius:5px; color:#a78bfa; font-size:0.6rem; font-weight:700; cursor:pointer; flex-shrink:0;">👤</button>
                         ${pdfBtn}
                         <span style="font-weight:900; font-size:16px; color:${ptsColor}; flex-shrink:0;"><span class="pts-cell" data-pts="${player.points}">${player.points}</span><span style="font-size:10px; opacity:0.6; margin-left:3px;">b</span></span>
