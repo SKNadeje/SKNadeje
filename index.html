@@ -1696,25 +1696,40 @@ input:focus {
         <aside>
             <div id="progress-container"></div>
 
-   <div class="scoring-legend">
-    <h3 style="margin-bottom:12px; cursor:pointer; display:flex; align-items:center; justify-content:space-between;" onclick="toggleBodovani()">
-        <span><i class="fas fa-info-circle"></i> Bodování turnaje</span>
+<div class="scoring-legend" style="margin-bottom:18px; background:rgba(212,175,55,0.03); border:1px solid rgba(212,175,55,0.15); border-radius:14px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); box-shadow:none; padding:0;">
+    <div style="cursor:pointer; padding:12px 16px; border-bottom:1px solid rgba(212,175,55,0.1); display:flex; justify-content:space-between; align-items:center;" onclick="toggleBodovani()">
+        <span style="color:#d4af37; font-weight:800; letter-spacing:1.5px; font-size:0.75rem; text-transform:uppercase;"><i class="fas fa-info-circle" style="margin-right:6px;"></i> Bodování turnaje</span>
         <i class="fas fa-chevron-up" id="bodovani-chevron" style="font-size:0.7rem; transition:transform 0.3s; color:#d4af37;"></i>
-    </h3>
-    <div id="bodovani-content">
-        <div class="legend-grid">
-            <div class="legend-item"><span class="label">Skupiny</span><span class="value">+4</span></div>
-            <div class="legend-item"><span class="label">1/16</span><span class="value">+2</span></div>
-            <div class="legend-item"><span class="label">1/8</span><span class="value">+3</span></div>
-            <div class="legend-item"><span class="label">1/4</span><span class="value">+4</span></div>
-            <div class="legend-item"><span class="label">Semi</span><span class="value">+5</span></div>
-            <div class="legend-item" style="border-color:rgba(180,100,40,0.3);">
-                <span class="label" style="color:rgba(217,123,58,0.7);">Bronz</span>
-                <span class="value" style="color:#d97b3a;">+8</span>
+    </div>
+    <div id="bodovani-content" style="padding:16px;">
+        <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:space-between;">
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:transparent; border:1px solid rgba(212,175,55,0.1); border-radius:8px;">
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">Skupiny</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+4</div>
             </div>
-            <div class="legend-item" style="border-color:rgba(212,175,55,0.3);">
-                <span class="label" style="color:rgba(212,175,55,0.7);">Vítěz</span>
-                <span class="value" style="color:#d4af37;">+12</span>
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:transparent; border:1px solid rgba(212,175,55,0.1); border-radius:8px;">
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">1/16</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+2</div>
+            </div>
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:transparent; border:1px solid rgba(212,175,55,0.1); border-radius:8px;">
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">1/8</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+3</div>
+            </div>
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:transparent; border:1px solid rgba(212,175,55,0.1); border-radius:8px;">
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">1/4</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+4</div>
+            </div>
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:transparent; border:1px solid rgba(212,175,55,0.1); border-radius:8px;">
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">Semi</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#f0e6c8;">+5</div>
+            </div>
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:transparent; border:1px solid rgba(180,100,40,0.3); border-radius:8px;">
+                <div style="font-size:0.6rem; color:rgba(217,123,58,0.7); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">Bronz</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#d97b3a;">+8</div>
+            </div>
+            <div style="flex:1; min-width:60px; text-align:center; padding:8px 4px; background:transparent; border:1px solid rgba(212,175,55,0.3); border-radius:8px;">
+                <div style="font-size:0.6rem; color:rgba(212,175,55,0.7); text-transform:uppercase; font-weight:800; letter-spacing:0.5px;">Vítěz</div>
+                <div style="font-size:0.95rem; font-weight:900; color:#d4af37;">+12</div>
             </div>
         </div>
     </div>
