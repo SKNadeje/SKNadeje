@@ -2042,35 +2042,20 @@ async function odeslatPushVsem() {
     if (!confirm(`Odeslat push všem hráčům?\n\nNadpis: ${title}\nZpráva: ${message}`)) return;
 
     try {
-        // Pošleme přes OneSignal REST API
-        // POZN: pro produkci by REST API klíč měl být skrytý v edge function
-        // Pro jednoduchost teď přes prompt
-        const apiKey = localStorage.getItem('onesignal_api_key') || prompt("OneSignal REST API klíč (uloží se v prohlížeči):");
-        if (!apiKey) return;
-        localStorage.setItem('onesignal_api_key', apiKey);
-        
-        const response = await fetch('https://onesignal.com/api/v1/notifications', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Basic ${apiKey}`
-            },
-            body: JSON.stringify({
-                app_id: 'e4db4056-c4db-422c-b7f4-8943a720d548',
-                included_segments: ['Subscribed Users'],
-                headings: { en: title, cs: title },
-                contents: { en: message, cs: message },
+        const { data, error } = await supabaseClient.functions.invoke('send-push', {
+            body: { 
+                title, 
+                message,
                 url: window.location.href
-            })
+            }
         });
         
-        const result = await response.json();
-        if (result.id) {
-            showToast(`✅ Push odeslán! Příjemců: ${result.recipients || '?'}`, 'success', 5000);
-        } else {
-            throw new Error(result.errors?.join(', ') || 'Neznámá chyba');
-        }
+        if (error) throw error;
+        if (data?.errors) throw new Error(Array.isArray(data.errors) ? data.errors.join(', ') : JSON.stringify(data.errors));
+        
+        showToast(`✅ Push odeslán! Příjemců: ${data?.recipients || '?'}`, 'success', 5000);
     } catch (err) {
+        console.error("Push error:", err);
         showToast("Chyba: " + err.message, 'error');
     }
 }
