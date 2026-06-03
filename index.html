@@ -6762,7 +6762,8 @@ window.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('DOMContentLoaded', checkUserSession);
 
     window.onload = init;
-    // Registrace PWA Service Workeru
+  // Registrace PWA Service Workeru - DOČASNĚ VYPNUTO pro test OneSignalu
+/*
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./service-worker.js')
@@ -6770,6 +6771,7 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.warn('⚠️ PWA Service Worker error:', err));
     });
 }
+*/
 </script>
 
 <div id="custom-alert" class="modal-overlay hidden">
