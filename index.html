@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SK Naděje - WorldCup2026</title>
+    <!-- PWA META -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#d4af37">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WC2026">
+<link rel="apple-touch-icon" href="logo-wc2026.png">
+<link rel="icon" type="image/png" href="logo-wc2026.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -1995,6 +2004,45 @@ input:focus {
 </div>
     
 <script>
+
+    // PWA - tlačítko Přidat na plochu
+let pwaPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    pwaPrompt = e;
+    // Ukázat banner po 5 sekundách (nech uživatele se rozkoukat)
+    setTimeout(() => {
+        const banner = document.getElementById('pwa-install-banner');
+        if (banner && !localStorage.getItem('pwa-dismissed')) {
+            banner.style.display = 'flex';
+        }
+    }, 5000);
+});
+
+async function instalovatPWA() {
+    if (!pwaPrompt) return;
+    pwaPrompt.prompt();
+    const { outcome } = await pwaPrompt.userChoice;
+    document.getElementById('pwa-install-banner').style.display = 'none';
+    if (outcome === 'accepted') {
+        showToast('🎉 Appka přidána na plochu!', 'success', 4000);
+    }
+    pwaPrompt = null;
+}
+
+// Pokud uživatel banner zavře, neukazovat měsíc
+document.addEventListener('DOMContentLoaded', () => {
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) {
+        const closeBtn = banner.querySelector('button:last-child');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                localStorage.setItem('pwa-dismissed', Date.now());
+            });
+        }
+    }
+});
 // Uloží nově získané odznáčky do DB (jen pro sebe)
 async function ulozZiskaneOdznaky(rowId, odznaky) {
     const { data: authData } = await supabaseClient.auth.getUser();
@@ -6524,6 +6572,14 @@ window.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('DOMContentLoaded', checkUserSession);
 
     window.onload = init;
+    // Registrace PWA Service Workeru
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+            .then(reg => console.log('✅ PWA: Service Worker registered'))
+            .catch(err => console.warn('⚠️ PWA Service Worker error:', err));
+    });
+}
 </script>
 
 <div id="custom-alert" class="modal-overlay hidden">
@@ -6569,7 +6625,16 @@ window.addEventListener('DOMContentLoaded', checkUserSession);
         <button onclick="odeslatChatZpravu()" id="chat-send-btn" style="background:linear-gradient(135deg,#d4af37,#9a7b1e); color:#05070f; border:none; padding:9px 14px; border-radius:8px; cursor:pointer; font-weight:800;"><i class="fas fa-paper-plane"></i></button>
     </div>
 </div>
-    
+    <!-- 📱 PWA INSTALL BANNER -->
+<div id="pwa-install-banner" style="display:none; position:fixed; bottom:80px; left:12px; right:12px; max-width:340px; margin:0 auto; background:linear-gradient(135deg,#d4af37,#9a7b1e); color:#05070f; padding:14px 16px; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.5); z-index:9997; display:none; align-items:center; gap:10px;">
+    <i class="fas fa-download" style="font-size:1.3rem;"></i>
+    <div style="flex:1;">
+        <div style="font-weight:900; font-size:0.85rem;">Přidat na plochu</div>
+        <div style="font-size:0.7rem; opacity:0.8;">Otevírej tipovačku jako appku</div>
+    </div>
+    <button onclick="instalovatPWA()" style="background:#05070f; color:#d4af37; border:none; padding:7px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">INSTALOVAT</button>
+    <button onclick="document.getElementById('pwa-install-banner').style.display='none';" style="background:none; border:none; color:#05070f; opacity:0.5; cursor:pointer; padding:5px;"><i class="fas fa-times"></i></button>
+</div>
    <div id="toast-container"></div> 
 <div id="notif-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); z-index:100000; justify-content:center; align-items:center; padding:20px;">
     <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; padding:28px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.7);">
