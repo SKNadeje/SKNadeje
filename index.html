@@ -6464,7 +6464,7 @@ window.addEventListener('DOMContentLoaded', checkUserSession);
     </div>
 </div>
 <div id="profil-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); z-index:100000; justify-content:center; align-items:center; padding:20px;" onclick="if(event.target===this) this.style.display='none'">
-    <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; padding:28px; max-width:420px; width:100%; box-shadow:0 25px 60px rgba(0,0,0,0.7);">
+    <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; padding:28px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.7);">
         <div id="profil-obsah"></div>
         <button onclick="document.getElementById('profil-modal').style.display='none'" class="btn" style="width:100%; margin-top:16px; background:rgba(30,40,60,0.8); color:#94a3b8; border:1px solid rgba(212,175,55,0.12);">Zavřít</button>
     </div>
