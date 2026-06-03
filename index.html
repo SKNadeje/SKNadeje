@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
 <header class="site-header">
     <div class="mini-host-bar">
@@ -1985,6 +1986,175 @@ input:focus {
 </div>
     
 <script>
+// ════════════════════════════════════════════
+// 📈 GRAFY V PROFILU
+// ════════════════════════════════════════════
+
+// Graf vývoje bodů v čase (line chart se zlatým gradientem)
+async function renderBodyVCaseChart(canvasId, userId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    const { data: snapshoty } = await supabaseClient
+        .from('mvp_snapshoty')
+        .select('*')
+        .eq('user_id', userId)
+        .order('snapshot_date', { ascending: true });
+
+    // Aktuální body (přidáme jako poslední bod)
+    const p = profilData.find(x => String(x.rowId) === String(userId));
+    const aktualniBody = p?.points || 0;
+
+    const points = [...(snapshoty || [])];
+    const dnesni = new Date().toISOString().slice(0, 10);
+    if (!points.length || points[points.length - 1].snapshot_date !== dnesni) {
+        points.push({ snapshot_date: dnesni, body: aktualniBody });
+    }
+
+    if (points.length < 2) {
+        canvas.parentElement.innerHTML = '<div style="text-align:center; color:#5a6480; font-size:0.75rem; padding:30px;">📊 Zatím málo dat – graf se objeví po dalším kole.</div>';
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 160);
+    gradient.addColorStop(0, 'rgba(212,175,55,0.4)');
+    gradient.addColorStop(1, 'rgba(212,175,55,0.02)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: points.map(s => new Date(s.snapshot_date).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' })),
+            datasets: [{
+                label: 'Body',
+                data: points.map(s => s.body),
+                borderColor: '#d4af37',
+                backgroundColor: gradient,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#d4af37',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15,20,35,0.95)',
+                    borderColor: 'rgba(212,175,55,0.3)',
+                    borderWidth: 1,
+                    titleColor: '#d4af37',
+                    bodyColor: '#f0e6c8',
+                    padding: 10,
+                    callbacks: {
+                        label: (ctx) => `${ctx.parsed.y} bodů`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#5a6480', font: { size: 10 } },
+                    grid: { color: 'rgba(212,175,55,0.05)' }
+                },
+                y: {
+                    ticks: { color: '#5a6480', font: { size: 10 } },
+                    grid: { color: 'rgba(212,175,55,0.05)' },
+                    beginAtZero: true
+                }
+            },
+            animation: { duration: 1200, easing: 'easeOutQuart' }
+        }
+    });
+}
+
+// Radarový graf úspěšnosti po fázích
+function renderUspechFazChart(canvasId, tip) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    const f = spocitejFazeProfil(tip);
+    const maxy = { skupiny: 192, s32: 32, s16: 24, s8: 16, s4: 10, bronze: 8, winner: 12 };
+    const faze = ['Skupiny', '1/16', '1/8', '1/4', 'Semi', 'Bronz', 'Vítěz'];
+    const keys = ['skupiny', 's32', 's16', 's8', 's4', 'bronze', 'winner'];
+    const data = keys.map(k => maxy[k] > 0 ? Math.round((f[k] / maxy[k]) * 100) : 0);
+
+    // Pokud nejsou data, neukazuj prázdný graf
+    if (data.every(d => d === 0)) {
+        canvas.parentElement.innerHTML = '<div style="text-align:center; color:#5a6480; font-size:0.75rem; padding:30px;">🎯 Zatím žádné body – graf se zobrazí jakmile admin zadá první výsledky.</div>';
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: faze,
+            datasets: [{
+                label: 'Úspěšnost %',
+                data: data,
+                borderColor: '#d4af37',
+                backgroundColor: 'rgba(212,175,55,0.2)',
+                pointBackgroundColor: '#d4af37',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15,20,35,0.95)',
+                    borderColor: 'rgba(212,175,55,0.3)',
+                    borderWidth: 1,
+                    titleColor: '#d4af37',
+                    bodyColor: '#f0e6c8',
+                    callbacks: {
+                        label: (ctx) => `${ctx.parsed.r}%`
+                    }
+                }
+            },
+            scales: {
+                r: {
+                    suggestedMin: 0,
+                    suggestedMax: 100,
+                    ticks: {
+                        color: '#5a6480',
+                        backdropColor: 'transparent',
+                        font: { size: 9 },
+                        stepSize: 25
+                    },
+                    pointLabels: {
+                        color: '#f0e6c8',
+                        font: { size: 10, weight: '700' }
+                    },
+                    grid: { color: 'rgba(212,175,55,0.1)' },
+                    angleLines: { color: 'rgba(212,175,55,0.15)' }
+                }
+            },
+            animation: { duration: 1200, easing: 'easeOutQuart' }
+        }
+    });
+}
+
+// Vykreslení obou grafů
+async function renderProfilGrafy(rowId, chartId1, chartId2) {
+    const p = profilData.find(x => String(x.rowId) === String(rowId));
+    if (!p) return;
+    await renderBodyVCaseChart(chartId1, p.rowId);
+    renderUspechFazChart(chartId2, p.tip);
+}
+    
 // Úprava vlastní zprávy
 async function upravitZpravu(id, oldText) {
     const novyText = prompt("Uprav svou zprávu:", oldText);
@@ -2829,36 +2999,39 @@ function otevritProfil(rowId) {
                 <div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase;">Lepší než</div>
             </div>
         </div>
-        <!-- ÚSPĚŠNOST PO FÁZÍCH -->
-        ${(() => {
-            const f = spocitejFazeProfil(p.tip);
-            const maxy = { skupiny: 192, s32: 32, s16: 24, s8: 16, s4: 10, bronze: 8, winner: 12 };
-            const faze = [
-                { key: 'skupiny', n: 'Skupiny' }, { key: 's32', n: '1/16' }, { key: 's16', n: '1/8' },
-                { key: 's8', n: '1/4' }, { key: 's4', n: 'Semi' }, { key: 'bronze', n: 'Bronz' }, { key: 'winner', n: 'Vítěz' }
-            ];
-            const maData = profilData.some(x => x.points > 0);
-            if (!maData) return '';
-            return `
-                <div style="margin-bottom:16px;">
-                    <div style="font-size:0.65rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:8px;">Úspěšnost po fázích</div>
-                    ${faze.map(ff => {
-                        const ziskal = f[ff.key];
-                        const max = maxy[ff.key];
-                        const pct = max > 0 ? Math.round((ziskal / max) * 100) : 0;
-                        return `
-                            <div style="margin-bottom:5px;">
-                                <div style="display:flex; justify-content:space-between; font-size:0.65rem; margin-bottom:2px;">
-                                    <span style="color:#94a3b8;">${ff.n}</span>
-                                    <span style="color:#d4af37; font-weight:700;">${ziskal}/${max} (${pct}%)</span>
-                                </div>
-                                <div style="height:4px; background:rgba(255,255,255,0.05); border-radius:2px; overflow:hidden;">
-                                    <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,#d4af37,#9a7b1e); border-radius:2px;"></div>
-                                </div>
-                            </div>`;
-                    }).join('')}
-                </div>`;
-        })()}
+       <!-- 📈 GRAFY -->
+${(() => {
+    const isOwn = window.loggedUserIdGlobal && String(window.loggedUserIdGlobal) === String(p.rowId);
+    const chartId1 = `chart-body-${p.rowId}-${Date.now()}`;
+    const chartId2 = `chart-faze-${p.rowId}-${Date.now()}`;
+
+    const grafyHtml = `
+        <div id="graphs-section-${p.rowId}" style="${isOwn ? '' : 'display:none;'}">
+            <div style="font-size:0.65rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin:14px 0 6px;">📈 Vývoj bodů v čase</div>
+            <div style="background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.15); border-radius:10px; padding:10px; height:160px; margin-bottom:14px; position:relative;">
+                <canvas id="${chartId1}"></canvas>
+            </div>
+
+            <div style="font-size:0.65rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin:14px 0 6px;">🎯 Úspěšnost po fázích</div>
+            <div style="background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.15); border-radius:10px; padding:10px; height:240px; margin-bottom:14px; position:relative;">
+                <canvas id="${chartId2}"></canvas>
+            </div>
+        </div>
+        ${!isOwn ? `
+            <button id="show-graphs-${p.rowId}" onclick="document.getElementById('graphs-section-${p.rowId}').style.display='block'; renderProfilGrafy('${p.rowId}', '${chartId1}', '${chartId2}'); this.style.display='none';" 
+                style="width:100%; margin-top:10px; padding:12px; background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.3); color:#d4af37; border-radius:10px; cursor:pointer; font-weight:800; letter-spacing:1px; text-transform:uppercase; font-size:0.75rem;">
+                📊 ZOBRAZIT GRAFY HRÁČE
+            </button>
+        ` : ''}
+    `;
+
+    // Pokud je to vlastní profil, vyrenderuj grafy hned po otevření modalu
+    if (isOwn) {
+        setTimeout(() => renderProfilGrafy(p.rowId, chartId1, chartId2), 150);
+    }
+
+    return grafyHtml;
+})()}
 
        <!-- ODZNAKY -->
         ${(() => {
