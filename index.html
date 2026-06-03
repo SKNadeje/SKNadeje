@@ -1985,6 +1985,28 @@ input:focus {
 </div>
     
 <script>
+// Úprava vlastní zprávy
+async function upravitZpravu(id, oldText) {
+    const novyText = prompt("Uprav svou zprávu:", oldText);
+    if (novyText === null) return; // zrušeno
+    
+    const trimmed = novyText.trim();
+    if (!trimmed) return showToast("Zpráva nemůže být prázdná", 'error');
+    if (trimmed.length > 200) return showToast("Maximálně 200 znaků!", 'error');
+    if (trimmed === oldText) return; // beze změny
+
+    try {
+        const { error } = await supabaseClient
+            .from('chat_zpravy')
+            .update({ message: trimmed, edited_at: new Date().toISOString() })
+            .eq('id', id);
+        if (error) throw error;
+        showToast("✏️ Zpráva upravena", 'success', 1500);
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
+    
     async function resetMVP() {
     const { data: authData } = await supabaseClient.auth.getUser();
     if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
@@ -2320,19 +2342,23 @@ async function vykreslitChat() {
         const escaped = String(z.message).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const escapedName = String(z.name || 'Anonym').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-        return `
-            <div class="chat-msg ${isMine ? 'own' : ''}" data-id="${z.id}">
-                <div class="chat-msg-header">
-                    <span class="chat-msg-name">${escapedName}${typeof mvpBadgeHtml === 'function' ? mvpBadgeHtml(z.user_id, 'small') : ''}</span>
-                    <span class="chat-msg-time">${time}</span>
-                </div>
-                <div class="chat-msg-text">${escaped}</div>
-                <div class="chat-msg-actions">
-                    ${reakceHtml}
-                    <button class="chat-react-btn" onclick="otevritReakce(${z.id}, this)">😊+</button>
-                    ${muzuMazat ? `<button class="chat-delete-btn" onclick="smazatZpravu(${z.id})">🗑️</button>` : ''}
-                </div>
-            </div>`;
+       const editedText = z.edited_at ? '<span style="font-size:0.55rem; color:#5a6480; margin-left:4px; font-style:italic;">(upraveno)</span>' : '';
+const escapedForEdit = String(z.message).replace(/'/g, "\\'").replace(/\n/g, '\\n');
+
+return `
+    <div class="chat-msg ${isMine ? 'own' : ''}" data-id="${z.id}">
+        <div class="chat-msg-header">
+            <span class="chat-msg-name">${escapedName}${typeof mvpBadgeHtml === 'function' ? mvpBadgeHtml(z.user_id, 'small') : ''}</span>
+            <span class="chat-msg-time">${time}${editedText}</span>
+        </div>
+        <div class="chat-msg-text">${escaped}</div>
+        <div class="chat-msg-actions">
+            ${reakceHtml}
+            <button class="chat-react-btn" onclick="otevritReakce(${z.id}, this)">😊+</button>
+            ${isMine ? `<button class="chat-delete-btn" style="color:#38bdf8;" onclick="upravitZpravu(${z.id}, '${escapedForEdit}')">✏️</button>` : ''}
+            ${muzuMazat ? `<button class="chat-delete-btn" onclick="smazatZpravu(${z.id})">🗑️</button>` : ''}
+        </div>
+    </div>`;
     }).join('');
 
     // Scroll dolů
