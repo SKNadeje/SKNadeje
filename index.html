@@ -24,10 +24,32 @@
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
-            appId: "e4db4056-c4db-422c-b7f4-8943a720d548",
-            notifyButton: { enable: false },
-            allowLocalhostAsSecureOrigin: true
-        });
+    appId: "e4db4056-c4db-422c-b7f4-8943a720d548",
+    notifyButton: {
+        enable: true,
+        size: 'medium',
+        position: 'bottom-left',
+        prenotify: true,
+        showCredit: false,
+        text: {
+            'tip.state.unsubscribed': 'Přihlas se k notifikacím',
+            'tip.state.subscribed': "Jsi přihlášen k notifikacím",
+            'tip.state.blocked': "Notifikace jsou zablokované",
+            'message.prenotify': 'Klikni pro přihlášení k notifikacím',
+            'message.action.subscribed': "Děkujeme za přihlášení!",
+            'message.action.resubscribed': "Jsi přihlášen!",
+            'message.action.unsubscribed': "Už nebudeš dostávat notifikace.",
+            'dialog.main.title': 'Spravovat notifikace',
+            'dialog.main.button.subscribe': 'PŘIHLÁSIT',
+            'dialog.main.button.unsubscribe': 'ODHLÁSIT',
+            'dialog.blocked.title': 'Odblokovat notifikace',
+            'dialog.blocked.message': "Postupuj podle instrukcí pro povolení notifikací:"
+        }
+    },
+    allowLocalhostAsSecureOrigin: true,
+    serviceWorkerPath: "service-worker.js",
+    serviceWorkerParam: { scope: "./" }
+});
         console.log("🔔 OneSignal inicializován");
     });
 </script>
