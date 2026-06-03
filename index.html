@@ -26,11 +26,11 @@
         await OneSignal.init({
             appId: "e4db4056-c4db-422c-b7f4-8943a720d548",
             notifyButton: {
-                enable: false  // Vlastní tlačítko si uděláme sami
+                enable: false
             },
             allowLocalhostAsSecureOrigin: true,
-            serviceWorkerPath: "OneSignalSDKWorker.js",
-            serviceWorkerParam: { scope: "/" }
+            serviceWorkerPath: "service-worker.js",
+            serviceWorkerParam: { scope: "./" }
         });
         console.log("🔔 OneSignal inicializován");
     });
