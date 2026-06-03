@@ -1995,6 +1995,46 @@ input:focus {
 </div>
     
 <script>
+// Uloží nově získané odznáčky do DB (jen pro sebe)
+async function ulozZiskaneOdznaky(rowId, odznaky) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (!authData?.user || String(authData.user.id) !== String(rowId)) return; // jen pro vlastní profil
+    
+    // Vyfiltruj negativní a stavové (ty se nepersistují)
+    const VYNECHAT = ['Pohodář', 'Nezaplaceno', 'Zaplaceno', 'Propadák', 'Černý kůň'];
+    const aktualne = odznaky
+        .filter(o => o.aktivni && !VYNECHAT.includes(o.label))
+        .map(o => o.label);
+    
+    if (aktualne.length === 0) return;
+    
+    // Načti dosud uložené
+    const { data: row } = await supabaseClient
+        .from('tipy')
+        .select('achievements_earned')
+        .eq('user_id', rowId)
+        .maybeSingle();
+    const ulozeno = (row?.achievements_earned) || [];
+    
+    // Najdi nově získané
+    const nove = aktualne.filter(label => !ulozeno.includes(label));
+    if (nove.length === 0) return;
+    
+    // Ulož merged seznam
+    const updated = [...ulozeno, ...nove];
+    await supabaseClient.from('tipy').update({ achievements_earned: updated }).eq('user_id', rowId);
+    
+    // Toast notifikace (jen pokud to není první save = úvodní inicializace)
+    if (ulozeno.length > 0) {
+        if (nove.length === 1) {
+            const o = odznaky.find(x => x.label === nove[0]);
+            showToast(`🏆 Získal jsi odznáček: ${o.icon} ${nove[0]}!`, 'success', 5000);
+        } else {
+            showToast(`🏆 Získal jsi ${nove.length} nových odznáčků!`, 'success', 5000);
+        }
+    }
+}
+    
 // ════════════════════════════════════════════
 // 📈 GRAFY V PROFILU
 // ════════════════════════════════════════════
@@ -2999,20 +3039,27 @@ window.addEventListener('DOMContentLoaded', () => {
     odznaky.push({ icon: '💰', label: p.isPaid ? 'Zaplaceno' : 'Nezaplaceno', aktivni: p.isPaid, klik: `togglePaymentProfil('${p.rowId}', ${p.isPaid})`, popis: p.isPaid ? 'Uhradil/a startovné 200 Kč.' : 'Ještě nezaplatil/a startovné 200 Kč.' });
 
     // === POŘADÍ V ŽEBŘÍČKU ===
-    odznaky.push({ icon: '👑', label: 'Král', aktivni: p.rank === 1 && p.points > 0, popis: 'Vede žebříček – aktuálně nejlepší tipař!' });
-    odznaky.push({ icon: '🥈', label: 'Stříbro', aktivni: p.rank === 2 && p.points > 0, popis: 'Drží stříbrnou pozici v žebříčku.' });
-    odznaky.push({ icon: '🥉', label: 'Bronz', aktivni: p.rank === 3 && p.points > 0, popis: 'Drží bronzovou pozici v žebříčku.' });
+    odznaky.push({ icon: '👑', label: 'Král', aktivni: p.rank === 1 && p.points > 0, popis: 'Vedl/a žebříček – nejlepší tipař!' });
+    odznaky.push({ icon: '🥈', label: 'Stříbro', aktivni: p.rank === 2 && p.points > 0, popis: 'Držel/a stříbrnou pozici v žebříčku.' });
+    odznaky.push({ icon: '🥉', label: 'Bronz', aktivni: p.rank === 3 && p.points > 0, popis: 'Držel/a bronzovou pozici v žebříčku.' });
     odznaky.push({ icon: '🐴', label: 'Černý kůň', aktivni: p.rank === total && p.points > 0 && total > 3, popis: 'Drží poslední místo – nezbývá než stoupat!' });
 
     // === POHYB ===
     const skok = p.previous_rank ? p.previous_rank - p.rank : 0;
-    odznaky.push({ icon: '🍀', label: 'Šťastlivec', aktivni: skok >= 3 && skok < 5, popis: 'Skočil/a v žebříčku o 3-4 místa nahoru!' });
-    odznaky.push({ icon: '🚀', label: 'Raketa', aktivni: skok >= 5, popis: `Mega skok o ${skok} míst nahoru!` });
-    odznaky.push({ icon: '💀', label: 'Propadák', aktivni: skok <= -3, popis: `Spadl/a v žebříčku o ${Math.abs(skok)} míst dolů.` });
+    odznaky.push({ icon: '🍀', label: 'Šťastlivec', aktivni: skok >= 3, popis: 'Skočil/a v žebříčku o 3+ míst nahoru!' });
+    odznaky.push({ icon: '🚀', label: 'Raketa', aktivni: skok >= 5, popis: 'Mega skok o 5+ míst nahoru!' });
+    odznaky.push({ icon: '💀', label: 'Propadák', aktivni: skok <= -3, popis: 'Spadl/a v žebříčku o 3+ míst dolů.' });
 
     // === TIPOVACÍ STYL ===
     odznaky.push({ icon: '🎰', label: 'Sázkař', aktivni: !!(tip.winner && tip.winner === outsider && oblibeny !== outsider), popis: 'Vsadil/a na outsidera, kterého málokdo tipuje na vítěze.' });
     odznaky.push({ icon: '🐑', label: 'S davem', aktivni: !!(tip.winner && tip.winner === oblibeny && sortHlasy[0]?.[1] > 1), popis: 'Vsadil/a na nejoblíbenějšího favorita podle hráčů.' });
+
+    // === ČESKÝ FAN ===
+    const tipGroupA = (tip.groups && tip.groups[0]) || [];
+    const ceskoPostupZeSkupiny = String(tipGroupA[0] || '').trim() === 'Česko' || String(tipGroupA[1] || '').trim() === 'Česko';
+    const ceskoV16 = (tip.s32 || []).some(t => String(t).trim() === 'Česko');
+    odznaky.push({ icon: '🇨🇿', label: 'Vlastenec', aktivni: ceskoPostupZeSkupiny, popis: 'Věří českému týmu – tipoval Česko do top 2 ze skupiny.' });
+    odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV16, popis: 'Tipoval/a Česko do 1/16 finále – odvážná předpověď!' });
 
     // === TREFY V TURNAJI ===
     const trefilVitez = r.winner && tip.winner && String(r.winner).trim() === String(tip.winner).trim();
@@ -3034,23 +3081,32 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    odznaky.push({ icon: '📚', label: 'Profík', aktivni: presneSkupiny >= 1 && presneSkupiny < 3, popis: `Tipoval/a přesné pořadí v ${presneSkupiny} skupin${presneSkupiny === 1 ? 'ě' : 'ách'}.` });
-    odznaky.push({ icon: '🏆', label: 'Vševěd', aktivni: presneSkupiny >= 3, popis: `Tipoval/a přesné pořadí v ${presneSkupiny} skupinách – mistrovský výkon!` });
+    odznaky.push({ icon: '📚', label: 'Profík', aktivni: presneSkupiny >= 1, popis: `Tipoval/a přesné pořadí v ${presneSkupiny} skupin${presneSkupiny === 1 ? 'ě' : 'ách'}.` });
+    odznaky.push({ icon: '🏆', label: 'Vševěd', aktivni: presneSkupiny >= 3, popis: 'Tipoval/a přesné pořadí ve 3+ skupinách – mistrovský výkon!' });
     odznaky.push({ icon: '🎯', label: 'Snajpr', aktivni: prvniMistaTrefil >= 6, popis: `Trefil/a 1. místo v ${prvniMistaTrefil} skupinách.` });
 
     // === MVP ===
     const pocetMVP = (typeof mvpCacheGlobal !== 'undefined') ? (mvpCacheGlobal[p.rowId] || 0) : 0;
-    odznaky.push({ icon: '🌟', label: 'MVP', aktivni: pocetMVP >= 1 && pocetMVP < 3, popis: `Získal/a MVP kola ${pocetMVP}×.` });
+    odznaky.push({ icon: '🌟', label: 'MVP', aktivni: pocetMVP >= 1, popis: `Získal/a MVP kola ${pocetMVP}×.` });
     odznaky.push({ icon: '💎', label: 'Hvězda kol', aktivni: pocetMVP >= 3, popis: `Získal/a MVP kola ${pocetMVP}× – legendární výkon!` });
 
     // === CHAT AKTIVITA ===
     const chatStats = (typeof chatStatsCache !== 'undefined') ? (chatStatsCache[p.rowId] || { messages: 0, reactions: 0 }) : { messages: 0, reactions: 0 };
-    odznaky.push({ icon: '💬', label: 'Klábosil', aktivni: chatStats.messages >= 10 && chatStats.messages < 50, popis: `Napsal/a ${chatStats.messages} zpráv v chatu.` });
+    odznaky.push({ icon: '💬', label: 'Klábosil', aktivni: chatStats.messages >= 10, popis: `Napsal/a ${chatStats.messages} zpráv v chatu.` });
     odznaky.push({ icon: '🎙️', label: 'Showman', aktivni: chatStats.messages >= 50, popis: `Napsal/a ${chatStats.messages} zpráv – chat baví!` });
     odznaky.push({ icon: '❤️', label: 'Oblíbenec', aktivni: chatStats.reactions >= 5, popis: `Dostal/a ${chatStats.reactions} reakcí na zprávy.` });
 
+    // === MERGE S ULOŽENÝMI (persistence) ===
+    const ulozeno = p.achievements_earned || [];
+    odznaky.forEach(o => {
+        if (ulozeno.includes(o.label)) {
+            o.aktivni = true;
+            o.persisted = true;
+        }
+    });
+
     // === FALLBACK – Pohodář ===
-    const dulezite = ['Král','Stříbro','Bronz','Jasnovidec','Bronz oko','Profík','Vševěd','Snajpr','MVP','Hvězda kol','Klábosil','Showman','Oblíbenec','Černý kůň','Sázkař','S davem','Šťastlivec','Raketa','Propadák'];
+    const dulezite = ['Král','Stříbro','Bronz','Jasnovidec','Bronz oko','Profík','Vševěd','Snajpr','MVP','Hvězda kol','Klábosil','Showman','Oblíbenec','Černý kůň','Sázkař','S davem','Šťastlivec','Raketa','Propadák','Vlastenec','Naivka'];
     const maDulezity = odznaky.some(o => o.aktivni && dulezite.includes(o.label));
     odznaky.push({ icon: '🦥', label: 'Pohodář', aktivni: !maDulezity, popis: 'V klidu sleduje turnaj a nestresuje se pořadím.' });
 
@@ -4767,10 +4823,18 @@ async function renderLeaderboard(data, real) {
         const rowId = player.user_id || player.id;
         const isOwn = loggedUserId && String(loggedUserId) === String(rowId);
         const isPaidProfil = player.paid === true || player.paid === 1 || String(player.paid) === 'true';
-        profilData.push({ rowId, name: player.name, full_name: player.full_name, points: player.points, rank: currentRank, isPaid: isPaidProfil, tip: player.tip, previous_rank: player.previous_rank });
+        profilData.push({ rowId, name: player.name, full_name: player.full_name, points: player.points, rank: currentRank, isPaid: isPaidProfil, tip: player.tip, previous_rank: player.previous_rank, achievements_earned: player.achievements_earned || [] });
         return { ...player, rowId, isOwn, isPaid: isPaidProfil, rank: currentRank };
     });
     window.loggedUserIdGlobal = loggedUserId;
+    // Uložení získaných odznáčků pro přihlášeného hráče
+if (loggedUserId) {
+    const me = profilData.find(x => String(x.rowId) === String(loggedUserId));
+    if (me) {
+        const myOdznaky = ziskejOdznaky(me);
+        ulozZiskaneOdznaky(loggedUserId, myOdznaky); // asynchronně, bez await
+    }
+}
 
     // Trend šipka
     const trendHtml = (p) => {
