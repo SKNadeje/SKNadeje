@@ -2170,7 +2170,7 @@ async function vyhlasitMVPTydne() {
         }
 
         const jmenaVitezu = viteziTydne.map(v => v.name).join(', ');
-        showToast(`🌟 MVP týdne: ${jmenaVitezu} (+${maxPrirustek} bodů)!`, 'success', 6000);
+        showToast(`🌟 MVP kola: ${jmenaVitezu} (+${maxPrirustek} bodů)!`, 'success', 6000);
         
         await nactiMVPCache();
         if (typeof loadAll === "function") await loadAll();
@@ -2228,7 +2228,7 @@ function mvpBadgeHtml(userId, size = 'normal') {
 
     const pocetText = pocet > 1 ? `<span style="margin-left:3px; opacity:0.85;">×${pocet}</span>` : '';
 
-    return `<span class="mvp-badge" title="MVP týdne ${pocet}× ${pocet === 6 ? '🏆 LEGENDA!' : ''}" style="display:inline-flex; align-items:center; gap:2px; padding:${s.pad}; background:${bg}; border:1px solid ${glow}; border-radius:10px; font-size:${s.fs}; font-weight:900; color:${color}; box-shadow:0 0 8px ${glow}; ${animace} margin-left:5px; white-space:nowrap;"><span style="font-size:${s.ico};">${icon}</span>${pocetText}</span>`;
+    return `<span class="mvp-badge" title="MVP kola ${pocet}× ${pocet >= 7 ? '🏆 LEGENDA!' : ''}" style="display:inline-flex; align-items:center; gap:2px; padding:${s.pad}; background:${bg}; border:1px solid ${glow}; border-radius:10px; font-size:${s.fs}; font-weight:900; color:${color}; box-shadow:0 0 8px ${glow}; ${animace} margin-left:5px; white-space:nowrap;"><span style="font-size:${s.ico};">${icon}</span>${pocetText}</span>`;
 }
 
 // Načtení MVP cache při startu
