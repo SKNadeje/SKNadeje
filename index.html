@@ -25,12 +25,8 @@
     OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
             appId: "e4db4056-c4db-422c-b7f4-8943a720d548",
-            notifyButton: {
-                enable: false
-            },
-            allowLocalhostAsSecureOrigin: true,
-            serviceWorkerPath: "service-worker.js",
-            serviceWorkerParam: { scope: "./" }
+            notifyButton: { enable: false },
+            allowLocalhostAsSecureOrigin: true
         });
         console.log("🔔 OneSignal inicializován");
     });
