@@ -23,6 +23,10 @@
 </header>
 
 <style>
+    /* Povolit scroll přes grafy na mobilu */
+#profil-modal canvas {
+    touch-action: pan-y !important;
+}
 /* --- MVP ODZNÁČEK ANIMACE --- */
 @keyframes mvpGlow {
     0%, 100% { box-shadow: 0 0 8px rgba(212,175,55,0.5); }
@@ -2041,6 +2045,7 @@ async function renderBodyVCaseChart(canvasId, userId) {
             }]
         },
         options: {
+            events: ['mousemove', 'mouseout', 'click'],
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
@@ -2109,6 +2114,7 @@ function renderUspechFazChart(canvasId, tip) {
             }]
         },
         options: {
+            events: ['mousemove', 'mouseout', 'click'],
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
