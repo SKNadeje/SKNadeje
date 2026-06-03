@@ -18,6 +18,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- 🔔 OneSignal Push Notifications -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+            appId: "e4db4056-c4db-422c-b7f4-8943a720d548",
+            notifyButton: {
+                enable: false  // Vlastní tlačítko si uděláme sami
+            },
+            allowLocalhostAsSecureOrigin: true,
+            serviceWorkerPath: "OneSignalSDKWorker.js",
+            serviceWorkerParam: { scope: "/" }
+        });
+        console.log("🔔 OneSignal inicializován");
+    });
+</script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
 <header class="site-header">
@@ -1777,7 +1794,10 @@ input:focus {
     </form>
 </div>
 
-<div id="logged-in-section" class="hidden" style="position:absolute; top:12px; right:12px; z-index:50;">
+<div id="logged-in-section" class="hidden" style="position:absolute; top:12px; right:12px; z-index:50; display:flex; gap:6px;">
+    <button id="notif-toggle-btn" onclick="toggleNotifikace()" title="Push notifikace" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:#d4af37; font-size:0.7rem; padding:7px 12px; border-radius:9px; cursor:pointer; font-weight:600; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+        🔕 Notifikace
+    </button>
     <button onclick="logoutUser()" title="Odhlásit se" style="background:rgba(10,13,26,0.85); border:1px solid rgba(212,175,55,0.2); color:#94a3b8; font-size:0.72rem; padding:7px 16px; border-radius:9px; cursor:pointer; font-weight:600; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
         <i class="fas fa-sign-out-alt" style="margin-right:5px; color:var(--accent);"></i>Odhlásit
     </button>
@@ -1840,6 +1860,12 @@ input:focus {
         style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; width:100%; font-size:0.8rem;">
         📧 ODESLAT NOTIFIKACI HRÁČŮM
     </button>
+            <div style="padding: 0 20px 10px;">
+    <button type="button" class="btn" onclick="odeslatPushVsem()" 
+        style="background:rgba(168,139,250,0.15); border:1px solid rgba(168,139,250,0.3); color:#a78bfa; width:100%; font-size:0.8rem;">
+        🔔 POSLAT PUSH NOTIFIKACI
+    </button>
+</div>
 </div>
         <div style="padding: 0 20px 10px;">
     <button type="button" class="btn" onclick="otevritAnketuAdmin()" 
@@ -2004,7 +2030,159 @@ input:focus {
 </div>
     
 <script>
+    // Admin: odeslat push notifikaci všem
+async function odeslatPushVsem() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+        showToast("Pouze pro admina!", 'error');
+        return;
+    }
+    
+    const title = prompt("Nadpis notifikace:", "⚽ WC2026 Tipovačka");
+    if (!title) return;
+    const message = prompt("Zpráva:", "Něco se děje na tipovačce!");
+    if (!message) return;
+    
+    if (!confirm(`Odeslat push všem hráčům?\n\nNadpis: ${title}\nZpráva: ${message}`)) return;
 
+    try {
+        // Pošleme přes OneSignal REST API
+        // POZN: pro produkci by REST API klíč měl být skrytý v edge function
+        // Pro jednoduchost teď přes prompt
+        const apiKey = localStorage.getItem('onesignal_api_key') || prompt("OneSignal REST API klíč (uloží se v prohlížeči):");
+        if (!apiKey) return;
+        localStorage.setItem('onesignal_api_key', apiKey);
+        
+        const response = await fetch('https://onesignal.com/api/v1/notifications', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${apiKey}`
+            },
+            body: JSON.stringify({
+                app_id: 'e4db4056-c4db-422c-b7f4-8943a720d548',
+                included_segments: ['Subscribed Users'],
+                headings: { en: title, cs: title },
+                contents: { en: message, cs: message },
+                url: window.location.href
+            })
+        });
+        
+        const result = await response.json();
+        if (result.id) {
+            showToast(`✅ Push odeslán! Příjemců: ${result.recipients || '?'}`, 'success', 5000);
+        } else {
+            throw new Error(result.errors?.join(', ') || 'Neznámá chyba');
+        }
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
+// ════════════════════════════════════════════
+// 🔔 PUSH NOTIFIKACE
+// ════════════════════════════════════════════
+
+// Zeptá se uživatele jestli chce push notifikace
+async function zeptatNaNotifikace() {
+    if (!window.OneSignal) return;
+    
+    try {
+        const permission = await OneSignal.Notifications.permission;
+        if (permission === 'granted') {
+            console.log("✅ Push notifikace už povoleny");
+            await spojOneSignalSUserem();
+            return true;
+        }
+        if (permission === 'denied') {
+            console.log("❌ Push notifikace zamítnuty");
+            return false;
+        }
+        // Zobraz nativní prompt
+        await OneSignal.Notifications.requestPermission();
+        const novyStav = await OneSignal.Notifications.permission;
+        if (novyStav === 'granted') {
+            showToast("🔔 Notifikace zapnuty! Budeš dostávat upozornění.", 'success', 4000);
+            await spojOneSignalSUserem();
+            return true;
+        }
+    } catch (err) {
+        console.warn("Push notifikace error:", err);
+    }
+    return false;
+}
+
+// Spojí OneSignal user ID s naším Supabase user ID
+async function spojOneSignalSUserem() {
+    if (!window.OneSignal) return;
+    try {
+        const { data: authData } = await supabaseClient.auth.getUser();
+        if (!authData?.user) return;
+        
+        // Externí ID = naše user_id ze Supabase (pak víme komu poslat)
+        await OneSignal.login(authData.user.id);
+        console.log("✅ OneSignal spojen s userem:", authData.user.id);
+    } catch (err) {
+        console.warn("OneSignal login error:", err);
+    }
+}
+
+// Vyhodí se z notifikací
+async function odhlasitNotifikace() {
+    if (!window.OneSignal) return;
+    try {
+        await OneSignal.User.PushSubscription.optOut();
+        await OneSignal.logout();
+        showToast("🔕 Notifikace vypnuty.", 'info', 3000);
+    } catch (err) {
+        console.warn("OneSignal logout error:", err);
+    }
+}
+
+// Tlačítko v UI - ukazuje stav notifikací
+async function aktualizujTlacitkoNotifikaci() {
+    if (!window.OneSignal) return;
+    try {
+        const btn = document.getElementById('notif-toggle-btn');
+        if (!btn) return;
+        const permission = await OneSignal.Notifications.permission;
+        const isOptedIn = await OneSignal.User.PushSubscription.optedIn;
+        
+        if (permission === 'granted' && isOptedIn) {
+            btn.innerHTML = '🔔 Notifikace ZAP';
+            btn.style.background = 'rgba(34,197,94,0.15)';
+            btn.style.borderColor = 'rgba(34,197,94,0.3)';
+            btn.style.color = '#22c55e';
+        } else {
+            btn.innerHTML = '🔕 Notifikace VYP';
+            btn.style.background = 'rgba(212,175,55,0.1)';
+            btn.style.borderColor = 'rgba(212,175,55,0.3)';
+            btn.style.color = '#d4af37';
+        }
+    } catch (err) {
+        console.warn("Tlačítko notifikací error:", err);
+    }
+}
+
+// Toggle tlačítka v UI
+async function toggleNotifikace() {
+    if (!window.OneSignal) return;
+    const isOptedIn = await OneSignal.User.PushSubscription.optedIn;
+    if (isOptedIn) {
+        await odhlasitNotifikace();
+    } else {
+        await zeptatNaNotifikace();
+    }
+    setTimeout(aktualizujTlacitkoNotifikaci, 500);
+}
+
+// Spuštění po načtení
+window.addEventListener('load', () => {
+    setTimeout(async () => {
+        await spojOneSignalSUserem();
+        await aktualizujTlacitkoNotifikaci();
+    }, 2000);
+});
+    
     // PWA - tlačítko Přidat na plochu
 let pwaPrompt = null;
 
