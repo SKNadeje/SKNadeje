@@ -2088,39 +2088,33 @@ function onOneSignal(callback) {
     OneSignalDeferred.push(callback);
 }
 
-// Zeptá se uživatele jestli chce notifikace
 async function zeptatNaNotifikace() {
     onOneSignal(async function(OneSignal) {
         try {
-            console.log("🔔 Stav permission před:", await OneSignal.Notifications.permission);
-            console.log("🔔 OptedIn před:", await OneSignal.User.PushSubscription.optedIn);
+            console.log("🔔 Volám optIn() – mělo by se objevit povolení od prohlížeče");
             
-            // Pokud už má povoleno ale je opted out, jen znovu opt-in
+            // optIn() v v16 zařídí: 
+            // 1) zeptá se na povolení (pokud ještě není)
+            // 2) přihlásí uživatele k push notifikacím
+            await OneSignal.User.PushSubscription.optIn();
+            
+            // Počkej chvilku ať se to propíše
+            await new Promise(r => setTimeout(r, 500));
+            
             const permission = await OneSignal.Notifications.permission;
-            if (permission) {
-                await OneSignal.User.PushSubscription.optIn();
+            const isOptedIn = await OneSignal.User.PushSubscription.optedIn;
+            console.log("🔔 Po optIn():", { permission, isOptedIn });
+            
+            if (permission && isOptedIn) {
                 await spojOneSignalSUserem();
-                showToast("🔔 Notifikace zapnuty!", 'success', 4000);
-                setTimeout(aktualizujTlacitkoNotifikaci, 1000);
-                return;
+                showToast("🔔 Notifikace zapnuty! Budeš dostávat upozornění.", 'success', 4000);
+            } else if (!permission) {
+                showToast("Notifikace zamítnuty v prohlížeči. Můžeš to změnit v jeho nastavení.", 'error', 5000);
+            } else {
+                showToast("Něco se nepovedlo – zkus to znovu.", 'error');
             }
             
-            // Zobrazí systémový prompt
-            await OneSignal.Notifications.requestPermission();
-            
-            // Počkej chvíli ať se permission propíše
-            setTimeout(async () => {
-                const granted = await OneSignal.Notifications.permission;
-                console.log("🔔 Permission po request:", granted);
-                if (granted) {
-                    await OneSignal.User.PushSubscription.optIn();
-                    await spojOneSignalSUserem();
-                    showToast("🔔 Notifikace zapnuty! Budeš dostávat upozornění.", 'success', 4000);
-                } else {
-                    showToast("Notifikace zamítnuty. Můžeš to změnit v nastavení prohlížeče.", 'error', 5000);
-                }
-                setTimeout(aktualizujTlacitkoNotifikaci, 500);
-            }, 800);
+            setTimeout(aktualizujTlacitkoNotifikaci, 500);
             
         } catch (err) {
             console.error("❌ Push error:", err);
