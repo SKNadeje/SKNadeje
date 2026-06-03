@@ -2504,21 +2504,24 @@ function nastavRealtimeChat() {
     chatSubscription = supabaseClient
         .channel('chat-channel')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_zpravy' }, async (payload) => {
-            if (payload.eventType === 'INSERT') {
-                chatMessagesCache.push(payload.new);
-                if (chatMessagesCache.length > 50) chatMessagesCache.shift();
-                if (!chatOpen) {
-                    const { data } = await supabaseClient.auth.getUser();
-                    if (payload.new.user_id !== data?.user?.id) {
-                        chatUnread++;
-                        updateUnreadBadge();
-                    }
-                }
-            } else if (payload.eventType === 'DELETE') {
-                chatMessagesCache = chatMessagesCache.filter(z => z.id !== payload.old.id);
+    if (payload.eventType === 'INSERT') {
+        chatMessagesCache.push(payload.new);
+        if (chatMessagesCache.length > 50) chatMessagesCache.shift();
+        if (!chatOpen) {
+            const { data } = await supabaseClient.auth.getUser();
+            if (payload.new.user_id !== data?.user?.id) {
+                chatUnread++;
+                updateUnreadBadge();
             }
-            if (chatOpen) vykreslitChat();
-        })
+        }
+    } else if (payload.eventType === 'DELETE') {
+        chatMessagesCache = chatMessagesCache.filter(z => z.id !== payload.old.id);
+    } else if (payload.eventType === 'UPDATE') {
+        const idx = chatMessagesCache.findIndex(z => z.id === payload.new.id);
+        if (idx !== -1) chatMessagesCache[idx] = payload.new;
+    }
+    if (chatOpen) vykreslitChat();
+})
         .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_reakce' }, async (payload) => {
             if (payload.eventType === 'INSERT') chatReactionsCache.push(payload.new);
             else if (payload.eventType === 'DELETE') {
