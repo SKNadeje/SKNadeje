@@ -2177,23 +2177,25 @@ async function upravitZpravu(id, oldText) {
     }
 }
     
-    async function resetMVP() {
+   async function resetMVP() {
     const { data: authData } = await supabaseClient.auth.getUser();
     if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
         showToast("Pouze pro admina!", 'error');
         return;
     }
-    
-    const volba = confirm("Co chceš resetovat?\n\nOK = jen MVP tituly (odznáčky zmizí)\nZRUŠIT = úplný reset (i snapshoty)");
-    
+
+    const volba = prompt("Co chceš resetovat?\n\n1 = jen MVP tituly (odznáčky zmizí)\n2 = jen historii bodů v grafu\n3 = úplný reset (všechno)\n\nZadej číslo:");
+    if (!volba || !['1','2','3'].includes(volba.trim())) return;
+
     try {
-        if (volba) {
-            // Jen tituly
-            const { error } = await supabaseClient.from('mvp_tydne').delete().neq('id', 0);
-            if (error) throw error;
+        if (volba === '1') {
+            await supabaseClient.from('mvp_tydne').delete().neq('id', 0);
             showToast("✅ MVP odznáčky vymazány!", 'success');
+        } else if (volba === '2') {
+            await supabaseClient.from('mvp_snapshoty').delete().neq('id', 0);
+            showToast("✅ Historie bodů vymazána!", 'success');
         } else {
-            if (!confirm("ÚPLNÝ RESET – vymaže i snapshoty. Pokračovat?")) return;
+            if (!confirm("ÚPLNÝ RESET – vymaže odznáčky i historii grafů. Pokračovat?")) return;
             await supabaseClient.from('mvp_tydne').delete().neq('id', 0);
             await supabaseClient.from('mvp_snapshoty').delete().neq('id', 0);
             showToast("✅ MVP kompletně resetováno!", 'success');
