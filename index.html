@@ -2079,123 +2079,133 @@ async function odeslatPushVsem() {
     }
 }
 // ════════════════════════════════════════════
-// 🔔 PUSH NOTIFIKACE
+// 🔔 PUSH NOTIFIKACE (OneSignal v16)
 // ════════════════════════════════════════════
 
-// Zeptá se uživatele jestli chce push notifikace
+// Pomocník: počká až bude OneSignal připraven
+function onOneSignal(callback) {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(callback);
+}
+
+// Zeptá se uživatele jestli chce notifikace
 async function zeptatNaNotifikace() {
-    if (!window.OneSignal) return;
-    
-    try {
-        const permission = await OneSignal.Notifications.permission;
-        if (permission === 'granted') {
-            console.log("✅ Push notifikace už povoleny");
-            await spojOneSignalSUserem();
-            return true;
+    onOneSignal(async function(OneSignal) {
+        try {
+            console.log("🔔 Stav permission před:", await OneSignal.Notifications.permission);
+            console.log("🔔 OptedIn před:", await OneSignal.User.PushSubscription.optedIn);
+            
+            // Pokud už má povoleno ale je opted out, jen znovu opt-in
+            const permission = await OneSignal.Notifications.permission;
+            if (permission) {
+                await OneSignal.User.PushSubscription.optIn();
+                await spojOneSignalSUserem();
+                showToast("🔔 Notifikace zapnuty!", 'success', 4000);
+                setTimeout(aktualizujTlacitkoNotifikaci, 1000);
+                return;
+            }
+            
+            // Zobrazí systémový prompt
+            await OneSignal.Notifications.requestPermission();
+            
+            // Počkej chvíli ať se permission propíše
+            setTimeout(async () => {
+                const granted = await OneSignal.Notifications.permission;
+                console.log("🔔 Permission po request:", granted);
+                if (granted) {
+                    await OneSignal.User.PushSubscription.optIn();
+                    await spojOneSignalSUserem();
+                    showToast("🔔 Notifikace zapnuty! Budeš dostávat upozornění.", 'success', 4000);
+                } else {
+                    showToast("Notifikace zamítnuty. Můžeš to změnit v nastavení prohlížeče.", 'error', 5000);
+                }
+                setTimeout(aktualizujTlacitkoNotifikaci, 500);
+            }, 800);
+            
+        } catch (err) {
+            console.error("❌ Push error:", err);
+            showToast("Chyba: " + err.message, 'error');
         }
-        if (permission === 'denied') {
-            console.log("❌ Push notifikace zamítnuty");
-            return false;
-        }
-        // Zobraz nativní prompt
-        await OneSignal.Notifications.requestPermission();
-        const novyStav = await OneSignal.Notifications.permission;
-        if (novyStav === 'granted') {
-            showToast("🔔 Notifikace zapnuty! Budeš dostávat upozornění.", 'success', 4000);
-            await spojOneSignalSUserem();
-            return true;
-        }
-    } catch (err) {
-        console.warn("Push notifikace error:", err);
-    }
-    return false;
+    });
 }
 
-// Spojí OneSignal user ID s naším Supabase user ID
+// Spojí OneSignal user s naším Supabase user ID
 async function spojOneSignalSUserem() {
-    if (!window.OneSignal) return;
-    try {
-        const { data: authData } = await supabaseClient.auth.getUser();
-        if (!authData?.user) return;
-        
-        // Externí ID = naše user_id ze Supabase (pak víme komu poslat)
-        await OneSignal.login(authData.user.id);
-        console.log("✅ OneSignal spojen s userem:", authData.user.id);
-    } catch (err) {
-        console.warn("OneSignal login error:", err);
-    }
-}
-
-// Vyhodí se z notifikací
-async function odhlasitNotifikace() {
-    if (!window.OneSignal) return;
-    try {
-        await OneSignal.User.PushSubscription.optOut();
-        await OneSignal.logout();
-        showToast("🔕 Notifikace vypnuty.", 'info', 3000);
-    } catch (err) {
-        console.warn("OneSignal logout error:", err);
-    }
-}
-
-// Tlačítko v UI - ukazuje stav notifikací
-async function aktualizujTlacitkoNotifikaci() {
-    if (!window.OneSignal) return;
-    try {
-        const btn = document.getElementById('notif-toggle-btn');
-        if (!btn) return;
-        const permission = await OneSignal.Notifications.permission;
-        const isOptedIn = await OneSignal.User.PushSubscription.optedIn;
-        
-        if (permission === 'granted' && isOptedIn) {
-            btn.innerHTML = '🔔 Notifikace ZAP';
-            btn.style.background = 'rgba(34,197,94,0.15)';
-            btn.style.borderColor = 'rgba(34,197,94,0.3)';
-            btn.style.color = '#22c55e';
-        } else {
-            btn.innerHTML = '🔕 Notifikace VYP';
-            btn.style.background = 'rgba(212,175,55,0.1)';
-            btn.style.borderColor = 'rgba(212,175,55,0.3)';
-            btn.style.color = '#d4af37';
+    onOneSignal(async function(OneSignal) {
+        try {
+            const { data: authData } = await supabaseClient.auth.getUser();
+            if (!authData?.user) return;
+            await OneSignal.login(authData.user.id);
+            console.log("✅ OneSignal spojen s userem:", authData.user.id);
+        } catch (err) {
+            console.warn("OneSignal login error:", err);
         }
-    } catch (err) {
-        console.warn("Tlačítko notifikací error:", err);
-    }
+    });
 }
 
-// Toggle tlačítka v UI
+// Vypnout notifikace
+async function odhlasitNotifikace() {
+    onOneSignal(async function(OneSignal) {
+        try {
+            await OneSignal.User.PushSubscription.optOut();
+            showToast("🔕 Notifikace vypnuty.", 'info', 3000);
+            setTimeout(aktualizujTlacitkoNotifikaci, 500);
+        } catch (err) {
+            console.warn("OneSignal opt-out error:", err);
+        }
+    });
+}
+
+// Aktualizace tlačítka
+async function aktualizujTlacitkoNotifikaci() {
+    onOneSignal(async function(OneSignal) {
+        try {
+            const btn = document.getElementById('notif-toggle-btn');
+            if (!btn) return;
+            const permission = await OneSignal.Notifications.permission;
+            const isOptedIn = await OneSignal.User.PushSubscription.optedIn;
+            
+            console.log("🔔 Update tlačítka:", { permission, isOptedIn });
+            
+            if (permission && isOptedIn) {
+                btn.innerHTML = '🔔 ZAP';
+                btn.style.background = 'rgba(34,197,94,0.15)';
+                btn.style.borderColor = 'rgba(34,197,94,0.3)';
+                btn.style.color = '#22c55e';
+            } else {
+                btn.innerHTML = '🔕 VYP';
+                btn.style.background = 'rgba(212,175,55,0.1)';
+                btn.style.borderColor = 'rgba(212,175,55,0.3)';
+                btn.style.color = '#d4af37';
+            }
+        } catch (err) {
+            console.warn("Tlačítko error:", err);
+        }
+    });
+}
+
+// Hlavní toggle
 async function toggleNotifikace() {
-    if (!window.OneSignal) return;
-    const isOptedIn = await OneSignal.User.PushSubscription.optedIn;
-    if (isOptedIn) {
-        await odhlasitNotifikace();
-    } else {
-        await zeptatNaNotifikace();
-    }
-    setTimeout(aktualizujTlacitkoNotifikaci, 500);
+    onOneSignal(async function(OneSignal) {
+        const isOptedIn = await OneSignal.User.PushSubscription.optedIn;
+        const permission = await OneSignal.Notifications.permission;
+        
+        console.log("🔔 Toggle - stav:", { permission, isOptedIn });
+        
+        if (isOptedIn && permission) {
+            await odhlasitNotifikace();
+        } else {
+            await zeptatNaNotifikace();
+        }
+    });
 }
 
 // Spuštění po načtení
 window.addEventListener('load', () => {
-    setTimeout(async () => {
-        await spojOneSignalSUserem();
-        await aktualizujTlacitkoNotifikaci();
-    }, 2000);
-});
-    
-    // PWA - tlačítko Přidat na plochu
-let pwaPrompt = null;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    pwaPrompt = e;
-    // Ukázat banner po 5 sekundách (nech uživatele se rozkoukat)
     setTimeout(() => {
-        const banner = document.getElementById('pwa-install-banner');
-        if (banner && !localStorage.getItem('pwa-dismissed')) {
-            banner.style.display = 'flex';
-        }
-    }, 5000);
+        spojOneSignalSUserem();
+        aktualizujTlacitkoNotifikaci();
+    }, 2500);
 });
 
 async function instalovatPWA() {
