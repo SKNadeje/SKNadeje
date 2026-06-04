@@ -3458,12 +3458,12 @@ window.addEventListener('DOMContentLoaded', () => {
     odznaky.push({ icon: '🎰', label: 'Sázkař', aktivni: !!(tip.winner && tip.winner === outsider && oblibeny !== outsider), popis: 'Vsadil/a na outsidera, kterého málokdo tipuje na vítěze.' });
     odznaky.push({ icon: '🐑', label: 'S davem', aktivni: !!(tip.winner && tip.winner === oblibeny && sortHlasy[0]?.[1] > 1), popis: 'Vsadil/a na nejoblíbenějšího favorita podle hráčů.' });
 
-    // === ČESKÝ FAN ===
-    const tipGroupA = (tip.groups && tip.groups[0]) || [];
-    const ceskoPostupZeSkupiny = String(tipGroupA[0] || '').trim() === 'Česko' || String(tipGroupA[1] || '').trim() === 'Česko';
-    const ceskoV16 = (tip.s32 || []).some(t => String(t).trim() === 'Česko');
-    odznaky.push({ icon: '🇨🇿', label: 'Vlastenec', aktivni: ceskoPostupZeSkupiny, popis: 'Věří českému týmu – tipoval Česko do top 2 ze skupiny.' });
-    odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV16, popis: 'Tipoval/a Česko do 1/16 finále – odvážná předpověď!' });
+   // === ČESKÝ FAN ===
+const tipGroupA = (tip.groups && tip.groups[0]) || [];
+const ceskoPostupZeSkupiny = String(tipGroupA[0] || '').trim() === 'Česko' || String(tipGroupA[1] || '').trim() === 'Česko';
+const ceskoV8 = (tip.s16 || []).some(t => String(t).trim() === 'Česko');
+odznaky.push({ icon: '🇨🇿', label: 'Vlastenec', aktivni: ceskoPostupZeSkupiny, popis: 'Věří českému týmu – tipoval Česko do top 2 ze skupiny.' });
+odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/a Česko do 1/8 finále – odvážná předpověď!' });
 
     // === TREFY V TURNAJI ===
     const trefilVitez = r.winner && tip.winner && String(r.winner).trim() === String(tip.winner).trim();
