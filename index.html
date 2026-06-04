@@ -3802,9 +3802,16 @@ function spocitejFazeProfil(tip) {
     
     let profilData = []; // sem uložíme hráče pro profily
 
-function otevritProfil(rowId) {
+async function otevritProfil(rowId) {
     const p = profilData.find(x => String(x.rowId) === String(rowId));
     if (!p) return;
+    
+    // 🆕 Načti admin výsledky pro porovnání bonus tipů
+    let adminVys = {};
+    try {
+        const { data } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).single();
+        adminVys = data || {};
+    } catch (e) { /* ignore */ }
 
     const maBody = profilData.some(x => x.points > 0);
     const hlaska = ziskejHlasku(p.rank, profilData.length, p.points, maBody);
@@ -3868,8 +3875,7 @@ ${(() => {
 <!-- 🎁 BONUS TIPY -->
         ${(() => {
             const tip = p.tip || {};
-            const vys = (typeof vysledky !== 'undefined' ? vysledky : (typeof adminResults !== 'undefined' ? adminResults : {}));
-            return renderBonusTipy(tip, vys);
+            return renderBonusTipy(tip, adminVys);
         })()}
 
        <!-- ODZNAKY -->
