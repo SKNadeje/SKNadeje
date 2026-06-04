@@ -29,10 +29,7 @@ async function aktualizujBonusSekciVisibility() {
     if (sec) sec.style.display = isAdmin ? 'block' : 'none';
 }
 
-// Spusť po načtení
-window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(aktualizujBonusSekciVisibility, 1000);
-});
+
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
@@ -7000,6 +6997,9 @@ async function checkUserSession() {
 
 async function nactiUzivatelskyTip(userId) {
     console.log("➡️ [Tip] 1. Začínám stahovat tvůj tip pro pavouka...");
+    
+    // Zobraz/skryj bonus sekci podle role (admin vs ostatní)
+    aktualizujBonusSekciVisibility();
     
     try {
         const { data, error } = await supabaseClient
