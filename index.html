@@ -2429,14 +2429,13 @@ async function ulozZiskaneOdznaky(rowId, odznaky) {
     const updated = [...ulozeno, ...nove];
     await supabaseClient.from('tipy').update({ achievements_earned: updated }).eq('user_id', rowId);
     
-  // Achievement Showcase Banner (jen pokud to není první save)
-if (ulozeno.length > 0) {
-    nove.forEach(label => {
-        const o = odznaky.find(x => x.label === label);
-        if (o && typeof ukazAchievementBanner === 'function') {
-            ukazAchievementBanner(o);
-        }
-    });
+// Achievement Showcase Banner - vždy ukáže nově získané
+nove.forEach(label => {
+    const o = odznaky.find(x => x.label === label);
+    if (o && typeof ukazAchievementBanner === 'function') {
+        ukazAchievementBanner(o);
+    }
+});
 }
 }
     
