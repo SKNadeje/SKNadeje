@@ -2914,36 +2914,6 @@ async function upravitZpravu(id, oldText) {
 
 let mvpCacheGlobal = {}; // { user_id: počet MVP titulů }
 
-// Helper: spočítá body hráče z jeho tipu a admin výsledků
-function spocitejBodyHrace(tip, real) {
-    if (!tip || !real) return 0;
-    let pts = 0;
-    
-    if (real.groups && tip.groups) {
-        real.groups.forEach((g, i) => {
-            const tipG = tip.groups[i] || [];
-            const aT = g.teams || g;
-            if (Array.isArray(aT)) {
-                aT.forEach((t, p) => {
-                    if (t && tipG[p] && String(t).trim() === String(tipG[p]).trim()) pts += 4;
-                });
-            }
-        });
-    }
-    
-    const ck = (sid, b) => {
-        const rt = real[sid] || [];
-        const tt = tip[sid] || [];
-        if (Array.isArray(rt)) rt.forEach(t => {
-            if (t && Array.isArray(tt) && tt.some(x => String(x).trim() === String(t).trim())) pts += b;
-        });
-    };
-    ck('s32', 2); ck('s16', 3); ck('s8', 4); ck('s4', 5);
-    if (real.winner && tip.winner && String(real.winner).trim() === String(tip.winner).trim()) pts += 12;
-    if (real.bronze && tip.bronze && String(real.bronze).trim() === String(tip.bronze).trim()) pts += 8;
-    
-    return pts;
-}
 
 // Hlavní admin funkce: vyhlásí MVP týdne
 async function vyhlasitMVPTydne() {
@@ -3778,29 +3748,7 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
 
     return odznaky;
 }
-function spocitejFazeProfil(tip) {
-    const r = window.currentResults || {};
-    if (!tip) tip = {};
-    const out = { skupiny: 0, s32: 0, s16: 0, s8: 0, s4: 0, bronze: 0, winner: 0 };
 
-    // Skupiny
-    const rg = r.groups || [];
-    if (tip.groups) rg.forEach((g, i) => {
-        const tipG = tip.groups[i] || [];
-        const aT = g.teams || g;
-        if (Array.isArray(aT)) aT.forEach((t, p) => { if (t && tipG[p] && String(t).trim() === String(tipG[p]).trim()) out.skupiny += 4; });
-    });
-    // Playoff
-    const ck = (sid, body) => {
-        (r[sid] || []).forEach(t => { if (t && (tip[sid] || []).some(x => String(x).trim() === String(t).trim())) out[sid] += body; });
-    };
-    ck('s32', 2); ck('s16', 3); ck('s8', 4); ck('s4', 5);
-    if (r.winner && tip.winner && String(r.winner).trim() === String(tip.winner).trim()) out.winner += 12;
-    if (r.bronze && tip.bronze && String(r.bronze).trim() === String(tip.bronze).trim()) out.bronze += 8;
-    return out;
-}
-    
-    let profilData = []; // sem uložíme hráče pro profily
 
 async function otevritProfil(rowId) {
     const p = profilData.find(x => String(x.rowId) === String(rowId));
@@ -5409,6 +5357,150 @@ async function loadAll() {
     }
 }
 
+// Helper: spočítá body hráče z jeho tipu a admin výsledků
+function spocitejBodyHrace(tip, real) {
+    if (!tip || !real) return 0;
+    let pts = 0;
+    
+    if (real.groups && tip.groups) {
+        real.groups.forEach((g, i) => {
+            const tipG = tip.groups[i] || [];
+            const aT = g.teams || g;
+            if (Array.isArray(aT)) {
+                aT.forEach((t, p) => {
+                    if (t && tipG[p] && String(t).trim() === String(tipG[p]).trim()) pts += 4;
+                });
+            }
+        });
+    }
+    
+    const ck = (sid, b) => {
+        const rt = real[sid] || [];
+        const tt = tip[sid] || [];
+        if (Array.isArray(rt)) rt.forEach(t => {
+            if (t && Array.isArray(tt) && tt.some(x => String(x).trim() === String(t).trim())) pts += b;
+        });
+    };
+    ck('s32', 2); ck('s16', 3); ck('s8', 4); ck('s4', 5);
+    if (real.winner && tip.winner && String(real.winner).trim() === String(tip.winner).trim()) pts += 12;
+   if (real.bronze && tip.bronze && String(real.bronze).trim() === String(tip.bronze).trim()) pts += 8;
+    
+    // 🎁 Bonus body
+    pts += spocitejBonusBody(tip, real);
+    
+    return pts;
+}
+    
+async function updateRankTrends() {
+   const { data: authData } = await supabaseClient.auth.getUser();
+if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+    return showToast("Přístup zamítnut!", 'error');
+}
+
+    const btn = document.getElementById('btn-update-trends');
+    const originalText = btn.innerHTML;
+    
+    // Loading stav
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Počítám ranky...';
+
+    try {
+        // 1. Načteme všechna data
+        const { data: tipy, error: err1 } = await supabaseClient.from('tipy').select('*');
+        const { data: real, error: err2 } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).single();
+
+        if (err1 || err2) throw new Error("Nepodařilo se spojit s databází.");
+
+        // 2. Logika výpočtu bodů (musí být stejná jako v žebříčku)
+       const r = real.playoff 
+    ? { ...real.playoff, groups: real.groups, bonus: real.bonus || real.playoff.bonus || {} } 
+    : real;
+        
+        const rankedPlayers = tipy.map(p => {
+            let tip = p.tip_data;
+            if (typeof tip === 'string') tip = JSON.parse(tip);
+            if (!tip) tip = {};
+
+            let pts = 0;
+            // Skupiny (4 body za přesné umístění)
+            if (r.groups && tip.groups) {
+                r.groups.forEach((g, i) => {
+                    const tipG = tip.groups[i] || [];
+                    const aT = g.teams || g;
+                    if (Array.isArray(aT)) {
+                        aT.forEach((t, pos) => { if (t && tipG[pos] && String(t).trim() === String(tipG[pos]).trim()) pts += 4; });
+                    }
+                });
+            }
+            // Playoff (body za účast týmu v daném kole)
+            const ck = (sid, val) => {
+                const rt = r[sid] || [];
+                const tt = tip[sid] || [];
+                if (Array.isArray(rt)) rt.forEach(t => { if (t && Array.isArray(tt) && tt.some(x => String(x).trim() === String(t).trim())) pts += val; });
+            };
+           ck('s32', 2); ck('s16', 3); ck('s8', 4); ck('s4', 5);
+if (r.winner && tip.winner && String(r.winner).trim() === String(tip.winner).trim()) pts += 12;
+if (r.bronze && tip.bronze && String(r.bronze).trim() === String(tip.bronze).trim()) pts += 8;
+
+// 🎁 Bonus body
+pts += spocitejBonusBody(tip, r);
+
+return { id: p.id, points: pts };
+        });
+
+        // 3. Seřazení hráčů podle bodů (vytvoření pořadí)
+        rankedPlayers.sort((a, b) => b.points - a.points);
+
+        // 4. Hromadný update do Supabase (previous_rank)
+        console.log("Zapisuji nové trendy do DB...");
+        for (let i = 0; i < rankedPlayers.length; i++) {
+            const currentRank = i + 1;
+            await supabaseClient
+                .from('tipy')
+                .update({ previous_rank: currentRank })
+                .eq('id', rankedPlayers[i].id);
+        }
+
+        showToast("Pořadí uloženo – šipky aktivní!", 'success');
+        if (typeof loadAll === "function") await loadAll(); // Obnovit žebříček
+
+    } catch (err) {
+        console.error(err);
+        showToast("Chyba: " + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}    
+
+
+// Tuto funkci zavoláš v adminu ve chvíli, kdy klikneš na "Vyhodnotit"
+// Jako parametr 'adminVysledky' jí předáš ten svůj uložený objekt s reálnými výsledky
+    
+function spocitejFazeProfil(tip) {
+    const r = window.currentResults || {};
+    if (!tip) tip = {};
+    const out = { skupiny: 0, s32: 0, s16: 0, s8: 0, s4: 0, bronze: 0, winner: 0 };
+
+    // Skupiny
+    const rg = r.groups || [];
+    if (tip.groups) rg.forEach((g, i) => {
+        const tipG = tip.groups[i] || [];
+        const aT = g.teams || g;
+        if (Array.isArray(aT)) aT.forEach((t, p) => { if (t && tipG[p] && String(t).trim() === String(tipG[p]).trim()) out.skupiny += 4; });
+    });
+    // Playoff
+    const ck = (sid, body) => {
+        (r[sid] || []).forEach(t => { if (t && (tip[sid] || []).some(x => String(x).trim() === String(t).trim())) out[sid] += body; });
+    };
+    ck('s32', 2); ck('s16', 3); ck('s8', 4); ck('s4', 5);
+    if (r.winner && tip.winner && String(r.winner).trim() === String(tip.winner).trim()) out.winner += 12;
+    if (r.bronze && tip.bronze && String(r.bronze).trim() === String(tip.bronze).trim()) out.bronze += 8;
+    return out;
+}
+    
+    let profilData = []; // sem uložíme hráče pro profily
+    
 async function renderLeaderboard(data, real) {
     console.log("🚀 START: renderLeaderboard (Full Detail Mode + Bank)", { pocet_tipu: data?.length });
     
@@ -5427,7 +5519,7 @@ async function renderLeaderboard(data, real) {
 
     // --- 📦 DATA ADMINA A VÝPOČET BODŮ ---
     const adminData = real || window.currentResults || {};
-   const r = {
+  const r = {
     groups: adminData.groups || adminData.playoff?.groups || [],
     s32:    adminData.s32    || adminData.playoff?.s32    || [],
     s16:    adminData.s16    || adminData.playoff?.s16    || [],
@@ -5435,6 +5527,7 @@ async function renderLeaderboard(data, real) {
     s4:     adminData.s4     || adminData.playoff?.s4     || [],
     winner: adminData.winner || adminData.playoff?.winner || "",
     bronze: adminData.bronze || adminData.playoff?.bronze || "",
+    bonus:  adminData.bonus  || adminData.playoff?.bonus  || {},
 };
 
     const processed = (data || []).map(row => {
@@ -6804,86 +6897,7 @@ function getTeamsForStage(id, fallbackTeams) {
 }
 
 
-async function updateRankTrends() {
-   const { data: authData } = await supabaseClient.auth.getUser();
-if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
-    return showToast("Přístup zamítnut!", 'error');
-}
 
-    const btn = document.getElementById('btn-update-trends');
-    const originalText = btn.innerHTML;
-    
-    // Loading stav
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Počítám ranky...';
-
-    try {
-        // 1. Načteme všechna data
-        const { data: tipy, error: err1 } = await supabaseClient.from('tipy').select('*');
-        const { data: real, error: err2 } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).single();
-
-        if (err1 || err2) throw new Error("Nepodařilo se spojit s databází.");
-
-        // 2. Logika výpočtu bodů (musí být stejná jako v žebříčku)
-        const r = real.playoff ? { ...real.playoff, groups: real.groups } : real;
-        
-        const rankedPlayers = tipy.map(p => {
-            let tip = p.tip_data;
-            if (typeof tip === 'string') tip = JSON.parse(tip);
-            if (!tip) tip = {};
-
-            let pts = 0;
-            // Skupiny (4 body za přesné umístění)
-            if (r.groups && tip.groups) {
-                r.groups.forEach((g, i) => {
-                    const tipG = tip.groups[i] || [];
-                    const aT = g.teams || g;
-                    if (Array.isArray(aT)) {
-                        aT.forEach((t, pos) => { if (t && tipG[pos] && String(t).trim() === String(tipG[pos]).trim()) pts += 4; });
-                    }
-                });
-            }
-            // Playoff (body za účast týmu v daném kole)
-            const ck = (sid, val) => {
-                const rt = r[sid] || [];
-                const tt = tip[sid] || [];
-                if (Array.isArray(rt)) rt.forEach(t => { if (t && Array.isArray(tt) && tt.some(x => String(x).trim() === String(t).trim())) pts += val; });
-            };
-            ck('s32', 2); ck('s16', 3); ck('s8', 4); ck('s4', 5);
-            if (r.winner && tip.winner && String(r.winner).trim() === String(tip.winner).trim()) pts += 12;
-            if (r.bronze && tip.bronze && String(r.bronze).trim() === String(tip.bronze).trim()) pts += 8;
-
-            return { id: p.id, points: pts };
-        });
-
-        // 3. Seřazení hráčů podle bodů (vytvoření pořadí)
-        rankedPlayers.sort((a, b) => b.points - a.points);
-
-        // 4. Hromadný update do Supabase (previous_rank)
-        console.log("Zapisuji nové trendy do DB...");
-        for (let i = 0; i < rankedPlayers.length; i++) {
-            const currentRank = i + 1;
-            await supabaseClient
-                .from('tipy')
-                .update({ previous_rank: currentRank })
-                .eq('id', rankedPlayers[i].id);
-        }
-
-        showToast("Pořadí uloženo – šipky aktivní!", 'success');
-        if (typeof loadAll === "function") await loadAll(); // Obnovit žebříček
-
-    } catch (err) {
-        console.error(err);
-        showToast("Chyba: " + err.message, 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
-}    
-
-
-// Tuto funkci zavoláš v adminu ve chvíli, kdy klikneš na "Vyhodnotit"
-// Jako parametr 'adminVysledky' jí předáš ten svůj uložený objekt s reálnými výsledky
 async function vyhodnotitTipy(adminVysledky) {
     const { data: vsechnyTipy, error: fetchError } = await supabaseClient
         .from('tipy')
