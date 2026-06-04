@@ -21,6 +21,44 @@
     <!-- 🔔 OneSignal Push Notifications -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
+    // Render bonus tipů v profilu – ukáže tipované hodnoty + porovná se skutečností (pokud admin už vyhlásil)
+function renderBonusTipy(tip, real) {
+    if (!tip?.bonus) return '';
+    const b = tip.bonus;
+    // Pokud žádný bonus není vyplněn, vůbec nezobrazuj
+    if (!b.topScorer && !b.topGoalkeeper && b.totalGoals == null && b.zeroZeroResults == null) return '';
+    
+    const rb = real?.bonus || {};
+    
+    const renderRow = (icon, label, tipVal, realVal, isNumber) => {
+        if (!tipVal && tipVal !== 0) return '';
+        let status = '';
+        if (realVal !== undefined && realVal !== null && realVal !== '' && realVal !== 0) {
+            const match = isNumber 
+                ? parseInt(tipVal) === parseInt(realVal)
+                : String(tipVal).trim().toLowerCase() === String(realVal).trim().toLowerCase();
+            status = match 
+                ? '<span style="color:#22c55e; margin-left:6px; font-weight:700;">✅ +8</span>' 
+                : `<span style="color:#ef4444; margin-left:6px; font-size:0.75rem;">❌ ${realVal}</span>`;
+        }
+        return `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; font-size:0.82rem; border-bottom:1px solid rgba(212,175,55,0.05);">
+                <span style="color:#94a3b8;">${icon} ${label}</span>
+                <span style="color:#f0e6c8; font-weight:600;">${tipVal}${status}</span>
+            </div>
+        `;
+    };
+    
+    return `
+        <div style="margin-top:16px; padding:14px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.2); border-radius:12px;">
+            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:10px; text-align:center;">🎁 Bonus tipy</div>
+            ${renderRow('🥇', 'Zlatá kopačka', b.topScorer, rb.topScorer, false)}
+            ${renderRow('🧤', 'Zlatá rukavice', b.topGoalkeeper, rb.topGoalkeeper, false)}
+            ${renderRow('⚽', 'Branek v turnaji', b.totalGoals, rb.totalGoals, true)}
+            ${renderRow('0️⃣', 'Zápasy 0:0', b.zeroZeroResults, rb.zeroZeroResults, true)}
+        </div>
+    `;
+}
     // Zobraz bonus sekci jen pro admina
 async function aktualizujBonusSekciVisibility() {
     const { data: authData } = await supabaseClient.auth.getUser();
@@ -3827,6 +3865,12 @@ ${(() => {
 
     return grafyHtml;
 })()}
+<!-- 🎁 BONUS TIPY -->
+        ${(() => {
+            const tip = p.tip || {};
+            const vys = (typeof vysledky !== 'undefined' ? vysledky : (typeof adminResults !== 'undefined' ? adminResults : {}));
+            return renderBonusTipy(tip, vys);
+        })()}
 
        <!-- ODZNAKY -->
         ${(() => {
