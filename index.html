@@ -1921,9 +1921,11 @@ input:focus {
     Zapomněl jsem heslo
 </button>
     </form>
-</div>
-
+</div>    
 <div id="logged-in-section" class="hidden" style="position:absolute; top:12px; right:12px; z-index:50; display:flex; gap:6px;">
+    <button onclick="document.getElementById('pravidla-modal').style.display='flex'" title="Pravidla a info" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:#d4af37; font-size:0.7rem; padding:7px 12px; border-radius:9px; cursor:pointer; font-weight:600; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+        ❓ Pravidla
+    </button>
     <button id="notif-toggle-btn" onclick="toggleNotifikace()" title="Push notifikace" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:#d4af37; font-size:0.7rem; padding:7px 12px; border-radius:9px; cursor:pointer; font-weight:600; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
         🔕 Notifikace
     </button>
@@ -7247,6 +7249,111 @@ if ('serviceWorker' in navigator) {
     <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; padding:28px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.7);">
         <div id="profil-obsah"></div>
         <button onclick="document.getElementById('profil-modal').style.display='none'" class="btn" style="width:100%; margin-top:16px; background:rgba(30,40,60,0.8); color:#94a3b8; border:1px solid rgba(212,175,55,0.12);">Zavřít</button>
+    </div>
+</div>
+
+<!-- 📋 PRAVIDLA & ODKAZY MODAL -->
+<div id="pravidla-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); z-index:100000; justify-content:center; align-items:center; padding:20px;" onclick="if(event.target===this) this.style.display='none'">
+    <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; padding:28px; max-width:480px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.7);">
+        
+        <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:6px;">WC2026 · Tipovačka</div>
+            <div style="font-size:22px; font-weight:900; color:#d4af37; text-transform:uppercase; letter-spacing:2px;">📋 Pravidla &amp; info</div>
+        </div>
+
+        <!-- BODOVÁNÍ -->
+        <div style="margin-bottom:18px;">
+            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:10px;">🎯 Bodování</div>
+            <div style="background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.15); border-radius:12px; padding:14px;">
+                <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#94a3b8;">Skupiny (přesné pořadí)</span><b style="color:#d4af37;">+4 b/tým</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#94a3b8;">1/16 finále</span><b style="color:#d4af37;">+2 b/tým</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#94a3b8;">1/8 finále</span><b style="color:#d4af37;">+3 b/tým</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#94a3b8;">Čtvrtfinále</span><b style="color:#d4af37;">+4 b/tým</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#94a3b8;">Semifinále</span><b style="color:#d4af37;">+5 b/tým</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#d97b3a;">🥉 3. místo</span><b style="color:#d97b3a;">+8 b</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#d4af37;">🏆 Vítěz turnaje</span><b style="color:#d4af37;">+12 b</b></div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0 0 0; margin-top:6px; border-top:1px solid rgba(212,175,55,0.1); font-size:0.8rem;">
+                    <span style="color:#f0e6c8; font-weight:700;">MAXIMUM</span>
+                    <b style="color:#d4af37;">294 bodů</b>
+                </div>
+            </div>
+        </div>
+
+        <!-- BANK -->
+        <div style="margin-bottom:18px;">
+            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:10px;">💰 Bank &amp; výhry</div>
+            <div style="background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.15); border-radius:12px; padding:14px;">
+                <div style="font-size:0.85rem; color:#94a3b8; margin-bottom:10px;">Startovné <b style="color:#f0e6c8;">200 Kč</b> od každého hráče. Celkový bank se dělí takto:</div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span>🥇 1. místo</span><b style="color:#d4af37;">60 %</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span>🥈 2. místo</span><b style="color:#cbd5e1;">30 %</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span>🥉 3. místo</span><b style="color:#d97b3a;">10 %</b></div>
+            </div>
+        </div>
+
+        <!-- JAK SE TIPUJE -->
+        <div style="margin-bottom:18px;">
+            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:10px;">⚽ Jak se tipuje</div>
+            <div style="background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.15); border-radius:12px; padding:14px; font-size:0.82rem; color:#f0e6c8; line-height:1.6;">
+                1️⃣ Seřaď týmy v každé skupině podle předpokládaného umístění<br>
+                2️⃣ Vyber 8 nejlepších týmů ze 3. míst<br>
+                3️⃣ Postupně klikej vítěze v playoff (1/16 → finále)<br>
+                4️⃣ Odešli tip a zaplať 200 Kč<br>
+                ⏰ Termín: <b style="color:#d4af37;">11. 6. 2026 ve 21:00</b>
+            </div>
+        </div>
+
+        <!-- ODKAZY -->
+        <div style="margin-bottom:18px;">
+            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:10px;">🌐 Užitečné odkazy</div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <a href="https://www.livesport.cz/fotbal/ms/" target="_blank" rel="noopener" style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px; color:#f0e6c8; text-decoration:none; font-size:0.85rem; transition:all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.12)'" onmouseout="this.style.background='rgba(212,175,55,0.06)'">
+                    <span style="font-size:1.1rem;">📺</span>
+                    <div style="flex:1;">
+                        <div style="font-weight:700;">LiveSport.cz</div>
+                        <div style="font-size:0.7rem; color:#5a6480;">Živé výsledky a tabulky</div>
+                    </div>
+                    <span style="color:rgba(212,175,55,0.5);">→</span>
+                </a>
+                <a href="https://www.fifa.com/fifaplus/en/tournaments/mens/worldcup/canadamexicousa2026" target="_blank" rel="noopener" style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px; color:#f0e6c8; text-decoration:none; font-size:0.85rem; transition:all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.12)'" onmouseout="this.style.background='rgba(212,175,55,0.06)'">
+                    <span style="font-size:1.1rem;">🏆</span>
+                    <div style="flex:1;">
+                        <div style="font-weight:700;">FIFA – oficiální stránka</div>
+                        <div style="font-size:0.7rem; color:#5a6480;">Oficiální informace, statistiky</div>
+                    </div>
+                    <span style="color:rgba(212,175,55,0.5);">→</span>
+                </a>
+                <a href="https://www.idnes.cz/fotbal/ms-2026" target="_blank" rel="noopener" style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px; color:#f0e6c8; text-decoration:none; font-size:0.85rem; transition:all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.12)'" onmouseout="this.style.background='rgba(212,175,55,0.06)'">
+                    <span style="font-size:1.1rem;">📰</span>
+                    <div style="flex:1;">
+                        <div style="font-weight:700;">iDNES – MS 2026</div>
+                        <div style="font-size:0.7rem; color:#5a6480;">Zprávy a komentáře</div>
+                    </div>
+                    <span style="color:rgba(212,175,55,0.5);">→</span>
+                </a>
+                <a href="https://www.fotbal.cz" target="_blank" rel="noopener" style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px; color:#f0e6c8; text-decoration:none; font-size:0.85rem; transition:all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.12)'" onmouseout="this.style.background='rgba(212,175,55,0.06)'">
+                    <span style="font-size:1.1rem;">🇨🇿</span>
+                    <div style="flex:1;">
+                        <div style="font-weight:700;">FAČR – český fotbal</div>
+                        <div style="font-size:0.7rem; color:#5a6480;">Reprezentace a turnaje</div>
+                    </div>
+                    <span style="color:rgba(212,175,55,0.5);">→</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- TIPY -->
+        <div style="margin-bottom:18px;">
+            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:10px;">💡 Tipy &amp; triky</div>
+            <div style="background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.15); border-radius:12px; padding:14px; font-size:0.78rem; color:#94a3b8; line-height:1.6;">
+                • Tip lze měnit kdykoliv do 11.6.<br>
+                • <b style="color:#d4af37;">@</b> v chatu = zmínka hráče<br>
+                • Klikni na 👤 v žebříčku → profil + grafy<br>
+                • PDF tipu si stáhneš v sekci ODESLAT<br>
+                • Aktuální body se počítají z výsledků admina
+            </div>
+        </div>
+
+        <button onclick="document.getElementById('pravidla-modal').style.display='none'" class="btn" style="width:100%; background:rgba(30,40,60,0.8); color:#94a3b8; border:1px solid rgba(212,175,55,0.12);">Zavřít</button>
     </div>
 </div>
    <div id="group-editor" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); z-index:100000; justify-content:center; align-items:center; padding:20px;" onclick="if(event.target===this) zavritEditor()">
