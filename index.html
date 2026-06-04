@@ -21,6 +21,18 @@
     <!-- 🔔 OneSignal Push Notifications -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
+    // Zobraz bonus sekci jen pro admina
+async function aktualizujBonusSekciVisibility() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    const isAdmin = authData?.user?.id === "92a1e51b-e03c-48d7-99df-76c2f60a455f";
+    const sec = document.getElementById('bonus-section');
+    if (sec) sec.style.display = isAdmin ? 'block' : 'none';
+}
+
+// Spusť po načtení
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(aktualizujBonusSekciVisibility, 1000);
+});
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
@@ -2092,7 +2104,75 @@ input:focus {
         <i class="fas fa-lock"></i> Tipování je uzavřeno!
     </div>
 </div>
+<!-- 🎁 BONUS TIPY (jen admin v testu) -->
+<div id="bonus-section" style="display:none; max-width:400px; margin:0 auto 25px auto; padding:20px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.25); border-radius:14px;">
+    <div style="text-align:center; margin-bottom:14px;">
+        <div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:4px;">🧪 ADMIN TEST</div>
+        <div style="font-size:1rem; font-weight:900; color:#d4af37; letter-spacing:1.5px; text-transform:uppercase;">🎁 Bonus tipy</div>
+        <div style="font-size:0.7rem; color:#94a3b8; margin-top:4px;">+8 bodů za každý správný tip</div>
+    </div>
 
+    <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:0.7rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:4px;">🥇 Zlatá kopačka (nejlepší střelec)</label>
+        <input list="dl-streleci" id="bonus-topScorer" placeholder="Vyber nebo napiš jméno..." style="width:100%; padding:9px 12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
+        <datalist id="dl-streleci">
+            <option value="Erling Haaland"></option>
+            <option value="Kylian Mbappé"></option>
+            <option value="Harry Kane"></option>
+            <option value="Vinicius Jr."></option>
+            <option value="Jude Bellingham"></option>
+            <option value="Bukayo Saka"></option>
+            <option value="Lautaro Martínez"></option>
+            <option value="Lionel Messi"></option>
+            <option value="Cristiano Ronaldo"></option>
+            <option value="Patrik Schick"></option>
+            <option value="Mohamed Salah"></option>
+            <option value="Phil Foden"></option>
+            <option value="Jamal Musiala"></option>
+            <option value="Lamine Yamal"></option>
+            <option value="Florian Wirtz"></option>
+            <option value="Ousmane Dembélé"></option>
+            <option value="Antoine Griezmann"></option>
+            <option value="Heung-min Son"></option>
+            <option value="Romelu Lukaku"></option>
+            <option value="Victor Osimhen"></option>
+            <option value="Jonathan David"></option>
+            <option value="Robert Lewandowski"></option>
+        </datalist>
+    </div>
+
+    <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:0.7rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:4px;">🧤 Zlatá rukavice (nejlepší brankář)</label>
+        <input list="dl-brankari" id="bonus-topGoalkeeper" placeholder="Vyber nebo napiš jméno..." style="width:100%; padding:9px 12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
+        <datalist id="dl-brankari">
+            <option value="Thibaut Courtois"></option>
+            <option value="Gianluigi Donnarumma"></option>
+            <option value="Alisson Becker"></option>
+            <option value="Ederson"></option>
+            <option value="Mike Maignan"></option>
+            <option value="Yassine Bounou"></option>
+            <option value="Diogo Costa"></option>
+            <option value="André Onana"></option>
+            <option value="Aaron Ramsdale"></option>
+            <option value="Unai Simón"></option>
+            <option value="Jordan Pickford"></option>
+            <option value="Jiří Pavlenka"></option>
+            <option value="Emiliano Martínez"></option>
+            <option value="Wojciech Szczęsny"></option>
+        </datalist>
+    </div>
+
+    <div style="display:flex; gap:10px;">
+        <div style="flex:1;">
+            <label style="display:block; font-size:0.7rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:4px;">⚽ Branek v turnaji</label>
+            <input type="number" id="bonus-totalGoals" min="50" max="300" placeholder="např. 145" style="width:100%; padding:9px 12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
+        </div>
+        <div style="flex:1;">
+            <label style="display:block; font-size:0.7rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:4px;">0️⃣ Zápasy 0:0</label>
+            <input type="number" id="bonus-zeroZeroResults" min="0" max="20" placeholder="např. 3" style="width:100%; padding:9px 12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
+        </div>
+    </div>
+</div>
 <input type="text" id="user-name" placeholder="Zadej své jméno pro žebříček" style="margin-bottom:25px; text-align:center; font-size:1.2rem; padding: 16px; max-width: 400px; display: block; margin-left: auto; margin-right: auto; background: #1e293b; color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
 
 <button id="btn-odeslat-tip" class="btn btn-primary" style="font-size: 1.2rem; padding: 18px 40px; max-width: 400px; width: 100%; display: block; margin: 0 auto; background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 0 10px 25px rgba(34,197,94,0.4); border: none; cursor: pointer; border-radius: 8px;" onclick="saveToSupabase()">
@@ -5145,6 +5225,7 @@ let state = {
     ], 
     thirds: [], 
     playoff: {},
+    bonus: { topScorer: '', topGoalkeeper: '', totalGoals: null, zeroZeroResults: null },
     history: {} 
 };
 // Mapování názvů týmů na kódy vlajek (flagcdn.com)
@@ -5336,6 +5417,13 @@ async function renderLeaderboard(data, real) {
         ck('s32', 2); ck('s16', 3); ck('s8', 4); ck('s4', 5);
         if (r.winner && tip.winner && String(r.winner).trim() === String(tip.winner).trim()) pts += 12;
         if (r.bronze && tip.bronze && String(r.bronze).trim() === String(tip.bronze).trim()) pts += 8;
+        // Bonus body (+8 za každý správný)
+const rBonus = r.bonus || {};
+const tBonus = tip.bonus || {};
+if (rBonus.topScorer && tBonus.topScorer && String(rBonus.topScorer).trim().toLowerCase() === String(tBonus.topScorer).trim().toLowerCase()) pts += 8;
+if (rBonus.topGoalkeeper && tBonus.topGoalkeeper && String(rBonus.topGoalkeeper).trim().toLowerCase() === String(tBonus.topGoalkeeper).trim().toLowerCase()) pts += 8;
+if (rBonus.totalGoals != null && tBonus.totalGoals != null && parseInt(rBonus.totalGoals) === parseInt(tBonus.totalGoals)) pts += 8;
+if (rBonus.zeroZeroResults != null && tBonus.zeroZeroResults != null && parseInt(rBonus.zeroZeroResults) === parseInt(tBonus.zeroZeroResults)) pts += 8;
 
         return { ...row, tip, points: pts };
     }).sort((a, b) => b.points - a.points);
@@ -6285,7 +6373,30 @@ function cfS(sid, count) {
                 ${allTeams.map(t => `<option value="${t}" ${String(t).trim() === String(broS).trim() ? 'selected' : ''}>${t}</option>`).join('')}
             </select>
         </div>`;
-
+// === BONUS VÝSLEDKY ===
+const rBonusReal = res.bonus || {};
+finalHTML += `
+    <div style="background:linear-gradient(180deg, rgba(15,20,35,0.9) 0%, rgba(212,175,55,0.1) 100%); padding:20px; border-radius:12px; border:2px solid var(--accent); grid-column: 1 / -1;">
+        <b style="font-size: 1.2rem; color: #d4af37;">🎁 Bonus výsledky</b>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:12px;">
+            <div>
+                <label style="display:block; color:#f0e6c8; font-size:0.85rem; margin-bottom:6px;">🥇 Zlatá kopačka</label>
+                <input id="a-bonus-topScorer" value="${rBonusReal.topScorer || ''}" placeholder="jméno střelce" style="width:100%; padding:10px; background:rgba(0,0,0,0.4); color:white; border:1px solid rgba(212,175,55,0.2); border-radius:8px; box-sizing:border-box;">
+            </div>
+            <div>
+                <label style="display:block; color:#f0e6c8; font-size:0.85rem; margin-bottom:6px;">🧤 Zlatá rukavice</label>
+                <input id="a-bonus-topGoalkeeper" value="${rBonusReal.topGoalkeeper || ''}" placeholder="jméno brankáře" style="width:100%; padding:10px; background:rgba(0,0,0,0.4); color:white; border:1px solid rgba(212,175,55,0.2); border-radius:8px; box-sizing:border-box;">
+            </div>
+            <div>
+                <label style="display:block; color:#f0e6c8; font-size:0.85rem; margin-bottom:6px;">⚽ Branek v turnaji</label>
+                <input type="number" id="a-bonus-totalGoals" value="${rBonusReal.totalGoals ?? ''}" placeholder="např. 145" style="width:100%; padding:10px; background:rgba(0,0,0,0.4); color:white; border:1px solid rgba(212,175,55,0.2); border-radius:8px; box-sizing:border-box;">
+            </div>
+            <div>
+                <label style="display:block; color:#f0e6c8; font-size:0.85rem; margin-bottom:6px;">0️⃣ Zápasy 0:0</label>
+                <input type="number" id="a-bonus-zeroZeroResults" value="${rBonusReal.zeroZeroResults ?? ''}" placeholder="např. 3" style="width:100%; padding:10px; background:rgba(0,0,0,0.4); color:white; border:1px solid rgba(212,175,55,0.2); border-radius:8px; box-sizing:border-box;">
+            </div>
+        </div>
+    </div>`;
     cont.innerHTML = finalHTML;
 }
     // 1. TUTO FUNKCI NAPOJ NA TLAČÍTKO "ULOŽIT VÝSLEDKY" V ADMINU
@@ -6393,14 +6504,20 @@ async function nacistAdminVysledky() {
 
     // 2. SBĚR PLAYOFF (Přesně podle ID v genAdminForm)
     const adminData = {
-        groups: groups,
-        s32: Array.from({length: 16}, (_, j) => getV(`a-s32-${j}`)),
-        s16: Array.from({length: 8},  (_, j) => getV(`a-s16-${j}`)),
-        s8:  Array.from({length: 4},  (_, j) => getV(`a-s8-${j}`)),
-        s4:  Array.from({length: 4},  (_, j) => getV(`a-s4-${j}`)),
-        winner: getV('a-win'),
-        bronze: getV('a-bro')
-    };
+    groups: groups,
+    s32: Array.from({length: 16}, (_, j) => getV(`a-s32-${j}`)),
+    s16: Array.from({length: 8},  (_, j) => getV(`a-s16-${j}`)),
+    s8:  Array.from({length: 4},  (_, j) => getV(`a-s8-${j}`)),
+    s4:  Array.from({length: 4},  (_, j) => getV(`a-s4-${j}`)),
+    winner: getV('a-win'),
+    bronze: getV('a-bro'),
+    bonus: {
+        topScorer: getV('a-bonus-topScorer'),
+        topGoalkeeper: getV('a-bonus-topGoalkeeper'),
+        totalGoals: parseInt(getV('a-bonus-totalGoals')) || null,
+        zeroZeroResults: parseInt(getV('a-bonus-zeroZeroResults')) || null
+    }
+};
 
     // 🔥 DIAGNOSTICKÝ LOG - Tady v konzoli uvidíš, co JS skutečně "vidí" před odesláním
     console.log("📤 ODESÍLÁM DO DATABÁZE:", adminData);
@@ -6442,7 +6559,13 @@ async function nacistAdminVysledky() {
     // 2. KONTROLA JMÉNA
     const name = document.getElementById('user-name').value;
     if (!name) return showCustomAlert("Chyba", "Zadej své jméno, ať víme, jak ti říkat v žebříčku!");
-
+// Posbírej bonus tipy
+const bonus = {
+    topScorer: (document.getElementById('bonus-topScorer')?.value || '').trim(),
+    topGoalkeeper: (document.getElementById('bonus-topGoalkeeper')?.value || '').trim(),
+    totalGoals: parseInt(document.getElementById('bonus-totalGoals')?.value) || null,
+    zeroZeroResults: parseInt(document.getElementById('bonus-zeroZeroResults')?.value) || null
+};
     // 3. SESTAVENÍ DAT
     const tipData = { 
         groups: state.groups.map(g => g.teams), 
@@ -6452,7 +6575,8 @@ async function nacistAdminVysledky() {
         s8: state.playoff.s8, 
         s4: state.playoff.s4, 
         bronze: state.playoff.bronze, 
-        winner: state.playoff.winner 
+        winner: state.playoff.winner,
+        bonus: bonus
     };
 
     try {
@@ -6920,6 +7044,14 @@ async function nactiUzivatelskyTip(userId) {
                 
                 // 2. NAPLNĚNÍ PAVOUKA (Playoff)
                 if (state.playoff) Object.assign(state.playoff, tip);
+                // Naplnění bonus tipů (pokud existují)
+if (tip.bonus) {
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val !== null && val !== undefined && val !== '') el.value = val; };
+    setVal('bonus-topScorer', tip.bonus.topScorer);
+    setVal('bonus-topGoalkeeper', tip.bonus.topGoalkeeper);
+    setVal('bonus-totalGoals', tip.bonus.totalGoals);
+    setVal('bonus-zeroZeroResults', tip.bonus.zeroZeroResults);
+}
 
                 console.log("➡️ [Tip] 3. Generuji HTML a simuluji tvé klikání na 3. místa...");
                 
