@@ -2,7 +2,7 @@
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
 // WC2026 Tipovačka - Service Worker
-const CACHE_NAME = 'wc2026-v2';
+const CACHE_NAME = 'wc2026-v4';
 const URLS_TO_CACHE = [
     './',
     './index.html',
