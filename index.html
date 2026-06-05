@@ -1950,6 +1950,7 @@ input:focus {
     <span class="step-dot" id="dot-s4" onclick="skocNaFazi('dot-s4')" style="cursor:pointer;">Semifinále</span>
    <span class="step-dot" id="dot-s3" onclick="skocNaFazi('dot-s3')" style="cursor:pointer;">3. místo</span>
 <span class="step-dot" id="dot-fin" onclick="skocNaFazi('dot-fin')" style="cursor:pointer;">Finále</span>
+<span class="step-dot" id="dot-bonus" onclick="skocNaFazi('dot-bonus')" style="cursor:pointer;">🎁 Bonus</span>
       </div>
     </header>
 
@@ -2119,6 +2120,13 @@ input:focus {
 
             <div id="playoff-container"></div>
             <div id="sec-thirds" class="hidden"></div>
+<!-- 🎁 BONUS SEKCE -->
+<div id="phase-bonus" class="hidden section-box">
+    <div class="section-header">🎁 BONUS TIPY</div>
+    <div class="section-content" style="padding: 40px; text-align: center;">
+        <div style="font-size: 2rem; color: #d4af37; font-weight: 900;">test</div>
+    </div>
+</div>
             
            <div id="final-box" class="hidden section-box" style="border: 2px solid var(--winner); text-align: center; background: linear-gradient(180deg, rgba(30,41,59,0.8) 0%, rgba(34,197,94,0.1) 100%);">
     <div class="section-header" style="background: rgba(34,197,94,0.2); border-bottom: 1px solid var(--winner); justify-content: center;">🏆 FINÁLNÍ ODESLÁNÍ</div>
@@ -4534,6 +4542,10 @@ function skocNaFazi(faze) {
         // Skupiny
         document.getElementById('phase-groups')?.classList.remove('hidden');
     } 
+    else if (faze === 'dot-bonus') {
+        // 🎁 Bonus
+        document.getElementById('phase-bonus')?.classList.remove('hidden');
+    }
     else if (faze === 'dot-s2') {
     // 3. místa – musí být hotové skupiny
     if (state.groups.filter(g => g.done).length < 12) {
@@ -6869,7 +6881,8 @@ function updateStepper(activeId) {
     { id: 'dot-s8',  check: () => state.playoff.s8 && state.playoff.s8.length === 4 },
     { id: 'dot-s4',  check: () => state.playoff.s4 && state.playoff.s4.length === 2 },
     { id: 'dot-s3',  check: () => state.playoff.bronze && state.playoff.bronze !== "" },
-    { id: 'dot-fin', check: () => state.playoff.winner }
+    { id: 'dot-fin', check: () => state.playoff.winner },
+    { id: 'dot-bonus', check: () => false }
 ];
 
     steps.forEach(step => {
