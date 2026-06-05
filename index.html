@@ -21,7 +21,32 @@
     <!-- 🔔 OneSignal Push Notifications -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
-    // Render bonus tipů v profilu – ukáže tipované hodnoty + porovná se skutečností (pokud admin už vyhlásil)
+    // 🎁 Spočítej bonus body - s odstupňovaným bodováním pro počet branek
+function spocitejBonusBody(tip, real) {
+    const rb = real?.bonus || {};
+    const tb = tip?.bonus || {};
+    let pts = 0;
+    
+    // Top střelec - přesná shoda = 8 b
+    if (rb.topScorer && tb.topScorer && String(rb.topScorer).trim().toLowerCase() === String(tb.topScorer).trim().toLowerCase()) pts += 8;
+    
+    // Top brankář - přesná shoda = 8 b
+    if (rb.topGoalkeeper && tb.topGoalkeeper && String(rb.topGoalkeeper).trim().toLowerCase() === String(tb.topGoalkeeper).trim().toLowerCase()) pts += 8;
+    
+    // 🎯 Branek v turnaji - ODSTUPŇOVANÉ (15 / 8 / 3 / 0)
+    if (rb.totalGoals != null && tb.totalGoals != null && rb.totalGoals !== '' && tb.totalGoals !== '') {
+        const diff = Math.abs(parseInt(rb.totalGoals) - parseInt(tb.totalGoals));
+        if (diff === 0) pts += 15;
+        else if (diff <= 5) pts += 8;
+        else if (diff <= 10) pts += 3;
+    }
+    
+    // Zápasy 0:0 - přesná shoda = 8 b
+    if (rb.zeroZeroResults != null && tb.zeroZeroResults != null && parseInt(rb.zeroZeroResults) === parseInt(tb.zeroZeroResults)) pts += 8;
+    
+    return pts;
+}
+   // Render bonus tipů v profilu – ukáže tipované hodnoty + porovná se skutečností (pokud admin už vyhlásil)
 function renderBonusTipy(tip, real) {
     if (!tip?.bonus) return '';
     const b = tip.bonus;
@@ -30,16 +55,30 @@ function renderBonusTipy(tip, real) {
     
     const rb = real?.bonus || {};
     
-    const renderRow = (icon, label, tipVal, realVal, isNumber) => {
+    const renderRow = (icon, label, tipVal, realVal, isNumber, isTotalGoals = false) => {
         if (!tipVal && tipVal !== 0) return '';
         let status = '';
         if (realVal !== undefined && realVal !== null && realVal !== '' && realVal !== 0) {
-            const match = isNumber 
-                ? parseInt(tipVal) === parseInt(realVal)
-                : String(tipVal).trim().toLowerCase() === String(realVal).trim().toLowerCase();
-            status = match 
-                ? '<span style="color:#22c55e; margin-left:6px; font-weight:700;">✅ +8</span>' 
-                : `<span style="color:#ef4444; margin-left:6px; font-size:0.75rem;">❌ ${realVal}</span>`;
+            // 🎯 Speciální logika pro "Branek v turnaji" – odstupňované body (15/8/3)
+            if (isTotalGoals) {
+                const diff = Math.abs(parseInt(tipVal) - parseInt(realVal));
+                if (diff === 0) {
+                    status = '<span style="color:#d4af37; margin-left:6px; font-weight:700;">🎯 +15</span>';
+                } else if (diff <= 5) {
+                    status = `<span style="color:#22c55e; margin-left:6px; font-weight:700;">✅ +8 <small style="opacity:0.7;">(${realVal})</small></span>`;
+                } else if (diff <= 10) {
+                    status = `<span style="color:#fbbf24; margin-left:6px; font-weight:700;">🟡 +3 <small style="opacity:0.7;">(${realVal})</small></span>`;
+                } else {
+                    status = `<span style="color:#ef4444; margin-left:6px; font-size:0.75rem;">❌ ${realVal}</span>`;
+                }
+            } else {
+                const match = isNumber 
+                    ? parseInt(tipVal) === parseInt(realVal)
+                    : String(tipVal).trim().toLowerCase() === String(realVal).trim().toLowerCase();
+                status = match 
+                    ? '<span style="color:#22c55e; margin-left:6px; font-weight:700;">✅ +8</span>' 
+                    : `<span style="color:#ef4444; margin-left:6px; font-size:0.75rem;">❌ ${realVal}</span>`;
+            }
         }
         return `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; font-size:0.82rem; border-bottom:1px solid rgba(212,175,55,0.05);">
@@ -54,7 +93,7 @@ function renderBonusTipy(tip, real) {
             <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:10px; text-align:center;">🎁 Bonus tipy</div>
             ${renderRow('🥇', 'Zlatá kopačka', b.topScorer, rb.topScorer, false)}
             ${renderRow('🧤', 'Zlatá rukavice', b.topGoalkeeper, rb.topGoalkeeper, false)}
-            ${renderRow('⚽', 'Branek v turnaji', b.totalGoals, rb.totalGoals, true)}
+            ${renderRow('⚽', 'Branek v turnaji', b.totalGoals, rb.totalGoals, true, true)}
             ${renderRow('0️⃣', 'Zápasy 0:0', b.zeroZeroResults, rb.zeroZeroResults, true)}
         </div>
     `;
@@ -5670,17 +5709,11 @@ async function renderLeaderboard(data, real) {
             const tt = tip[sid] || [];
             if (Array.isArray(rt)) rt.forEach(t => { if (t && Array.isArray(tt) && tt.some(x => String(x).trim() === String(t).trim())) pts += p; });
         };
-        ck('s32', 2); ck('s16', 3); ck('s8', 4); ck('s4', 5);
+       ck('s32', 2); ck('s16', 3); ck('s8', 4); ck('s4', 5);
         if (r.winner && tip.winner && String(r.winner).trim() === String(tip.winner).trim()) pts += 12;
         if (r.bronze && tip.bronze && String(r.bronze).trim() === String(tip.bronze).trim()) pts += 8;
-        // Bonus body (+8 za každý správný)
-const rBonus = r.bonus || {};
-const tBonus = tip.bonus || {};
-if (rBonus.topScorer && tBonus.topScorer && String(rBonus.topScorer).trim().toLowerCase() === String(tBonus.topScorer).trim().toLowerCase()) pts += 8;
-if (rBonus.topGoalkeeper && tBonus.topGoalkeeper && String(rBonus.topGoalkeeper).trim().toLowerCase() === String(tBonus.topGoalkeeper).trim().toLowerCase()) pts += 8;
-if (rBonus.totalGoals != null && tBonus.totalGoals != null && parseInt(rBonus.totalGoals) === parseInt(tBonus.totalGoals)) pts += 8;
-if (rBonus.zeroZeroResults != null && tBonus.zeroZeroResults != null && parseInt(rBonus.zeroZeroResults) === parseInt(tBonus.zeroZeroResults)) pts += 8;
-
+        // 🎁 Bonus body (s odstupňovaným bodováním pro branky)
+        pts += spocitejBonusBody(tip, r);
         return { ...row, tip, points: pts };
     }).sort((a, b) => b.points - a.points);
 
@@ -7553,11 +7586,13 @@ if ('serviceWorker' in navigator) {
                 <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#d4af37;">🏆 Vítěz turnaje</span><b style="color:#d4af37;">+12 b</b></div>
                 <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#94a3b8;">Nejlepší střelec turnaje</span><b style="color:#d4af37;">+8 b</b></div>
                 <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#94a3b8;">Nejlepší brankář turnaje</span><b style="color:#d4af37;">+8 b</b></div>
-                <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#94a3b8;">Trefený počet branek v turnaji</span><b style="color:#d4af37;">+8 b</b></div>
+               <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#94a3b8;">⚽ Branek v turnaji – přesně</span><b style="color:#d4af37;">+15 b</b></div>
+<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#94a3b8;">⚽ Branek v turnaji – ±5</span><b style="color:#d4af37;">+8 b</b></div>
+<div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#94a3b8;">⚽ Branek v turnaji – ±10</span><b style="color:#d4af37;">+3 b</b></div>
                 <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:0.85rem;"><span style="color:#94a3b8;">Trefený počet utkání 0:0</span><b style="color:#d4af37;">+8 b</b></div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0 0 0; margin-top:6px; border-top:1px solid rgba(212,175,55,0.1); font-size:0.8rem;">
                     <span style="color:#f0e6c8; font-weight:700;">MAXIMUM</span>
-                    <b style="color:#d4af37;">326 bodů</b>
+                    <b style="color:#d4af37;">333 bodů</b>
                 </div>
             </div>
         </div>
