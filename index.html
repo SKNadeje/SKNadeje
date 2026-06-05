@@ -7952,16 +7952,18 @@ if ('serviceWorker' in navigator) {
     </div>
 </div>
 <div id="profil-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); z-index:100000; justify-content:center; align-items:center; padding:20px;" onclick="if(event.target===this) this.style.display='none'">
-    <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; padding:28px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.7);">
-        <div id="profil-obsah"></div>
-        <button onclick="document.getElementById('profil-modal').style.display='none'" class="btn" style="width:100%; margin-top:16px; background:rgba(30,40,60,0.8); color:#94a3b8; border:1px solid rgba(212,175,55,0.12);">Zavřít</button>
+    <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; max-width:420px; width:100%; max-height:90vh; box-shadow:0 25px 60px rgba(0,0,0,0.7); display:flex; flex-direction:column; overflow:hidden;">
+        <div id="profil-obsah" style="padding:28px; flex:1; overflow-y:auto;"></div>
+        <div style="padding:14px 20px; background:rgba(8,12,24,0.85); border-top:1px solid rgba(212,175,55,0.15); flex-shrink:0; backdrop-filter:blur(8px);">
+            <button onclick="document.getElementById('profil-modal').style.display='none'" class="btn" style="width:100%; margin:0; background:rgba(30,40,60,0.8); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); padding:12px; border-radius:10px; cursor:pointer; font-weight:700;">✕ Zavřít</button>
+        </div>
     </div>
 </div>
 
 <!-- 📋 PRAVIDLA & ODKAZY MODAL -->
 <div id="pravidla-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); z-index:100000; justify-content:center; align-items:center; padding:20px;" onclick="if(event.target===this) this.style.display='none'">
-    <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; padding:28px; max-width:480px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.7);">
-        
+    <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; max-width:480px; width:100%; max-height:90vh; box-shadow:0 25px 60px rgba(0,0,0,0.7); display:flex; flex-direction:column; overflow:hidden;">
+        <div style="padding:28px; flex:1; overflow-y:auto;">   
         <div style="text-align:center; margin-bottom:20px;">
             <div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:6px;">WC2026 · Tipovačka</div>
             <div style="font-size:22px; font-weight:900; color:#d4af37; text-transform:uppercase; letter-spacing:2px;">📋 Pravidla &amp; info</div>
@@ -8060,7 +8062,10 @@ if ('serviceWorker' in navigator) {
             </div>
         </div>
 
-        <button onclick="document.getElementById('pravidla-modal').style.display='none'" class="btn" style="width:100%; background:rgba(30,40,60,0.8); color:#94a3b8; border:1px solid rgba(212,175,55,0.12);">Zavřít</button>
+      </div>
+        <div style="padding:14px 20px; background:rgba(8,12,24,0.85); border-top:1px solid rgba(212,175,55,0.15); flex-shrink:0; backdrop-filter:blur(8px);">
+            <button onclick="document.getElementById('pravidla-modal').style.display='none'" class="btn" style="width:100%; margin:0; background:rgba(30,40,60,0.8); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); padding:12px; border-radius:10px; cursor:pointer; font-weight:700;">✕ Zavřít</button>
+        </div>
     </div>
 </div>
    <div id="group-editor" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); z-index:100000; justify-content:center; align-items:center; padding:20px;" onclick="if(event.target===this) zavritEditor()">
