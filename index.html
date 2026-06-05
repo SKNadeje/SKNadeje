@@ -6569,31 +6569,39 @@ function cfS(sid, count) {
         const finalists = state.playoff['s4']; // Vítězové ze semifinále
         genStage('Finále', finalists, 1, 's2', 'sec-s3', 'dot-s3');
     } 
-    else if(sid === 's2') {
-        // --- 🏆 KONEC PAVOUKA - FINÁLNÍ SHRNUTÍ 🏆 ---
-        state.playoff.winner = wins[0]; 
-        const bronzeEl = document.querySelector('#sec-s3 .selected');
-        state.playoff.bronze = bronzeEl ? bronzeEl.innerText : "Nezvoleno"; 
+   else if(sid === 's2') {
+    // --- 🏆 KONEC PAVOUKA - FINÁLNÍ SHRNUTÍ 🏆 ---
+    state.playoff.winner = wins[0]; 
+    const bronzeEl = document.querySelector('#sec-s3 .selected');
+    state.playoff.bronze = bronzeEl ? bronzeEl.innerText : "Nezvoleno"; 
 
-        // Skryjeme pavouka
-       document.querySelectorAll('.section-box:not(#section-leaderboard):not(#bankbody-section)').forEach(d => {
+    // Skryjeme pavouka
+   document.querySelectorAll('.section-box:not(#section-leaderboard):not(#bankbody-section)').forEach(d => {
     d.classList.add('hidden');
 });
-        
-        // Ukážeme finální potvrzovací box
-        const finalBox = document.getElementById('final-box');
-        if(finalBox) {
-            finalBox.classList.remove('hidden');
-            const winDisp = document.getElementById('winner-display');
-            if(winDisp) winDisp.innerText = "TVŮJ VÍTĚZ: " + wins[0];
+    
+    // Ukážeme finální potvrzovací box
+    const finalBox = document.getElementById('final-box');
+    if(finalBox) {
+        finalBox.classList.remove('hidden');
+        const winDisp = document.getElementById('winner-display');
+        if(winDisp) winDisp.innerText = "TVŮJ VÍTĚZ: " + wins[0];
 
-            // --- 🚀 FIX PRO MOBILY: POSLEDNÍ SCROLL ---
-            setTimeout(() => {
-                finalBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+        // 🆕 Aktualizuj viditelnost bonus sekce (admin vs ostatní)
+        if (typeof aktualizujBonusSekciVisibility === 'function') {
+            aktualizujBonusSekciVisibility();
         }
-    }
 
+        // --- 🚀 FIX PRO MOBILY: SCROLL NA BONUS POKUD VIDITELNÝ ---
+        setTimeout(() => {
+            const bonusSection = document.getElementById('bonus-section');
+            const target = (bonusSection && bonusSection.style.display !== 'none') 
+                ? bonusSection 
+                : finalBox;
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+}
     // TADY BYLO window.scrollTo(0,0) - SMAZÁNO!
 }
    async function checkAdmin() {
