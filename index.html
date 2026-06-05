@@ -4147,9 +4147,16 @@ window.addEventListener('DOMContentLoaded', () => {
     const oblibeny = sortHlasy[0]?.[0];
     const outsider = sortHlasy[sortHlasy.length-1]?.[0];
 
-    // === ZÁKLAD ===
-    odznaky.push({ icon: '✅', label: 'Kompletní tip', aktivni: !!(tip.winner && tip.winner !== ''), popis: 'Vyplnil/a celý tip až po vítěze turnaje.' });
-    odznaky.push({ icon: '💰', label: p.isPaid ? 'Zaplaceno' : 'Nezaplaceno', aktivni: p.isPaid, klik: `togglePaymentProfil('${p.rowId}', ${p.isPaid})`, popis: p.isPaid ? 'Uhradil/a startovné 200 Kč.' : 'Ještě nezaplatil/a startovné 200 Kč.' });
+  // === ZÁKLAD ===
+    // Kompletní tip = vítěz + všechny 4 bonus tipy
+    const tb = tip.bonus || {};
+    const kompletni = !!(tip.winner && tip.winner.trim() !== '')
+        && !!(tb.topScorer && tb.topScorer.trim() !== '')
+        && !!(tb.topGoalkeeper && tb.topGoalkeeper.trim() !== '')
+        && (tb.totalGoals != null && tb.totalGoals !== '')
+        && (tb.zeroZeroResults != null && tb.zeroZeroResults !== '');
+    odznaky.push({ icon: '✅', label: 'Kompletní tip', aktivni: kompletni, popis: 'Vyplnil/a celý tip včetně všech 4 bonus tipů.' });
+     odznaky.push({ icon: '💰', label: p.isPaid ? 'Zaplaceno' : 'Nezaplaceno', aktivni: p.isPaid, klik: `togglePaymentProfil('${p.rowId}', ${p.isPaid})`, popis: p.isPaid ? 'Uhradil/a startovné 200 Kč.' : 'Ještě nezaplatil/a startovné 200 Kč.' });
 
     // === POŘADÍ V ŽEBŘÍČKU ===
     odznaky.push({ icon: '👑', label: 'Král', aktivni: p.rank === 1 && p.points > 0, popis: 'Vedl/a žebříček – nejlepší tipař!' });
