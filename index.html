@@ -2291,6 +2291,17 @@ input:focus {
 }
     // 🎁 Po potvrzení bonusu → otevři odeslat tip
 function confirmBonus() {
+    // 💾 Ulož bonus tipy do state (pro updateStepper a saveToSupabase)
+    state.bonus = {
+        topScorer: (document.getElementById('bonus-topScorer')?.value || '').trim(),
+        topGoalkeeper: (document.getElementById('bonus-topGoalkeeper')?.value || '').trim(),
+        totalGoals: parseInt(document.getElementById('bonus-totalGoals')?.value) || null,
+        zeroZeroResults: parseInt(document.getElementById('bonus-zeroZeroResults')?.value) || null
+    };
+    
+    // Aktualizuj stepper (zelená tečka)
+    if (typeof updateStepper === 'function') updateStepper('dot-bonus');
+    
     // Skryj bonus sekci
     document.getElementById('phase-bonus')?.classList.add('hidden');
     
@@ -3800,7 +3811,23 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
     odznaky.push({ icon: '💬', label: 'Klábosil', aktivni: chatStats.messages >= 10, popis: `Napsal/a ${chatStats.messages} zpráv v chatu.` });
     odznaky.push({ icon: '🎙️', label: 'Showman', aktivni: chatStats.messages >= 50, popis: `Napsal/a ${chatStats.messages} zpráv – chat baví!` });
     odznaky.push({ icon: '❤️', label: 'Oblíbenec', aktivni: chatStats.reactions >= 5, popis: `Dostal/a ${chatStats.reactions} reakcí na zprávy.` });
-
+// === BONUS TIPY ===
+    const tipBonus = tip.bonus || {};
+    const realBonus = r.bonus || {};
+    
+    const sedi = (a, b) => a && b && String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+    const sediCislo = (a, b) => a != null && b != null && parseInt(a) === parseInt(b);
+    
+    const bonusStrelec = sedi(realBonus.topScorer, tipBonus.topScorer);
+    const bonusBrankar = sedi(realBonus.topGoalkeeper, tipBonus.topGoalkeeper);
+    const bonusGoly = sediCislo(realBonus.totalGoals, tipBonus.totalGoals);
+    const bonusNuly = sediCislo(realBonus.zeroZeroResults, tipBonus.zeroZeroResults);
+    
+    odznaky.push({ icon: '🥇', label: 'Zlatá noha', aktivni: bonusStrelec, popis: 'Trefil/a nejlepšího střelce turnaje.' });
+    odznaky.push({ icon: '🧤', label: 'Anděl', aktivni: bonusBrankar, popis: 'Trefil/a nejlepšího brankáře turnaje.' });
+    odznaky.push({ icon: '⚽', label: 'Gólomat', aktivni: bonusGoly, popis: 'Trefil/a přesný počet branek v turnaji.' });
+    odznaky.push({ icon: '0️⃣', label: 'Nula', aktivni: bonusNuly, popis: 'Trefil/a přesný počet zápasů 0:0.' });
+    odznaky.push({ icon: '🎁', label: 'Bonusový mistr', aktivni: bonusStrelec && bonusBrankar && bonusGoly && bonusNuly, popis: 'Trefil/a všechny 4 bonusové tipy – mistrovský výkon!' });
     // === MERGE S ULOŽENÝMI (persistence) ===
     const ulozeno = p.achievements_earned || [];
     odznaky.forEach(o => {
@@ -3811,7 +3838,7 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
     });
 
     // === FALLBACK – Pohodář ===
-    const dulezite = ['Kompletní tip','Zaplaceno','Král','Stříbro','Bronz','Jasnovidec','Bronz oko','Profík','Vševěd','Snajpr','MVP','Hvězda kol','Klábosil','Showman','Oblíbenec','Černý kůň','Sázkař','S davem','Šťastlivec','Raketa','Propadák','Vlastenec','Naivka'];
+    const dulezite = ['Kompletní tip','Zaplaceno','Král','Stříbro','Bronz','Jasnovidec','Bronz oko','Profík','Vševěd','Snajpr','MVP','Hvězda kol','Klábosil','Showman','Oblíbenec','Černý kůň','Sázkař','S davem','Šťastlivec','Raketa','Propadák','Vlastenec','Naivka','Zlatá noha','Anděl','Gólomat','Nula','Bonusový mistr'];
     const maDulezity = odznaky.some(o => o.aktivni && dulezite.includes(o.label));
     odznaky.push({ icon: '🦥', label: 'Pohodář', aktivni: !maDulezity, popis: 'V klidu sleduje turnaj a nestresuje se pořadím.' });
 
@@ -6941,8 +6968,11 @@ function updateStepper(activeId) {
     { id: 'dot-s8',  check: () => state.playoff.s8 && state.playoff.s8.length === 4 },
     { id: 'dot-s4',  check: () => state.playoff.s4 && state.playoff.s4.length === 2 },
     { id: 'dot-s3',  check: () => state.playoff.bronze && state.playoff.bronze !== "" },
-    { id: 'dot-fin', check: () => state.playoff.winner },
-    { id: 'dot-bonus', check: () => false }
+   { id: 'dot-fin', check: () => state.playoff.winner },
+    { id: 'dot-bonus', check: () => {
+        const b = state.bonus || {};
+        return b.topScorer && b.topGoalkeeper && (b.totalGoals != null && b.totalGoals !== '') && (b.zeroZeroResults != null && b.zeroZeroResults !== '');
+    }}
 ];
 
     steps.forEach(step => {
@@ -7182,12 +7212,15 @@ async function nactiUzivatelskyTip(userId) {
                 // 2. NAPLNĚNÍ PAVOUKA (Playoff)
                 if (state.playoff) Object.assign(state.playoff, tip);
                 // Naplnění bonus tipů (pokud existují)
+// Naplnění bonus tipů (pokud existují)
 if (tip.bonus) {
     const setVal = (id, val) => { const el = document.getElementById(id); if (el && val !== null && val !== undefined && val !== '') el.value = val; };
     setVal('bonus-topScorer', tip.bonus.topScorer);
     setVal('bonus-topGoalkeeper', tip.bonus.topGoalkeeper);
     setVal('bonus-totalGoals', tip.bonus.totalGoals);
     setVal('bonus-zeroZeroResults', tip.bonus.zeroZeroResults);
+    // 💾 Ulož do state, aby se zelená tečka aktivovala
+    state.bonus = { ...tip.bonus };
 }
 
                 console.log("➡️ [Tip] 3. Generuji HTML a simuluji tvé klikání na 3. místa...");
