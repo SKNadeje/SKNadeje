@@ -1881,16 +1881,7 @@ input:focus {
 </style>
 </head>
 <body>
-  <!-- 🔴 LIVE PILULKA pro bonus -->
-<div id="bonus-live-banner" style="display:none; position:fixed; bottom:80px; left:50%; transform:translateX(-50%); z-index:9990; padding:8px 18px; background:linear-gradient(90deg, #ef4444, #b91c1c); color:white; text-align:center; font-weight:800; font-size:0.7rem; letter-spacing:1px; border-radius:20px; box-shadow:0 6px 20px rgba(239,68,68,0.5); white-space:nowrap; max-width:90vw;">
-    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:white; margin-right:8px; vertical-align:middle; animation:livePulse 1s infinite;"></span>
-    🔴 BONUS LIVE – body se průběžně aktualizují
-</div>
-
-<!-- ✅ FINÁLNÍ PILULKA pro bonus -->
-<div id="bonus-final-banner" style="display:none; position:fixed; bottom:80px; left:50%; transform:translateX(-50%); z-index:9990; padding:8px 18px; background:linear-gradient(90deg, #22c55e, #15803d); color:white; text-align:center; font-weight:800; font-size:0.7rem; letter-spacing:1px; border-radius:20px; box-shadow:0 6px 20px rgba(34,197,94,0.5); white-space:nowrap; max-width:90vw;">
-    ✅ BONUS – finální vyhodnocení
-</div>
+ 
 <img src="logo-wc2026.png" class="side-decor left" alt="">
 <img src="logo-wc2026.png" class="side-decor right" alt="">
     
@@ -2066,8 +2057,9 @@ input:focus {
 </div>
 
     <div class="dashboard">
-        <aside>
-            <div id="progress-container"></div>
+       <aside>
+    <div id="progress-container"></div>
+    <div id="bonus-status-inline"></div>
 
 
 <div class="bankbody-box" id="bankbody-section" style="margin-bottom:18px; background:rgba(212,175,55,0.03); border:1px solid rgba(212,175,55,0.15); border-radius:14px;">
@@ -2266,19 +2258,41 @@ input:focus {
 </div>
     
 <script>
-   function aktualizujBonusLiveBanner() {
-    const liveBanner = document.getElementById('bonus-live-banner');
-    const finalBanner = document.getElementById('bonus-final-banner');
+  // 🎁 Aktualizuj LIVE/FINAL status pro bonus (inline pod Postup turnaje)
+function aktualizujBonusLiveBanner() {
+    const inline = document.getElementById('bonus-status-inline');
     const badge = document.getElementById('bonus-status-badge');
     
     const r = window.currentResults || {};
     const fs = r.faze_status || {};
     const bonusStatus = fs.bonus || 'none';
     
-    if (liveBanner) liveBanner.style.display = bonusStatus === 'live' ? 'block' : 'none';
-    if (finalBanner) finalBanner.style.display = bonusStatus === 'final' ? 'block' : 'none';
+    // Inline status pod Postup turnaje
+    if (inline) {
+        if (bonusStatus === 'live') {
+            inline.innerHTML = `
+                <div style="background:linear-gradient(90deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05)); border:1px solid rgba(239,68,68,0.4); border-radius:14px; padding:12px 14px; margin-bottom:18px; display:flex; align-items:center; gap:10px; box-shadow:0 4px 12px rgba(239,68,68,0.15);">
+                    <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#ef4444; flex-shrink:0; animation:livePulse 1s infinite; box-shadow:0 0 8px rgba(239,68,68,0.6);"></span>
+                    <div style="flex:1;">
+                        <div style="font-size:0.7rem; color:#ef4444; font-weight:900; letter-spacing:1.5px; text-transform:uppercase;">🔴 BONUS LIVE</div>
+                        <div style="font-size:0.7rem; color:#94a3b8; margin-top:2px;">Body se průběžně aktualizují</div>
+                    </div>
+                </div>`;
+        } else if (bonusStatus === 'final') {
+            inline.innerHTML = `
+                <div style="background:linear-gradient(90deg, rgba(34,197,94,0.12), rgba(34,197,94,0.03)); border:1px solid rgba(34,197,94,0.35); border-radius:14px; padding:12px 14px; margin-bottom:18px; display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:1rem; flex-shrink:0;">✅</span>
+                    <div style="flex:1;">
+                        <div style="font-size:0.7rem; color:#22c55e; font-weight:900; letter-spacing:1.5px; text-transform:uppercase;">Bonus finální</div>
+                        <div style="font-size:0.7rem; color:#94a3b8; margin-top:2px;">Bonusy byly definitivně vyhodnoceny</div>
+                    </div>
+                </div>`;
+        } else {
+            inline.innerHTML = '';
+        }
+    }
     
-    // Badge v hlavičce bonus sekce
+    // Badge v hlavičce bonus sekce (zůstává)
     if (badge) {
         if (bonusStatus === 'live') {
             badge.innerHTML = ` <span class="live-badge"><span class="live-dot"></span>LIVE</span>`;
