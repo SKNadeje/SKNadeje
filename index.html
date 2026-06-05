@@ -98,12 +98,10 @@ function renderBonusTipy(tip, real) {
         </div>
     `;
 }
-    // Zobraz bonus sekci jen pro admina
+  // Bonusy uvolněny pro všechny – funkce je dummy pro zachování zpětné kompatibility
 async function aktualizujBonusSekciVisibility() {
-    const { data: authData } = await supabaseClient.auth.getUser();
-    const isAdmin = authData?.user?.id === "92a1e51b-e03c-48d7-99df-76c2f60a455f";
-    const sec = document.getElementById('bonus-section');
-    if (sec) sec.style.display = isAdmin ? 'block' : 'none';
+    // Bonus sekce je viditelná pro všechny hráče
+    return;
 }
 
 
@@ -2168,9 +2166,13 @@ input:focus {
     </div>
     <div class="section-content" style="padding: 25px;">
         
-        <div style="text-align:center; margin-bottom:20px;">
-            <div style="font-size:0.75rem; color:#94a3b8;">+8 bodů za každý správný tip</div>
-        </div>
+       <div style="text-align:center; margin-bottom:20px;">
+    <div style="font-size:0.75rem; color:#94a3b8; line-height:1.6;">
+        Za přesné tipy získáš bonusové body navíc.<br>
+        <span style="color:#d4af37; font-weight:700;">+8 bodů</span> za střelce, brankáře, zápasy 0:0 ·
+        <span style="color:#d4af37; font-weight:700;">až +15 bodů</span> za počet branek (přesně/±5/±10)
+    </div>
+</div>
 
         <div style="max-width:400px; margin:0 auto;">
 
@@ -4612,7 +4614,7 @@ async function exportZebricek() {
     
 function spocitejBodyVeHre() {
     const r = window.currentResults || {};
-    const MAX = 294;
+    const MAX = 333; // 294 (turnaj) + 39 (bonusy: 8+8+15+8)
 
     let rozdeleno = 0;
 
@@ -4646,6 +4648,13 @@ function spocitejBodyVeHre() {
     // Bronz a vítěz
     if (r.bronze && String(r.bronze).trim() !== "") rozdeleno += 8;
     if (r.winner && String(r.winner).trim() !== "") rozdeleno += 12;
+
+    // 🎁 Bonus body (pokud admin už nastavil výsledky)
+    const b = r.bonus || {};
+    if (b.topScorer && String(b.topScorer).trim() !== '') rozdeleno += 8;
+    if (b.topGoalkeeper && String(b.topGoalkeeper).trim() !== '') rozdeleno += 8;
+    if (b.totalGoals != null && b.totalGoals !== '') rozdeleno += 15;
+    if (b.zeroZeroResults != null && b.zeroZeroResults !== '') rozdeleno += 8;
 
     const zbyva = MAX - rozdeleno;
     return { max: MAX, rozdeleno, zbyva };
@@ -6907,6 +6916,8 @@ děkujeme, že ses zapojil/a do tipovačky SK Naděje na Mistrovství světa ve 
    • 8 postupujících ze 3. míst
    • Pavouka playoff (1/16 → finále)
    • Vítěze a 3. místo
+   • Bonusy
+   
 
 2️⃣ ZAPLAŤ startovné 200 Kč
    • Bankovní převod (info najdeš na webu)
@@ -6932,7 +6943,16 @@ Po tomto čase už nejde tip měnit!
 - 🥉 3. místo: +8 bodů (přesný tip)
 - 🥇 Vítěz: +12 bodů (přesný tip)
 
-MAXIMUM = 294 BODŮ
+🎁 BONUS TIPY:
+- 🥇 Zlatá kopačka (nejlepší střelec): +8 bodů
+- 🧤 Zlatá rukavice (nejlepší brankář): +8 bodů
+- ⚽ Branek v turnaji:
+   • přesně: +15 bodů
+   • ±5 branek: +8 bodů
+   • ±10 branek: +3 body
+- 0️⃣ Zápasy 0:0: +8 bodů
+
+MAXIMUM = 333 BODŮ
 
 ═════════════════════════════
 
