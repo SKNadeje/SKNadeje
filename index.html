@@ -2090,6 +2090,12 @@ input:focus {
         📊 SPRAVOVAT ANKETU
     </button>
 </div>
+        <div style="padding: 0 20px 10px;">
+    <button type="button" class="btn" onclick="generatePDFvsech()" 
+        style="background:rgba(212,175,55,0.15); border:1px solid rgba(212,175,55,0.3); color:#d4af37; width:100%; font-size:0.8rem;">
+        📄 PDF VŠECH TIPŮ
+    </button>
+</div>
     <div style="padding: 20px;"><button type="button" class="btn btn-primary" onclick="saveAdminResults()">ULOŽIT VÝSLEDKY</button></div>
 </div>
 
@@ -2180,52 +2186,85 @@ input:focus {
             <div style="margin-bottom:14px;">
                 <label style="display:block; font-size:0.75rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:6px;">🥇 Zlatá kopačka (nejlepší střelec)</label>
                 <input list="dl-streleci" id="bonus-topScorer" placeholder="Vyber nebo napiš jméno..." style="width:100%; padding:11px 14px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.9rem; box-sizing:border-box;">
-                <datalist id="dl-streleci">
-                    <option value="Erling Haaland"></option>
-                    <option value="Kylian Mbappé"></option>
-                    <option value="Harry Kane"></option>
-                    <option value="Vinicius Jr."></option>
-                    <option value="Jude Bellingham"></option>
-                    <option value="Bukayo Saka"></option>
-                    <option value="Lautaro Martínez"></option>
-                    <option value="Lionel Messi"></option>
-                    <option value="Cristiano Ronaldo"></option>
-                    <option value="Patrik Schick"></option>
-                    <option value="Mohamed Salah"></option>
-                    <option value="Phil Foden"></option>
-                    <option value="Jamal Musiala"></option>
-                    <option value="Lamine Yamal"></option>
-                    <option value="Florian Wirtz"></option>
-                    <option value="Ousmane Dembélé"></option>
-                    <option value="Antoine Griezmann"></option>
-                    <option value="Heung-min Son"></option>
-                    <option value="Romelu Lukaku"></option>
-                    <option value="Victor Osimhen"></option>
-                    <option value="Jonathan David"></option>
-                    <option value="Robert Lewandowski"></option>
-                </datalist>
+               <datalist id="dl-streleci">
+    <!-- Top favorité na Zlatou kopačku -->
+    <option value="Erling Haaland"></option>
+    <option value="Kylian Mbappé"></option>
+    <option value="Harry Kane"></option>
+    <option value="Vinicius Jr."></option>
+    <option value="Lamine Yamal"></option>
+    <option value="Jude Bellingham"></option>
+    <option value="Lautaro Martínez"></option>
+    <option value="Julián Álvarez"></option>
+    <option value="Mohamed Salah"></option>
+    <option value="Lionel Messi"></option>
+    <option value="Cristiano Ronaldo"></option>
+    <option value="Darwin Núñez"></option>
+    <option value="Bukayo Saka"></option>
+    <option value="Phil Foden"></option>
+    <option value="Florian Wirtz"></option>
+    <option value="Jamal Musiala"></option>
+    <option value="Ousmane Dembélé"></option>
+    <option value="Kai Havertz"></option>
+    <option value="Antoine Griezmann"></option>
+    <option value="Cody Gakpo"></option>
+    <option value="Memphis Depay"></option>
+    <option value="Heung-min Son"></option>
+    <option value="Romelu Lukaku"></option>
+    <option value="Bruno Fernandes"></option>
+    <option value="Raphinha"></option>
+    <option value="Neymar Jr."></option>
+    <option value="Endrick"></option>
+    <option value="Matheus Cunha"></option>
+    <option value="Christian Pulisic"></option>
+    <option value="Luis Díaz"></option>
+    <option value="Sadio Mané"></option>
+    <option value="Jonathan David"></option>
+    <option value="Patrik Schick"></option>
+    <option value="Nico Williams"></option>
+    <option value="Mikel Oyarzabal"></option>
+    <option value="Mohammed Kudus"></option>
+    <option value="Riyad Mahrez"></option>
+    <option value="Hakan Çalhanoğlu"></option>
+    <option value="Raúl Jiménez"></option>
+    <option value="Santiago Giménez"></option>
+</datalist>
             </div>
 
             <!-- Zlatá rukavice -->
             <div style="margin-bottom:14px;">
                 <label style="display:block; font-size:0.75rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:6px;">🧤 Zlatá rukavice (nejlepší brankář)</label>
                 <input list="dl-brankari" id="bonus-topGoalkeeper" placeholder="Vyber nebo napiš jméno..." style="width:100%; padding:11px 14px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.9rem; box-sizing:border-box;">
-                <datalist id="dl-brankari">
-                    <option value="Thibaut Courtois"></option>
-                    <option value="Gianluigi Donnarumma"></option>
-                    <option value="Alisson Becker"></option>
-                    <option value="Ederson"></option>
-                    <option value="Mike Maignan"></option>
-                    <option value="Yassine Bounou"></option>
-                    <option value="Diogo Costa"></option>
-                    <option value="André Onana"></option>
-                    <option value="Aaron Ramsdale"></option>
-                    <option value="Unai Simón"></option>
-                    <option value="Jordan Pickford"></option>
-                    <option value="Jiří Pavlenka"></option>
-                    <option value="Emiliano Martínez"></option>
-                    <option value="Wojciech Szczęsny"></option>
-                </datalist>
+               <datalist id="dl-brankari">
+    <option value="Thibaut Courtois"></option>
+    <option value="Emiliano Martínez"></option>
+    <option value="Alisson Becker"></option>
+    <option value="Ederson"></option>
+    <option value="Mike Maignan"></option>
+    <option value="Jordan Pickford"></option>
+    <option value="Unai Simón"></option>
+    <option value="David Raya"></option>
+    <option value="Yassine Bounou"></option>
+    <option value="Diogo Costa"></option>
+    <option value="Marc-André ter Stegen"></option>
+    <option value="Yann Sommer"></option>
+    <option value="Bart Verbruggen"></option>
+    <option value="Édouard Mendy"></option>
+    <option value="Sergio Rochet"></option>
+    <option value="Matt Turner"></option>
+    <option value="Mathew Ryan"></option>
+    <option value="Zion Suzuki"></option>
+    <option value="Dominik Livaković"></option>
+    <option value="Jindřich Staněk"></option>
+    <option value="Matěj Kovář"></option>
+    <option value="Guillermo Ochoa"></option>
+    <option value="Raúl Rangel"></option>
+    <option value="Camilo Vargas"></option>
+    <option value="Alireza Beiranvand"></option>
+    <option value="Robin Olsen"></option>
+    <option value="Alexander Schlager"></option>
+    <option value="Dayne St Clair"></option>
+</datalist>
             </div>
 
             <!-- Branek + Zápasy 0:0 -->
@@ -2299,6 +2338,203 @@ input:focus {
 </div>
     
 <script>
+    // 📄 Admin: PDF se všemi tipy hráčů
+async function generatePDFvsech() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+        showToast("Pouze pro admina!", 'error');
+        return;
+    }
+
+    if (!confirm("Vygenerovat PDF se všemi tipy hráčů? Může to chvíli trvat...")) return;
+
+    showToast('📄 Generuji PDF se všemi tipy...', 'info', 4000);
+
+    try {
+        // Načti všechny tipy
+        const { data: tipy, error } = await supabaseClient
+            .from('tipy')
+            .select('*')
+            .order('name', { ascending: true });
+        
+        if (error) throw error;
+        if (!tipy || tipy.length === 0) {
+            showToast('Žádní hráči nenalezeni', 'error');
+            return;
+        }
+
+        const dnes = new Date().toLocaleDateString('cs-CZ');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' });
+        
+        // === ÚVODNÍ STRÁNKA ===
+        const titulHtml = `
+            <div id="pdf-titul" style="width:794px; height:1123px; background:#05070f; padding:80px 40px; font-family:Arial,sans-serif; color:#f0e6c8; box-sizing:border-box;">
+                <div style="text-align:center; margin-top:120px;">
+                    <div style="font-size:11px; letter-spacing:5px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:32px;">SK Naděje presents</div>
+                    <img src="logo-wc2026.png" style="width:200px; height:200px; object-fit:contain; margin-bottom:32px;">
+                    <div style="font-size:36px; font-weight:900; letter-spacing:4px; text-transform:uppercase; color:#d4af37; line-height:1.3; margin-bottom:14px;">Tipovačka</div>
+                    <div style="font-size:28px; font-weight:900; letter-spacing:3px; text-transform:uppercase; color:#d4af37; line-height:1.3; margin-bottom:20px;">MS 2026</div>
+                    <div style="font-size:14px; color:rgba(212,175,55,0.5); letter-spacing:2px; text-transform:uppercase; margin-bottom:60px;">USA · Mexico · Canada</div>
+                    <div style="display:inline-block; padding:14px 32px; border-radius:30px; background:rgba(212,175,55,0.1); border:2px solid rgba(212,175,55,0.3); font-size:18px; color:#d4af37; font-weight:700;">📁 Tipy všech hráčů</div>
+                    <div style="font-size:14px; color:#94a3b8; margin-top:24px;">Celkem hráčů: <b style="color:#d4af37;">${tipy.length}</b></div>
+                    <div style="font-size:12px; color:#5a6480; margin-top:8px;">Stav k ${dnes}</div>
+                </div>
+                <div style="position:absolute; bottom:60px; left:0; right:0; text-align:center; font-size:9px; color:rgba(212,175,55,0.3); letter-spacing:2px; text-transform:uppercase;">sknadeje.github.io/SKNadeje</div>
+            </div>
+        `;
+        
+        const titulContainer = document.createElement('div');
+        titulContainer.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
+        titulContainer.innerHTML = titulHtml;
+        document.body.appendChild(titulContainer);
+        
+        const titulCanvas = await html2canvas(titulContainer.querySelector('#pdf-titul'), {
+            scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false
+        });
+        const pdfW = pdf.internal.pageSize.getWidth();
+        const pdfH = pdf.internal.pageSize.getHeight();
+        pdf.addImage(titulCanvas.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH);
+        document.body.removeChild(titulContainer);
+        
+        // === STRÁNKA PRO KAŽDÉHO HRÁČE ===
+        for (let idx = 0; idx < tipy.length; idx++) {
+            const row = tipy[idx];
+            const jméno = row.name || 'Anonym';
+            let tip = row.tip_data;
+            if (typeof tip === 'string') { try { tip = JSON.parse(tip); } catch { tip = {}; } }
+
+            showToast(`Generuji ${idx + 1}/${tipy.length}: ${jméno}`, 'info', 1500);
+
+            // Skupiny
+            const skupiny = tip.groups || [];
+            const skupinyHTML = skupiny.map((tymy, i) => {
+                const pismeno = String.fromCharCode(65 + i);
+                return `
+                    <div style="background:rgba(255,255,255,0.02); border-left:2px solid rgba(212,175,55,0.4); border-radius:0 8px 8px 0; padding:8px;">
+                        <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; font-weight:800; margin-bottom:5px;">Skupina ${pismeno}</div>
+                        ${(Array.isArray(tymy) ? tymy : []).map((t, p) => `
+                            <div style="font-size:9px; color:${p===0?'#d4af37':'#f0e6c8'}; font-weight:${p===0?'700':'400'}; margin-bottom:2px;">
+                                <span style="color:#d4af37; font-size:8px; font-weight:900; margin-right:4px;">${p+1}.</span>${t}
+                            </div>
+                        `).join('')}
+                    </div>`;
+            }).join('');
+
+            // Playoff
+            const playoffFaze = [
+                { key: 's32', label: '1/16' },
+                { key: 's16', label: '1/8' },
+                { key: 's8',  label: 'Čtvrtfinále' },
+                { key: 's4',  label: 'Semifinále' },
+            ];
+            const playoffHTML = playoffFaze.map(f => {
+                const tymy = tip[f.key] || [];
+                return `
+                    <div style="background:rgba(255,255,255,0.02); border-left:2px solid rgba(212,175,55,0.4); border-radius:0 8px 8px 0; padding:8px;">
+                        <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1px; text-transform:uppercase; font-weight:800; margin-bottom:5px;">${f.label}</div>
+                        ${tymy.map(t => `<div style="font-size:8.5px; color:#e8dcc0; padding:1px 0;">${t}</div>`).join('')}
+                    </div>`;
+            }).join('');
+
+            // Bonusy
+            const b = tip.bonus || {};
+            const bonusHTML = `
+                <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;">
+                    <div style="background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.15); border-radius:8px; padding:8px;">
+                        <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1px; text-transform:uppercase; font-weight:700; margin-bottom:4px;">🥇 Zlatá kopačka</div>
+                        <div style="font-size:11px; font-weight:700; color:#d4af37;">${b.topScorer || '–'}</div>
+                    </div>
+                    <div style="background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.15); border-radius:8px; padding:8px;">
+                        <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1px; text-transform:uppercase; font-weight:700; margin-bottom:4px;">🧤 Zlatá rukavice</div>
+                        <div style="font-size:11px; font-weight:700; color:#d4af37;">${b.topGoalkeeper || '–'}</div>
+                    </div>
+                    <div style="background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.15); border-radius:8px; padding:8px;">
+                        <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1px; text-transform:uppercase; font-weight:700; margin-bottom:4px;">⚽ Branek v turnaji</div>
+                        <div style="font-size:11px; font-weight:700; color:#d4af37;">${b.totalGoals ?? '–'}</div>
+                    </div>
+                    <div style="background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.15); border-radius:8px; padding:8px;">
+                        <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1px; text-transform:uppercase; font-weight:700; margin-bottom:4px;">0️⃣ Zápasy 0:0</div>
+                        <div style="font-size:11px; font-weight:700; color:#d4af37;">${b.zeroZeroResults ?? '–'}</div>
+                    </div>
+                </div>`;
+
+            const paidBadge = (row.paid === true || row.paid === 1 || String(row.paid) === 'true') 
+                ? '<span style="background:#22c55e; color:#fff; padding:3px 9px; border-radius:6px; font-size:9px; font-weight:800; letter-spacing:1px;">ZAPLACENO</span>'
+                : '<span style="background:#ef4444; color:#fff; padding:3px 9px; border-radius:6px; font-size:9px; font-weight:800; letter-spacing:1px;">DLUŽÍ</span>';
+
+            const playerHtml = `
+                <div id="pdf-player-${idx}" style="width:794px; background:#05070f; padding:32px; font-family:Arial,sans-serif; color:#f0e6c8; box-sizing:border-box;">
+                    
+                    <!-- Hlavička hráče -->
+                    <div style="text-align:center; padding-bottom:14px; border-bottom:1px solid rgba(212,175,55,0.15); margin-bottom:14px;">
+                        <div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:6px;">Hráč ${idx + 1} z ${tipy.length}</div>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:14px;">
+                            <div style="font-size:26px; font-weight:900; letter-spacing:1px; color:#d4af37;">${jméno}</div>
+                            ${paidBadge}
+                        </div>
+                        ${row.email ? `<div style="font-size:9px; color:#5a6480; margin-top:5px;">${row.email}</div>` : ''}
+                    </div>
+
+                    <!-- Skupiny -->
+                    <div style="font-size:9px; letter-spacing:2.5px; color:rgba(212,175,55,0.5); text-transform:uppercase; font-weight:700; text-align:center; margin:12px 0 8px;">Pořadí ve skupinách</div>
+                    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-bottom:10px;">${skupinyHTML}</div>
+
+                    <!-- Playoff -->
+                    <div style="font-size:9px; letter-spacing:2.5px; color:rgba(212,175,55,0.5); text-transform:uppercase; font-weight:700; text-align:center; margin:12px 0 8px;">Play-off postup</div>
+                    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-bottom:10px;">${playoffHTML}</div>
+
+                    <!-- Vítěz a bronz -->
+                    <div style="font-size:9px; letter-spacing:2.5px; color:rgba(212,175,55,0.5); text-transform:uppercase; font-weight:700; text-align:center; margin:10px 0 8px;">Finálové tipy</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+                        <div style="background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.3); border-radius:8px; padding:10px; text-align:center;">
+                            <div style="font-size:14px; margin-bottom:3px;">🏆</div>
+                            <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px;">Vítěz</div>
+                            <div style="font-size:13px; font-weight:900; color:#d4af37;">${tip.winner || '–'}</div>
+                        </div>
+                        <div style="background:rgba(180,100,40,0.08); border:1px solid rgba(180,100,40,0.3); border-radius:8px; padding:10px; text-align:center;">
+                            <div style="font-size:14px; margin-bottom:3px;">🥉</div>
+                            <div style="font-size:8px; color:rgba(180,100,40,0.6); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px;">3. místo</div>
+                            <div style="font-size:13px; font-weight:900; color:#d97b3a;">${tip.bronze || '–'}</div>
+                        </div>
+                    </div>
+
+                    <!-- Bonusy -->
+                    <div style="font-size:9px; letter-spacing:2.5px; color:rgba(212,175,55,0.5); text-transform:uppercase; font-weight:700; text-align:center; margin:10px 0 8px;">🎁 Bonus tipy</div>
+                    ${bonusHTML}
+
+                    <div style="text-align:center; margin-top:12px; padding-top:8px; border-top:1px solid rgba(212,175,55,0.08); font-size:7.5px; color:rgba(212,175,55,0.3); letter-spacing:1.5px; text-transform:uppercase;">
+                        sknadeje.github.io/SKNadeje · MS 2026 Tipovačka · Strana ${idx + 2}
+                    </div>
+                </div>
+            `;
+
+            const container = document.createElement('div');
+            container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
+            container.innerHTML = playerHtml;
+            document.body.appendChild(container);
+
+            const canvas = await html2canvas(container.querySelector(`#pdf-player-${idx}`), {
+                scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false
+            });
+
+            pdf.addPage();
+            const imgRatio = canvas.width / canvas.height;
+            const pdfImgW = pdfW;
+            const pdfImgH = pdfImgW / imgRatio;
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfImgW, Math.min(pdfImgH, pdfH));
+            document.body.removeChild(container);
+        }
+
+        // Stáhni PDF
+        pdf.save(`WC2026-vsechny-tipy-${dnes.replace(/\./g, '').replace(/\s/g, '')}.pdf`);
+        showToast(`✅ PDF se ${tipy.length} hráči staženo!`, 'success', 5000);
+
+    } catch (err) {
+        console.error("Chyba PDF:", err);
+        showToast("Chyba při generování: " + err.message, 'error');
+    }
+}
   // 🎁 Aktualizuj LIVE/FINAL status pro bonus (inline pod Postup turnaje)
 function aktualizujBonusLiveBanner() {
     const inline = document.getElementById('bonus-status-inline');
