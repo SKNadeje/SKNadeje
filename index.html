@@ -163,7 +163,10 @@ async function aktualizujBonusSekciVisibility() {
     const { data: authData } = await supabaseClient.auth.getUser();
     const isAdmin = authData?.user?.id === "92a1e51b-e03c-48d7-99df-76c2f60a455f";
     const sec = document.getElementById('bonus-section');
+    const dotBonus = document.getElementById('step-bonus');
+    
     if (sec) sec.style.display = isAdmin ? 'block' : 'none';
+    if (dotBonus) dotBonus.style.display = isAdmin ? 'inline-block' : 'none';
 }
 
 
@@ -2073,6 +2076,7 @@ input:focus {
     <span class="step-dot" id="dot-s4" onclick="skocNaFazi('dot-s4')" style="cursor:pointer;">Semifinále</span>
    <span class="step-dot" id="dot-s3" onclick="skocNaFazi('dot-s3')" style="cursor:pointer;">3. místo</span>
 <span class="step-dot" id="dot-fin" onclick="skocNaFazi('dot-fin')" style="cursor:pointer;">Finále</span>
+<span class="step-dot" id="step-bonus" onclick="skocNaFazi('dot-bonus')" style="cursor:pointer;">🎁 Bonus</span>
       </div>
     </header>
 
@@ -2262,6 +2266,7 @@ input:focus {
         <i class="fas fa-lock"></i> Tipování je uzavřeno!
     </div>
 </div>
+        <a id="dot-bonus" style="position:relative; top:-80px; visibility:hidden;"></a>
 <!-- 🎁 BONUS TIPY (jen admin v testu) -->
 <div id="bonus-section" style="display:none; max-width:400px; margin:0 auto 25px auto; padding:20px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.25); border-radius:14px;">
     <div style="text-align:center; margin-bottom:14px;">
