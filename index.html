@@ -2124,7 +2124,10 @@ input:focus {
 <div id="phase-bonus" class="hidden section-box">
     <div class="section-header">🎁 BONUS TIPY</div>
     <div class="section-content" style="padding: 40px; text-align: center;">
-        <div style="font-size: 2rem; color: #d4af37; font-weight: 900;">test</div>
+        <div style="font-size: 2rem; color: #d4af37; font-weight: 900; margin-bottom: 20px;">test</div>
+        <button class="btn btn-primary" style="margin-top:25px; font-size: 1.1rem; padding: 16px;" onclick="confirmBonus()">
+            Pokračovat na odeslání <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
+        </button>
     </div>
 </div>
             
@@ -2247,6 +2250,24 @@ input:focus {
 </div>
     
 <script>
+    // 🎁 Po potvrzení bonusu → otevři odeslat tip
+function confirmBonus() {
+    // Skryj bonus sekci
+    document.getElementById('phase-bonus')?.classList.add('hidden');
+    
+    // Ukaž final-box (okno pro odeslání tipu)
+    const finalBox = document.getElementById('final-box');
+    if (finalBox) {
+        finalBox.classList.remove('hidden');
+        const winDisp = document.getElementById('winner-display');
+        if (winDisp && state.playoff.winner) {
+            winDisp.innerText = "TVŮJ VÍTĚZ: " + state.playoff.winner;
+        }
+        setTimeout(() => {
+            finalBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+}
     // ════════════════════════════════════════════
 // 💬 @ ZMÍNKY V CHATU
 // ════════════════════════════════════════════
@@ -6413,26 +6434,23 @@ function cfS(sid, count) {
         genStage('Finále', finalists, 1, 's2', 'sec-s3', 'dot-s3');
     } 
     else if(sid === 's2') {
-        // --- 🏆 KONEC PAVOUKA - FINÁLNÍ SHRNUTÍ 🏆 ---
+        // --- 🏆 KONEC PAVOUKA - SKOK NA BONUS 🏆 ---
         state.playoff.winner = wins[0]; 
         const bronzeEl = document.querySelector('#sec-s3 .selected');
         state.playoff.bronze = bronzeEl ? bronzeEl.innerText : "Nezvoleno"; 
 
         // Skryjeme pavouka
-       document.querySelectorAll('.section-box:not(#section-leaderboard):not(#bankbody-section)').forEach(d => {
-    d.classList.add('hidden');
-});
+        document.querySelectorAll('.section-box:not(#section-leaderboard):not(#bankbody-section)').forEach(d => {
+            d.classList.add('hidden');
+        });
         
-        // Ukážeme finální potvrzovací box
-        const finalBox = document.getElementById('final-box');
-        if(finalBox) {
-            finalBox.classList.remove('hidden');
-            const winDisp = document.getElementById('winner-display');
-            if(winDisp) winDisp.innerText = "TVŮJ VÍTĚZ: " + wins[0];
-
-            // --- 🚀 FIX PRO MOBILY: POSLEDNÍ SCROLL ---
+        // 🎁 Otevři BONUS sekci (ne final-box)
+        const bonusPhase = document.getElementById('phase-bonus');
+        if(bonusPhase) {
+            bonusPhase.classList.remove('hidden');
+            if (typeof updateStepper === 'function') updateStepper('dot-bonus');
             setTimeout(() => {
-                finalBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                bonusPhase.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
         }
     }
