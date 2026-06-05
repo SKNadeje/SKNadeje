@@ -20,197 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- 🔔 OneSignal Push Notifications -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-    function ukazOdeslat() {
-    const odeslat = document.getElementById('odeslat-section');
-    const bonusBtn = document.getElementById('btn-pokracovat-bonus');
-    if (odeslat) odeslat.style.display = 'block';
-    if (bonusBtn) bonusBtn.style.display = 'none';
-    setTimeout(() => {
-        odeslat?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-}
-    // ════════════════════════════════════════════
-// 🔴 LIVE BONUS ADMIN PANEL
-// ════════════════════════════════════════════
 
-async function liveBonusAdjust(field, delta) {
-    const { data: authData } = await supabaseClient.auth.getUser();
-    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return showToast("Pouze admin!", 'error');
-    
-    try {
-        const { data: adm } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).single();
-        const bonus = adm?.bonus || {};
-        const current = parseInt(bonus[field]) || 0;
-        bonus[field] = Math.max(0, current + delta);
-        
-        const { error } = await supabaseClient.from('admin_vysledky').update({ bonus }).eq('id', 1);
-        if (error) throw error;
-        
-        const labels = { totalGoals: '⚽ Branek', zeroZeroResults: '0️⃣ Zápasy 0:0' };
-        showToast(`${labels[field]}: ${bonus[field]}`, 'success', 1500);
-        
-        if (typeof loadAll === 'function') await loadAll();
-        if (typeof renderAdminPanel === 'function') renderAdminPanel();
-    } catch (err) {
-        showToast("Chyba: " + err.message, 'error');
-    }
-}
-
-async function setBonusStatus(status) {
-    const { data: authData } = await supabaseClient.auth.getUser();
-    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return showToast("Pouze admin!", 'error');
-    
-    if (status === 'final' && !confirm('Opravdu uzavřít bonusy FINÁLNĚ?\n\nKlidně to půjde otevřít zpátky, ale hráči uvidí "FINÁLNÍ" stav.')) return;
-    
-    try {
-        const { error } = await supabaseClient.from('admin_vysledky').update({ bonus_status: status }).eq('id', 1);
-        if (error) throw error;
-        
-        const labels = {
-            idle: '⏸️ Bonus PAUSE',
-            live: '🔴 LIVE mode aktivní – hráči vidí průběžné body!',
-            final: '🏁 Bonusy uzavřeny finálně!'
-        };
-        showToast(labels[status], 'success', 3000);
-        
-        if (typeof loadAll === 'function') await loadAll();
-        if (typeof renderAdminPanel === 'function') renderAdminPanel();
-    } catch (err) {
-        showToast("Chyba: " + err.message, 'error');
-    }
-}// ════════════════════════════════════════════
-// 🔴 LIVE BONUS ADMIN PANEL
-// ════════════════════════════════════════════
-
-async function liveBonusAdjust(field, delta) {
-    const { data: authData } = await supabaseClient.auth.getUser();
-    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return showToast("Pouze admin!", 'error');
-    
-    try {
-        const { data: adm } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).single();
-        const bonus = adm?.bonus || {};
-        const current = parseInt(bonus[field]) || 0;
-        bonus[field] = Math.max(0, current + delta);
-        
-        const { error } = await supabaseClient.from('admin_vysledky').update({ bonus }).eq('id', 1);
-        if (error) throw error;
-        
-        const labels = { totalGoals: '⚽ Branek', zeroZeroResults: '0️⃣ Zápasy 0:0' };
-        showToast(`${labels[field]}: ${bonus[field]}`, 'success', 1500);
-        
-        if (typeof loadAll === 'function') await loadAll();
-        if (typeof renderAdminPanel === 'function') renderAdminPanel();
-    } catch (err) {
-        showToast("Chyba: " + err.message, 'error');
-    }
-}
-
-async function setBonusStatus(status) {
-    const { data: authData } = await supabaseClient.auth.getUser();
-    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return showToast("Pouze admin!", 'error');
-    
-    if (status === 'final' && !confirm('Opravdu uzavřít bonusy FINÁLNĚ?\n\nKlidně to půjde otevřít zpátky, ale hráči uvidí "FINÁLNÍ" stav.')) return;
-    
-    try {
-        const { error } = await supabaseClient.from('admin_vysledky').update({ bonus_status: status }).eq('id', 1);
-        if (error) throw error;
-        
-        const labels = {
-            idle: '⏸️ Bonus PAUSE',
-            live: '🔴 LIVE mode aktivní – hráči vidí průběžné body!',
-            final: '🏁 Bonusy uzavřeny finálně!'
-        };
-        showToast(labels[status], 'success', 3000);
-        
-        if (typeof loadAll === 'function') await loadAll();
-        if (typeof renderAdminPanel === 'function') renderAdminPanel();
-    } catch (err) {
-        showToast("Chyba: " + err.message, 'error');
-    }
-}
-    // Render bonus tipů v profilu – ukáže tipované hodnoty + porovná se skutečností (pokud admin už vyhlásil)
-function renderBonusTipy(tip, real) {
-    if (!tip?.bonus) return '';
-    const b = tip.bonus;
-    // Pokud žádný bonus není vyplněn, vůbec nezobrazuj
-    if (!b.topScorer && !b.topGoalkeeper && b.totalGoals == null && b.zeroZeroResults == null) return '';
-    
-    const rb = real?.bonus || {};
-    
-    const renderRow = (icon, label, tipVal, realVal, isNumber) => {
-        if (!tipVal && tipVal !== 0) return '';
-        let status = '';
-        if (realVal !== undefined && realVal !== null && realVal !== '' && realVal !== 0) {
-            const match = isNumber 
-                ? parseInt(tipVal) === parseInt(realVal)
-                : String(tipVal).trim().toLowerCase() === String(realVal).trim().toLowerCase();
-            status = match 
-                ? '<span style="color:#22c55e; margin-left:6px; font-weight:700;">✅ +8</span>' 
-                : `<span style="color:#ef4444; margin-left:6px; font-size:0.75rem;">❌ ${realVal}</span>`;
-        }
-        return `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; font-size:0.82rem; border-bottom:1px solid rgba(212,175,55,0.05);">
-                <span style="color:#94a3b8;">${icon} ${label}</span>
-                <span style="color:#f0e6c8; font-weight:600;">${tipVal}${status}</span>
-            </div>
-        `;
-    };
-    
-    return `
-        <div style="margin-top:16px; padding:14px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.2); border-radius:12px;">
-            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:10px; text-align:center;">🎁 Bonus tipy</div>
-            ${renderRow('🥇', 'Zlatá kopačka', b.topScorer, rb.topScorer, false)}
-            ${renderRow('🧤', 'Zlatá rukavice', b.topGoalkeeper, rb.topGoalkeeper, false)}
-            ${renderRow('⚽', 'Branek v turnaji', b.totalGoals, rb.totalGoals, true)}
-            ${renderRow('0️⃣', 'Zápasy 0:0', b.zeroZeroResults, rb.zeroZeroResults, true)}
-        </div>
-    `;
-}
-    // Zobraz bonus sekci jen pro admina
-async function aktualizujBonusSekciVisibility() {
-    const { data: authData } = await supabaseClient.auth.getUser();
-    const isAdmin = authData?.user?.id === "92a1e51b-e03c-48d7-99df-76c2f60a455f";
-    const sec = document.getElementById('bonus-section');
-    const dotBonus = document.getElementById('step-bonus');
-    const odeslat = document.getElementById('odeslat-section');
-    
-    if (sec) sec.style.display = isAdmin ? 'block' : 'none';
-    if (dotBonus) dotBonus.style.display = isAdmin ? 'inline-block' : 'none';
-    if (odeslat) odeslat.style.display = isAdmin ? 'none' : 'block';
-}
-
-
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-    appId: "e4db4056-c4db-422c-b7f4-8943a720d548",
-    notifyButton: {
-        enable: true,
-        size: 'medium',
-        position: 'bottom-left',
-        prenotify: true,
-        showCredit: false,
-        text: {
-            'tip.state.unsubscribed': 'Přihlas se k notifikacím',
-            'tip.state.subscribed': "Jsi přihlášen k notifikacím",
-            'tip.state.blocked': "Notifikace jsou zablokované",
-            'message.prenotify': 'Klikni pro přihlášení k notifikacím',
-            'message.action.subscribed': "Děkujeme za přihlášení!",
-            'message.action.resubscribed': "Jsi přihlášen!",
-            'message.action.unsubscribed': "Už nebudeš dostávat notifikace.",
-            'dialog.main.title': 'Spravovat notifikace',
-            'dialog.main.button.subscribe': 'PŘIHLÁSIT',
-            'dialog.main.button.unsubscribe': 'ODHLÁSIT',
-            'dialog.blocked.title': 'Odblokovat notifikace',
-            'dialog.blocked.message': "Postupuj podle instrukcí pro povolení notifikací:"
-        }
-    },
-    allowLocalhostAsSecureOrigin: true,
-});
-        console.log("🔔 OneSignal inicializován");
-    });
-</script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
 <header class="site-header">
@@ -2257,29 +2067,17 @@ input:focus {
 
             <div id="playoff-container"></div>
             <div id="sec-thirds" class="hidden"></div>
-            
-           <div id="final-box" class="hidden section-box" style="border: 2px solid var(--winner); text-align: center; background: linear-gradient(180deg, rgba(30,41,59,0.8) 0%, rgba(34,197,94,0.1) 100%);">
-    <div class="section-header" style="background: rgba(34,197,94,0.2); border-bottom: 1px solid var(--winner); justify-content: center;">🏆 FINÁLNÍ ODESLÁNÍ</div>
-    <div class="section-content" style="padding: 40px;">
-        <h2 id="winner-display" style="color:var(--winner); margin: 0 0 30px 0; font-size: 2rem; font-weight: 900; text-shadow: 0 0 20px rgba(34,197,94,0.4);"></h2>
-        
-        <div class="countdown-wrapper" style="max-width: 400px; margin: 0 auto 25px auto; background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #38bdf8;">
-    <div class="countdown-title" style="color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 8px;">Tipování se uzavře za:</div>
-    
-    <div class="countdown-numbers js-timer-container" style="color: #fff; font-size: 1.8rem; font-weight: 900;">
-        <span class="cd-days" style="color: #38bdf8;">00</span>d : 
-        <span class="cd-hours" style="color: #38bdf8;">00</span>h : 
-        <span class="cd-mins" style="color: #38bdf8;">00</span>m : 
-        <span class="cd-secs" style="color: #38bdf8;">00</span>s
+            <!-- 🎁 BONUS PAGE - SAMOSTATNÁ SEKCE -->
+<div id="bonus-page" class="section-box hidden" style="margin-bottom: 25px;">
+    <div class="section-header" style="background: linear-gradient(90deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05)); border-bottom: 1px solid rgba(212,175,55,0.2);">
+        <div class="section-title" style="color: #d4af37;">
+            🎁 BONUS TIPY
+        </div>
     </div>
-
-    <div class="countdown-expired" style="display: none; color: #ef4444; font-weight: bold; font-size: 1.2rem;">
-        <i class="fas fa-lock"></i> Tipování je uzavřeno!
-    </div>
-</div>
+    <div class="section-content">
         
-<!-- 🎁 BONUS TIPY (jen admin v testu) -->
-<div id="bonus-section" style="display:none; max-width:400px; margin:0 auto 25px auto; padding:20px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.25); border-radius:14px; scroll-margin-top:90px;">
+      <!-- 🎁 BONUS TIPY (jen admin v testu) -->
+<div id="bonus-section" style="display:block; max-width:400px; margin:0 auto 25px auto; padding:20px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.25); border-radius:14px; scroll-margin-top:90px;">
     <div style="text-align:center; margin-bottom:14px;">
         <div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:4px;">🧪 ADMIN TEST</div>
         <div style="font-size:1rem; font-weight:900; color:#d4af37; letter-spacing:1.5px; text-transform:uppercase;">🎁 Bonus tipy</div>
@@ -2352,6 +2150,30 @@ input:focus {
         Pokračovat na odeslat →
     </button>
 </div>
+        
+    </div>
+</div>
+           <div id="final-box" class="hidden section-box" style="border: 2px solid var(--winner); text-align: center; background: linear-gradient(180deg, rgba(30,41,59,0.8) 0%, rgba(34,197,94,0.1) 100%);">
+    <div class="section-header" style="background: rgba(34,197,94,0.2); border-bottom: 1px solid var(--winner); justify-content: center;">🏆 FINÁLNÍ ODESLÁNÍ</div>
+    <div class="section-content" style="padding: 40px;">
+        <h2 id="winner-display" style="color:var(--winner); margin: 0 0 30px 0; font-size: 2rem; font-weight: 900; text-shadow: 0 0 20px rgba(34,197,94,0.4);"></h2>
+        
+        <div class="countdown-wrapper" style="max-width: 400px; margin: 0 auto 25px auto; background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #38bdf8;">
+    <div class="countdown-title" style="color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 8px;">Tipování se uzavře za:</div>
+    
+    <div class="countdown-numbers js-timer-container" style="color: #fff; font-size: 1.8rem; font-weight: 900;">
+        <span class="cd-days" style="color: #38bdf8;">00</span>d : 
+        <span class="cd-hours" style="color: #38bdf8;">00</span>h : 
+        <span class="cd-mins" style="color: #38bdf8;">00</span>m : 
+        <span class="cd-secs" style="color: #38bdf8;">00</span>s
+    </div>
+
+    <div class="countdown-expired" style="display: none; color: #ef4444; font-weight: bold; font-size: 1.2rem;">
+        <i class="fas fa-lock"></i> Tipování je uzavřeno!
+    </div>
+</div>
+        
+
 
 <!-- 🆕 OBAL ODESLAT SEKCE -->
 <div id="odeslat-section">
@@ -2368,6 +2190,201 @@ input:focus {
 </div>
 
          <script>
+             function ukazOdeslat() {
+    // Skryj bonus page
+    const bonusPage = document.getElementById('bonus-page');
+    if (bonusPage) bonusPage.classList.add('hidden');
+    
+    // Otevři final-box (původní odeslat okno)
+    const finalBox = document.getElementById('final-box');
+    if (finalBox) {
+        finalBox.classList.remove('hidden');
+        const winDisp = document.getElementById('winner-display');
+        if (winDisp && state.playoff.winner) {
+            winDisp.innerText = "TVŮJ VÍTĚZ: " + state.playoff.winner;
+        }
+        setTimeout(() => {
+            finalBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+}
+    // ════════════════════════════════════════════
+// 🔴 LIVE BONUS ADMIN PANEL
+// ════════════════════════════════════════════
+
+async function liveBonusAdjust(field, delta) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return showToast("Pouze admin!", 'error');
+    
+    try {
+        const { data: adm } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).single();
+        const bonus = adm?.bonus || {};
+        const current = parseInt(bonus[field]) || 0;
+        bonus[field] = Math.max(0, current + delta);
+        
+        const { error } = await supabaseClient.from('admin_vysledky').update({ bonus }).eq('id', 1);
+        if (error) throw error;
+        
+        const labels = { totalGoals: '⚽ Branek', zeroZeroResults: '0️⃣ Zápasy 0:0' };
+        showToast(`${labels[field]}: ${bonus[field]}`, 'success', 1500);
+        
+        if (typeof loadAll === 'function') await loadAll();
+        if (typeof renderAdminPanel === 'function') renderAdminPanel();
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
+
+async function setBonusStatus(status) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return showToast("Pouze admin!", 'error');
+    
+    if (status === 'final' && !confirm('Opravdu uzavřít bonusy FINÁLNĚ?\n\nKlidně to půjde otevřít zpátky, ale hráči uvidí "FINÁLNÍ" stav.')) return;
+    
+    try {
+        const { error } = await supabaseClient.from('admin_vysledky').update({ bonus_status: status }).eq('id', 1);
+        if (error) throw error;
+        
+        const labels = {
+            idle: '⏸️ Bonus PAUSE',
+            live: '🔴 LIVE mode aktivní – hráči vidí průběžné body!',
+            final: '🏁 Bonusy uzavřeny finálně!'
+        };
+        showToast(labels[status], 'success', 3000);
+        
+        if (typeof loadAll === 'function') await loadAll();
+        if (typeof renderAdminPanel === 'function') renderAdminPanel();
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}// ════════════════════════════════════════════
+// 🔴 LIVE BONUS ADMIN PANEL
+// ════════════════════════════════════════════
+
+async function liveBonusAdjust(field, delta) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return showToast("Pouze admin!", 'error');
+    
+    try {
+        const { data: adm } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).single();
+        const bonus = adm?.bonus || {};
+        const current = parseInt(bonus[field]) || 0;
+        bonus[field] = Math.max(0, current + delta);
+        
+        const { error } = await supabaseClient.from('admin_vysledky').update({ bonus }).eq('id', 1);
+        if (error) throw error;
+        
+        const labels = { totalGoals: '⚽ Branek', zeroZeroResults: '0️⃣ Zápasy 0:0' };
+        showToast(`${labels[field]}: ${bonus[field]}`, 'success', 1500);
+        
+        if (typeof loadAll === 'function') await loadAll();
+        if (typeof renderAdminPanel === 'function') renderAdminPanel();
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
+
+async function setBonusStatus(status) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return showToast("Pouze admin!", 'error');
+    
+    if (status === 'final' && !confirm('Opravdu uzavřít bonusy FINÁLNĚ?\n\nKlidně to půjde otevřít zpátky, ale hráči uvidí "FINÁLNÍ" stav.')) return;
+    
+    try {
+        const { error } = await supabaseClient.from('admin_vysledky').update({ bonus_status: status }).eq('id', 1);
+        if (error) throw error;
+        
+        const labels = {
+            idle: '⏸️ Bonus PAUSE',
+            live: '🔴 LIVE mode aktivní – hráči vidí průběžné body!',
+            final: '🏁 Bonusy uzavřeny finálně!'
+        };
+        showToast(labels[status], 'success', 3000);
+        
+        if (typeof loadAll === 'function') await loadAll();
+        if (typeof renderAdminPanel === 'function') renderAdminPanel();
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
+    // Render bonus tipů v profilu – ukáže tipované hodnoty + porovná se skutečností (pokud admin už vyhlásil)
+function renderBonusTipy(tip, real) {
+    if (!tip?.bonus) return '';
+    const b = tip.bonus;
+    // Pokud žádný bonus není vyplněn, vůbec nezobrazuj
+    if (!b.topScorer && !b.topGoalkeeper && b.totalGoals == null && b.zeroZeroResults == null) return '';
+    
+    const rb = real?.bonus || {};
+    
+    const renderRow = (icon, label, tipVal, realVal, isNumber) => {
+        if (!tipVal && tipVal !== 0) return '';
+        let status = '';
+        if (realVal !== undefined && realVal !== null && realVal !== '' && realVal !== 0) {
+            const match = isNumber 
+                ? parseInt(tipVal) === parseInt(realVal)
+                : String(tipVal).trim().toLowerCase() === String(realVal).trim().toLowerCase();
+            status = match 
+                ? '<span style="color:#22c55e; margin-left:6px; font-weight:700;">✅ +8</span>' 
+                : `<span style="color:#ef4444; margin-left:6px; font-size:0.75rem;">❌ ${realVal}</span>`;
+        }
+        return `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; font-size:0.82rem; border-bottom:1px solid rgba(212,175,55,0.05);">
+                <span style="color:#94a3b8;">${icon} ${label}</span>
+                <span style="color:#f0e6c8; font-weight:600;">${tipVal}${status}</span>
+            </div>
+        `;
+    };
+    
+    return `
+        <div style="margin-top:16px; padding:14px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.2); border-radius:12px;">
+            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:10px; text-align:center;">🎁 Bonus tipy</div>
+            ${renderRow('🥇', 'Zlatá kopačka', b.topScorer, rb.topScorer, false)}
+            ${renderRow('🧤', 'Zlatá rukavice', b.topGoalkeeper, rb.topGoalkeeper, false)}
+            ${renderRow('⚽', 'Branek v turnaji', b.totalGoals, rb.totalGoals, true)}
+            ${renderRow('0️⃣', 'Zápasy 0:0', b.zeroZeroResults, rb.zeroZeroResults, true)}
+        </div>
+    `;
+}
+   async function aktualizujBonusSekciVisibility() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    const isAdmin = authData?.user?.id === "92a1e51b-e03c-48d7-99df-76c2f60a455f";
+    const dotBonus = document.getElementById('step-bonus');
+    
+    if (dotBonus) dotBonus.style.display = isAdmin ? 'inline-block' : 'none';
+    
+    // Bonus-page se zobrazuje jen pro admina (přes hidden class), ale samotná bonus-section je vždy visible když page existuje
+}
+
+
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+    appId: "e4db4056-c4db-422c-b7f4-8943a720d548",
+    notifyButton: {
+        enable: true,
+        size: 'medium',
+        position: 'bottom-left',
+        prenotify: true,
+        showCredit: false,
+        text: {
+            'tip.state.unsubscribed': 'Přihlas se k notifikacím',
+            'tip.state.subscribed': "Jsi přihlášen k notifikacím",
+            'tip.state.blocked': "Notifikace jsou zablokované",
+            'message.prenotify': 'Klikni pro přihlášení k notifikacím',
+            'message.action.subscribed': "Děkujeme za přihlášení!",
+            'message.action.resubscribed': "Jsi přihlášen!",
+            'message.action.unsubscribed': "Už nebudeš dostávat notifikace.",
+            'dialog.main.title': 'Spravovat notifikace',
+            'dialog.main.button.subscribe': 'PŘIHLÁSIT',
+            'dialog.main.button.unsubscribe': 'ODHLÁSIT',
+            'dialog.blocked.title': 'Odblokovat notifikace',
+            'dialog.blocked.message': "Postupuj podle instrukcí pro povolení notifikací:"
+        }
+    },
+    allowLocalhostAsSecureOrigin: true,
+});
+        console.log("🔔 OneSignal inicializován");
+    });
     // ════════════════════════════════════════════
 // 💬 @ ZMÍNKY V CHATU
 // ════════════════════════════════════════════
@@ -6556,38 +6573,42 @@ function cfS(sid, count) {
         const finalists = state.playoff['s4']; // Vítězové ze semifinále
         genStage('Finále', finalists, 1, 's2', 'sec-s3', 'dot-s3');
     } 
-   else if(sid === 's2') {
-    // --- 🏆 KONEC PAVOUKA - FINÁLNÍ SHRNUTÍ 🏆 ---
+ else if(sid === 's2') {
     state.playoff.winner = wins[0]; 
     const bronzeEl = document.querySelector('#sec-s3 .selected');
     state.playoff.bronze = bronzeEl ? bronzeEl.innerText : "Nezvoleno"; 
-
-    // Skryjeme pavouka
-   document.querySelectorAll('.section-box:not(#section-leaderboard):not(#bankbody-section)').forEach(d => {
-    d.classList.add('hidden');
-});
     
-    // Ukážeme finální potvrzovací box
-    const finalBox = document.getElementById('final-box');
-    if(finalBox) {
-        finalBox.classList.remove('hidden');
-        const winDisp = document.getElementById('winner-display');
-        if(winDisp) winDisp.innerText = "TVŮJ VÍTĚZ: " + wins[0];
-
-        // 🆕 Aktualizuj viditelnost bonus sekce (admin vs ostatní)
-        if (typeof aktualizujBonusSekciVisibility === 'function') {
-            aktualizujBonusSekciVisibility();
+    // Skryjeme pavouka
+    document.querySelectorAll('.section-box:not(#section-leaderboard):not(#bankbody-section)').forEach(d => {
+        d.classList.add('hidden');
+    });
+    
+    // Zjistíme jestli je admin (pomocí bonus-page existence + admin kontrola)
+    supabaseClient.auth.getUser().then(({ data: authData }) => {
+        const isAdmin = authData?.user?.id === "92a1e51b-e03c-48d7-99df-76c2f60a455f";
+        
+        if (isAdmin) {
+            // 🎁 ADMIN: Skoč na BONUS sekci
+            const bonusPage = document.getElementById('bonus-page');
+            if (bonusPage) {
+                bonusPage.classList.remove('hidden');
+                setTimeout(() => {
+                    bonusPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        } else {
+            // 🏆 NON-ADMIN: Rovnou otevři odeslat (final-box)
+            const finalBox = document.getElementById('final-box');
+            if(finalBox) {
+                finalBox.classList.remove('hidden');
+                const winDisp = document.getElementById('winner-display');
+                if(winDisp) winDisp.innerText = "TVŮJ VÍTĚZ: " + wins[0];
+                setTimeout(() => {
+                    finalBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
         }
-
-        // --- 🚀 FIX PRO MOBILY: SCROLL NA BONUS POKUD VIDITELNÝ ---
-        setTimeout(() => {
-            const bonusSection = document.getElementById('bonus-section');
-            const target = (bonusSection && bonusSection.style.display !== 'none') 
-                ? bonusSection 
-                : finalBox;
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-    }
+    });
 }
     // TADY BYLO window.scrollTo(0,0) - SMAZÁNO!
 }
