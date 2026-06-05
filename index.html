@@ -2362,14 +2362,20 @@ input:focus {
 </div>
     
 <script>
-    // Realtime: admin výsledky → auto-refresh žebříčku
-supabaseClient
-    .channel('admin_vysledky_changes')
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'admin_vysledky' }, async (payload) => {
-        console.log('🔄 Admin výsledky se změnily – refresh žebříčku');
-        if (typeof loadAll === 'function') await loadAll();
-    })
-    .subscribe();
+  // Realtime: admin výsledky → auto-refresh žebříčku
+window.addEventListener('DOMContentLoaded', () => {
+    if (typeof supabaseClient === 'undefined') {
+        console.warn('Supabase ještě není připraven, realtime subscription odložen');
+        return;
+    }
+    supabaseClient
+        .channel('admin_vysledky_changes')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'admin_vysledky' }, async (payload) => {
+            console.log('🔄 Admin výsledky se změnily – refresh žebříčku');
+            if (typeof loadAll === 'function') await loadAll();
+        })
+        .subscribe();
+});
     // ════════════════════════════════════════════
 // 💬 @ ZMÍNKY V CHATU
 // ════════════════════════════════════════════
@@ -5666,12 +5672,13 @@ async function renderLeaderboard(data, real) {
         if (authData?.user) loggedUserId = authData.user.id;
     } catch (e) { console.warn("Uživatel nepřihlášen."); }
 
-    // --- 🕒 KONTROLA DEADLINE ---
-    const isBeforeDeadline = new Date().getTime() < new Date("2026-06-11T20:00:00").getTime();
+   // --- 🕒 KONTROLA DEADLINE ---
+const isBeforeDeadline = new Date().getTime() < new Date("2026-06-11T20:00:00").getTime();
 
-    // --- 📦 DATA ADMINA A VÝPOČET BODŮ ---
-    const adminData = real || window.currentResults || {};
-    // 🔴 Ukaž/skryj LIVE bonus banner
+// --- 📦 DATA ADMINA A VÝPOČET BODŮ ---
+const adminData = real || window.currentResults || {};
+
+// 🔴 Ukaž/skryj LIVE bonus banner
 const liveInd = document.getElementById('live-bonus-indicator');
 if (liveInd) {
     liveInd.style.display = (adminData.bonus_status === 'live') ? 'block' : 'none';
