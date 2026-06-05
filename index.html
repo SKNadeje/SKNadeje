@@ -1881,6 +1881,16 @@ input:focus {
 </style>
 </head>
 <body>
+    <!-- 🔴 LIVE BANNER pro bonus -->
+<div id="bonus-live-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9990; padding:12px 20px; background:linear-gradient(90deg, #ef4444, #b91c1c); color:white; text-align:center; font-weight:900; font-size:0.85rem; letter-spacing:1px; box-shadow:0 4px 16px rgba(239,68,68,0.5);">
+    <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:white; margin-right:10px; vertical-align:middle; animation:livePulse 1s infinite;"></span>
+    🔴 LIVE: Vyhodnocování bonusů probíhá – body se průběžně aktualizují
+</div>
+
+<!-- ✅ FINÁLNÍ BANNER pro bonus -->
+<div id="bonus-final-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9990; padding:12px 20px; background:linear-gradient(90deg, #22c55e, #15803d); color:white; text-align:center; font-weight:900; font-size:0.85rem; letter-spacing:1px; box-shadow:0 4px 16px rgba(34,197,94,0.5);">
+    ✅ FINÁLNÍ: Bonusy byly definitivně vyhodnoceny
+</div>
 <img src="logo-wc2026.png" class="side-decor left" alt="">
 <img src="logo-wc2026.png" class="side-decor right" alt="">
     
@@ -2122,7 +2132,9 @@ input:focus {
             <div id="sec-thirds" class="hidden"></div>
 <!-- 🎁 BONUS SEKCE -->
 <div id="phase-bonus" class="hidden section-box">
-    <div class="section-header">🎁 BONUS TIPY</div>
+    <div class="section-header">
+        <span>🎁 BONUS TIPY <span id="bonus-status-badge"></span></span>
+    </div>
     <div class="section-content" style="padding: 25px;">
         
         <div style="text-align:center; margin-bottom:20px;">
@@ -2254,6 +2266,29 @@ input:focus {
 </div>
     
 <script>
+   function aktualizujBonusLiveBanner() {
+    const liveBanner = document.getElementById('bonus-live-banner');
+    const finalBanner = document.getElementById('bonus-final-banner');
+    const badge = document.getElementById('bonus-status-badge');
+    
+    const r = window.currentResults || {};
+    const fs = r.faze_status || {};
+    const bonusStatus = fs.bonus || 'none';
+    
+    if (liveBanner) liveBanner.style.display = bonusStatus === 'live' ? 'block' : 'none';
+    if (finalBanner) finalBanner.style.display = bonusStatus === 'final' ? 'block' : 'none';
+    
+    // Badge v hlavičce bonus sekce
+    if (badge) {
+        if (bonusStatus === 'live') {
+            badge.innerHTML = ` <span class="live-badge"><span class="live-dot"></span>LIVE</span>`;
+        } else if (bonusStatus === 'final') {
+            badge.innerHTML = ` <span class="final-badge">✓ FINÁLNÍ</span>`;
+        } else {
+            badge.innerHTML = '';
+        }
+    }
+}
     // 🎁 Po potvrzení bonusu → otevři odeslat tip
 function confirmBonus() {
     // Skryj bonus sekci
@@ -3520,7 +3555,8 @@ function renderStatusPanel() {
         { k: 's8', n: '1/4' },
         { k: 's4', n: 'Semi' },
         { k: 'bronze', n: 'Bronz' },
-        { k: 'winner', n: 'Vítěz' }
+        { k: 'winner', n: 'Vítěz' },
+        { k: 'bonus', n: '🎁 Bonus' }
     ];
 
     const tlacitkoHtml = (klic, label) => {
@@ -5376,6 +5412,7 @@ async function loadAll() {
             if (typeof renderAnketa === "function") renderAnketa();
             if (typeof renderProgress === "function") renderProgress();
             if (typeof renderStatusPanel === "function") renderStatusPanel();
+            if (typeof aktualizujBonusLiveBanner === "function") aktualizujBonusLiveBanner();
             if (typeof init === "function") init();
             console.log("✅ Všechny komponenty vykresleny.");
         } else {
@@ -5383,10 +5420,11 @@ async function loadAll() {
             if (typeof renderLeaderboard === "function") {
                 renderLeaderboard([], window.currentResults || {});
             }
-           // --- C. BODY VE HŘE (i bez tipů) ---
+          // --- C. BODY VE HŘE (i bez tipů) ---
             if (typeof renderBodyVeHre === "function") renderBodyVeHre();
             if (typeof renderAnketa === "function") renderAnketa();
             if (typeof renderStatusPanel === "function") renderStatusPanel();
+            if (typeof aktualizujBonusLiveBanner === "function") aktualizujBonusLiveBanner();
             if (typeof init === "function") init();
         }
     } catch (error) {
