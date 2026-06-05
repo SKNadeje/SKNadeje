@@ -2123,9 +2123,81 @@ input:focus {
 <!-- 🎁 BONUS SEKCE -->
 <div id="phase-bonus" class="hidden section-box">
     <div class="section-header">🎁 BONUS TIPY</div>
-    <div class="section-content" style="padding: 40px; text-align: center;">
-        <div style="font-size: 2rem; color: #d4af37; font-weight: 900; margin-bottom: 20px;">test</div>
-        <button class="btn btn-primary" style="margin-top:25px; font-size: 1.1rem; padding: 16px;" onclick="confirmBonus()">
+    <div class="section-content" style="padding: 25px;">
+        
+        <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size:0.75rem; color:#94a3b8;">+8 bodů za každý správný tip</div>
+        </div>
+
+        <div style="max-width:400px; margin:0 auto;">
+
+            <!-- Zlatá kopačka -->
+            <div style="margin-bottom:14px;">
+                <label style="display:block; font-size:0.75rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:6px;">🥇 Zlatá kopačka (nejlepší střelec)</label>
+                <input list="dl-streleci" id="bonus-topScorer" placeholder="Vyber nebo napiš jméno..." style="width:100%; padding:11px 14px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.9rem; box-sizing:border-box;">
+                <datalist id="dl-streleci">
+                    <option value="Erling Haaland"></option>
+                    <option value="Kylian Mbappé"></option>
+                    <option value="Harry Kane"></option>
+                    <option value="Vinicius Jr."></option>
+                    <option value="Jude Bellingham"></option>
+                    <option value="Bukayo Saka"></option>
+                    <option value="Lautaro Martínez"></option>
+                    <option value="Lionel Messi"></option>
+                    <option value="Cristiano Ronaldo"></option>
+                    <option value="Patrik Schick"></option>
+                    <option value="Mohamed Salah"></option>
+                    <option value="Phil Foden"></option>
+                    <option value="Jamal Musiala"></option>
+                    <option value="Lamine Yamal"></option>
+                    <option value="Florian Wirtz"></option>
+                    <option value="Ousmane Dembélé"></option>
+                    <option value="Antoine Griezmann"></option>
+                    <option value="Heung-min Son"></option>
+                    <option value="Romelu Lukaku"></option>
+                    <option value="Victor Osimhen"></option>
+                    <option value="Jonathan David"></option>
+                    <option value="Robert Lewandowski"></option>
+                </datalist>
+            </div>
+
+            <!-- Zlatá rukavice -->
+            <div style="margin-bottom:14px;">
+                <label style="display:block; font-size:0.75rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:6px;">🧤 Zlatá rukavice (nejlepší brankář)</label>
+                <input list="dl-brankari" id="bonus-topGoalkeeper" placeholder="Vyber nebo napiš jméno..." style="width:100%; padding:11px 14px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.9rem; box-sizing:border-box;">
+                <datalist id="dl-brankari">
+                    <option value="Thibaut Courtois"></option>
+                    <option value="Gianluigi Donnarumma"></option>
+                    <option value="Alisson Becker"></option>
+                    <option value="Ederson"></option>
+                    <option value="Mike Maignan"></option>
+                    <option value="Yassine Bounou"></option>
+                    <option value="Diogo Costa"></option>
+                    <option value="André Onana"></option>
+                    <option value="Aaron Ramsdale"></option>
+                    <option value="Unai Simón"></option>
+                    <option value="Jordan Pickford"></option>
+                    <option value="Jiří Pavlenka"></option>
+                    <option value="Emiliano Martínez"></option>
+                    <option value="Wojciech Szczęsny"></option>
+                </datalist>
+            </div>
+
+            <!-- Branek + Zápasy 0:0 -->
+            <div style="display:flex; gap:12px; margin-bottom:20px;">
+                <div style="flex:1;">
+                    <label style="display:block; font-size:0.75rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:6px;">⚽ Branek v turnaji</label>
+                    <input type="number" id="bonus-totalGoals" min="50" max="300" placeholder="např. 145" style="width:100%; padding:11px 14px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.9rem; box-sizing:border-box;">
+                </div>
+                <div style="flex:1;">
+                    <label style="display:block; font-size:0.75rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:6px;">0️⃣ Zápasy 0:0</label>
+                    <input type="number" id="bonus-zeroZeroResults" min="0" max="20" placeholder="např. 3" style="width:100%; padding:11px 14px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.9rem; box-sizing:border-box;">
+                </div>
+            </div>
+
+        </div>
+
+        <button class="btn btn-primary" style="margin-top:10px; font-size: 1.1rem; padding: 16px;" onclick="confirmBonus()">
             Pokračovat na odeslání <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
         </button>
     </div>
@@ -2150,75 +2222,7 @@ input:focus {
         <i class="fas fa-lock"></i> Tipování je uzavřeno!
     </div>
 </div>
-<!-- 🎁 BONUS TIPY (jen admin v testu) -->
-<div id="bonus-section" style="display:none; max-width:400px; margin:0 auto 25px auto; padding:20px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.25); border-radius:14px;">
-    <div style="text-align:center; margin-bottom:14px;">
-        <div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:4px;">🧪 ADMIN TEST</div>
-        <div style="font-size:1rem; font-weight:900; color:#d4af37; letter-spacing:1.5px; text-transform:uppercase;">🎁 Bonus tipy</div>
-        <div style="font-size:0.7rem; color:#94a3b8; margin-top:4px;">+8 bodů za každý správný tip</div>
-    </div>
 
-    <div style="margin-bottom:12px;">
-        <label style="display:block; font-size:0.7rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:4px;">🥇 Zlatá kopačka (nejlepší střelec)</label>
-        <input list="dl-streleci" id="bonus-topScorer" placeholder="Vyber nebo napiš jméno..." style="width:100%; padding:9px 12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
-        <datalist id="dl-streleci">
-            <option value="Erling Haaland"></option>
-            <option value="Kylian Mbappé"></option>
-            <option value="Harry Kane"></option>
-            <option value="Vinicius Jr."></option>
-            <option value="Jude Bellingham"></option>
-            <option value="Bukayo Saka"></option>
-            <option value="Lautaro Martínez"></option>
-            <option value="Lionel Messi"></option>
-            <option value="Cristiano Ronaldo"></option>
-            <option value="Patrik Schick"></option>
-            <option value="Mohamed Salah"></option>
-            <option value="Phil Foden"></option>
-            <option value="Jamal Musiala"></option>
-            <option value="Lamine Yamal"></option>
-            <option value="Florian Wirtz"></option>
-            <option value="Ousmane Dembélé"></option>
-            <option value="Antoine Griezmann"></option>
-            <option value="Heung-min Son"></option>
-            <option value="Romelu Lukaku"></option>
-            <option value="Victor Osimhen"></option>
-            <option value="Jonathan David"></option>
-            <option value="Robert Lewandowski"></option>
-        </datalist>
-    </div>
-
-    <div style="margin-bottom:12px;">
-        <label style="display:block; font-size:0.7rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:4px;">🧤 Zlatá rukavice (nejlepší brankář)</label>
-        <input list="dl-brankari" id="bonus-topGoalkeeper" placeholder="Vyber nebo napiš jméno..." style="width:100%; padding:9px 12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
-        <datalist id="dl-brankari">
-            <option value="Thibaut Courtois"></option>
-            <option value="Gianluigi Donnarumma"></option>
-            <option value="Alisson Becker"></option>
-            <option value="Ederson"></option>
-            <option value="Mike Maignan"></option>
-            <option value="Yassine Bounou"></option>
-            <option value="Diogo Costa"></option>
-            <option value="André Onana"></option>
-            <option value="Aaron Ramsdale"></option>
-            <option value="Unai Simón"></option>
-            <option value="Jordan Pickford"></option>
-            <option value="Jiří Pavlenka"></option>
-            <option value="Emiliano Martínez"></option>
-            <option value="Wojciech Szczęsny"></option>
-        </datalist>
-    </div>
-
-    <div style="display:flex; gap:10px;">
-        <div style="flex:1;">
-            <label style="display:block; font-size:0.7rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:4px;">⚽ Branek v turnaji</label>
-            <input type="number" id="bonus-totalGoals" min="50" max="300" placeholder="např. 145" style="width:100%; padding:9px 12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
-        </div>
-        <div style="flex:1;">
-            <label style="display:block; font-size:0.7rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:4px;">0️⃣ Zápasy 0:0</label>
-            <input type="number" id="bonus-zeroZeroResults" min="0" max="20" placeholder="např. 3" style="width:100%; padding:9px 12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
-        </div>
-    </div>
-</div>
 <input type="text" id="user-name" placeholder="Zadej své jméno pro žebříček" style="margin-bottom:25px; text-align:center; font-size:1.2rem; padding: 16px; max-width: 400px; display: block; margin-left: auto; margin-right: auto; background: #1e293b; color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
 
 <button id="btn-odeslat-tip" class="btn btn-primary" style="font-size: 1.2rem; padding: 18px 40px; max-width: 400px; width: 100%; display: block; margin: 0 auto; background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 0 10px 25px rgba(34,197,94,0.4); border: none; cursor: pointer; border-radius: 8px;" onclick="saveToSupabase()">
