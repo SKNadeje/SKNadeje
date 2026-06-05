@@ -1897,7 +1897,7 @@ input:focus {
     <span class="step-dot" id="dot-s4" onclick="skocNaFazi('dot-s4')" style="cursor:pointer;">Semifinále</span>
    <span class="step-dot" id="dot-s3" onclick="skocNaFazi('dot-s3')" style="cursor:pointer;">3. místo</span>
 <span class="step-dot" id="dot-fin" onclick="skocNaFazi('dot-fin')" style="cursor:pointer;">Finále</span>
-<span class="step-dot" id="step-bonus" onclick="skocNaFazi('bonus-section')" style="cursor:pointer;">🎁 Bonus</span>
+<span class="step-dot" id="step-bonus" onclick="skocNaBonus()" style="cursor:pointer;">🎁 Bonus</span>
       </div>
     </header>
 
@@ -2190,6 +2190,27 @@ input:focus {
 </div>
 
          <script>
+             // Skok na bonus sekci + zvýraznění dotu
+function skocNaBonus() {
+    // Skryj všechny tipovací sekce
+    document.querySelectorAll('.section-box:not(#section-leaderboard):not(#bankbody-section)').forEach(d => {
+        d.classList.add('hidden');
+    });
+    
+    // Ukaž bonus-page
+    const bonusPage = document.getElementById('bonus-page');
+    if (bonusPage) {
+        bonusPage.classList.remove('hidden');
+        setTimeout(() => {
+            bonusPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+    
+    // Aktualizuj active step dot
+    document.querySelectorAll('.step-dot').forEach(d => d.classList.remove('active'));
+    const dotBonus = document.getElementById('step-bonus');
+    if (dotBonus) dotBonus.classList.add('active');
+}
              function ukazOdeslat() {
     // Skryj bonus page
     const bonusPage = document.getElementById('bonus-page');
