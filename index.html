@@ -21,6 +21,105 @@
     <!-- 🔔 OneSignal Push Notifications -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
+    // ════════════════════════════════════════════
+// 🔴 LIVE BONUS ADMIN PANEL
+// ════════════════════════════════════════════
+
+async function liveBonusAdjust(field, delta) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return showToast("Pouze admin!", 'error');
+    
+    try {
+        const { data: adm } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).single();
+        const bonus = adm?.bonus || {};
+        const current = parseInt(bonus[field]) || 0;
+        bonus[field] = Math.max(0, current + delta);
+        
+        const { error } = await supabaseClient.from('admin_vysledky').update({ bonus }).eq('id', 1);
+        if (error) throw error;
+        
+        const labels = { totalGoals: '⚽ Branek', zeroZeroResults: '0️⃣ Zápasy 0:0' };
+        showToast(`${labels[field]}: ${bonus[field]}`, 'success', 1500);
+        
+        if (typeof loadAll === 'function') await loadAll();
+        if (typeof renderAdminPanel === 'function') renderAdminPanel();
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
+
+async function setBonusStatus(status) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return showToast("Pouze admin!", 'error');
+    
+    if (status === 'final' && !confirm('Opravdu uzavřít bonusy FINÁLNĚ?\n\nKlidně to půjde otevřít zpátky, ale hráči uvidí "FINÁLNÍ" stav.')) return;
+    
+    try {
+        const { error } = await supabaseClient.from('admin_vysledky').update({ bonus_status: status }).eq('id', 1);
+        if (error) throw error;
+        
+        const labels = {
+            idle: '⏸️ Bonus PAUSE',
+            live: '🔴 LIVE mode aktivní – hráči vidí průběžné body!',
+            final: '🏁 Bonusy uzavřeny finálně!'
+        };
+        showToast(labels[status], 'success', 3000);
+        
+        if (typeof loadAll === 'function') await loadAll();
+        if (typeof renderAdminPanel === 'function') renderAdminPanel();
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}// ════════════════════════════════════════════
+// 🔴 LIVE BONUS ADMIN PANEL
+// ════════════════════════════════════════════
+
+async function liveBonusAdjust(field, delta) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return showToast("Pouze admin!", 'error');
+    
+    try {
+        const { data: adm } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).single();
+        const bonus = adm?.bonus || {};
+        const current = parseInt(bonus[field]) || 0;
+        bonus[field] = Math.max(0, current + delta);
+        
+        const { error } = await supabaseClient.from('admin_vysledky').update({ bonus }).eq('id', 1);
+        if (error) throw error;
+        
+        const labels = { totalGoals: '⚽ Branek', zeroZeroResults: '0️⃣ Zápasy 0:0' };
+        showToast(`${labels[field]}: ${bonus[field]}`, 'success', 1500);
+        
+        if (typeof loadAll === 'function') await loadAll();
+        if (typeof renderAdminPanel === 'function') renderAdminPanel();
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
+
+async function setBonusStatus(status) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return showToast("Pouze admin!", 'error');
+    
+    if (status === 'final' && !confirm('Opravdu uzavřít bonusy FINÁLNĚ?\n\nKlidně to půjde otevřít zpátky, ale hráči uvidí "FINÁLNÍ" stav.')) return;
+    
+    try {
+        const { error } = await supabaseClient.from('admin_vysledky').update({ bonus_status: status }).eq('id', 1);
+        if (error) throw error;
+        
+        const labels = {
+            idle: '⏸️ Bonus PAUSE',
+            live: '🔴 LIVE mode aktivní – hráči vidí průběžné body!',
+            final: '🏁 Bonusy uzavřeny finálně!'
+        };
+        showToast(labels[status], 'success', 3000);
+        
+        if (typeof loadAll === 'function') await loadAll();
+        if (typeof renderAdminPanel === 'function') renderAdminPanel();
+    } catch (err) {
+        showToast("Chyba: " + err.message, 'error');
+    }
+}
     // Render bonus tipů v profilu – ukáže tipované hodnoty + porovná se skutečností (pokud admin už vyhlásil)
 function renderBonusTipy(tip, real) {
     if (!tip?.bonus) return '';
@@ -112,6 +211,30 @@ async function aktualizujBonusSekciVisibility() {
 </header>
 
 <style>
+    @keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.95); }
+}
+
+#live-bonus-indicator {
+    display: none;
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 99996;
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    color: white;
+    padding: 10px 22px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    box-shadow: 0 6px 24px rgba(239,68,68,0.5);
+    animation: livePulse 1.5s infinite;
+    white-space: nowrap;
+}
     /* === @ZMÍNKY V CHATU === */
 .chat-mention {
     background: rgba(212,175,55,0.18);
@@ -2239,6 +2362,14 @@ input:focus {
 </div>
     
 <script>
+    // Realtime: admin výsledky → auto-refresh žebříčku
+supabaseClient
+    .channel('admin_vysledky_changes')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'admin_vysledky' }, async (payload) => {
+        console.log('🔄 Admin výsledky se změnily – refresh žebříčku');
+        if (typeof loadAll === 'function') await loadAll();
+    })
+    .subscribe();
     // ════════════════════════════════════════════
 // 💬 @ ZMÍNKY V CHATU
 // ════════════════════════════════════════════
@@ -3690,6 +3821,27 @@ window.addEventListener('DOMContentLoaded', () => {
     odznaky.push({ icon: '🎰', label: 'Sázkař', aktivni: !!(tip.winner && tip.winner === outsider && oblibeny !== outsider), popis: 'Vsadil/a na outsidera, kterého málokdo tipuje na vítěze.' });
     odznaky.push({ icon: '🐑', label: 'S davem', aktivni: !!(tip.winner && tip.winner === oblibeny && sortHlasy[0]?.[1] > 1), popis: 'Vsadil/a na nejoblíbenějšího favorita podle hráčů.' });
 
+     // === BONUS TIPY ===
+const rb = (typeof window.currentResults !== 'undefined' ? window.currentResults?.bonus : null) || {};
+const tb = tip?.bonus || {};
+
+const matchStrelec = rb.topScorer && tb.topScorer && 
+    String(rb.topScorer).trim().toLowerCase() === String(tb.topScorer).trim().toLowerCase();
+const matchBrankar = rb.topGoalkeeper && tb.topGoalkeeper && 
+    String(rb.topGoalkeeper).trim().toLowerCase() === String(tb.topGoalkeeper).trim().toLowerCase();
+const matchGoly = rb.totalGoals != null && tb.totalGoals != null && 
+    parseInt(rb.totalGoals) === parseInt(tb.totalGoals);
+const matchNuly = rb.zeroZeroResults != null && tb.zeroZeroResults != null && 
+    parseInt(rb.zeroZeroResults) === parseInt(tb.zeroZeroResults);
+
+odznaky.push({ icon: '🥇', label: 'Zlatá noha', aktivni: matchStrelec, popis: 'Tipoval/a přesně nejlepšího střelce turnaje (Zlatou kopačku).' });
+odznaky.push({ icon: '🧤', label: 'Anděl', aktivni: matchBrankar, popis: 'Tipoval/a přesně nejlepšího brankáře turnaje (Zlatou rukavici).' });
+odznaky.push({ icon: '⚽', label: 'Gólomat', aktivni: matchGoly, popis: 'Tipoval/a přesný počet branek v turnaji.' });
+odznaky.push({ icon: '0️⃣', label: 'Nula', aktivni: matchNuly, popis: 'Tipoval/a přesný počet zápasů s výsledkem 0:0.' });
+
+// MISTR BONUSŮ – všechny 4 správně
+const vsechny4 = matchStrelec && matchBrankar && matchGoly && matchNuly;
+odznaky.push({ icon: '🎁', label: 'Bonusový mistr', aktivni: vsechny4, popis: 'Tipoval/a SPRÁVNĚ všechny 4 bonus kategorie – mistrovský výkon!' });
    // === ČESKÝ FAN ===
 const tipGroupA = (tip.groups && tip.groups[0]) || [];
 const ceskoPostupZeSkupiny = String(tipGroupA[0] || '').trim() === 'Česko' || String(tipGroupA[1] || '').trim() === 'Česko';
@@ -5519,6 +5671,11 @@ async function renderLeaderboard(data, real) {
 
     // --- 📦 DATA ADMINA A VÝPOČET BODŮ ---
     const adminData = real || window.currentResults || {};
+    // 🔴 Ukaž/skryj LIVE bonus banner
+const liveInd = document.getElementById('live-bonus-indicator');
+if (liveInd) {
+    liveInd.style.display = (adminData.bonus_status === 'live') ? 'block' : 'none';
+}
   const r = {
     groups: adminData.groups || adminData.playoff?.groups || [],
     s32:    adminData.s32    || adminData.playoff?.s32    || [],
@@ -6537,6 +6694,49 @@ finalHTML += `
             </div>
         </div>
     </div>`;
+       // === LIVE BONUS PANEL ===
+const bStatus = res.bonus_status || 'idle';
+const bGoals = parseInt(res.bonus?.totalGoals) || 0;
+const bZeros = parseInt(res.bonus?.zeroZeroResults) || 0;
+const statusBadge = {
+    idle: '<span style="background:rgba(148,163,184,0.2); color:#94a3b8; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:700;">⏸️ IDLE</span>',
+    live: '<span style="background:rgba(239,68,68,0.2); color:#ef4444; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:700; animation:livePulse 1.5s infinite;">🔴 LIVE</span>',
+    final: '<span style="background:rgba(34,197,94,0.2); color:#22c55e; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:700;">🏁 FINÁLNÍ</span>'
+}[bStatus];
+
+finalHTML += `
+    <div style="background:linear-gradient(180deg, rgba(239,68,68,0.08) 0%, rgba(212,175,55,0.08) 100%); padding:20px; border-radius:12px; border:2px solid rgba(239,68,68,0.4); grid-column: 1 / -1;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <b style="font-size: 1.2rem; color: #ef4444;">🔴 LIVE bonus tipy</b>
+            ${statusBadge}
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:14px;">
+            <div>
+                <label style="display:block; color:#f0e6c8; font-size:0.85rem; margin-bottom:6px;">⚽ Branek v turnaji: <b style="color:#d4af37;">${bGoals}</b></label>
+                <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                    <button onclick="liveBonusAdjust('totalGoals', -10)" style="flex:1; padding:8px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); border-radius:6px; color:#ef4444; font-weight:700; cursor:pointer;">-10</button>
+                    <button onclick="liveBonusAdjust('totalGoals', -1)" style="flex:1; padding:8px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); border-radius:6px; color:#ef4444; font-weight:700; cursor:pointer;">-1</button>
+                    <button onclick="liveBonusAdjust('totalGoals', 1)" style="flex:1; padding:8px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2); border-radius:6px; color:#22c55e; font-weight:700; cursor:pointer;">+1</button>
+                    <button onclick="liveBonusAdjust('totalGoals', 5)" style="flex:1; padding:8px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); border-radius:6px; color:#22c55e; font-weight:700; cursor:pointer;">+5</button>
+                </div>
+            </div>
+            <div>
+                <label style="display:block; color:#f0e6c8; font-size:0.85rem; margin-bottom:6px;">0️⃣ Zápasy 0:0: <b style="color:#d4af37;">${bZeros}</b></label>
+                <div style="display:flex; gap:4px;">
+                    <button onclick="liveBonusAdjust('zeroZeroResults', -1)" style="flex:1; padding:8px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); border-radius:6px; color:#ef4444; font-weight:700; cursor:pointer;">-1</button>
+                    <button onclick="liveBonusAdjust('zeroZeroResults', 1)" style="flex:1; padding:8px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2); border-radius:6px; color:#22c55e; font-weight:700; cursor:pointer;">+1</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            ${bStatus !== 'live' ? `<button onclick="setBonusStatus('live')" style="flex:1; padding:10px; background:linear-gradient(135deg,#ef4444,#b91c1c); border:none; border-radius:8px; color:white; font-weight:800; cursor:pointer;">🔴 SPUSTIT LIVE</button>` : ''}
+            ${bStatus === 'live' ? `<button onclick="setBonusStatus('idle')" style="flex:1; padding:10px; background:rgba(148,163,184,0.2); border:1px solid rgba(148,163,184,0.4); border-radius:8px; color:#94a3b8; font-weight:800; cursor:pointer;">⏸️ PAUSE</button>` : ''}
+            ${bStatus !== 'final' ? `<button onclick="setBonusStatus('final')" style="flex:1; padding:10px; background:linear-gradient(135deg,#22c55e,#15803d); border:none; border-radius:8px; color:white; font-weight:800; cursor:pointer;">🏁 UZAVŘÍT FINÁLNĚ</button>` : ''}
+            ${bStatus === 'final' ? `<button onclick="setBonusStatus('idle')" style="flex:1; padding:10px; background:rgba(148,163,184,0.2); border:1px solid rgba(148,163,184,0.4); border-radius:8px; color:#94a3b8; font-weight:800; cursor:pointer;">🔄 ZNOVU OTEVŘÍT</button>` : ''}
+        </div>
+    </div>`;
     cont.innerHTML = finalHTML;
 }
     // 1. TUTO FUNKCI NAPOJ NA TLAČÍTKO "ULOŽIT VÝSLEDKY" V ADMINU
@@ -7344,6 +7544,8 @@ if ('serviceWorker' in navigator) {
     <div id="achievement-confetti" style="position:absolute; inset:0; pointer-events:none; overflow:hidden;"></div>
     <div id="achievement-banner-content"></div>
 </div>
+    <!-- 🔴 LIVE BONUS INDIKÁTOR -->
+<div id="live-bonus-indicator">🔴 LIVE BONUS – body se mění v reálném čase</div>
    <div id="toast-container"></div> 
 <div id="notif-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); z-index:100000; justify-content:center; align-items:center; padding:20px;">
     <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; padding:28px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.7);">
