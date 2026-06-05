@@ -4325,11 +4325,13 @@ ${(() => {
 <!-- 🎁 BONUS TIPY -->
         ${(() => {
             const tip = p.tip || {};
+            const ADMIN_ID = "92a1e51b-e03c-48d7-99df-76c2f60a455f";
+            const isAdmin = window.loggedUserIdGlobal === ADMIN_ID;
             const tournamentStarted = new Date().getTime() >= new Date("2026-06-11T21:00:00").getTime();
             const isOwn = window.loggedUserIdGlobal && String(window.loggedUserIdGlobal) === String(p.rowId);
             
-            // Pokud turnaj ještě nezačal a nejde o vlastní profil → skryj
-            if (!tournamentStarted && !isOwn) {
+            // Pokud turnaj ještě nezačal a nejde o vlastní profil ani admina → skryj
+            if (!tournamentStarted && !isOwn && !isAdmin) {
                 return `
                     <div style="margin-top:16px; padding:16px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.2); border-radius:12px; text-align:center;">
                         <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:8px;">🎁 Bonus tipy</div>
