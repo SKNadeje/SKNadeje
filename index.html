@@ -21,6 +21,15 @@
     <!-- 🔔 OneSignal Push Notifications -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
+    function ukazOdeslat() {
+    const odeslat = document.getElementById('odeslat-section');
+    const bonusBtn = document.getElementById('btn-pokracovat-bonus');
+    if (odeslat) odeslat.style.display = 'block';
+    if (bonusBtn) bonusBtn.style.display = 'none';
+    setTimeout(() => {
+        odeslat?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+}
     // ════════════════════════════════════════════
 // 🔴 LIVE BONUS ADMIN PANEL
 // ════════════════════════════════════════════
@@ -164,9 +173,11 @@ async function aktualizujBonusSekciVisibility() {
     const isAdmin = authData?.user?.id === "92a1e51b-e03c-48d7-99df-76c2f60a455f";
     const sec = document.getElementById('bonus-section');
     const dotBonus = document.getElementById('step-bonus');
+    const odeslat = document.getElementById('odeslat-section');
     
     if (sec) sec.style.display = isAdmin ? 'block' : 'none';
     if (dotBonus) dotBonus.style.display = isAdmin ? 'inline-block' : 'none';
+    if (odeslat) odeslat.style.display = isAdmin ? 'none' : 'block';
 }
 
 
@@ -2325,7 +2336,7 @@ input:focus {
         </datalist>
     </div>
 
-    <div style="display:flex; gap:10px;">
+    <div style="display:flex; gap:10px; margin-bottom:16px;">
         <div style="flex:1;">
             <label style="display:block; font-size:0.7rem; color:#d4af37; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:4px;">⚽ Branek v turnaji</label>
             <input type="number" id="bonus-totalGoals" min="50" max="300" placeholder="např. 145" style="width:100%; padding:9px 12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
@@ -2335,52 +2346,26 @@ input:focus {
             <input type="number" id="bonus-zeroZeroResults" min="0" max="20" placeholder="např. 3" style="width:100%; padding:9px 12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
         </div>
     </div>
-</div>
-<input type="text" id="user-name" placeholder="Zadej své jméno pro žebříček" style="margin-bottom:25px; text-align:center; font-size:1.2rem; padding: 16px; max-width: 400px; display: block; margin-left: auto; margin-right: auto; background: #1e293b; color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
 
-<button id="btn-odeslat-tip" class="btn btn-primary" style="font-size: 1.2rem; padding: 18px 40px; max-width: 400px; width: 100%; display: block; margin: 0 auto; background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 0 10px 25px rgba(34,197,94,0.4); border: none; cursor: pointer; border-radius: 8px;" onclick="saveToSupabase()">
-    ODESLAT TIP DO ŽEBŘÍČKU
+    <!-- 🆕 POKRAČOVACÍ TLAČÍTKO -->
+    <button id="btn-pokracovat-bonus" onclick="ukazOdeslat()" style="width:100%; padding:14px; background:linear-gradient(135deg,#d4af37,#9a7b1e); color:#05070f; border:none; border-radius:10px; font-weight:900; font-size:0.95rem; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; box-shadow:0 6px 16px rgba(212,175,55,0.3);">
+        Pokračovat na odeslat →
+    </button>
+</div>
+
+<!-- 🆕 OBAL ODESLAT SEKCE -->
+<div id="odeslat-section">
+    <input type="text" id="user-name" placeholder="Zadej své jméno pro žebříček" style="margin-bottom:25px; text-align:center; font-size:1.2rem; padding: 16px; max-width: 400px; display: block; margin-left: auto; margin-right: auto; background: #1e293b; color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
+
+    <button id="btn-odeslat-tip" class="btn btn-primary" style="font-size: 1.2rem; padding: 18px 40px; max-width: 400px; width: 100%; display: block; margin: 0 auto; background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 0 10px 25px rgba(34,197,94,0.4); border: none; cursor: pointer; border-radius: 8px;" onclick="saveToSupabase()">
+        ODESLAT TIP DO ŽEBŘÍČKU
+    </button>
+
     <button onclick="generatePDF()" class="btn" 
-    style="margin-top:12px; background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:#d4af37; max-width:400px; width:100%; display:block; margin-left:auto; margin-right:auto;">
-    📄 STÁHNOUT TIP JAKO PDF
-</button>
-</button>   </div>
+        style="margin-top:12px; background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:#d4af37; max-width:400px; width:100%; display:block; margin-left:auto; margin-right:auto;">
+        📄 STÁHNOUT TIP JAKO PDF
+    </button>
 </div>
-        </main>
-    </div>
-</div>
-
-<div class="admin-trigger" onclick="checkAdmin()"><i class="fas fa-lock"></i></div>
-
- <div id="payment-modal-overlay" class="modal-overlay" style="display: none;">
-    <div class="payment-modal">
-        <div style="font-size: 2.5rem; margin-bottom: 10px;">🎉</div>
-        <h2>Tipy uloženy!</h2>
-        <p>Pro zařazení do hry zbývá poslední krok:<br>zaplatit startovné.</p>
-        
-        <div id="qr-code-container"></div>
-
-        <button class="close-payment-btn" onclick="closePaymentModal()">
-            MÁM ZAPLACENO / ZAVŘÍT
-        </button>
-    </div>
-</div>
-    
-<script>
-  // Realtime: admin výsledky → auto-refresh žebříčku
-window.addEventListener('DOMContentLoaded', () => {
-    if (typeof supabaseClient === 'undefined') {
-        console.warn('Supabase ještě není připraven, realtime subscription odložen');
-        return;
-    }
-    supabaseClient
-        .channel('admin_vysledky_changes')
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'admin_vysledky' }, async (payload) => {
-            console.log('🔄 Admin výsledky se změnily – refresh žebříčku');
-            if (typeof loadAll === 'function') await loadAll();
-        })
-        .subscribe();
-});
     // ════════════════════════════════════════════
 // 💬 @ ZMÍNKY V CHATU
 // ════════════════════════════════════════════
