@@ -3974,6 +3974,20 @@ ${(() => {
 <!-- 🎁 BONUS TIPY -->
         ${(() => {
             const tip = p.tip || {};
+            const tournamentStarted = new Date().getTime() >= new Date("2026-06-11T21:00:00").getTime();
+            const isOwn = window.loggedUserIdGlobal && String(window.loggedUserIdGlobal) === String(p.rowId);
+            
+            // Pokud turnaj ještě nezačal a nejde o vlastní profil → skryj
+            if (!tournamentStarted && !isOwn) {
+                return `
+                    <div style="margin-top:16px; padding:16px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.2); border-radius:12px; text-align:center;">
+                        <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:8px;">🎁 Bonus tipy</div>
+                        <div style="font-size:2rem; margin-bottom:6px;">🔒</div>
+                        <div style="font-size:0.8rem; color:#94a3b8; line-height:1.5;">Bonus tipy ostatních hráčů budou odhaleny<br><b style="color:#d4af37;">po startu turnaje (11. 6. 2026)</b></div>
+                    </div>
+                `;
+            }
+            
             return renderBonusTipy(tip, adminVys);
         })()}
 
