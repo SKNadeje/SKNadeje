@@ -35,6 +35,16 @@
 </header>
 
 <style>
+    #step-bonus.active {
+    background: linear-gradient(135deg, #d4af37, #9a7b1e) !important;
+    color: #05070f !important;
+    border-color: #d4af37 !important;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4) !important;
+}
+
+#step-bonus:hover {
+    border-color: rgba(212, 175, 55, 0.5);
+}
     @keyframes livePulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.6; transform: scale(0.95); }
@@ -2191,6 +2201,7 @@ input:focus {
 
          <script>
              // Skok na bonus sekci + zvýraznění dotu
+// Skok na bonus sekci + zvýraznění dotu (zachová splněné kroky)
 function skocNaBonus() {
     // Skryj všechny tipovací sekce
     document.querySelectorAll('.section-box:not(#section-leaderboard):not(#bankbody-section)').forEach(d => {
@@ -2201,17 +2212,19 @@ function skocNaBonus() {
     const bonusPage = document.getElementById('bonus-page');
     if (bonusPage) {
         bonusPage.classList.remove('hidden');
-        setTimeout(() => {
+        // Plynulý scroll bez setTimeout (zabrání odskakování)
+        requestAnimationFrame(() => {
             bonusPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+        });
     }
     
-    // Aktualizuj active step dot
-    document.querySelectorAll('.step-dot').forEach(d => d.classList.remove('active'));
+    // Jen PŘIDEJ active na bonus – předchozí splněné kroky NEMAŽEME
     const dotBonus = document.getElementById('step-bonus');
     if (dotBonus) dotBonus.classList.add('active');
 }
-             function ukazOdeslat() {
+
+// Pokračování z bonusu → klasické okno odeslání
+function ukazOdeslat() {
     // Skryj bonus page
     const bonusPage = document.getElementById('bonus-page');
     if (bonusPage) bonusPage.classList.add('hidden');
@@ -2224,9 +2237,10 @@ function skocNaBonus() {
         if (winDisp && state.playoff.winner) {
             winDisp.innerText = "TVŮJ VÍTĚZ: " + state.playoff.winner;
         }
-        setTimeout(() => {
+        // Plynulý scroll bez setTimeout
+        requestAnimationFrame(() => {
             finalBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+        });
     }
 }
     // ════════════════════════════════════════════
