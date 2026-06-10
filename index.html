@@ -21,6 +21,104 @@
     <!-- 🔔 OneSignal Push Notifications -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
+    // 🎯 Spočítá rozsah pozic pro hráče (best / worst case)
+function vypocetSance(rowId) {
+    const real = window.currentResults || {};
+    
+    const stats = profilData.map(p => ({
+        rowId: p.rowId,
+        current: p.points,
+        max: vypocetMaxMozneBody(p.tip, real)
+    }));
+    
+    const me = stats.find(s => String(s.rowId) === String(rowId));
+    if (!me) return null;
+    
+    const guaranteedAhead = stats.filter(o => 
+        String(o.rowId) !== String(rowId) && o.current > me.max
+    ).length;
+    const bestPosition = guaranteedAhead + 1;
+    
+    const couldPass = stats.filter(o => 
+        String(o.rowId) !== String(rowId) && o.max > me.current
+    ).length;
+    const worstPosition = couldPass + 1;
+    
+    return {
+        current: me.current,
+        max: me.max,
+        remaining: me.max - me.current,
+        bestPosition,
+        worstPosition,
+        totalPlayers: profilData.length
+    };
+}
+// 🎯 Spočítá MAXIMÁLNÍ MOŽNÉ body hráče (current + vše co ještě může získat)
+function vypocetMaxMozneBody(tip, real) {
+    if (!tip || !real) return 0;
+    
+    const fs = real.faze_status || {};
+    const grpStatus = fs.groups || {};
+    let maxPts = 0;
+    
+    // SKUPINY
+    const groups = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+    groups.forEach((letter, i) => {
+        const status = grpStatus[letter] || 'none';
+        const tipG = tip.groups?.[i] || [];
+        
+        if (status === 'final' && real.groups?.[i]) {
+            const realTeams = real.groups[i].teams || real.groups[i];
+            if (Array.isArray(realTeams)) {
+                realTeams.forEach((t, p) => {
+                    if (t && tipG[p] && String(t).trim() === String(tipG[p]).trim()) maxPts += 4;
+                });
+            }
+        } else {
+            tipG.forEach(t => { if (t) maxPts += 4; });
+        }
+    });
+    
+    // PLAYOFF
+    const playoffMax = { s32: 2, s16: 3, s8: 4, s4: 5 };
+    Object.entries(playoffMax).forEach(([sid, body]) => {
+        const status = fs[sid] || 'none';
+        const tipTymy = tip[sid] || [];
+        const realTymy = real[sid] || [];
+        
+        if (status === 'final') {
+            tipTymy.forEach(t => {
+                if (t && realTymy.some(x => String(x).trim() === String(t).trim())) maxPts += body;
+            });
+        } else {
+            tipTymy.forEach(t => { if (t) maxPts += body; });
+        }
+    });
+    
+    // BRONZ
+    if ((fs.bronze || 'none') === 'final') {
+        if (real.bronze && tip.bronze && String(real.bronze).trim() === String(tip.bronze).trim()) maxPts += 8;
+    } else if (tip.bronze) maxPts += 8;
+    
+    // VÍTĚZ
+    if ((fs.winner || 'none') === 'final') {
+        if (real.winner && tip.winner && String(real.winner).trim() === String(tip.winner).trim()) maxPts += 12;
+    } else if (tip.winner) maxPts += 12;
+    
+    // BONUS
+    if ((fs.bonus || 'none') === 'final') {
+        maxPts += spocitejBonusBody(tip, real);
+    } else {
+        const tb = tip.bonus || {};
+        if (tb.topScorer) maxPts += 8;
+        if (tb.topGoalkeeper) maxPts += 8;
+        if (tb.totalGoals != null && tb.totalGoals !== '') maxPts += 15;
+        if (tb.zeroZeroResults != null && tb.zeroZeroResults !== '') maxPts += 8;
+    }
+    
+    return maxPts;
+}
+    
     // 🎁 Admin: Rychlé uložení live bonus hodnot
 async function ulozLiveBonus() {
     const { data: authData } = await supabaseClient.auth.getUser();
@@ -2364,6 +2462,183 @@ input:focus {
 </div>
     
 <script>
+// 🧬 Tipař DNA - klasifikace a vizualizace stylu hráče
+function vypocetTiparDNA(p) {
+    const tip = p.tip || {};
+    
+    // === TÝMOVÉ KATEGORIE (síla na MS 2026) ===
+    const TOP_FAVORIT = ['Argentina', 'Francie', 'Brazílie', 'Anglie', 'Španělsko', 'Německo', 'Portugalsko'];
+    const SILNY = ['Belgie', 'Nizozemsko', 'Chorvatsko', 'Uruguay', 'Maroko', 'Švýcarsko', 'Japonsko', 'USA', 'Mexiko', 'Senegal', 'Kolumbie', 'Itálie'];
+    const TMAVY_KUN = ['Norsko', 'Turecko', 'Egypt', 'Írán', 'JAR', 'Ekvádor', 'Austrálie', 'Paraguay', 'Skotsko', 'Rakousko', 'Pobřeží slonoviny', 'Saudská Arábie', 'Jižní Korea'];
+    
+    const kategorieZemy = (zeme) => {
+        if (TOP_FAVORIT.includes(zeme)) return 'fav';
+        if (SILNY.includes(zeme)) return 'silny';
+        if (TMAVY_KUN.includes(zeme)) return 'kun';
+        return 'outsider';
+    };
+    
+    // === 🦁 ODVAHA: outsideři v top pozicích ===
+    let bodyOdvahy = 0, maxBodyOdvahy = 0;
+    
+    if (tip.winner) {
+        const k = kategorieZemy(tip.winner);
+        bodyOdvahy += k === 'outsider' ? 3 : k === 'kun' ? 2 : k === 'silny' ? 1 : 0;
+        maxBodyOdvahy += 3;
+    }
+    if (tip.bronze) {
+        const k = kategorieZemy(tip.bronze);
+        bodyOdvahy += k === 'outsider' ? 2 : k === 'kun' ? 1.5 : k === 'silny' ? 0.5 : 0;
+        maxBodyOdvahy += 2;
+    }
+    (tip.s4 || []).forEach(t => {
+        if (t) {
+            const k = kategorieZemy(t);
+            bodyOdvahy += k === 'outsider' ? 1 : k === 'kun' ? 0.7 : k === 'silny' ? 0.3 : 0;
+            maxBodyOdvahy += 1;
+        }
+    });
+    
+    const odvaha = maxBodyOdvahy > 0 ? Math.round((bodyOdvahy / maxBodyOdvahy) * 100) : 0;
+    
+    // === 💎 ORIGINALITA: shoda s ostatními ===
+    const ostatni = profilData.filter(x => String(x.rowId) !== String(p.rowId));
+    let oBody = 0, oMax = 0;
+    
+    const pridejOrig = (myTip, getterFn, vaha = 1) => {
+        if (!myTip || ostatni.length === 0) return;
+        const shody = ostatni.filter(o => {
+            const ot = getterFn(o);
+            return Array.isArray(ot) 
+                ? ot.some(x => String(x || '').trim().toLowerCase() === String(myTip).trim().toLowerCase())
+                : String(ot || '').trim().toLowerCase() === String(myTip).trim().toLowerCase();
+        }).length;
+        const procent = shody / ostatni.length;
+        oBody += (1 - procent) * vaha;
+        oMax += vaha;
+    };
+    
+    pridejOrig(tip.winner, o => o.tip?.winner, 3);
+    pridejOrig(tip.bronze, o => o.tip?.bronze, 2);
+    (tip.s4 || []).forEach(t => pridejOrig(t, o => o.tip?.s4, 1));
+    
+    const originalita = oMax > 0 ? Math.round((oBody / oMax) * 100) : 0;
+    const konzervatismus = 100 - odvaha;
+    
+    // === URČENÍ TYPU ===
+    let typ, ikona, popis, gradient, akcentColor;
+    
+    if (odvaha >= 60 && originalita >= 50) {
+        typ = 'Hazardér'; ikona = '🎲';
+        popis = 'Sázíš na šokující výsledky a nebojíš se outsiderů.';
+        gradient = 'linear-gradient(135deg, #ef4444, #f97316)';
+        akcentColor = '#f97316';
+    } else if (odvaha < 40 && originalita >= 50) {
+        typ = 'Prorok'; ikona = '🧠';
+        popis = 'Sázíš na favorit, ale s nečekanými tahy.';
+        gradient = 'linear-gradient(135deg, #8b5cf6, #d4af37)';
+        akcentColor = '#a78bfa';
+    } else if (odvaha >= 60 && originalita < 40) {
+        typ = 'Romantik'; ikona = '💝';
+        popis = 'Věříš v outsidery jako ostatní snílci.';
+        gradient = 'linear-gradient(135deg, #ec4899, #f97316)';
+        akcentColor = '#ec4899';
+    } else if (odvaha < 40 && originalita < 40) {
+        typ = 'Analytik'; ikona = '📊';
+        popis = 'Sázíš na jistotu, žádné překvapení.';
+        gradient = 'linear-gradient(135deg, #06b6d4, #3b82f6)';
+        akcentColor = '#06b6d4';
+    } else {
+        typ = 'Stratég'; ikona = '⚖️';
+        popis = 'Vyvážený mix sázek – kalkulovaný risk.';
+        gradient = 'linear-gradient(135deg, #d4af37, #f59e0b)';
+        akcentColor = '#d4af37';
+    }
+    
+    // === NEJORIGINÁLNĚJŠÍ TIP ===
+    let nejTip = null;
+    const kandidatu = [
+        { co: '🏆 Vítěz', val: tip.winner, getter: o => o.tip?.winner },
+        { co: '🥉 3. místo', val: tip.bronze, getter: o => o.tip?.bronze }
+    ];
+    (tip.s4 || []).forEach(t => kandidatu.push({ co: '⚡ Semifinále', val: t, getter: o => o.tip?.s4 }));
+    
+    kandidatu.forEach(k => {
+        if (k.val && ostatni.length > 0) {
+            const shody = ostatni.filter(o => {
+                const ot = k.getter(o);
+                return Array.isArray(ot)
+                    ? ot.some(x => String(x || '').trim().toLowerCase() === String(k.val).trim().toLowerCase())
+                    : String(ot || '').trim().toLowerCase() === String(k.val).trim().toLowerCase();
+            }).length;
+            const unik = Math.round(((ostatni.length - shody) / ostatni.length) * 100);
+            if (!nejTip || unik > nejTip.unikatnost) {
+                nejTip = { co: k.co, kdo: k.val, unikatnost: unik };
+            }
+        }
+    });
+    
+    return { odvaha, originalita, konzervatismus, typ, ikona, popis, gradient, akcentColor, nejTip };
+}
+    // 🧬 Render TIPAŘ DNA widgetu
+function renderTiparDNA(p) {
+    const tip = p.tip || {};
+    if (!tip.winner) return ''; // Pokud nemá tipnutého vítěze, nemá DNA smysl
+    
+    const dna = vypocetTiparDNA(p);
+    
+    return `
+        <div style="margin-bottom:16px; border-radius:16px; overflow:hidden; border:1px solid rgba(212,175,55,0.2); box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+            <!-- HLAVIČKA S TYPEM -->
+            <div style="background:${dna.gradient}; padding:20px 16px; text-align:center; position:relative; overflow:hidden;">
+                <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:radial-gradient(circle at 30% 50%, rgba(255,255,255,0.15), transparent 70%);"></div>
+                <div style="position:relative; z-index:1;">
+                    <div style="font-size:0.6rem; letter-spacing:3px; color:rgba(255,255,255,0.8); text-transform:uppercase; font-weight:700; margin-bottom:8px;">🧬 TIPAŘ DNA</div>
+                    <div style="font-size:3rem; line-height:1; margin-bottom:6px; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));">${dna.ikona}</div>
+                    <div style="font-size:1.6rem; font-weight:900; color:white; letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; text-shadow:0 2px 8px rgba(0,0,0,0.3);">${dna.typ}</div>
+                    <div style="font-size:0.75rem; color:rgba(255,255,255,0.9); font-style:italic; line-height:1.4; max-width:280px; margin:0 auto;">${dna.popis}</div>
+                </div>
+            </div>
+            
+            <!-- 3 STATY -->
+            <div style="padding:14px; background:rgba(8,12,24,0.6);">
+                ${[
+                    { icon: '🦁', label: 'Odvaha', value: dna.odvaha, color: '#ef4444', gradient: 'linear-gradient(90deg, #ef4444, #f97316)' },
+                    { icon: '💎', label: 'Originalita', value: dna.originalita, color: '#a78bfa', gradient: 'linear-gradient(90deg, #8b5cf6, #d4af37)' },
+                    { icon: '🛡️', label: 'Konzervatismus', value: dna.konzervatismus, color: '#06b6d4', gradient: 'linear-gradient(90deg, #06b6d4, #3b82f6)' }
+                ].map(stat => `
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+                            <span style="font-size:0.72rem; color:#f0e6c8; font-weight:600;">${stat.icon} ${stat.label}</span>
+                            <span style="font-size:0.95rem; color:${stat.color}; font-weight:900;">${stat.value}%</span>
+                        </div>
+                        <div style="height:8px; background:rgba(0,0,0,0.5); border-radius:5px; overflow:hidden;">
+                            <div style="height:100%; width:${stat.value}%; background:${stat.gradient}; border-radius:5px; box-shadow:0 0 8px ${stat.color}40; transition:width 1.2s ease-out;"></div>
+                        </div>
+                    </div>
+                `).join('')}
+                
+                ${dna.nejTip ? `
+                    <!-- NEJORIGINÁLNĚJŠÍ TIP -->
+                    <div style="margin-top:12px; background:linear-gradient(135deg, rgba(139,92,246,0.12), rgba(212,175,55,0.06)); border:1px solid rgba(139,92,246,0.3); border-radius:10px; padding:10px 12px;">
+                        <div style="font-size:0.58rem; letter-spacing:1.5px; color:rgba(139,92,246,0.9); text-transform:uppercase; font-weight:800; margin-bottom:5px;">⚡ TVŮJ NEJODVÁŽNĚJŠÍ TIP</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="flex:1; min-width:0;">
+                                <div style="font-size:0.68rem; color:#94a3b8; margin-bottom:2px;">${dna.nejTip.co}</div>
+                                <div style="font-size:1rem; color:#f0e6c8; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${dna.nejTip.kdo}</div>
+                            </div>
+                            <div style="text-align:right; flex-shrink:0; margin-left:8px;">
+                                <div style="font-size:1.3rem; color:#a78bfa; font-weight:900; line-height:1;">${dna.nejTip.unikatnost}%</div>
+                                <div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px;">unikátní</div>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+    
     // 🎁 Render veřejných bonus statů (lídr střelců, branky, 0:0)
 function renderBonusStats() {
     const cont = document.getElementById('bonus-stats-container');
@@ -4289,6 +4564,79 @@ async function otevritProfil(rowId) {
                 <div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase;">Lepší než</div>
             </div>
         </div>
+      <!-- 🧬 TIPAŘ DNA -->
+        ${renderTiparDNA(p)}
+        
+        <!-- 🎯 ŠANCE NA POZICI -->
+        ${(() => {
+            const maBody = profilData.some(x => x.points > 0);
+            if (!maBody) return '';
+            
+            const s = vypocetSance(p.rowId);
+            if (!s) return '';
+            
+            const percentDone = s.max > 0 ? Math.round((s.current / s.max) * 100) : 0;
+            
+            let verdict, verdictColor, verdictBg, verdictIcon;
+            if (s.bestPosition === 1) {
+                verdict = 'Stále v boji o 1. místo!';
+                verdictColor = '#d4af37';
+                verdictBg = 'rgba(212,175,55,0.1)';
+                verdictIcon = '🏆';
+            } else if (s.bestPosition <= 3) {
+                verdict = 'Boj o medaile';
+                verdictColor = '#d97b3a';
+                verdictBg = 'rgba(180,100,40,0.1)';
+                verdictIcon = '🥉';
+            } else if (s.worstPosition <= Math.ceil(s.totalPlayers / 2)) {
+                verdict = 'Top polovina jistá';
+                verdictColor = '#22c55e';
+                verdictBg = 'rgba(34,197,94,0.1)';
+                verdictIcon = '📊';
+            } else {
+                verdict = 'Bojuj dál!';
+                verdictColor = '#94a3b8';
+                verdictBg = 'rgba(148,163,184,0.08)';
+                verdictIcon = '💪';
+            }
+            
+            return `
+                <div style="margin-bottom:16px; padding:14px; background:linear-gradient(135deg, rgba(56,189,248,0.05), rgba(212,175,55,0.05)); border:1px solid rgba(56,189,248,0.2); border-radius:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(56,189,248,0.8); text-transform:uppercase; font-weight:700;">🎯 Šance na pozici</div>
+                        <div style="background:${verdictBg}; color:${verdictColor}; padding:3px 10px; border-radius:8px; font-size:0.65rem; font-weight:800; letter-spacing:1px;">${verdictIcon} ${verdict}</div>
+                    </div>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:0.7rem; color:#94a3b8; margin-bottom:4px;">
+                        <span>${s.current} bodů</span>
+                        <span style="color:#5a6480;">Max možných: <b style="color:#d4af37;">${s.max} b</b></span>
+                    </div>
+                    <div style="height:8px; background:rgba(0,0,0,0.4); border-radius:4px; overflow:hidden; margin-bottom:14px;">
+                        <div style="height:100%; width:${percentDone}%; background:linear-gradient(90deg, #22c55e, #d4af37); border-radius:4px; transition:width 0.6s;"></div>
+                    </div>
+                    
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <div style="text-align:center; padding:10px 6px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.25); border-radius:8px;">
+                            <div style="font-size:0.55rem; color:#22c55e; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:3px;">🚀 Nejlépe</div>
+                            <div style="font-size:1.4rem; font-weight:900; color:#22c55e;">${s.bestPosition}.</div>
+                            <div style="font-size:0.55rem; color:#5a6480;">místo</div>
+                        </div>
+                        <div style="text-align:center; padding:10px 6px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); border-radius:8px;">
+                            <div style="font-size:0.55rem; color:#ef4444; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:3px;">⚠️ Nejhůře</div>
+                            <div style="font-size:1.4rem; font-weight:900; color:#ef4444;">${s.worstPosition}.</div>
+                            <div style="font-size:0.55rem; color:#5a6480;">místo</div>
+                        </div>
+                    </div>
+                    
+                    ${s.remaining > 0 ? `
+                        <div style="text-align:center; margin-top:10px; font-size:0.7rem; color:#94a3b8;">
+                            <span style="color:#d4af37; font-weight:700;">+${s.remaining} bodů</span> může ještě získat
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        })()}
+
        <!-- 📈 GRAFY -->
 ${(() => {
     const isOwn = window.loggedUserIdGlobal && String(window.loggedUserIdGlobal) === String(p.rowId);
