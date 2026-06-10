@@ -2088,7 +2088,7 @@ input:focus {
         <h1 style="font-size:1.8rem; letter-spacing:6px; margin-bottom:2px;">WORLD CUP 2026</h1>
         <div style="font-size:0.6rem; color:rgba(212,175,55,0.4); letter-spacing:3px; text-transform:uppercase; margin-bottom:18px;">Tipovačka SK Naděje</div>
     <div class="countdown-wrapper" style="display:inline-block; background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.18); box-shadow:0 4px 20px rgba(0,0,0,0.3); padding:14px 28px; max-width:none; margin:0 auto 25px auto;">
-    <div class="countdown-title" style="margin-bottom:12px;">Tipování se uzavře za:</div>
+    <div class="countdown-title" style="margin-bottom:12px;">Mundial začíná za:</div>
     <div id="countdown-timer" style="display:flex; justify-content:center; gap:10px; align-items:flex-start;">
         <div style="text-align:center;"><div style="font-size:1.6rem; font-weight:900; color:#d4af37; line-height:1;"><span id="cd-days">00</span></div><div style="font-size:0.5rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">dní</div></div>
         <div style="font-size:1.6rem; color:rgba(212,175,55,0.3); line-height:1;">:</div>
@@ -2467,9 +2467,9 @@ function vypocetTiparDNA(p) {
     const tip = p.tip || {};
     
     // === TÝMOVÉ KATEGORIE (síla na MS 2026) ===
-    const TOP_FAVORIT = ['Argentina', 'Francie', 'Brazílie', 'Anglie', 'Španělsko', 'Německo', 'Portugalsko'];
-    const SILNY = ['Belgie', 'Nizozemsko', 'Chorvatsko', 'Uruguay', 'Maroko', 'Švýcarsko', 'Japonsko', 'USA', 'Mexiko', 'Senegal', 'Kolumbie', 'Itálie'];
-    const TMAVY_KUN = ['Norsko', 'Turecko', 'Egypt', 'Írán', 'JAR', 'Ekvádor', 'Austrálie', 'Paraguay', 'Skotsko', 'Rakousko', 'Pobřeží slonoviny', 'Saudská Arábie', 'Jižní Korea'];
+    const TOP_FAVORIT = ['Argentina', 'Francie', 'Brazílie', 'Anglie', 'Španělsko', 'Německo'];
+    const SILNY = ['Belgie', 'Nizozemsko', 'Chorvatsko', 'Uruguay', 'Maroko', 'Švýcarsko', 'Japonsko', 'USA', 'Mexiko', 'Senegal', 'Kolumbie', 'Portugalsko'];
+    const TMAVY_KUN = ['Norsko', 'Turecko', 'Egypt', 'Írán', 'JAR', 'Ekvádor', 'Austrálie', 'Paraguay', 'Skotsko', 'Rakousko', 'Česko', 'Saudská Arábie', 'Jižní Korea'];
     
     const kategorieZemy = (zeme) => {
         if (TOP_FAVORIT.includes(zeme)) return 'fav';
