@@ -2535,7 +2535,7 @@ function vypocetTiparDNA(p) {
         akcentColor = '#f97316';
     } else if (odvaha < 40 && originalita >= 50) {
         typ = 'Prorok'; ikona = '🧠';
-        popis = 'Sázíš na favorit, ale s nečekanými tahy.';
+        popis = 'Sázíš na favorita, ale s nečekanými tahy.';
         gradient = 'linear-gradient(135deg, #8b5cf6, #d4af37)';
         akcentColor = '#a78bfa';
     } else if (odvaha >= 60 && originalita < 40) {
@@ -5182,148 +5182,240 @@ function toggleZebricek() {
 }
     
 async function exportZebricek() {
-    const { data: tipy } = await supabaseClient.from('tipy').select('*');
-    const r = window.currentResults || {};
+    showToast('🎨 Generuji vizuální žebříček...', 'info', 3000);
+    
+    try {
+        const { data: tipy } = await supabaseClient.from('tipy').select('*');
+        const r = window.currentResults || {};
 
-    if (!tipy || tipy.length === 0) {
-        showToast("Žádní hráči k exportu.", 'error');
-        return;
-    }
-
-    const rr = {
-        groups: r.groups || [], s32: r.s32 || [], s16: r.s16 || [],
-        s8: r.s8 || [], s4: r.s4 || [], winner: r.winner || '', bronze: r.bronze || ''
-    };
-
-    const vysledky = tipy.map(row => {
-        let tip = row.tip_data;
-        if (typeof tip === 'string') { try { tip = JSON.parse(tip); } catch { tip = {}; } }
-        let pts = 0;
-        if (rr.groups && tip.groups) {
-            rr.groups.forEach((g, i) => {
-                const tipG = tip.groups[i] || [];
-                const aT = g.teams || g;
-                if (Array.isArray(aT)) aT.forEach((t, p) => { if (t && tipG[p] && String(t).trim() === String(tipG[p]).trim()) pts += 4; });
-            });
-        }
-        ['s32','s16','s8','s4'].forEach((sid, idx) => {
-            const body = [2,3,4,5][idx];
-            (rr[sid]||[]).forEach(t => { if (t && (tip[sid]||[]).some(x => String(x).trim()===String(t).trim())) pts += body; });
-        });
-        if (rr.winner && tip.winner && String(rr.winner).trim()===String(tip.winner).trim()) pts += 12;
-        if (rr.bronze && tip.bronze && String(rr.bronze).trim()===String(tip.bronze).trim()) pts += 8;
-        return { name: row.name || 'Anonym', points: pts, previous_rank: row.previous_rank };
-    }).sort((a,b) => b.points - a.points);
-
-    // Avatar pro export (inline, ne přes funkci - kvůli jpg renderu)
-    const exportAvatar = (name, size) => {
-        const jmeno = (name || 'A').trim();
-        const parts = jmeno.split(/\s+/);
-        let init = parts[0]?.[0] || '?';
-        if (parts.length > 1) init += parts[1][0];
-        init = init.toUpperCase();
-        let hash = 0;
-        for (let i = 0; i < jmeno.length; i++) hash = jmeno.charCodeAt(i) + ((hash << 5) - hash);
-        const hue = Math.abs(hash) % 360;
-        return `<div style="width:${size}px; height:${size}px; min-width:${size}px; border-radius:50%; background:linear-gradient(135deg,hsl(${hue},45%,38%),hsl(${hue},45%,26%)); display:flex; align-items:center; justify-content:center; font-size:${Math.round(size*0.4)}px; font-weight:800; color:#fff;">${init}</div>`;
-    };
-
-    let lastPoints = -1, currentRank = 0;
-    const radky = vysledky.map((p, i) => {
-        if (p.points !== lastPoints) currentRank = i + 1;
-        lastPoints = p.points;
-
-        let trend = '<span style="color:#5a6480; font-size:12px; margin-left:8px;">–</span>';
-        if (p.previous_rank) {
-            const diff = p.previous_rank - currentRank;
-            if (diff > 0) trend = `<span style="color:#22c55e; font-size:12px; margin-left:8px;">▲${diff}</span>`;
-            else if (diff < 0) trend = `<span style="color:#ef4444; font-size:12px; margin-left:8px;">▼${Math.abs(diff)}</span>`;
+        if (!tipy || tipy.length === 0) {
+            showToast("Žádní hráči k exportu.", 'error');
+            return;
         }
 
-        // Medaile / pořadí
-        let rankBadge, rowBg, rowBorder, nameColor, ptsColor, glow = '';
-        if (currentRank === 1 && p.points > 0) {
-            rankBadge = '<div style="font-size:30px; width:42px; text-align:center;">🥇</div>';
-            rowBg = 'linear-gradient(90deg,rgba(212,175,55,0.22),rgba(212,175,55,0.04))';
-            rowBorder = 'rgba(212,175,55,0.5)'; nameColor = '#d4af37'; ptsColor = '#d4af37';
-            glow = 'box-shadow:0 0 20px rgba(212,175,55,0.2);';
-        } else if (currentRank === 2 && p.points > 0) {
-            rankBadge = '<div style="font-size:28px; width:42px; text-align:center;">🥈</div>';
-            rowBg = 'linear-gradient(90deg,rgba(148,163,184,0.16),rgba(148,163,184,0.02))';
-            rowBorder = 'rgba(148,163,184,0.35)'; nameColor = '#cbd5e1'; ptsColor = '#cbd5e1';
-        } else if (currentRank === 3 && p.points > 0) {
-            rankBadge = '<div style="font-size:28px; width:42px; text-align:center;">🥉</div>';
-            rowBg = 'linear-gradient(90deg,rgba(180,100,40,0.18),rgba(180,100,40,0.02))';
-            rowBorder = 'rgba(180,100,40,0.4)'; nameColor = '#d97b3a'; ptsColor = '#d97b3a';
-        } else {
-            rankBadge = `<div style="width:42px; text-align:center; color:rgba(255,255,255,0.35); font-size:18px; font-weight:900;">${currentRank}</div>`;
-            rowBg = 'rgba(255,255,255,0.025)'; rowBorder = 'rgba(255,255,255,0.05)'; nameColor = '#f0e6c8'; ptsColor = '#d4af37';
-        }
-
-        return `
-            <div style="display:flex; align-items:center; gap:12px; padding:13px 16px; border-radius:12px; background:${rowBg}; border:1px solid ${rowBorder}; margin-bottom:7px; ${glow}">
-                ${rankBadge}
-                ${exportAvatar(p.name, 36)}
-                <div style="flex:1; font-weight:800; color:${nameColor}; font-size:16px;">${p.name}${trend}</div>
-                <div style="font-weight:900; color:${ptsColor}; font-size:18px;">${p.points}<span style="font-size:10px; opacity:0.6; margin-left:3px;">b</span></div>
-            </div>`;
-    }).join('');
-
-    const dnes = new Date().toLocaleDateString('cs-CZ');
-    const pocetHracu = vysledky.length;
-
-    const html = `
-        <div id="export-content" style="width:520px; background:linear-gradient(160deg,#0a0f1d,#05070f); padding:0; font-family:Arial,sans-serif; overflow:hidden; border-radius:0;">
+        // Výpočet bodů (včetně bonusů s odstupňovaným bodováním)
+        const vysledky = tipy.map(row => {
+            let tip = row.tip_data;
+            if (typeof tip === 'string') { try { tip = JSON.parse(tip); } catch { tip = {}; } }
+            let pts = 0;
             
-            <!-- BANNER -->
-            <div style="background:linear-gradient(135deg,rgba(212,175,55,0.18),rgba(212,175,55,0.04)); padding:24px 28px 20px; border-bottom:2px solid rgba(212,175,55,0.3); position:relative;">
-                <div style="display:flex; align-items:center; gap:16px;">
-                    <img src="logo-wc2026.png" style="width:44px; height:60px; object-fit:contain; filter:drop-shadow(0 0 8px rgba(212,175,55,0.4));">
+            // Skupiny
+            if (r.groups && tip.groups) {
+                r.groups.forEach((g, i) => {
+                    const tipG = tip.groups[i] || [];
+                    const aT = g.teams || g;
+                    if (Array.isArray(aT)) aT.forEach((t, p) => { 
+                        if (t && tipG[p] && String(t).trim() === String(tipG[p]).trim()) pts += 4; 
+                    });
+                });
+            }
+            
+            // Playoff
+            ['s32','s16','s8','s4'].forEach((sid, idx) => {
+                const body = [2,3,4,5][idx];
+                (r[sid]||[]).forEach(t => { 
+                    if (t && (tip[sid]||[]).some(x => String(x).trim()===String(t).trim())) pts += body; 
+                });
+            });
+            
+            if (r.winner && tip.winner && String(r.winner).trim()===String(tip.winner).trim()) pts += 12;
+            if (r.bronze && tip.bronze && String(r.bronze).trim()===String(tip.bronze).trim()) pts += 8;
+            
+            // 🎁 Bonus body
+            if (typeof spocitejBonusBody === 'function') {
+                pts += spocitejBonusBody(tip, r);
+            }
+            
+            return { name: row.name || 'Anonym', points: pts, previous_rank: row.previous_rank };
+        }).sort((a,b) => b.points - a.points || a.name.localeCompare(b.name));
+
+        // Helper pro trend šipku
+        const trendBadge = (player, currentRank) => {
+            if (!player.previous_rank) return '';
+            const diff = player.previous_rank - currentRank;
+            if (diff > 0) return `<span style="color:#22c55e; font-size:11px; margin-left:8px; font-weight:700;">▲${diff}</span>`;
+            if (diff < 0) return `<span style="color:#ef4444; font-size:11px; margin-left:8px; font-weight:700;">▼${Math.abs(diff)}</span>`;
+            return `<span style="color:#5a6480; font-size:11px; margin-left:8px;">–</span>`;
+        };
+
+        // Ranking s ties
+        let lastPoints = -1, currentRank = 0;
+        const rankedVysledky = vysledky.map((p, i) => {
+            if (p.points !== lastPoints) currentRank = i + 1;
+            lastPoints = p.points;
+            return { ...p, rank: currentRank };
+        });
+
+        const top3 = rankedVysledky.slice(0, 3);
+        const rest = rankedVysledky.slice(3);
+        const leaderPoints = rankedVysledky[0]?.points || 1;
+        
+        const dnes = new Date().toLocaleDateString('cs-CZ', { 
+            day: 'numeric', month: 'long', year: 'numeric' 
+        });
+        
+        // Bonus stats (pokud admin nastavil)
+        const b = r.bonus || {};
+        const maBonusStats = b.topScorer || b.topGoalkeeper || b.totalGoals != null || b.zeroZeroResults != null;
+        
+        const html = `
+            <div id="export-content" style="width:720px; background:linear-gradient(180deg, #0a0f1e 0%, #050710 100%); font-family:'Helvetica Neue', Arial, sans-serif; color:#f0e6c8; padding:36px; box-sizing:border-box; position:relative; overflow:hidden;">
+                
+                <!-- Glow efekty -->
+                <div style="position:absolute; top:-80px; right:-80px; width:320px; height:320px; background:radial-gradient(circle, rgba(212,175,55,0.1), transparent 70%); border-radius:50%;"></div>
+                <div style="position:absolute; bottom:-120px; left:-120px; width:380px; height:380px; background:radial-gradient(circle, rgba(56,189,248,0.05), transparent 70%); border-radius:50%;"></div>
+                
+                <!-- HEADER -->
+                <div style="position:relative; z-index:2; display:flex; align-items:center; gap:18px; padding-bottom:24px; border-bottom:1px solid rgba(212,175,55,0.2); margin-bottom:30px;">
+                    <img src="logo-wc2026.png" style="width:54px; height:74px; object-fit:contain; filter:drop-shadow(0 0 10px rgba(212,175,55,0.5));">
                     <div style="flex:1;">
-                        <div style="font-size:10px; letter-spacing:3px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700;">SK Naděje · World Cup 2026</div>
-                        <div style="font-size:26px; font-weight:900; letter-spacing:1px; text-transform:uppercase; color:#d4af37; line-height:1.1; margin-top:2px;">Žebříček</div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="font-size:22px; font-weight:900; color:#f0e6c8;">${pocetHracu}</div>
-                        <div style="font-size:8px; color:rgba(212,175,55,0.5); text-transform:uppercase; letter-spacing:1px;">hráčů</div>
+                        <div style="font-size:10px; letter-spacing:4px; color:rgba(212,175,55,0.5); text-transform:uppercase; font-weight:700; margin-bottom:2px;">SK NADĚJE · WORLD CUP 2026</div>
+                        <div style="font-size:32px; font-weight:900; letter-spacing:2px; text-transform:uppercase; color:#d4af37; line-height:1;">ŽEBŘÍČEK</div>
+                        <div style="display:inline-flex; align-items:center; gap:8px; margin-top:6px; font-size:11px; color:#94a3b8;">
+                            <span>📅 ${dnes}</span>
+                            <span style="color:rgba(212,175,55,0.3);">·</span>
+                            <span>👥 ${rankedVysledky.length} hráčů</span>
+                            <span style="color:rgba(212,175,55,0.3);">·</span>
+                            <span>🎯 Max 333 b</span>
+                        </div>
                     </div>
                 </div>
+                
+                <!-- TOP 3 PODIUM -->
+                <div style="position:relative; z-index:2; display:grid; grid-template-columns:1fr 1.25fr 1fr; gap:10px; margin-bottom:14px; align-items:end;">
+                    
+                    ${top3[1] ? `
+                        <!-- 2. místo -->
+                        <div style="background:linear-gradient(180deg, rgba(148,163,184,0.2), rgba(148,163,184,0.04)); border:1px solid rgba(148,163,184,0.35); border-radius:14px 14px 0 0; padding:18px 12px; text-align:center; height:170px; display:flex; flex-direction:column; justify-content:flex-end;">
+                            <div style="font-size:42px; line-height:1; margin-bottom:8px;">🥈</div>
+                            <div style="font-size:10px; color:#cbd5e1; letter-spacing:2px; text-transform:uppercase; margin-bottom:4px; font-weight:700;">STŘÍBRO</div>
+                            <div style="font-size:16px; font-weight:900; color:#f0e6c8; margin-bottom:6px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${top3[1].name}${trendBadge(top3[1], top3[1].rank)}</div>
+                            <div style="font-size:26px; font-weight:900; color:#d4af37; line-height:1;">${top3[1].points}</div>
+                            <div style="font-size:9px; color:#5a6480; letter-spacing:1.5px; margin-top:2px;">BODŮ</div>
+                        </div>
+                    ` : '<div></div>'}
+                    
+                    ${top3[0] ? `
+                        <!-- 1. místo -->
+                        <div style="background:linear-gradient(180deg, rgba(212,175,55,0.28), rgba(212,175,55,0.08)); border:2px solid rgba(212,175,55,0.6); border-radius:14px 14px 0 0; padding:22px 14px; text-align:center; height:220px; display:flex; flex-direction:column; justify-content:flex-end; box-shadow:0 -10px 40px rgba(212,175,55,0.2);">
+                            <div style="font-size:56px; line-height:1; margin-bottom:8px; filter:drop-shadow(0 4px 10px rgba(212,175,55,0.5));">🏆</div>
+                            <div style="font-size:11px; color:#d4af37; letter-spacing:2.5px; text-transform:uppercase; margin-bottom:4px; font-weight:900;">VÍTĚZ</div>
+                            <div style="font-size:20px; font-weight:900; color:#f0e6c8; margin-bottom:8px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${top3[0].name}${trendBadge(top3[0], top3[0].rank)}</div>
+                            <div style="font-size:38px; font-weight:900; color:#d4af37; line-height:1; text-shadow:0 4px 12px rgba(212,175,55,0.4);">${top3[0].points}</div>
+                            <div style="font-size:9px; color:#5a6480; letter-spacing:1.5px; margin-top:4px;">BODŮ</div>
+                        </div>
+                    ` : '<div></div>'}
+                    
+                    ${top3[2] ? `
+                        <!-- 3. místo -->
+                        <div style="background:linear-gradient(180deg, rgba(217,123,58,0.2), rgba(217,123,58,0.04)); border:1px solid rgba(217,123,58,0.4); border-radius:14px 14px 0 0; padding:16px 10px; text-align:center; height:140px; display:flex; flex-direction:column; justify-content:flex-end;">
+                            <div style="font-size:38px; line-height:1; margin-bottom:6px;">🥉</div>
+                            <div style="font-size:10px; color:#d97b3a; letter-spacing:2px; text-transform:uppercase; margin-bottom:4px; font-weight:700;">BRONZ</div>
+                            <div style="font-size:15px; font-weight:900; color:#f0e6c8; margin-bottom:6px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${top3[2].name}${trendBadge(top3[2], top3[2].rank)}</div>
+                            <div style="font-size:22px; font-weight:900; color:#d4af37; line-height:1;">${top3[2].points}</div>
+                            <div style="font-size:9px; color:#5a6480; letter-spacing:1.5px; margin-top:2px;">BODŮ</div>
+                        </div>
+                    ` : '<div></div>'}
+                </div>
+                
+                <!-- Podium baseline -->
+                <div style="position:relative; z-index:2; height:8px; background:linear-gradient(90deg, rgba(148,163,184,0.4) 0%, rgba(212,175,55,0.6) 50%, rgba(217,123,58,0.4) 100%); margin-bottom:28px; border-radius:0 0 5px 5px; box-shadow:0 4px 16px rgba(0,0,0,0.4);"></div>
+                
+                <!-- ZBYTEK POŘADÍ -->
+                ${rest.length > 0 ? `
+                    <div style="position:relative; z-index:2; margin-bottom:24px;">
+                        <div style="font-size:10px; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; font-weight:700; margin-bottom:12px; padding:0 4px;">📊 POŘADÍ 4 — ${rankedVysledky.length}</div>
+                        <div style="display:grid; gap:7px;">
+                            ${rest.map(p => {
+                                const percent = leaderPoints > 0 ? Math.min(100, Math.round((p.points / leaderPoints) * 100)) : 0;
+                                return `
+                                    <div style="display:flex; align-items:center; background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.1); border-radius:10px; padding:10px 14px; gap:14px;">
+                                        <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, rgba(212,175,55,0.18), rgba(212,175,55,0.06)); border:1px solid rgba(212,175,55,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                            <span style="font-size:14px; font-weight:900; color:#d4af37;">${p.rank}</span>
+                                        </div>
+                                        <div style="flex:1; min-width:0;">
+                                            <div style="font-size:14px; font-weight:700; color:#f0e6c8; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}${trendBadge(p, p.rank)}</div>
+                                            <div style="height:4px; background:rgba(0,0,0,0.4); border-radius:3px; overflow:hidden;">
+                                                <div style="height:100%; width:${percent}%; background:linear-gradient(90deg, rgba(212,175,55,0.5), rgba(212,175,55,0.9)); border-radius:3px;"></div>
+                                            </div>
+                                        </div>
+                                        <div style="text-align:right; flex-shrink:0; min-width:60px;">
+                                            <div style="font-size:20px; font-weight:900; color:#d4af37; line-height:1;">${p.points}</div>
+                                            <div style="font-size:8px; color:#5a6480; letter-spacing:1.5px; margin-top:2px;">BODŮ</div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <!-- BONUS STATY -->
+                ${maBonusStats ? `
+                    <div style="position:relative; z-index:2; margin-bottom:24px; padding:16px; background:linear-gradient(135deg, rgba(212,175,55,0.07), rgba(56,189,248,0.04)); border:1px solid rgba(212,175,55,0.22); border-radius:12px;">
+                        <div style="font-size:10px; letter-spacing:3px; color:rgba(212,175,55,0.7); text-transform:uppercase; font-weight:700; text-align:center; margin-bottom:12px;">🎁 BONUS STATY</div>
+                        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;">
+                            <div style="text-align:center;">
+                                <div style="font-size:22px; margin-bottom:3px;">🥇</div>
+                                <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px;">LÍDR STŘELCŮ</div>
+                                <div style="font-size:12px; font-weight:700; color:#d4af37; line-height:1.2;">${b.topScorer || '–'}</div>
+                                ${b.topScorerGoals ? `<div style="font-size:10px; color:#94a3b8; margin-top:2px;">${b.topScorerGoals} ${b.topScorerGoals === 1 ? 'gól' : (b.topScorerGoals < 5 ? 'góly' : 'gólů')}</div>` : ''}
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="font-size:22px; margin-bottom:3px;">🧤</div>
+                                <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px;">TOP BRANKÁŘ</div>
+                                <div style="font-size:12px; font-weight:700; color:#d4af37; line-height:1.2;">${b.topGoalkeeper || '–'}</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="font-size:22px; margin-bottom:3px;">⚽</div>
+                                <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px;">BRANEK CELKEM</div>
+                                <div style="font-size:18px; font-weight:900; color:#d4af37; line-height:1;">${b.totalGoals != null ? b.totalGoals : '–'}</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="font-size:22px; margin-bottom:3px;">0️⃣</div>
+                                <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:3px;">ZÁPASY 0:0</div>
+                                <div style="font-size:18px; font-weight:900; color:#d4af37; line-height:1;">${b.zeroZeroResults != null ? b.zeroZeroResults : '–'}</div>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <!-- FOOTER -->
+                <div style="position:relative; z-index:2; margin-top:20px; padding-top:20px; border-top:1px solid rgba(212,175,55,0.15); text-align:center;">
+                    <div style="display:inline-flex; align-items:center; gap:10px; font-size:9px; color:rgba(212,175,55,0.5); letter-spacing:3px; text-transform:uppercase; font-weight:700;">
+                        <span>⚽</span>
+                        <span>sknadeje.github.io/SKNadeje</span>
+                        <span>⚽</span>
+                    </div>
+                    <div style="font-size:8px; color:#3a4258; margin-top:5px; letter-spacing:1.5px;">Tipovačka MS 2026 — fair play & good food</div>
+                </div>
             </div>
+        `;
 
-            <!-- ŽEBŘÍČEK -->
-            <div style="padding:20px 24px;">
-                ${radky}
-            </div>
+        const container = document.createElement('div');
+        container.style.cssText = 'position:fixed; left:-9999px; top:0; z-index:-1;';
+        container.innerHTML = html;
+        document.body.appendChild(container);
 
-            <!-- PATIČKA -->
-            <div style="text-align:center; padding:14px; background:rgba(0,0,0,0.3); border-top:1px solid rgba(212,175,55,0.1);">
-                <div style="font-size:9px; color:rgba(212,175,55,0.4); letter-spacing:1.5px; text-transform:uppercase;">stav k ${dnes} · sknadeje.github.io/SKNadeje</div>
-            </div>
-        </div>`;
-
-    const container = document.createElement('div');
-    container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
-    container.innerHTML = html;
-    document.body.appendChild(container);
-
-    try {
-        showToast('Generuji obrázek...', 'info', 2000);
         const canvas = await html2canvas(container.querySelector('#export-content'), {
             scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false
         });
+        
         canvas.toBlob((blob) => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `WC2026-zebricek-${dnes.replace(/\. /g, '-').replace(/\./g, '')}.png`;
+            a.download = `WC2026-zebricek-${new Date().toISOString().slice(0,10)}.png`;
             a.click();
             URL.revokeObjectURL(url);
-            showToast('Žebříček stažen jako obrázek!', 'success');
+            showToast('✅ Žebříček stažen!', 'success', 3000);
         }, 'image/png');
-    } catch (err) {
-        showToast('Chyba při exportu: ' + err.message, 'error');
-    } finally {
+        
         document.body.removeChild(container);
+        
+    } catch (err) {
+        console.error('Export chyba:', err);
+        showToast('Chyba při exportu: ' + err.message, 'error');
     }
 }
     
