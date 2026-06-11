@@ -5093,74 +5093,200 @@ async function otevritProfil(rowId) {
     document.getElementById('profil-modal').style.display = 'flex';
 }
    
-    // 🏆 Otevři vlastní tipovaný pavouk - KLASICKÝ BRACKET LAYOUT
+ // 🏆 Otevři vlastní tipovaný pavouk - SE ZÁPASY (kdo proti komu)
 async function otevritMujTip() {
-    if (!window.loggedUserIdGlobal) {
-        showToast('Musíš být přihlášen', 'error');
-        return;
-    }
+    if (!window.loggedUserIdGlobal) { showToast('Musíš být přihlášen', 'error'); return; }
     
     const me = profilData.find(x => String(x.rowId) === String(window.loggedUserIdGlobal));
-    if (!me || !me.tip) {
-        showToast('Nemáš zatím uložený tip', 'error');
-        return;
-    }
+    if (!me || !me.tip) { showToast('Nemáš zatím uložený tip', 'error'); return; }
     
     const tip = me.tip;
     const r = window.currentResults || {};
+    const eq = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
     
-    // Status helpers
-    const getStat = (real, tipVal) => {
-        if (!real || String(real).trim() === '') return '';
-        return String(real).trim() === String(tipVal).trim() ? 'correct' : 'wrong';
-    };
-    const getStatPlayoff = (sid, tipTym) => {
-        const real = r[sid] || [];
-        const valid = Array.isArray(real) ? real.filter(x => x && String(x).trim() !== '') : [];
-        if (valid.length === 0) return '';
-        return valid.some(x => String(x).trim() === String(tipTym).trim()) ? 'correct' : 'wrong';
-    };
-    
-    // Team box renderer
-    const teamBox = (team, status, big = false) => {
-        if (!team) return `<div style="height:${big ? 34 : 28}px;"></div>`;
-        const colors = {
-            correct: 'background:linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.06)); border:1px solid rgba(34,197,94,0.4); color:#22c55e;',
-            wrong: 'background:linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.04)); border:1px solid rgba(239,68,68,0.3); color:#ef4444;',
-            '': 'background:linear-gradient(135deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02)); border:1px solid rgba(212,175,55,0.22); color:#f0e6c8;'
+    // ════════════════════════════════════════════
+    // HELPER 1: Sestaví 32 týmů 1/16 finále z groups + thirds
+    // (replika prepareS32 logiky pro display)
+    // ════════════════════════════════════════════
+    const sestavTymyR32 = (groups, thirds) => {
+        const ID = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+        const getT = (gl, rank) => {
+            const idx = ID.indexOf(gl);
+            return idx >= 0 && groups[idx] ? (groups[idx][rank] || '??') : '??';
         };
-        return `<div style="font-size:${big ? '0.8rem' : '0.72rem'}; padding:${big ? '7px 10px' : '5px 8px'}; ${colors[status]} border-radius:6px; margin-bottom:4px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${team}</div>`;
+        
+        const tretiMista = (thirds || []).map(name => {
+            for (let i = 0; i < groups.length; i++) {
+                if (eq(groups[i]?.[2], name)) return { team: name, group: ID[i] };
+            }
+            return { team: name, group: null };
+        });
+        
+        const sloty = [
+            { matchId: 74, allowed: ['A','B','C','D','F'] },
+            { matchId: 77, allowed: ['C','D','F','G','H'] },
+            { matchId: 79, allowed: ['C','E','F','H','I'] },
+            { matchId: 80, allowed: ['E','H','I','J','K'] },
+            { matchId: 81, allowed: ['B','E','F','I','J'] },
+            { matchId: 82, allowed: ['A','E','H','I','J'] },
+            { matchId: 85, allowed: ['E','F','G','I','J'] },
+            { matchId: 87, allowed: ['D','E','I','J','L'] },
+        ];
+        
+        function najdi(s, m) {
+            if (s.length === 0) return {};
+            let bs = null, bc = null;
+            for (const sl of s) {
+                const c = m.filter(mi => mi.group && sl.allowed.includes(mi.group));
+                if (bc === null || c.length < bc.length) { bs = sl; bc = c; }
+            }
+            if (bc.length === 0) return null;
+            for (const cand of bc) {
+                const zs = s.filter(sl => sl.matchId !== bs.matchId);
+                const zm = m.filter(mi => mi.team !== cand.team);
+                const v = najdi(zs, zm);
+                if (v !== null) { v[bs.matchId] = cand.team; return v; }
+            }
+            return null;
+        }
+        
+        const mp = najdi(sloty, tretiMista) || {};
+        let fi = 0;
+        const g3 = (id) => {
+            if (mp[id]) return mp[id];
+            while (fi < (thirds || []).length && Object.values(mp).includes(thirds[fi])) fi++;
+            return thirds[fi++] || '??';
+        };
+        
+        return [
+            getT('E', 0), g3(74),  getT('I', 0), g3(77),
+            getT('A', 1), getT('B', 1), getT('F', 0), getT('C', 1),
+            getT('H', 0), getT('J', 1), getT('K', 1), getT('L', 1),
+            getT('D', 0), g3(81), getT('G', 0), g3(82),
+            getT('C', 0), getT('F', 1), getT('E', 1), getT('I', 1),
+            getT('A', 0), g3(79), getT('L', 0), g3(80),
+            getT('J', 0), getT('H', 1), getT('D', 1), getT('G', 1),
+            getT('B', 0), g3(85), getT('K', 0), g3(87),
+        ];
     };
     
+    // ════════════════════════════════════════════
+    // HELPER 2: Sestaví páry zápasů (sousedící indexy)
+    // ════════════════════════════════════════════
+    const sestavZapasy = (tymy, vitezi) => {
+        const z = [];
+        if (!tymy) return z;
+        for (let i = 0; i < tymy.length; i += 2) {
+            const t1 = tymy[i], t2 = tymy[i+1];
+            let v = null;
+            if (vitezi && Array.isArray(vitezi)) {
+                if (vitezi.some(x => eq(x, t1))) v = t1;
+                else if (vitezi.some(x => eq(x, t2))) v = t2;
+            }
+            z.push({ home: t1, away: t2, vitez: v });
+        }
+        return z;
+    };
+    
+    // ════════════════════════════════════════════
+    // HELPER 3: Status zápasu vs admin výsledek
+    // ════════════════════════════════════════════
+    const statusZapasu = (vitezTip, realAdmin) => {
+        if (!vitezTip) return 'no-pick';
+        if (!realAdmin) return 'pending';
+        const list = Array.isArray(realAdmin) 
+            ? realAdmin.filter(x => x && String(x).trim()) 
+            : (realAdmin ? [realAdmin] : []);
+        if (list.length === 0) return 'pending';
+        return list.some(x => eq(x, vitezTip)) ? 'correct' : 'wrong';
+    };
+    
+    // ════════════════════════════════════════════
+    // SESTAV VŠECHNA KOLA
+    // ════════════════════════════════════════════
+    const r32Teams = sestavTymyR32(tip.groups || [], tip.thirds || []);
+    const r32Zapasy = sestavZapasy(r32Teams, tip.s32);           // 16 zápasů
+    const r16Zapasy = sestavZapasy(tip.s32 || [], tip.s16);       // 8 zápasů
+    const qfZapasy  = sestavZapasy(tip.s16 || [], tip.s8);        // 4 zápasy
+    const semiZapasy = sestavZapasy(tip.s8 || [], tip.s4);        // 2 zápasy
+    
+    // Bronz: poražení ze semifinále = s8 - s4
+    const semiPorazeni = (tip.s8 || []).filter(t => 
+        !(tip.s4 || []).some(x => eq(x, t))
+    );
+    const bronzZapas = { home: semiPorazeni[0], away: semiPorazeni[1], vitez: tip.bronze };
+    
+    // Finále: 2 finalisté z s4
+    const finaleZapas = { home: (tip.s4 || [])[0], away: (tip.s4 || [])[1], vitez: tip.winner };
+    
+    // ════════════════════════════════════════════
+    // RENDER zápasu (match box)
+    // ════════════════════════════════════════════
+    const renderMatch = (z, realAdmin, varianta = 'default') => {
+        const status = statusZapasu(z.vitez, realAdmin);
+        const homeIsWinner = z.vitez && eq(z.home, z.vitez);
+        const awayIsWinner = z.vitez && eq(z.away, z.vitez);
+        
+        const stylForRow = (isWinner) => {
+            if (!z.vitez) return { bg: 'rgba(255,255,255,0.02)', border: 'rgba(212,175,55,0.08)', color: '#94a3b8', weight: 500 };
+            if (isWinner) {
+                if (status === 'correct') return { bg: 'rgba(34,197,94,0.18)', border: 'rgba(34,197,94,0.45)', color: '#22c55e', weight: 800 };
+                if (status === 'wrong')   return { bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.35)', color: '#ef4444', weight: 800 };
+                return { bg: 'rgba(212,175,55,0.14)', border: 'rgba(212,175,55,0.35)', color: '#d4af37', weight: 800 };
+            }
+            return { bg: 'rgba(255,255,255,0.02)', border: 'rgba(212,175,55,0.08)', color: '#5a6480', weight: 500 };
+        };
+        
+        const teamRow = (team, isWinner) => {
+            const c = stylForRow(isWinner);
+            const icon = isWinner && status === 'correct' ? ' ✓' : (isWinner && status === 'wrong' ? ' ✗' : '');
+            return `<div style="background:${c.bg}; border:1px solid ${c.border}; color:${c.color}; padding:5px 7px; border-radius:5px; font-size:0.7rem; font-weight:${c.weight}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${team || '–'}${icon}</div>`;
+        };
+        
+        const accent = varianta === 'final' ? 'rgba(212,175,55,0.35)' : (varianta === 'bronze' ? 'rgba(180,100,40,0.35)' : 'rgba(212,175,55,0.12)');
+        const bg = varianta === 'final' ? 'rgba(212,175,55,0.05)' : (varianta === 'bronze' ? 'rgba(180,100,40,0.04)' : 'rgba(0,0,0,0.2)');
+        
+        return `
+            <div style="background:${bg}; border:1px solid ${accent}; border-radius:8px; padding:5px; margin-bottom:6px; display:flex; flex-direction:column; gap:3px;">
+                ${teamRow(z.home, homeIsWinner)}
+                ${teamRow(z.away, awayIsWinner)}
+            </div>
+        `;
+    };
+    
+    // ════════════════════════════════════════════
+    // HTML VÝSTUP
+    // ════════════════════════════════════════════
     document.getElementById('muj-tip-obsah').innerHTML = `
         <!-- HEADER -->
-        <div style="text-align:center; margin-bottom:24px; padding-bottom:18px; border-bottom:1px solid rgba(212,175,55,0.15);">
+        <div style="text-align:center; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid rgba(212,175,55,0.15);">
             <div style="font-size:0.65rem; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:4px;">${me.name}</div>
             <div style="font-size:1.8rem; font-weight:900; color:#d4af37; letter-spacing:1px;">🏆 Tvůj pavouk</div>
-            <div style="font-size:0.8rem; color:#94a3b8; margin-top:8px;">Aktuální body: <b style="color:#d4af37;">${me.points}</b> · Pořadí: <b style="color:#d4af37;">${me.rank}.</b></div>
+            <div style="font-size:0.8rem; color:#94a3b8; margin-top:6px;">Body: <b style="color:#d4af37;">${me.points}</b> · Pořadí: <b style="color:#d4af37;">${me.rank}.</b></div>
         </div>
         
-        <!-- LAYOUT: SKUPINY VLEVO + PAVOUK VPRAVO -->
-        <div style="display:grid; grid-template-columns:minmax(280px, 1fr) minmax(0, 2fr); gap:18px; margin-bottom:22px;" class="bracket-layout">
+        <div style="display:grid; grid-template-columns:minmax(260px, 1fr) minmax(0, 2.2fr); gap:18px; margin-bottom:20px;" class="bracket-layout">
             
-            <!-- ═══ LEVÁ STRANA: SKUPINY ═══ -->
+            <!-- SKUPINY VLEVO -->
             <div>
                 <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.7); text-transform:uppercase; font-weight:800; margin-bottom:10px; padding-left:4px;">📋 Pořadí ve skupinách</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                     ${(tip.groups || []).map((g, idx) => {
                         const adminG = r.groups && r.groups[idx];
                         const aTeams = adminG?.teams || adminG;
+                        const fGetStat = (real, tipVal) => {
+                            if (!real || String(real).trim() === '') return '';
+                            return eq(real, tipVal) ? 'correct' : 'wrong';
+                        };
                         return `
                             <div style="background:linear-gradient(135deg, rgba(212,175,55,0.05), rgba(0,0,0,0.2)); border:1px solid rgba(212,175,55,0.18); border-radius:8px; padding:8px;">
                                 <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.7); font-weight:800; letter-spacing:1.5px; margin-bottom:5px; padding-bottom:3px; border-bottom:1px solid rgba(212,175,55,0.1);">SKUPINA ${String.fromCharCode(65+idx)}</div>
                                 ${(g || []).map((t, pos) => {
-                                    const status = (aTeams && aTeams[pos]) ? getStat(aTeams[pos], t) : '';
+                                    const stat = (aTeams && aTeams[pos]) ? fGetStat(aTeams[pos], t) : '';
                                     const isFirst = pos === 0;
-                                    const isSecond = pos === 1;
-                                    const isThird = pos === 2;
-                                    return `<div style="display:flex; align-items:center; gap:5px; padding:2px 3px; ${status === 'correct' ? 'background:rgba(34,197,94,0.1); border-radius:3px;' : status === 'wrong' ? 'background:rgba(239,68,68,0.05); border-radius:3px;' : ''}">
-                                        <span style="font-size:0.6rem; color:${isFirst ? '#d4af37' : isSecond ? '#cbd5e1' : isThird ? '#d97b3a' : '#5a6480'}; font-weight:900; min-width:10px;">${pos+1}.</span>
-                                        <span style="font-size:0.7rem; color:${status === 'correct' ? '#22c55e' : status === 'wrong' ? '#ef4444' : (isFirst ? '#f0e6c8' : '#cbd5e1')}; font-weight:${isFirst ? '700' : '500'}; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t || '–'}</span>
+                                    return `<div style="display:flex; align-items:center; gap:5px; padding:2px 3px; ${stat === 'correct' ? 'background:rgba(34,197,94,0.1); border-radius:3px;' : stat === 'wrong' ? 'background:rgba(239,68,68,0.05); border-radius:3px;' : ''}">
+                                        <span style="font-size:0.6rem; color:${isFirst ? '#d4af37' : (pos === 1 ? '#cbd5e1' : (pos === 2 ? '#d97b3a' : '#5a6480'))}; font-weight:900; min-width:10px;">${pos+1}.</span>
+                                        <span style="font-size:0.7rem; color:${stat === 'correct' ? '#22c55e' : stat === 'wrong' ? '#ef4444' : (isFirst ? '#f0e6c8' : '#cbd5e1')}; font-weight:${isFirst ? '700' : '500'}; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t || '–'}</span>
                                     </div>`;
                                 }).join('')}
                             </div>
@@ -5169,58 +5295,57 @@ async function otevritMujTip() {
                 </div>
             </div>
             
-            <!-- ═══ PRAVÁ STRANA: PAVOUK ═══ -->
+            <!-- BRACKET SE ZÁPASY -->
             <div>
-                <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.7); text-transform:uppercase; font-weight:800; margin-bottom:10px; padding-left:4px;">🏆 Pavouk turnaje</div>
-                <div style="background:linear-gradient(135deg, rgba(0,0,0,0.3), rgba(212,175,55,0.02)); border:1px solid rgba(212,175,55,0.15); border-radius:14px; padding:14px 10px; overflow-x:auto;">
-                    <div style="display:flex; gap:8px; min-width:max-content; align-items:stretch;">
+                <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.7); text-transform:uppercase; font-weight:800; margin-bottom:10px; padding-left:4px;">🏆 Pavouk turnaje – zápasy</div>
+                <div style="background:linear-gradient(135deg, rgba(0,0,0,0.3), rgba(212,175,55,0.02)); border:1px solid rgba(212,175,55,0.15); border-radius:14px; padding:14px 8px; overflow-x:auto;">
+                    <div style="display:flex; gap:8px; min-width:max-content; align-items:flex-start;">
                         
-                        <!-- R32 -->
-                        <div style="flex:0 0 110px;">
-                            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.7); letter-spacing:1.5px; font-weight:800; margin-bottom:3px;">1/16 FINÁLE</div>
-                            <div style="font-size:0.5rem; color:#5a6480; text-align:center; margin-bottom:8px;">32 týmů</div>
-                            ${(tip.s32 || []).map(t => teamBox(t, getStatPlayoff('s32', t))).join('')}
+                        <!-- 1/16 finále -->
+                        <div style="flex:0 0 135px;">
+                            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.75); letter-spacing:1.5px; font-weight:800; margin-bottom:3px;">ŠESTNÁCTIFINÁLE</div>
+                            <div style="font-size:0.5rem; color:#5a6480; text-align:center; margin-bottom:8px;">16 zápasů</div>
+                            ${r32Zapasy.map(z => renderMatch(z, r.s32)).join('')}
                         </div>
                         
-                        <!-- R16 -->
-                        <div style="flex:0 0 115px;">
-                            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.7); letter-spacing:1.5px; font-weight:800; margin-bottom:3px;">1/8 FINÁLE</div>
-                            <div style="font-size:0.5rem; color:#5a6480; text-align:center; margin-bottom:8px;">16 týmů</div>
-                            ${(tip.s16 || []).map(t => teamBox(t, getStatPlayoff('s16', t))).join('')}
+                        <!-- 1/8 -->
+                        <div style="flex:0 0 135px;">
+                            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.75); letter-spacing:1.5px; font-weight:800; margin-bottom:3px;">OSMIFINÁLE</div>
+                            <div style="font-size:0.5rem; color:#5a6480; text-align:center; margin-bottom:8px;">8 zápasů</div>
+                            ${r16Zapasy.map(z => renderMatch(z, r.s16)).join('')}
                         </div>
                         
-                        <!-- QF -->
-                        <div style="flex:0 0 120px;">
-                            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.7); letter-spacing:1.5px; font-weight:800; margin-bottom:3px;">ČTVRTFINÁLE</div>
-                            <div style="font-size:0.5rem; color:#5a6480; text-align:center; margin-bottom:8px;">8 týmů</div>
-                            ${(tip.s8 || []).map(t => teamBox(t, getStatPlayoff('s8', t), true)).join('')}
+                        <!-- 1/4 -->
+                        <div style="flex:0 0 140px;">
+                            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.75); letter-spacing:1.5px; font-weight:800; margin-bottom:3px;">ČTVRTFINÁLE</div>
+                            <div style="font-size:0.5rem; color:#5a6480; text-align:center; margin-bottom:8px;">4 zápasy</div>
+                            ${qfZapasy.map(z => renderMatch(z, r.s8)).join('')}
                         </div>
                         
-                        <!-- SF -->
-                        <div style="flex:0 0 125px;">
-                            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.7); letter-spacing:1.5px; font-weight:800; margin-bottom:3px;">SEMIFINÁLE</div>
-                            <div style="font-size:0.5rem; color:#5a6480; text-align:center; margin-bottom:8px;">4 týmy</div>
-                            ${(tip.s4 || []).map(t => teamBox(t, getStatPlayoff('s4', t), true)).join('')}
+                        <!-- Semi -->
+                        <div style="flex:0 0 145px;">
+                            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.75); letter-spacing:1.5px; font-weight:800; margin-bottom:3px;">SEMIFINÁLE</div>
+                            <div style="font-size:0.5rem; color:#5a6480; text-align:center; margin-bottom:8px;">2 zápasy</div>
+                            ${semiZapasy.map(z => renderMatch(z, null)).join('')}
                         </div>
                         
-                        <!-- FINAL + BRONZE -->
-                        <div style="flex:0 0 145px; display:flex; flex-direction:column; justify-content:center; gap:8px;">
-                            <!-- WINNER -->
-                            <div style="background:linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.08)); border:2px solid rgba(212,175,55,0.55); border-radius:14px; padding:14px 10px; text-align:center; box-shadow:0 6px 20px rgba(212,175,55,0.2);">
-                                <div style="font-size:2.2rem; line-height:1; margin-bottom:5px;">🏆</div>
-                                <div style="font-size:0.55rem; color:rgba(212,175,55,0.8); font-weight:900; letter-spacing:1.5px; margin-bottom:6px;">VÍTĚZ</div>
-                                <div style="font-size:0.85rem; font-weight:900; color:${getStat(r.winner, tip.winner) === 'correct' ? '#22c55e' : getStat(r.winner, tip.winner) === 'wrong' ? '#ef4444' : '#d4af37'}; padding:4px;">${tip.winner || '–'}</div>
+                        <!-- Finále + Bronz -->
+                        <div style="flex:0 0 155px; display:flex; flex-direction:column; gap:14px;">
+                            <div>
+                                <div style="text-align:center; font-size:0.6rem; color:rgba(212,175,55,0.9); letter-spacing:1.5px; font-weight:900; margin-bottom:5px;">🏆 FINÁLE</div>
+                                ${renderMatch(finaleZapas, r.winner, 'final')}
+                                ${tip.winner ? `<div style="text-align:center; font-size:0.65rem; color:#d4af37; font-weight:900; margin-top:6px; padding:6px; background:rgba(212,175,55,0.08); border-radius:6px; border:1px solid rgba(212,175,55,0.2);">🥇 ${tip.winner}</div>` : ''}
                             </div>
                             
-                            <!-- BRONZE -->
-                            <div style="background:linear-gradient(135deg, rgba(180,100,40,0.18), rgba(180,100,40,0.05)); border:1px solid rgba(180,100,40,0.4); border-radius:12px; padding:11px 10px; text-align:center;">
-                                <div style="font-size:1.5rem; line-height:1; margin-bottom:4px;">🥉</div>
-                                <div style="font-size:0.55rem; color:#d97b3a; font-weight:900; letter-spacing:1.5px; margin-bottom:5px;">3. MÍSTO</div>
-                                <div style="font-size:0.8rem; font-weight:900; color:${getStat(r.bronze, tip.bronze) === 'correct' ? '#22c55e' : getStat(r.bronze, tip.bronze) === 'wrong' ? '#ef4444' : '#d97b3a'};">${tip.bronze || '–'}</div>
+                            <div>
+                                <div style="text-align:center; font-size:0.6rem; color:#d97b3a; letter-spacing:1.5px; font-weight:900; margin-bottom:5px;">🥉 O 3. MÍSTO</div>
+                                ${renderMatch(bronzZapas, r.bronze, 'bronze')}
+                                ${tip.bronze ? `<div style="text-align:center; font-size:0.6rem; color:#d97b3a; font-weight:900; margin-top:6px; padding:5px; background:rgba(180,100,40,0.06); border-radius:6px; border:1px solid rgba(180,100,40,0.2);">3. ${tip.bronze}</div>` : ''}
                             </div>
                         </div>
                     </div>
                 </div>
+                <div style="text-align:center; font-size:0.6rem; color:#5a6480; margin-top:8px; font-style:italic;">💡 Posuvný bracket – přejeď vpravo</div>
             </div>
         </div>
         
@@ -5228,10 +5353,11 @@ async function otevritMujTip() {
         ${typeof renderBonusTipy === 'function' ? renderBonusTipy(tip, r) : ''}
         
         <!-- LEGENDA -->
-        <div style="margin-top:18px; padding:10px 14px; background:rgba(255,255,255,0.02); border-radius:10px; display:flex; justify-content:center; gap:18px; flex-wrap:wrap; font-size:0.7rem; color:#94a3b8;">
-            <span><span style="display:inline-block; width:10px; height:10px; background:#22c55e; border-radius:2px; vertical-align:middle; margin-right:5px;"></span>Trefil/a</span>
-            <span><span style="display:inline-block; width:10px; height:10px; background:#ef4444; border-radius:2px; vertical-align:middle; margin-right:5px;"></span>Mimo</span>
-            <span><span style="display:inline-block; width:10px; height:10px; background:rgba(212,175,55,0.3); border-radius:2px; vertical-align:middle; margin-right:5px;"></span>Čeká se</span>
+        <div style="margin-top:16px; padding:10px 14px; background:rgba(255,255,255,0.02); border-radius:10px; display:flex; justify-content:center; gap:14px; flex-wrap:wrap; font-size:0.68rem; color:#94a3b8;">
+            <span><span style="display:inline-block; width:10px; height:10px; background:#22c55e; border-radius:2px; vertical-align:middle; margin-right:5px;"></span>Trefil postup ✓</span>
+            <span><span style="display:inline-block; width:10px; height:10px; background:#ef4444; border-radius:2px; vertical-align:middle; margin-right:5px;"></span>Nepostoupil ✗</span>
+            <span><span style="display:inline-block; width:10px; height:10px; background:rgba(212,175,55,0.5); border-radius:2px; vertical-align:middle; margin-right:5px;"></span>Tipovaný vítěz (čeká)</span>
+            <span><span style="display:inline-block; width:10px; height:10px; background:#5a6480; border-radius:2px; vertical-align:middle; margin-right:5px;"></span>Tipovaný poražený</span>
         </div>
     `;
     
