@@ -6753,7 +6753,9 @@ async function vlozitTestData() {
 
     // === RENDER & EXPORT ===
     const container = document.createElement('div');
-    container.style.cssText = 'position:fixed; left:-9999px; top:0; z-index:-1;';
+    // KLÍČOVÁ ZMĚNA: Kontejneru dáme fixní šířku nejširšího elementu (1100px),
+    // aby mobilní prohlížeč nezkracoval layout podle šířky displeje.
+    container.style.cssText = 'position:fixed; left:-9999px; top:0; z-index:-1; width:1100px; overflow:visible;';
     container.innerHTML = page1Html + page2Html;
     document.body.appendChild(container);
 
@@ -6765,7 +6767,11 @@ async function vlozitTestData() {
         const pdfW1 = pdf.internal.pageSize.getWidth();
         const pdfH1 = pdf.internal.pageSize.getHeight();
         const c1 = await html2canvas(container.querySelector('#pdf-page1'), {
-            scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false
+            scale: 2, 
+            backgroundColor: '#05070f', 
+            useCORS: true, 
+            logging: false,
+            windowWidth: 794 // Fixní šířka okna pro zachování konzistence
         });
         const ratio1 = c1.width / c1.height;
         const h1 = pdfW1 / ratio1;
@@ -6775,12 +6781,32 @@ async function vlozitTestData() {
         pdf.addPage('a4', 'landscape');
         const pdfW2 = pdf.internal.pageSize.getWidth();
         const pdfH2 = pdf.internal.pageSize.getHeight();
+        
         const c2 = await html2canvas(container.querySelector('#pdf-page2'), {
-            scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false
+            scale: 2, 
+            backgroundColor: '#05070f', 
+            useCORS: true, 
+            logging: false,
+            windowWidth: 1100 // Vynutíme, aby si html2canvas myslel, že okno má 1100px
         });
+        
+        // Výpočet výšky tak, aby se celý pavouk vešel na šířku A4 landscape
         const ratio2 = c2.width / c2.height;
         const h2 = pdfW2 / ratio2;
-        pdf.addImage(c2.toDataURL('image/png'), 'PNG', 0, 0, pdfW2, Math.min(h2, pdfH2));
+        
+        // Pokud by byla výška obrázku větší než výška stránky, napasujeme to raději podle výšky
+        let finalW2 = pdfW2;
+        let finalH2 = h2;
+        if (h2 > pdfH2) {
+            finalH2 = pdfH2;
+            finalW2 = pdfH2 * ratio2;
+        }
+
+        // Vycentrování na stránce, pokud by vznikly okraje
+        const xOffset = (pdfW2 - finalW2) / 2;
+        const yOffset = (pdfH2 - finalH2) / 2;
+
+        pdf.addImage(c2.toDataURL('image/png'), 'PNG', xOffset, yOffset, finalW2, finalH2);
 
         pdf.save(`WC2026-tip-${jmeno}.pdf`);
         showToast(`✅ PDF s pavoukem staženo!`, 'success', 3500);
@@ -6790,7 +6816,6 @@ async function vlozitTestData() {
     } finally {
         document.body.removeChild(container);
     }
-}
     
 function showToast(message, type = 'info', duration = 4000) {
     const container = document.getElementById('toast-container');
