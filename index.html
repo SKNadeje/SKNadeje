@@ -5240,7 +5240,8 @@ async function otevritMujTip() {
         const teamRow = (team, isWinner) => {
             const c = stylForRow(isWinner);
             const icon = isWinner && status === 'correct' ? ' ✓' : (isWinner && status === 'wrong' ? ' ✗' : '');
-            return `<div style="background:${c.bg}; border:1px solid ${c.border}; color:${c.color}; padding:5px 7px; border-radius:5px; font-size:0.7rem; font-weight:${c.weight}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${team || '–'}${icon}</div>`;
+            const flag = (team && typeof flagImg === 'function') ? flagImg(team, 14) : '';
+            return `<div style="background:${c.bg}; border:1px solid ${c.border}; color:${c.color}; padding:5px 7px; border-radius:5px; font-size:0.7rem; font-weight:${c.weight}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:4px;">${flag}<span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${team || '–'}${icon}</span></div>`;
         };
         
         const accent = varianta === 'final' ? 'rgba(212,175,55,0.35)' : (varianta === 'bronze' ? 'rgba(180,100,40,0.35)' : 'rgba(212,175,55,0.12)');
@@ -5286,7 +5287,7 @@ async function otevritMujTip() {
                                     const isFirst = pos === 0;
                                     return `<div style="display:flex; align-items:center; gap:5px; padding:2px 3px; ${stat === 'correct' ? 'background:rgba(34,197,94,0.1); border-radius:3px;' : stat === 'wrong' ? 'background:rgba(239,68,68,0.05); border-radius:3px;' : ''}">
                                         <span style="font-size:0.6rem; color:${isFirst ? '#d4af37' : (pos === 1 ? '#cbd5e1' : (pos === 2 ? '#d97b3a' : '#5a6480'))}; font-weight:900; min-width:10px;">${pos+1}.</span>
-                                        <span style="font-size:0.7rem; color:${stat === 'correct' ? '#22c55e' : stat === 'wrong' ? '#ef4444' : (isFirst ? '#f0e6c8' : '#cbd5e1')}; font-weight:${isFirst ? '700' : '500'}; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t || '–'}</span>
+                                        <span style="font-size:0.7rem; color:${stat === 'correct' ? '#22c55e' : stat === 'wrong' ? '#ef4444' : (isFirst ? '#f0e6c8' : '#cbd5e1')}; font-weight:${isFirst ? '700' : '500'}; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:4px;">${(t && typeof flagImg === 'function') ? flagImg(t, 12) : ''}<span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${t || '–'}</span></span>
                                     </div>`;
                                 }).join('')}
                             </div>
@@ -5334,13 +5335,13 @@ async function otevritMujTip() {
                             <div>
                                 <div style="text-align:center; font-size:0.6rem; color:rgba(212,175,55,0.9); letter-spacing:1.5px; font-weight:900; margin-bottom:5px;">🏆 FINÁLE</div>
                                 ${renderMatch(finaleZapas, r.winner, 'final')}
-                                ${tip.winner ? `<div style="text-align:center; font-size:0.65rem; color:#d4af37; font-weight:900; margin-top:6px; padding:6px; background:rgba(212,175,55,0.08); border-radius:6px; border:1px solid rgba(212,175,55,0.2);">🥇 ${tip.winner}</div>` : ''}
+                                ${tip.winner ? `<div style="text-align:center; font-size:0.65rem; color:#d4af37; font-weight:900; margin-top:6px; padding:6px; background:rgba(212,175,55,0.08); border-radius:6px; border:1px solid rgba(212,175,55,0.2); display:flex; align-items:center; justify-content:center; gap:5px;">🥇 ${typeof flagImg === 'function' ? flagImg(tip.winner, 16) : ''}<span>${tip.winner}</span></div>` : ''}
                             </div>
                             
                             <div>
                                 <div style="text-align:center; font-size:0.6rem; color:#d97b3a; letter-spacing:1.5px; font-weight:900; margin-bottom:5px;">🥉 O 3. MÍSTO</div>
                                 ${renderMatch(bronzZapas, r.bronze, 'bronze')}
-                                ${tip.bronze ? `<div style="text-align:center; font-size:0.6rem; color:#d97b3a; font-weight:900; margin-top:6px; padding:5px; background:rgba(180,100,40,0.06); border-radius:6px; border:1px solid rgba(180,100,40,0.2);">3. ${tip.bronze}</div>` : ''}
+                                ${tip.bronze ? `<div style="text-align:center; font-size:0.6rem; color:#d97b3a; font-weight:900; margin-top:6px; padding:5px; background:rgba(180,100,40,0.06); border-radius:6px; border:1px solid rgba(180,100,40,0.2); display:flex; align-items:center; justify-content:center; gap:5px;">3. ${typeof flagImg === 'function' ? flagImg(tip.bronze, 14) : ''}<span>${tip.bronze}</span></div>` : ''}
                             </div>
                         </div>
                     </div>
