@@ -21,6 +21,99 @@
     <!-- 🔔 OneSignal Push Notifications -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
+    // 🎯 Render Šance widgetu (oddělený od profilu)
+function renderSanceWidget(p) {
+    const maBody = profilData.some(x => x.points > 0);
+    if (!maBody) {
+        return '<div style="text-align:center; padding:40px 20px; color:#94a3b8;"><div style="font-size:2.5rem; margin-bottom:10px;">🔒</div><div>Šance bude dostupná<br>po startu turnaje.</div></div>';
+    }
+    
+    const s = vypocetSance(p.rowId);
+    if (!s) return '';
+    
+    const percentDone = s.max > 0 ? Math.round((s.current / s.max) * 100) : 0;
+    
+    let verdict, verdictColor, verdictBg, verdictIcon;
+    if (s.bestPosition === 1) {
+        verdict = 'Stále v boji o 1. místo!';
+        verdictColor = '#d4af37'; verdictBg = 'rgba(212,175,55,0.1)'; verdictIcon = '🏆';
+    } else if (s.bestPosition <= 3) {
+        verdict = 'Boj o medaile';
+        verdictColor = '#d97b3a'; verdictBg = 'rgba(180,100,40,0.1)'; verdictIcon = '🥉';
+    } else if (s.worstPosition <= Math.ceil(s.totalPlayers / 2)) {
+        verdict = 'Top polovina jistá';
+        verdictColor = '#22c55e'; verdictBg = 'rgba(34,197,94,0.1)'; verdictIcon = '📊';
+    } else {
+        verdict = 'Bojuj dál!';
+        verdictColor = '#94a3b8'; verdictBg = 'rgba(148,163,184,0.08)'; verdictIcon = '💪';
+    }
+    
+    return `
+        <div style="padding:16px; background:linear-gradient(135deg, rgba(56,189,248,0.05), rgba(212,175,55,0.05)); border:1px solid rgba(56,189,248,0.2); border-radius:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <div style="font-size:0.75rem; letter-spacing:2px; color:rgba(56,189,248,0.8); text-transform:uppercase; font-weight:700;">🎯 Šance na pozici</div>
+                <div style="background:${verdictBg}; color:${verdictColor}; padding:4px 12px; border-radius:8px; font-size:0.7rem; font-weight:800; letter-spacing:1px;">${verdictIcon} ${verdict}</div>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:0.75rem; color:#94a3b8; margin-bottom:6px;">
+                <span>${s.current} bodů</span>
+                <span style="color:#5a6480;">Max možných: <b style="color:#d4af37;">${s.max} b</b></span>
+            </div>
+            <div style="height:10px; background:rgba(0,0,0,0.4); border-radius:5px; overflow:hidden; margin-bottom:16px;">
+                <div style="height:100%; width:${percentDone}%; background:linear-gradient(90deg, #22c55e, #d4af37); border-radius:5px;"></div>
+            </div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div style="text-align:center; padding:14px 8px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.25); border-radius:10px;">
+                    <div style="font-size:0.6rem; color:#22c55e; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:5px;">🚀 Nejlépe</div>
+                    <div style="font-size:1.8rem; font-weight:900; color:#22c55e;">${s.bestPosition}.</div>
+                    <div style="font-size:0.6rem; color:#5a6480;">místo</div>
+                </div>
+                <div style="text-align:center; padding:14px 8px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); border-radius:10px;">
+                    <div style="font-size:0.6rem; color:#ef4444; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:5px;">⚠️ Nejhůře</div>
+                    <div style="font-size:1.8rem; font-weight:900; color:#ef4444;">${s.worstPosition}.</div>
+                    <div style="font-size:0.6rem; color:#5a6480;">místo</div>
+                </div>
+            </div>
+            
+            ${s.remaining > 0 ? `
+                <div style="text-align:center; margin-top:14px; font-size:0.8rem; color:#94a3b8;">
+                    <span style="color:#d4af37; font-weight:700;">+${s.remaining} bodů</span> může ještě získat
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Helper - Back button
+function backBtn() {
+    return `<button onclick="profilZpet()" style="display:flex; align-items:center; gap:6px; padding:10px 16px; background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.25); border-radius:10px; color:#d4af37; font-weight:700; font-size:0.85rem; cursor:pointer; margin-bottom:18px; transition:all 0.2s;" onmouseover="this.style.background='rgba(212,175,55,0.15)'" onmouseout="this.style.background='rgba(212,175,55,0.08)'">← Zpět</button>`;
+}
+
+// Zobrazí konkrétní view v profilu
+function ukazProfilView(viewName) {
+    document.querySelectorAll('.profil-view').forEach(v => {
+        v.style.display = v.dataset.view === viewName ? 'block' : 'none';
+    });
+    
+    // Lazy-init grafy až když uživatel klikne
+    if (viewName === 'grafy' && window.__renderProfilGrafyCb) {
+        setTimeout(window.__renderProfilGrafyCb, 100);
+    }
+    
+    // Scroll na začátek
+    const obsah = document.getElementById('profil-obsah');
+    if (obsah) obsah.scrollTop = 0;
+    const modal = document.getElementById('profil-modal');
+    if (modal) {
+        const scrollArea = modal.querySelector('[style*="overflow-y:auto"]');
+        if (scrollArea) scrollArea.scrollTop = 0;
+    }
+}
+
+function profilZpet() {
+    ukazProfilView('hub');
+}
     // 🎯 Spočítá rozsah pozic pro hráče (best / worst case)
 function vypocetSance(rowId) {
     const real = window.currentResults || {};
@@ -4531,7 +4624,7 @@ async function otevritProfil(rowId) {
     const p = profilData.find(x => String(x.rowId) === String(rowId));
     if (!p) return;
     
-    // 🆕 Načti admin výsledky pro porovnání bonus tipů
+    // Načti admin výsledky
     let adminVys = {};
     try {
         const { data } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).single();
@@ -4541,178 +4634,192 @@ async function otevritProfil(rowId) {
     const maBody = profilData.some(x => x.points > 0);
     const hlaska = ziskejHlasku(p.rank, profilData.length, p.points, maBody);
     const lepsiNez = profilData.length > 1 ? Math.round(((profilData.length - p.rank) / (profilData.length - 1)) * 100) : 100;
-
-    document.getElementById('profil-obsah').innerHTML = `
-        <div style="text-align:center; margin-bottom:20px;">
-            <div style="display:flex; justify-content:center; margin-bottom:12px;">${avatarHtml(p.name, 64)}</div>
-            <div style="font-size:1.4rem; font-weight:900; color:#f0e6c8;">${p.name || 'Anonym'}${typeof mvpBadgeHtml === 'function' ? mvpBadgeHtml(p.rowId, 'large') : ''}</div>
-            ${p.full_name ? `<div style="font-size:0.85rem; color:#5a6480; margin-top:2px;">${p.full_name}</div>` : ''}
-            <div style="font-size:0.9rem; color:#d4af37; font-style:italic; margin-top:8px;">"${hlaska}"</div>
-        </div>
-
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px;">
-            <div style="text-align:center; padding:12px 6px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px;">
-                <div style="font-size:1.3rem; font-weight:900; color:#d4af37;">${p.rank}.</div>
-                <div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase;">Pořadí</div>
-            </div>
-            <div style="text-align:center; padding:12px 6px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px;">
-                <div style="font-size:1.3rem; font-weight:900; color:#d4af37;">${p.points}</div>
-                <div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase;">Bodů</div>
-            </div>
-            <div style="text-align:center; padding:12px 6px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px;">
-                <div style="font-size:1.3rem; font-weight:900; color:#d4af37;">${lepsiNez}%</div>
-                <div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase;">Lepší než</div>
-            </div>
-        </div>
-      <!-- 🧬 TIPAŘ DNA -->
-        ${renderTiparDNA(p)}
-        
-        <!-- 🎯 ŠANCE NA POZICI -->
-        ${(() => {
-            const maBody = profilData.some(x => x.points > 0);
-            if (!maBody) return '';
-            
-            const s = vypocetSance(p.rowId);
-            if (!s) return '';
-            
-            const percentDone = s.max > 0 ? Math.round((s.current / s.max) * 100) : 0;
-            
-            let verdict, verdictColor, verdictBg, verdictIcon;
-            if (s.bestPosition === 1) {
-                verdict = 'Stále v boji o 1. místo!';
-                verdictColor = '#d4af37';
-                verdictBg = 'rgba(212,175,55,0.1)';
-                verdictIcon = '🏆';
-            } else if (s.bestPosition <= 3) {
-                verdict = 'Boj o medaile';
-                verdictColor = '#d97b3a';
-                verdictBg = 'rgba(180,100,40,0.1)';
-                verdictIcon = '🥉';
-            } else if (s.worstPosition <= Math.ceil(s.totalPlayers / 2)) {
-                verdict = 'Top polovina jistá';
-                verdictColor = '#22c55e';
-                verdictBg = 'rgba(34,197,94,0.1)';
-                verdictIcon = '📊';
-            } else {
-                verdict = 'Bojuj dál!';
-                verdictColor = '#94a3b8';
-                verdictBg = 'rgba(148,163,184,0.08)';
-                verdictIcon = '💪';
-            }
-            
-            return `
-                <div style="margin-bottom:16px; padding:14px; background:linear-gradient(135deg, rgba(56,189,248,0.05), rgba(212,175,55,0.05)); border:1px solid rgba(56,189,248,0.2); border-radius:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(56,189,248,0.8); text-transform:uppercase; font-weight:700;">🎯 Šance na pozici</div>
-                        <div style="background:${verdictBg}; color:${verdictColor}; padding:3px 10px; border-radius:8px; font-size:0.65rem; font-weight:800; letter-spacing:1px;">${verdictIcon} ${verdict}</div>
-                    </div>
-                    
-                    <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:0.7rem; color:#94a3b8; margin-bottom:4px;">
-                        <span>${s.current} bodů</span>
-                        <span style="color:#5a6480;">Max možných: <b style="color:#d4af37;">${s.max} b</b></span>
-                    </div>
-                    <div style="height:8px; background:rgba(0,0,0,0.4); border-radius:4px; overflow:hidden; margin-bottom:14px;">
-                        <div style="height:100%; width:${percentDone}%; background:linear-gradient(90deg, #22c55e, #d4af37); border-radius:4px; transition:width 0.6s;"></div>
-                    </div>
-                    
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                        <div style="text-align:center; padding:10px 6px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.25); border-radius:8px;">
-                            <div style="font-size:0.55rem; color:#22c55e; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:3px;">🚀 Nejlépe</div>
-                            <div style="font-size:1.4rem; font-weight:900; color:#22c55e;">${s.bestPosition}.</div>
-                            <div style="font-size:0.55rem; color:#5a6480;">místo</div>
-                        </div>
-                        <div style="text-align:center; padding:10px 6px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); border-radius:8px;">
-                            <div style="font-size:0.55rem; color:#ef4444; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:3px;">⚠️ Nejhůře</div>
-                            <div style="font-size:1.4rem; font-weight:900; color:#ef4444;">${s.worstPosition}.</div>
-                            <div style="font-size:0.55rem; color:#5a6480;">místo</div>
-                        </div>
-                    </div>
-                    
-                    ${s.remaining > 0 ? `
-                        <div style="text-align:center; margin-top:10px; font-size:0.7rem; color:#94a3b8;">
-                            <span style="color:#d4af37; font-weight:700;">+${s.remaining} bodů</span> může ještě získat
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        })()}
-
-       <!-- 📈 GRAFY -->
-${(() => {
+    
+    // Data pro náhledy v dlaždicích
+    const dna = (p.tip?.winner) ? vypocetTiparDNA(p) : null;
+    const sance = maBody ? vypocetSance(p.rowId) : null;
+    const odznaky = ziskejOdznaky(p);
+    const aktivniOdznaky = odznaky.filter(o => o.aktivni).length;
+    
+    const bonusTip = p.tip?.bonus || {};
+    const bonusFilled = [
+        bonusTip.topScorer, bonusTip.topGoalkeeper, 
+        bonusTip.totalGoals, bonusTip.zeroZeroResults
+    ].filter(x => x != null && x !== '').length;
+    
+    // Privacy logic
+    const ADMIN_ID = "92a1e51b-e03c-48d7-99df-76c2f60a455f";
+    const isAdmin = window.loggedUserIdGlobal === ADMIN_ID;
+    const tournamentStarted = new Date().getTime() >= new Date("2026-06-11T21:00:00").getTime();
     const isOwn = window.loggedUserIdGlobal && String(window.loggedUserIdGlobal) === String(p.rowId);
+    const showBonus = isOwn || isAdmin || tournamentStarted;
+    
+    // Chart IDs pro grafy
     const chartId1 = `chart-body-${p.rowId}-${Date.now()}`;
     const chartId2 = `chart-faze-${p.rowId}-${Date.now()}`;
-
-    const grafyHtml = `
-        <div id="graphs-section-${p.rowId}" style="${isOwn ? '' : 'display:none;'}">
-            <div style="font-size:0.65rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin:14px 0 6px;">📈 Vývoj bodů v čase</div>
-            <div style="background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.15); border-radius:10px; padding:10px; height:160px; margin-bottom:14px; position:relative;">
+    window.__renderProfilGrafyCb = () => {
+        if (typeof renderProfilGrafy === 'function') {
+            renderProfilGrafy(p.rowId, chartId1, chartId2);
+        }
+    };
+    
+    const tileBase = `cursor:pointer; background:linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02)); border:1px solid rgba(212,175,55,0.2); border-radius:14px; padding:16px; transition:all 0.2s;`;
+    const tileEvents = `onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='rgba(212,175,55,0.45)'; this.style.boxShadow='0 6px 20px rgba(212,175,55,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(212,175,55,0.2)'; this.style.boxShadow='none';"`;
+    
+    document.getElementById('profil-obsah').innerHTML = `
+        <!-- ════════════ HUB VIEW ════════════ -->
+        <div class="profil-view" data-view="hub">
+            <!-- Hlavička bez avataru -->
+            <div style="text-align:center; margin-bottom:22px;">
+                <div style="font-size:1.7rem; font-weight:900; color:#f0e6c8; letter-spacing:0.5px;">${p.name || 'Anonym'}${typeof mvpBadgeHtml === 'function' ? mvpBadgeHtml(p.rowId, 'large') : ''}</div>
+                ${p.full_name ? `<div style="font-size:0.85rem; color:#5a6480; margin-top:3px;">${p.full_name}</div>` : ''}
+                <div style="font-size:0.9rem; color:#d4af37; font-style:italic; margin-top:10px;">"${hlaska}"</div>
+            </div>
+            
+            <!-- 3 statistiky -->
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:22px;">
+                <div style="text-align:center; padding:14px 6px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px;">
+                    <div style="font-size:1.4rem; font-weight:900; color:#d4af37;">${p.rank}.</div>
+                    <div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px; margin-top:2px;">Pořadí</div>
+                </div>
+                <div style="text-align:center; padding:14px 6px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px;">
+                    <div style="font-size:1.4rem; font-weight:900; color:#d4af37;">${p.points}</div>
+                    <div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px; margin-top:2px;">Bodů</div>
+                </div>
+                <div style="text-align:center; padding:14px 6px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px;">
+                    <div style="font-size:1.4rem; font-weight:900; color:#d4af37;">${lepsiNez}%</div>
+                    <div style="font-size:0.55rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px; margin-top:2px;">Lepší než</div>
+                </div>
+            </div>
+            
+            <!-- DLAŽDICE -->
+            <div style="font-size:0.65rem; letter-spacing:2.5px; color:rgba(212,175,55,0.5); text-transform:uppercase; font-weight:700; margin-bottom:10px; padding-left:2px;">📂 Detaily profilu</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                
+                ${dna ? `
+                    <!-- DNA dlaždice -->
+                    <div onclick="ukazProfilView('dna')" ${tileEvents} style="${tileBase}">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                            <span style="font-size:1.7rem;">🧬</span>
+                            <span style="color:rgba(212,175,55,0.5); font-size:1.2rem;">›</span>
+                        </div>
+                        <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; letter-spacing:1px; text-transform:uppercase;">Tipař DNA</div>
+                        <div style="font-size:0.75rem; color:${dna.akcentColor}; font-weight:700; margin-top:4px;">${dna.ikona} ${dna.typ}</div>
+                    </div>
+                ` : ''}
+                
+                <!-- GRAFY dlaždice -->
+                <div onclick="ukazProfilView('grafy')" ${tileEvents} style="${tileBase}">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                        <span style="font-size:1.7rem;">📈</span>
+                        <span style="color:rgba(212,175,55,0.5); font-size:1.2rem;">›</span>
+                    </div>
+                    <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; letter-spacing:1px; text-transform:uppercase;">Statistiky</div>
+                    <div style="font-size:0.7rem; color:#94a3b8; margin-top:4px;">Vývoj bodů + úspěšnost</div>
+                </div>
+                
+                <!-- ŠANCE dlaždice -->
+                ${sance ? `
+                    <div onclick="ukazProfilView('sance')" ${tileEvents} style="${tileBase}">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                            <span style="font-size:1.7rem;">🎯</span>
+                            <span style="color:rgba(212,175,55,0.5); font-size:1.2rem;">›</span>
+                        </div>
+                        <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; letter-spacing:1px; text-transform:uppercase;">Šance na pozici</div>
+                        <div style="font-size:0.7rem; color:#22c55e; font-weight:700; margin-top:4px;">🚀 Nejlépe ${sance.bestPosition}. místo</div>
+                    </div>
+                ` : `
+                    <div style="${tileBase}; cursor:default; opacity:0.5;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                            <span style="font-size:1.7rem;">🔒</span>
+                        </div>
+                        <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; letter-spacing:1px; text-transform:uppercase;">Šance na pozici</div>
+                        <div style="font-size:0.7rem; color:#94a3b8; margin-top:4px;">Po startu turnaje</div>
+                    </div>
+                `}
+                
+                <!-- BONUS dlaždice -->
+                <div onclick="ukazProfilView('bonus')" ${tileEvents} style="${tileBase}">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                        <span style="font-size:1.7rem;">🎁</span>
+                        <span style="color:rgba(212,175,55,0.5); font-size:1.2rem;">›</span>
+                    </div>
+                    <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; letter-spacing:1px; text-transform:uppercase;">Bonus tipy</div>
+                    <div style="font-size:0.7rem; color:${bonusFilled === 4 ? '#22c55e' : '#94a3b8'}; font-weight:700; margin-top:4px;">${showBonus ? `${bonusFilled}/4 vyplněno` : '🔒 do startu'}</div>
+                </div>
+                
+                <!-- ODZNAKY dlaždice (full width) -->
+                <div onclick="ukazProfilView('odznaky')" ${tileEvents} style="${tileBase}; grid-column:1/-1;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:14px;">
+                            <span style="font-size:1.7rem;">🏆</span>
+                            <div>
+                                <div style="font-size:0.72rem; font-weight:800; color:#f0e6c8; letter-spacing:1px; text-transform:uppercase;">Odznaky</div>
+                                <div style="font-size:0.7rem; color:#d4af37; font-weight:700; margin-top:2px;">${aktivniOdznaky}/${odznaky.length} získáno</div>
+                            </div>
+                        </div>
+                        <span style="color:rgba(212,175,55,0.5); font-size:1.2rem;">›</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ════════════ DNA VIEW ════════════ -->
+        <div class="profil-view" data-view="dna" style="display:none;">
+            ${backBtn()}
+            ${renderTiparDNA(p)}
+        </div>
+        
+        <!-- ════════════ GRAFY VIEW ════════════ -->
+        <div class="profil-view" data-view="grafy" style="display:none;">
+            ${backBtn()}
+            <div style="font-size:0.65rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin:0 0 8px;">📈 Vývoj bodů v čase</div>
+            <div style="background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.15); border-radius:10px; padding:10px; height:200px; margin-bottom:16px; position:relative;">
                 <canvas id="${chartId1}"></canvas>
             </div>
-
-            <div style="font-size:0.65rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin:14px 0 6px;">🎯 Úspěšnost po fázích</div>
-            <div style="background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.15); border-radius:10px; padding:10px; height:240px; margin-bottom:14px; position:relative;">
+            <div style="font-size:0.65rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin:0 0 8px;">🎯 Úspěšnost po fázích</div>
+            <div style="background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.15); border-radius:10px; padding:10px; height:280px; position:relative;">
                 <canvas id="${chartId2}"></canvas>
             </div>
         </div>
-        ${!isOwn ? `
-            <button id="show-graphs-${p.rowId}" onclick="document.getElementById('graphs-section-${p.rowId}').style.display='block'; renderProfilGrafy('${p.rowId}', '${chartId1}', '${chartId2}'); this.style.display='none';" 
-                style="width:100%; margin-top:10px; padding:12px; background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.3); color:#d4af37; border-radius:10px; cursor:pointer; font-weight:800; letter-spacing:1px; text-transform:uppercase; font-size:0.75rem;">
-                📊 ZOBRAZIT GRAFY HRÁČE
-            </button>
-        ` : ''}
+        
+        <!-- ════════════ ŠANCE VIEW ════════════ -->
+        <div class="profil-view" data-view="sance" style="display:none;">
+            ${backBtn()}
+            ${renderSanceWidget(p)}
+        </div>
+        
+        <!-- ════════════ BONUS VIEW ════════════ -->
+        <div class="profil-view" data-view="bonus" style="display:none;">
+            ${backBtn()}
+            ${(() => {
+                if (!showBonus) {
+                    return `
+                        <div style="padding:40px 20px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.2); border-radius:14px; text-align:center;">
+                            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:10px;">🎁 Bonus tipy</div>
+                            <div style="font-size:3rem; margin-bottom:12px;">🔒</div>
+                            <div style="font-size:0.9rem; color:#94a3b8; line-height:1.6;">Bonus tipy ostatních hráčů budou odhaleny<br><b style="color:#d4af37;">po startu turnaje (11. 6. 2026)</b></div>
+                        </div>
+                    `;
+                }
+                return renderBonusTipy(p.tip || {}, adminVys);
+            })()}
+        </div>
+        
+        <!-- ════════════ ODZNAKY VIEW ════════════ -->
+        <div class="profil-view" data-view="odznaky" style="display:none;">
+            ${backBtn()}
+            <div style="font-size:0.65rem; color:rgba(212,175,55,0.5); text-align:center; margin-bottom:12px; letter-spacing:1px; text-transform:uppercase;">↓ Klepni na odznak pro popis</div>
+            <div id="odznak-popis" style="display:none; padding:12px 14px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.2); border-radius:10px; margin-bottom:14px; font-size:0.85rem; color:#f0e6c8; line-height:1.5;"></div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(72px, 1fr)); gap:10px;">
+                ${odznaky.map(o => `
+                    <div title="${o.label}: ${o.popis || ''}" ${o.klik ? `onclick="${o.klik}"` : `onclick="ukazPopisOdznaku('${o.label.replace(/'/g, "\\'")}', '${(o.popis||'').replace(/'/g, "\\'")}', ${o.aktivni})"`} style="text-align:center; padding:12px 6px; border-radius:12px; background:${o.aktivni ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${o.aktivni ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.05)'}; opacity:${o.aktivni ? '1' : '0.35'}; cursor:pointer; transition:all 0.2s;">
+                        <div style="font-size:26px;">${o.icon}</div>
+                        <div style="font-size:0.55rem; color:#94a3b8; margin-top:5px; line-height:1.2;">${o.label}</div>
+                    </div>`).join('')}
+            </div>
+        </div>
     `;
-
-    // Pokud je to vlastní profil, vyrenderuj grafy hned po otevření modalu
-    if (isOwn) {
-        setTimeout(() => renderProfilGrafy(p.rowId, chartId1, chartId2), 150);
-    }
-
-    return grafyHtml;
-})()}
-<!-- 🎁 BONUS TIPY -->
-        ${(() => {
-            const tip = p.tip || {};
-            const ADMIN_ID = "92a1e51b-e03c-48d7-99df-76c2f60a455f";
-            const isAdmin = window.loggedUserIdGlobal === ADMIN_ID;
-            const tournamentStarted = new Date().getTime() >= new Date("2026-06-11T21:00:00").getTime();
-            const isOwn = window.loggedUserIdGlobal && String(window.loggedUserIdGlobal) === String(p.rowId);
-            
-            // Pokud turnaj ještě nezačal a nejde o vlastní profil ani admina → skryj
-            if (!tournamentStarted && !isOwn && !isAdmin) {
-                return `
-                    <div style="margin-top:16px; padding:16px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.2); border-radius:12px; text-align:center;">
-                        <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; margin-bottom:8px;">🎁 Bonus tipy</div>
-                        <div style="font-size:2rem; margin-bottom:6px;">🔒</div>
-                        <div style="font-size:0.8rem; color:#94a3b8; line-height:1.5;">Bonus tipy ostatních hráčů budou odhaleny<br><b style="color:#d4af37;">po startu turnaje (11. 6. 2026)</b></div>
-                    </div>
-                `;
-            }
-            
-            return renderBonusTipy(tip, adminVys);
-        })()}
-
-       <!-- ODZNAKY -->
-        ${(() => {
-            const odznaky = ziskejOdznaky(p);
-            return `
-                <div style="margin-bottom:16px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <div style="font-size:0.65rem; color:rgba(212,175,55,0.6); text-transform:uppercase; letter-spacing:1px; font-weight:700;">Odznaky</div>
-                        <div style="font-size:0.6rem; color:#5a6480;">↓ Klepni pro popis</div>
-                    </div>
-                    <div id="odznak-popis" style="display:none; padding:10px 12px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.2); border-radius:8px; margin-bottom:10px; font-size:0.75rem; color:#f0e6c8;"></div>
-       <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
-                        ${odznaky.map(o => `
-                            <div title="${o.label}: ${o.popis || ''}" ${o.klik ? `onclick="${o.klik}"` : `onclick="ukazPopisOdznaku('${o.label.replace(/'/g, "\\'")}', '${(o.popis||'').replace(/'/g, "\\'")}', ${o.aktivni})"`} style="text-align:center; padding:8px; border-radius:10px; width:60px; background:${o.aktivni ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${o.aktivni ? 'rgba(212,175,55,0.25)' : 'rgba(255,255,255,0.05)'}; opacity:${o.aktivni ? '1' : '0.35'}; cursor:pointer;">
-                                <div style="font-size:18px;">${o.icon}</div>
-                                <div style="font-size:0.5rem; color:#94a3b8; margin-top:3px;">${o.label}</div>
-                            </div>`).join('')}
-                    </div>
-                </div>`;
-        })()}
-
-       `;
 
     document.getElementById('profil-modal').style.display = 'flex';
 }
