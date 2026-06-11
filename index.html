@@ -5212,14 +5212,14 @@ async function otevritMujTip() {
         const awayIsWinner = z.vitez && eq(z.away, z.vitez);
         
         const styl = (isWinner) => {
-    if (!z.vitez) return { bg:'rgba(255,255,255,0.05)', bd:'rgba(212,175,55,0.12)', col:'#cbd5e1', w:600 };
-    if (isWinner) {
-        if (status === 'correct') return { bg:'rgba(34,197,94,0.22)', bd:'rgba(34,197,94,0.55)', col:'#4ade80', w:800 };
-        if (status === 'wrong')   return { bg:'rgba(239,68,68,0.18)', bd:'rgba(239,68,68,0.45)', col:'#f87171', w:800 };
-        return { bg:'rgba(212,175,55,0.2)', bd:'rgba(212,175,55,0.45)', col:'#f0c850', w:800 };
-    }
-    return { bg:'rgba(255,255,255,0.05)', bd:'rgba(212,175,55,0.12)', col:'#94a3b8', w:600 };
-};
+            if (!z.vitez) return { bg:'rgba(255,255,255,0.06)', bd:'rgba(212,175,55,0.15)', col:'#cbd5e1', w:600 };
+            if (isWinner) {
+                if (status === 'correct') return { bg:'rgba(34,197,94,0.25)', bd:'rgba(34,197,94,0.6)', col:'#4ade80', w:800 };
+                if (status === 'wrong')   return { bg:'rgba(239,68,68,0.2)', bd:'rgba(239,68,68,0.5)', col:'#f87171', w:800 };
+                return { bg:'rgba(212,175,55,0.22)', bd:'rgba(212,175,55,0.5)', col:'#f0c850', w:800 };
+            }
+            return { bg:'rgba(255,255,255,0.05)', bd:'rgba(212,175,55,0.12)', col:'#94a3b8', w:600 };
+        };
         
         const row = (team, isWinner) => {
             const c = styl(isWinner);
@@ -5236,10 +5236,9 @@ async function otevritMujTip() {
     };
     
     // ════════ BRACKET COLUMN renderer ════════
-    const bracketCol = (zapasy, realAdmin, label, sub) => `
+    const bracketCol = (zapasy, realAdmin, label) => `
         <div style="display:flex; flex-direction:column; min-width:0; height:100%;">
-            <div style="text-align:center; font-size:0.5rem; color:rgba(212,175,55,0.7); letter-spacing:1px; font-weight:800; margin-bottom:2px;">${label}</div>
-            <div style="text-align:center; font-size:0.45rem; color:#5a6480; margin-bottom:6px;">${sub}</div>
+            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.85); letter-spacing:1px; font-weight:800; margin-bottom:8px;">${label}</div>
             <div style="flex:1; display:flex; flex-direction:column; justify-content:space-around;">
                 ${zapasy.map(z => matchBox(z, realAdmin)).join('')}
             </div>
@@ -5259,11 +5258,11 @@ async function otevritMujTip() {
         <div style="background:radial-gradient(ellipse at center, rgba(212,175,55,0.06), rgba(0,0,0,0.4) 70%); border:1px solid rgba(212,175,55,0.18); border-radius:14px; padding:14px 6px; margin-bottom:20px; overflow-x:auto;">
             <div style="display:flex; gap:5px; min-width:max-content; align-items:stretch; height:480px;">
                 
-                <!-- ═══ LEVÁ STRANA (1/16 → SEMI) ═══ -->
-                <div style="flex:0 0 100px;">${bracketCol(leftR32, r.s32, '1/16 FINÁLE')}</div>
-                <div style="flex:0 0 100px;">${bracketCol(leftR16, r.s16, '1/8 FINÁLE')}</div>
-                <div style="flex:0 0 105px;">${bracketCol(leftQF, r.s8, 'ČTVRTFINÁLE')}</div>
-                <div style="flex:0 0 110px;">${bracketCol(leftSemi, null, 'SEMIFINÁLE')}</div>
+               <!-- ═══ LEVÁ STRANA (1/16 → SEMI) ═══ -->
+                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(leftR32, r.s32, '1/16')}</div>
+                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(leftR16, r.s16, '1/8')}</div>
+                <div style="flex:0 0 110px; min-width:0; overflow:hidden;">${bracketCol(leftQF, r.s8, 'ČTVRTFINÁLE')}</div>
+                <div style="flex:0 0 115px; min-width:0; overflow:hidden;">${bracketCol(leftSemi, null, 'SEMIFINÁLE')}</div>
                 
                 <!-- ═══ CENTER: POHÁR + FINÁLE + BRONZ ═══ -->
                 <div style="flex:0 0 155px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:0 4px; position:relative;">
@@ -5303,11 +5302,11 @@ async function otevritMujTip() {
                     ` : ''}
                 </div>
                 
-                <!-- ═══ PRAVÁ STRANA (SEMI → 1/16) ═══ -->
-                <div style="flex:0 0 110px;">${bracketCol(rightSemi, null, 'SEMIFINÁLE')}</div>
-                <div style="flex:0 0 105px;">${bracketCol(rightQF, r.s8, 'ČTVRTFINÁLE')}</div>
-                <div style="flex:0 0 100px;">${bracketCol(rightR16, r.s16, '1/8 FINÁLE')}</div>
-                <div style="flex:0 0 100px;">${bracketCol(rightR32, r.s32, '1/16 FINÁLE')}</div>
+               <!-- ═══ PRAVÁ STRANA (SEMI → 1/16) ═══ -->
+                <div style="flex:0 0 115px; min-width:0; overflow:hidden;">${bracketCol(rightSemi, null, 'SEMIFINÁLE')}</div>
+                <div style="flex:0 0 110px; min-width:0; overflow:hidden;">${bracketCol(rightQF, r.s8, 'ČTVRTFINÁLE')}</div>
+                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(rightR16, r.s16, '1/8')}</div>
+                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(rightR32, r.s32, '1/16')}</div>
             </div>
         </div>
         
