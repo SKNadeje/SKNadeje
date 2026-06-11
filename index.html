@@ -6456,118 +6456,319 @@ async function vlozitTestData() {
         .eq('user_id', userId)
         .maybeSingle();
 
-    const jméno = tipData?.name || 'Hráč';
+    const jmeno = tipData?.name || 'Hráč';
     const tip = tipData?.tip_data || state;
     const dnes = new Date().toLocaleDateString('cs-CZ');
+    const r = window.currentResults || {};
+    const eq = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
 
-    const skupiny = (tip.groups || state.groups.map(g => g.teams));
-    const skupinyHTML = skupiny.map((tymy, i) => {
-        const pismeno = String.fromCharCode(65 + i);
-        return `
-            <div style="background:rgba(255,255,255,0.02); border-left:2px solid rgba(212,175,55,0.4); border-radius:0 8px 8px 0; padding:10px;">
-                <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; font-weight:800; margin-bottom:7px;">Skupina ${pismeno}</div>
-                ${(Array.isArray(tymy) ? tymy : []).map((t, p) => {
-                    const kod = (typeof FLAG_CODES !== 'undefined' && FLAG_CODES[t]) ? FLAG_CODES[t] : null;
-                    const vlajka = kod ? `<img src="https://flagcdn.com/w40/${kod}.png" crossorigin="anonymous" style="width:14px; height:10px; object-fit:cover; border-radius:2px; margin-right:5px; vertical-align:middle;">` : '';
-                    return `
-                    <div style="font-size:10px; color:${p===0?'#d4af37':'#f0e6c8'}; font-weight:${p===0?'700':'400'}; margin-bottom:2px; display:flex; align-items:center;">
-                        <span style="color:#d4af37; font-size:8px; font-weight:900; margin-right:5px;">${p+1}.</span>${vlajka}${t}
-                    </div>`;
-                }).join('')}
-            </div>`;
-    }).join('');
+    showToast('Generuji PDF...', 'info', 2500);
 
-    const playoffFaze = [
-        { key: 's32', label: '1/16 finále' },
-        { key: 's16', label: '1/8 finále' },
-        { key: 's8',  label: 'Čtvrtfinále' },
-        { key: 's4',  label: 'Semifinále' },
-    ];
-    const playoffHTML = playoffFaze.map(f => {
-        const tymy = tip[f.key] || [];
-        return `
-            <div style="background:rgba(255,255,255,0.02); border-left:2px solid rgba(212,175,55,0.4); border-radius:0 8px 8px 0; padding:10px;">
-                <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1px; text-transform:uppercase; font-weight:800; margin-bottom:7px;">${f.label}</div>
-               ${tymy.map(t => {
-                    const kod = (typeof FLAG_CODES !== 'undefined' && FLAG_CODES[t]) ? FLAG_CODES[t] : null;
-                    const vlajka = kod ? `<img src="https://flagcdn.com/w40/${kod}.png" crossorigin="anonymous" style="width:13px; height:9px; object-fit:cover; border-radius:2px; margin-right:4px; vertical-align:middle;">` : '';
-                    return `<div style="font-size:9px; color:#e8dcc0; padding:2px 0; display:flex; align-items:center;">${vlajka}${t}</div>`;
-                }).join('')}
-                </div>`;
-    }).join('');
+    // ════════ HELPER: Vlaječka přes flagcdn ════════
+    const flag = (team, size = 14) => {
+        const kod = (typeof FLAG_CODES !== 'undefined' && FLAG_CODES[team]) ? FLAG_CODES[team] : null;
+        if (!kod) return '';
+        return `<img src="https://flagcdn.com/w40/${kod}.png" crossorigin="anonymous" style="width:${size}px; height:${Math.round(size*0.72)}px; object-fit:cover; border-radius:2px; vertical-align:middle; margin-right:5px;">`;
+    };
 
-    const sec = (title) => `<div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; font-weight:700; text-align:center; margin:22px 0 12px;">${title}</div>`;
+    // ════════ HELPER: Sestaví 32 týmů 1/16 ════════
+    const sestavTymyR32 = (groups, thirds) => {
+        const ID = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+        const getT = (gl, rank) => {
+            const idx = ID.indexOf(gl);
+            return idx >= 0 && groups[idx] ? (groups[idx][rank] || '??') : '??';
+        };
+        const tretiMista = (thirds || []).map(name => {
+            for (let i = 0; i < groups.length; i++) {
+                if (eq(groups[i]?.[2], name)) return { team: name, group: ID[i] };
+            }
+            return { team: name, group: null };
+        });
+        const sloty = [
+            { matchId: 74, allowed: ['A','B','C','D','F'] },
+            { matchId: 77, allowed: ['C','D','F','G','H'] },
+            { matchId: 79, allowed: ['C','E','F','H','I'] },
+            { matchId: 80, allowed: ['E','H','I','J','K'] },
+            { matchId: 81, allowed: ['B','E','F','I','J'] },
+            { matchId: 82, allowed: ['A','E','H','I','J'] },
+            { matchId: 85, allowed: ['E','F','G','I','J'] },
+            { matchId: 87, allowed: ['D','E','I','J','L'] },
+        ];
+        function najdi(s, m) {
+            if (s.length === 0) return {};
+            let bs = null, bc = null;
+            for (const sl of s) {
+                const c = m.filter(mi => mi.group && sl.allowed.includes(mi.group));
+                if (bc === null || c.length < bc.length) { bs = sl; bc = c; }
+            }
+            if (bc.length === 0) return null;
+            for (const cand of bc) {
+                const zs = s.filter(sl => sl.matchId !== bs.matchId);
+                const zm = m.filter(mi => mi.team !== cand.team);
+                const v = najdi(zs, zm);
+                if (v !== null) { v[bs.matchId] = cand.team; return v; }
+            }
+            return null;
+        }
+        const mp = najdi(sloty, tretiMista) || {};
+        let fi = 0;
+        const g3 = (id) => {
+            if (mp[id]) return mp[id];
+            while (fi < (thirds || []).length && Object.values(mp).includes(thirds[fi])) fi++;
+            return thirds[fi++] || '??';
+        };
+        return [
+            getT('E', 0), g3(74), getT('I', 0), g3(77),
+            getT('A', 1), getT('B', 1), getT('F', 0), getT('C', 1),
+            getT('H', 0), getT('J', 1), getT('K', 1), getT('L', 1),
+            getT('D', 0), g3(81), getT('G', 0), g3(82),
+            getT('C', 0), getT('F', 1), getT('E', 1), getT('I', 1),
+            getT('A', 0), g3(79), getT('L', 0), g3(80),
+            getT('J', 0), getT('H', 1), getT('D', 1), getT('G', 1),
+            getT('B', 0), g3(85), getT('K', 0), g3(87),
+        ];
+    };
 
-    const html = `
-        <div id="pdf-content" style="width:794px; background:#05070f; padding:44px; font-family:Arial,sans-serif; color:#f0e6c8;">
-            <div style="text-align:center; padding-bottom:20px; border-bottom:1px solid rgba(212,175,55,0.15); margin-bottom:8px;">
-               <div style="font-size:9px; letter-spacing:4px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:14px;">SK Naděje presents</div>
-<div style="display:flex; align-items:center; justify-content:center; gap:24px; margin-bottom:8px;">
-    <img src="logo-wc2026.png" style="width:60px; height:140px; object-fit:contain;">
-    <div style="font-size:22px; font-weight:900; letter-spacing:3px; text-transform:uppercase; color:#d4af37;">Mistrovství<br>světa 2026</div>
-    <img src="logo-wc2026.png" style="width:60px; height:140px; object-fit:contain;">
-</div>
-                <div style="display:flex; gap:8px; justify-content:center; align-items:center; margin:10px 0;">
-                    <img src="https://flagcdn.com/us.svg" style="height:13px; border-radius:2px; opacity:0.7;" crossorigin="anonymous">
-                    <span style="color:rgba(212,175,55,0.3); font-size:9px;">·</span>
-                    <img src="https://flagcdn.com/mx.svg" style="height:13px; border-radius:2px; opacity:0.7;" crossorigin="anonymous">
-                    <span style="color:rgba(212,175,55,0.3); font-size:9px;">·</span>
-                    <img src="https://flagcdn.com/ca.svg" style="height:13px; border-radius:2px; opacity:0.7;" crossorigin="anonymous">
+    // ════════ HELPER: Zápasy ════════
+    const sestavZapasy = (tymy, vitezi) => {
+        const z = [];
+        if (!tymy) return z;
+        for (let i = 0; i < tymy.length; i += 2) {
+            const t1 = tymy[i], t2 = tymy[i+1];
+            let v = null;
+            if (vitezi && Array.isArray(vitezi)) {
+                if (vitezi.some(x => eq(x, t1))) v = t1;
+                else if (vitezi.some(x => eq(x, t2))) v = t2;
+            }
+            z.push({ home: t1, away: t2, vitez: v });
+        }
+        return z;
+    };
+
+    const statusZapasu = (vitezTip, realAdmin) => {
+        if (!vitezTip) return 'no-pick';
+        if (!realAdmin) return 'pending';
+        const list = Array.isArray(realAdmin) ? realAdmin.filter(x => x && String(x).trim()) : (realAdmin ? [realAdmin] : []);
+        if (list.length === 0) return 'pending';
+        return list.some(x => eq(x, vitezTip)) ? 'correct' : 'wrong';
+    };
+
+    // ════════ DATA ════════
+    const r32Teams = sestavTymyR32(tip.groups || [], tip.thirds || []);
+    const r32Zapasy = sestavZapasy(r32Teams, tip.s32);
+    const r16Zapasy = sestavZapasy(tip.s32 || [], tip.s16);
+    const qfZapasy = sestavZapasy(tip.s16 || [], tip.s8);
+    const semiZapasy = sestavZapasy(tip.s8 || [], tip.s4);
+    const semiPorazeni = (tip.s8 || []).filter(t => !(tip.s4 || []).some(x => eq(x, t)));
+    const bronzZapas = { home: semiPorazeni[0], away: semiPorazeni[1], vitez: tip.bronze };
+    const finaleZapas = { home: (tip.s4 || [])[0], away: (tip.s4 || [])[1], vitez: tip.winner };
+
+    // ════════ MATCH BOX RENDERER (pro PDF) ════════
+    const matchBox = (z, realAdmin, varianta = 'default') => {
+        const status = statusZapasu(z.vitez, realAdmin);
+        const homeIsWinner = z.vitez && eq(z.home, z.vitez);
+        const awayIsWinner = z.vitez && eq(z.away, z.vitez);
+        
+        const styl = (isWinner) => {
+            if (!z.vitez) return { bg:'rgba(255,255,255,0.02)', bd:'rgba(212,175,55,0.08)', col:'#94a3b8', w:500 };
+            if (isWinner) {
+                if (status === 'correct') return { bg:'rgba(34,197,94,0.2)', bd:'rgba(34,197,94,0.5)', col:'#22c55e', w:800 };
+                if (status === 'wrong')   return { bg:'rgba(239,68,68,0.16)', bd:'rgba(239,68,68,0.4)', col:'#ef4444', w:800 };
+                return { bg:'rgba(212,175,55,0.15)', bd:'rgba(212,175,55,0.4)', col:'#d4af37', w:800 };
+            }
+            return { bg:'rgba(255,255,255,0.02)', bd:'rgba(212,175,55,0.08)', col:'#5a6480', w:500 };
+        };
+        
+        const row = (team, isWinner) => {
+            const c = styl(isWinner);
+            const icon = isWinner && status === 'correct' ? ' ✓' : (isWinner && status === 'wrong' ? ' ✗' : '');
+            return `<div style="background:${c.bg}; border:1px solid ${c.bd}; color:${c.col}; padding:3px 5px; border-radius:4px; font-size:8px; font-weight:${c.w}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:3px; margin-bottom:2px;">${flag(team, 10)}<span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${team || '–'}${icon}</span></div>`;
+        };
+        
+        const accent = varianta === 'final' ? 'rgba(212,175,55,0.4)' : (varianta === 'bronze' ? 'rgba(180,100,40,0.4)' : 'rgba(212,175,55,0.12)');
+        const bg = varianta === 'final' ? 'rgba(212,175,55,0.06)' : (varianta === 'bronze' ? 'rgba(180,100,40,0.05)' : 'rgba(0,0,0,0.2)');
+        
+        return `<div style="background:${bg}; border:1px solid ${accent}; border-radius:6px; padding:3px; margin-bottom:4px;">${row(z.home, homeIsWinner)}${row(z.away, awayIsWinner)}</div>`;
+    };
+
+    // ════════ HTML STRANA 1 ════════
+    const skupinyHTML = (tip.groups || []).map((tymy, i) => `
+        <div style="background:rgba(255,255,255,0.02); border-left:2px solid rgba(212,175,55,0.4); border-radius:0 8px 8px 0; padding:10px;">
+            <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; font-weight:800; margin-bottom:7px;">Skupina ${String.fromCharCode(65+i)}</div>
+            ${(Array.isArray(tymy) ? tymy : []).map((t, p) => `
+                <div style="font-size:10px; color:${p===0?'#d4af37':'#f0e6c8'}; font-weight:${p===0?'700':'400'}; margin-bottom:2px; display:flex; align-items:center;">
+                    <span style="color:#d4af37; font-size:8px; font-weight:900; margin-right:5px;">${p+1}.</span>${flag(t, 12)}${t || '–'}
+                </div>`).join('')}
+        </div>`).join('');
+
+    const b = tip.bonus || {};
+    const bonusHTML = `
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;">
+            <div style="background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.2); border-radius:8px; padding:10px;">
+                <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; font-weight:800; margin-bottom:5px;">🥇 Zlatá kopačka</div>
+                <div style="font-size:12px; font-weight:800; color:#d4af37;">${b.topScorer || '–'}</div>
+            </div>
+            <div style="background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.2); border-radius:8px; padding:10px;">
+                <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; font-weight:800; margin-bottom:5px;">🧤 Zlatá rukavice</div>
+                <div style="font-size:12px; font-weight:800; color:#d4af37;">${b.topGoalkeeper || '–'}</div>
+            </div>
+            <div style="background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.2); border-radius:8px; padding:10px;">
+                <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; font-weight:800; margin-bottom:5px;">⚽ Branek v turnaji</div>
+                <div style="font-size:14px; font-weight:900; color:#d4af37;">${b.totalGoals ?? '–'}</div>
+            </div>
+            <div style="background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.2); border-radius:8px; padding:10px;">
+                <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; font-weight:800; margin-bottom:5px;">0️⃣ Zápasy 0:0</div>
+                <div style="font-size:14px; font-weight:900; color:#d4af37;">${b.zeroZeroResults ?? '–'}</div>
+            </div>
+        </div>`;
+
+    const sec = (title) => `<div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; font-weight:700; text-align:center; margin:18px 0 10px;">${title}</div>`;
+
+    const page1Html = `
+        <div id="pdf-page1" style="width:794px; background:#05070f; padding:34px; font-family:Arial,sans-serif; color:#f0e6c8; box-sizing:border-box;">
+            <div style="text-align:center; padding-bottom:16px; border-bottom:1px solid rgba(212,175,55,0.15); margin-bottom:8px;">
+                <div style="font-size:9px; letter-spacing:4px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:10px;">SK Naděje presents</div>
+                <div style="display:flex; align-items:center; justify-content:center; gap:18px; margin-bottom:6px;">
+                    <img src="logo-wc2026.png" style="width:50px; height:110px; object-fit:contain;">
+                    <div style="font-size:20px; font-weight:900; letter-spacing:3px; text-transform:uppercase; color:#d4af37; line-height:1.1;">Mistrovství<br>světa 2026</div>
+                    <img src="logo-wc2026.png" style="width:50px; height:110px; object-fit:contain;">
                 </div>
-                <div style="display:inline-block; margin-top:10px; padding:6px 20px; border-radius:20px; background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.25); font-size:13px; color:#d4af37; font-weight:700;">Tip: ${jméno} · ${dnes}</div>
+                <div style="display:flex; gap:8px; justify-content:center; align-items:center; margin:8px 0;">
+                    <img src="https://flagcdn.com/us.svg" style="height:12px; border-radius:2px; opacity:0.7;" crossorigin="anonymous">
+                    <span style="color:rgba(212,175,55,0.3); font-size:8px;">·</span>
+                    <img src="https://flagcdn.com/mx.svg" style="height:12px; border-radius:2px; opacity:0.7;" crossorigin="anonymous">
+                    <span style="color:rgba(212,175,55,0.3); font-size:8px;">·</span>
+                    <img src="https://flagcdn.com/ca.svg" style="height:12px; border-radius:2px; opacity:0.7;" crossorigin="anonymous">
+                </div>
+                <div style="display:inline-block; margin-top:6px; padding:5px 18px; border-radius:20px; background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.25); font-size:12px; color:#d4af37; font-weight:700;">Tip: ${jmeno} · ${dnes}</div>
             </div>
 
             ${sec('Pořadí ve skupinách')}
             <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px;">${skupinyHTML}</div>
 
-            ${sec('Play-off postup')}
-            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px;">${playoffHTML}</div>
-
             ${sec('Finálové tipy')}
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                <div style="background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.3); border-radius:10px; padding:16px; text-align:center;">
-                    <div style="font-size:22px; margin-bottom:6px;">🏆</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div style="background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.3); border-radius:10px; padding:14px; text-align:center;">
+                    <div style="font-size:20px; margin-bottom:5px;">🏆</div>
                     <div style="font-size:8px; color:rgba(212,175,55,0.6); letter-spacing:2px; text-transform:uppercase; margin-bottom:5px;">Vítěz turnaje</div>
-                    <div style="font-size:16px; font-weight:900; color:#d4af37;">${(()=>{const k=(typeof FLAG_CODES!=='undefined'&&FLAG_CODES[tip.winner])?FLAG_CODES[tip.winner]:null; return (k?`<img src="https://flagcdn.com/w40/${k}.png" crossorigin="anonymous" style="width:20px;height:14px;object-fit:cover;border-radius:2px;margin-right:6px;vertical-align:middle;">`:'')+(tip.winner||'–');})()}</div>
+                    <div style="font-size:15px; font-weight:900; color:#d4af37; display:flex; align-items:center; justify-content:center; gap:6px;">${flag(tip.winner, 18)}${tip.winner || '–'}</div>
                 </div>
-                <div style="background:rgba(180,100,40,0.08); border:1px solid rgba(180,100,40,0.3); border-radius:10px; padding:16px; text-align:center;">
-                    <div style="font-size:22px; margin-bottom:6px;">🥉</div>
+                <div style="background:rgba(180,100,40,0.08); border:1px solid rgba(180,100,40,0.3); border-radius:10px; padding:14px; text-align:center;">
+                    <div style="font-size:20px; margin-bottom:5px;">🥉</div>
                     <div style="font-size:8px; color:rgba(180,100,40,0.6); letter-spacing:2px; text-transform:uppercase; margin-bottom:5px;">3. místo</div>
-                    <div style="font-size:16px; font-weight:900; color:#d97b3a;">${(()=>{const k=(typeof FLAG_CODES!=='undefined'&&FLAG_CODES[tip.bronze])?FLAG_CODES[tip.bronze]:null; return (k?`<img src="https://flagcdn.com/w40/${k}.png" crossorigin="anonymous" style="width:20px;height:14px;object-fit:cover;border-radius:2px;margin-right:6px;vertical-align:middle;">`:'')+(tip.bronze||'–');})()}</div>
+                    <div style="font-size:15px; font-weight:900; color:#d97b3a; display:flex; align-items:center; justify-content:center; gap:6px;">${flag(tip.bronze, 18)}${tip.bronze || '–'}</div>
                 </div>
             </div>
 
-            <div style="text-align:center; margin-top:24px; padding-top:14px; border-top:1px solid rgba(212,175,55,0.1); font-size:8px; color:rgba(212,175,55,0.3); letter-spacing:1.5px; text-transform:uppercase;">
-                sknadeje.github.io/SKNadeje · World Cup 2026 Tipovačka
+            ${sec('🎁 Bonus tipy')}
+            ${bonusHTML}
+
+            <div style="text-align:center; margin-top:18px; padding-top:12px; border-top:1px solid rgba(212,175,55,0.1); font-size:8px; color:rgba(212,175,55,0.3); letter-spacing:1.5px; text-transform:uppercase;">
+                sknadeje.github.io/SKNadeje · WC 2026 · Strana 1/2
             </div>
         </div>`;
 
+    // ════════ HTML STRANA 2 (BRACKET) ════════
+    const page2Html = `
+        <div id="pdf-page2" style="width:794px; background:#05070f; padding:34px; font-family:Arial,sans-serif; color:#f0e6c8; box-sizing:border-box;">
+            <div style="text-align:center; padding-bottom:12px; border-bottom:1px solid rgba(212,175,55,0.15); margin-bottom:14px;">
+                <div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:4px;">${jmeno} · ${dnes}</div>
+                <div style="font-size:22px; font-weight:900; letter-spacing:2px; text-transform:uppercase; color:#d4af37;">🏆 Pavouk turnaje</div>
+                <div style="font-size:9px; color:#94a3b8; margin-top:4px;">Skutečné zápasy podle tvého tipu</div>
+            </div>
+            
+            <div style="background:linear-gradient(135deg, rgba(0,0,0,0.3), rgba(212,175,55,0.02)); border:1px solid rgba(212,175,55,0.15); border-radius:12px; padding:10px 6px;">
+                <div style="display:flex; gap:6px; align-items:flex-start;">
+                    
+                    <!-- 1/16 -->
+                    <div style="flex:1; min-width:0;">
+                        <div style="text-align:center; font-size:7px; color:rgba(212,175,55,0.75); letter-spacing:1px; font-weight:800; margin-bottom:2px;">ŠESTNÁCTIFINÁLE</div>
+                        <div style="font-size:6px; color:#5a6480; text-align:center; margin-bottom:6px;">16 zápasů</div>
+                        ${r32Zapasy.map(z => matchBox(z, r.s32)).join('')}
+                    </div>
+                    
+                    <!-- 1/8 -->
+                    <div style="flex:1; min-width:0;">
+                        <div style="text-align:center; font-size:7px; color:rgba(212,175,55,0.75); letter-spacing:1px; font-weight:800; margin-bottom:2px;">OSMIFINÁLE</div>
+                        <div style="font-size:6px; color:#5a6480; text-align:center; margin-bottom:6px;">8 zápasů</div>
+                        <div style="padding-top:14px;">${r16Zapasy.map(z => matchBox(z, r.s16)).join('')}</div>
+                    </div>
+                    
+                    <!-- 1/4 -->
+                    <div style="flex:1; min-width:0;">
+                        <div style="text-align:center; font-size:7px; color:rgba(212,175,55,0.75); letter-spacing:1px; font-weight:800; margin-bottom:2px;">ČTVRTFINÁLE</div>
+                        <div style="font-size:6px; color:#5a6480; text-align:center; margin-bottom:6px;">4 zápasy</div>
+                        <div style="padding-top:42px;">${qfZapasy.map(z => matchBox(z, r.s8)).join('')}</div>
+                    </div>
+                    
+                    <!-- Semi -->
+                    <div style="flex:1; min-width:0;">
+                        <div style="text-align:center; font-size:7px; color:rgba(212,175,55,0.75); letter-spacing:1px; font-weight:800; margin-bottom:2px;">SEMIFINÁLE</div>
+                        <div style="font-size:6px; color:#5a6480; text-align:center; margin-bottom:6px;">2 zápasy</div>
+                        <div style="padding-top:98px;">${semiZapasy.map(z => matchBox(z, null)).join('')}</div>
+                    </div>
+                    
+                    <!-- Finále + Bronz -->
+                    <div style="flex:1.1; min-width:0; display:flex; flex-direction:column; gap:10px;">
+                        <div style="padding-top:14px;">
+                            <div style="text-align:center; font-size:8px; color:rgba(212,175,55,0.9); letter-spacing:1px; font-weight:900; margin-bottom:4px;">🏆 FINÁLE</div>
+                            ${matchBox(finaleZapas, r.winner, 'final')}
+                            ${tip.winner ? `<div style="text-align:center; font-size:8px; color:#d4af37; font-weight:900; margin-top:4px; padding:4px; background:rgba(212,175,55,0.08); border-radius:5px; border:1px solid rgba(212,175,55,0.2); display:flex; align-items:center; justify-content:center; gap:4px;">🥇 ${flag(tip.winner, 12)}${tip.winner}</div>` : ''}
+                        </div>
+                        <div>
+                            <div style="text-align:center; font-size:8px; color:#d97b3a; letter-spacing:1px; font-weight:900; margin-bottom:4px;">🥉 O 3. MÍSTO</div>
+                            ${matchBox(bronzZapas, r.bronze, 'bronze')}
+                            ${tip.bronze ? `<div style="text-align:center; font-size:7px; color:#d97b3a; font-weight:900; margin-top:4px; padding:3px; background:rgba(180,100,40,0.06); border-radius:5px; border:1px solid rgba(180,100,40,0.2); display:flex; align-items:center; justify-content:center; gap:4px;">3. ${flag(tip.bronze, 11)}${tip.bronze}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top:14px; padding:8px 12px; background:rgba(255,255,255,0.02); border-radius:8px; display:flex; justify-content:center; gap:14px; flex-wrap:wrap; font-size:7px; color:#94a3b8;">
+                <span><span style="display:inline-block; width:8px; height:8px; background:#22c55e; border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Trefil ✓</span>
+                <span><span style="display:inline-block; width:8px; height:8px; background:#ef4444; border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Nepostoupil ✗</span>
+                <span><span style="display:inline-block; width:8px; height:8px; background:rgba(212,175,55,0.5); border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Tip (čeká)</span>
+                <span><span style="display:inline-block; width:8px; height:8px; background:#5a6480; border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Poražený</span>
+            </div>
+            
+            <div style="text-align:center; margin-top:16px; padding-top:12px; border-top:1px solid rgba(212,175,55,0.1); font-size:8px; color:rgba(212,175,55,0.3); letter-spacing:1.5px; text-transform:uppercase;">
+                sknadeje.github.io/SKNadeje · WC 2026 · Strana 2/2
+            </div>
+        </div>`;
+
+    // ════════ RENDER & EXPORT ════════
     const container = document.createElement('div');
-    container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;';
-    container.innerHTML = html;
+    container.style.cssText = 'position:fixed; left:-9999px; top:0; z-index:-1;';
+    container.innerHTML = page1Html + page2Html;
     document.body.appendChild(container);
 
-  try {
-        showToast('Generuji PDF...', 'info', 2000);
-        const canvas = await html2canvas(container.querySelector('#pdf-content'), {
+    try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' });
+        const pdfW = pdf.internal.pageSize.getWidth();
+        const pdfH = pdf.internal.pageSize.getHeight();
+
+        // Strana 1
+        const c1 = await html2canvas(container.querySelector('#pdf-page1'), {
             scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false
         });
-        const { jsPDF } = window.jspdf;
-        const imgData = canvas.toDataURL('image/png');
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
+        const ratio1 = c1.width / c1.height;
+        const h1 = pdfW / ratio1;
+        pdf.addImage(c1.toDataURL('image/png'), 'PNG', 0, 0, pdfW, Math.min(h1, pdfH));
 
-        // PDF přesně podle výšky obsahu (žádné bílé místo dole)
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'px',
-            format: [imgWidth / 2, imgHeight / 2]  // /2 protože scale:2
+        // Strana 2
+        pdf.addPage();
+        const c2 = await html2canvas(container.querySelector('#pdf-page2'), {
+            scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false
         });
+        const ratio2 = c2.width / c2.height;
+        const h2 = pdfW / ratio2;
+        pdf.addImage(c2.toDataURL('image/png'), 'PNG', 0, 0, pdfW, Math.min(h2, pdfH));
 
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth / 2, imgHeight / 2);
-        pdf.save(`WC2026-tip-${jméno}.pdf`);
-        showToast(`PDF staženo! Tip: ${jméno}`, 'success');
+        pdf.save(`WC2026-tip-${jmeno}.pdf`);
+        showToast(`✅ PDF s pavoukem staženo!`, 'success', 3500);
     } catch (err) {
+        console.error('PDF chyba:', err);
         showToast('Chyba při generování PDF: ' + err.message, 'error');
     } finally {
         document.body.removeChild(container);
