@@ -271,7 +271,7 @@ function aktualniZapas() {
     const now = new Date();
     return ZAPASY_WC2026.find(z => {
         const start = new Date(z.datum);
-        const konec = new Date(start.getTime() + 105 * 60 * 1000); // 90 min + nastavení
+        const konec = new Date(start.getTime() + 125 * 60 * 1000); // 90 min + nastavení
         return now >= start && now <= konec;
     });
 }
