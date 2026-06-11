@@ -6758,50 +6758,35 @@ async function vlozitTestData() {
     container.innerHTML = page1Html + page2Html;
     document.body.appendChild(container);
 
-    try {
+   try {
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' });
-
-        // Strana 1 - portrait
-        const pdfW1 = pdf.internal.pageSize.getWidth();
-        const pdfH1 = pdf.internal.pageSize.getHeight();
+        
+        // Vyrenderuj obě stránky JAKO PRVNÍ - získáme přesné rozměry canvasu
         const c1 = await html2canvas(container.querySelector('#pdf-page1'), {
-            scale: 2, 
-            backgroundColor: '#05070f', 
-            useCORS: true, 
-            logging: false,
-            windowWidth: 794 // Fixní šířka okna pro zachování konzistence
+            scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false
         });
-        const ratio1 = c1.width / c1.height;
-        const h1 = pdfW1 / ratio1;
-        pdf.addImage(c1.toDataURL('image/png'), 'PNG', 0, 0, pdfW1, Math.min(h1, pdfH1));
-
-       // Strana 2 - LANDSCAPE (na šířku)
-        pdf.addPage('a4', 'landscape');
-        const pdfW2 = pdf.internal.pageSize.getWidth();
-        const pdfH2 = pdf.internal.pageSize.getHeight();
         const c2 = await html2canvas(container.querySelector('#pdf-page2'), {
             scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false,
             width: 1100, windowWidth: 1100
         });
         
-        // Výpočet výšky tak, aby se celý pavouk vešel na šířku A4 landscape
-        const ratio2 = c2.width / c2.height;
-        const h2 = pdfW2 / ratio2;
+        // 🎯 STRANA 1 - vytvoř PDF s ROZMĚRY PŘESNĚ DLE CANVASU
+        // (žádné bílé pozadí, žádné scaling)
+        const w1 = c1.width / 2;
+        const h1 = c1.height / 2;
+        const pdf = new jsPDF({
+            orientation: w1 > h1 ? 'l' : 'p',
+            unit: 'px',
+            format: [w1, h1]
+        });
+        pdf.addImage(c1.toDataURL('image/png'), 'PNG', 0, 0, w1, h1);
         
-        // Pokud by byla výška obrázku větší než výška stránky, napasujeme to raději podle výšky
-        let finalW2 = pdfW2;
-        let finalH2 = h2;
-        if (h2 > pdfH2) {
-            finalH2 = pdfH2;
-            finalW2 = pdfH2 * ratio2;
-        }
-
-        // Vycentrování na stránce, pokud by vznikly okraje
-        const xOffset = (pdfW2 - finalW2) / 2;
-        const yOffset = (pdfH2 - finalH2) / 2;
-
-        pdf.addImage(c2.toDataURL('image/png'), 'PNG', xOffset, yOffset, finalW2, finalH2);
+        // 🎯 STRANA 2 - vlastní rozměry stránky podle bracket canvasu
+        // (přesně 1100px wide × výška obsahu, nic se neořezává)
+        const w2 = c2.width / 2;
+        const h2 = c2.height / 2;
+        pdf.addPage([w2, h2], w2 > h2 ? 'l' : 'p');
+        pdf.addImage(c2.toDataURL('image/png'), 'PNG', 0, 0, w2, h2);
 
         pdf.save(`WC2026-tip-${jmeno}.pdf`);
         showToast(`✅ PDF s pavoukem staženo!`, 'success', 3500);
