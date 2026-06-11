@@ -6453,14 +6453,12 @@ async function vlozitTestData() {
 
     showToast('Generuji PDF...', 'info', 3000);
 
-    // Vlaječka
     const flag = (team, size = 14) => {
         const kod = (typeof FLAG_CODES !== 'undefined' && FLAG_CODES[team]) ? FLAG_CODES[team] : null;
         if (!kod) return '';
         return `<img src="https://flagcdn.com/w40/${kod}.png" crossorigin="anonymous" style="width:${size}px; height:${Math.round(size*0.72)}px; object-fit:cover; border-radius:2px; vertical-align:middle; margin-right:5px;">`;
     };
 
-    // === HELPERS ===
     const sestavTymyR32 = (groups, thirds) => {
         const ID = ['A','B','C','D','E','F','G','H','I','J','K','L'];
         const getT = (gl, rank) => {
@@ -6541,7 +6539,6 @@ async function vlozitTestData() {
         return list.some(x => eq(x, vitezTip)) ? 'correct' : 'wrong';
     };
 
-    // === BUILD DATA ===
     const r32Teams = sestavTymyR32(tip.groups || [], tip.thirds || []);
     const r32Zapasy = sestavZapasy(r32Teams, tip.s32);
     const r16Zapasy = sestavZapasy(tip.s32 || [], tip.s16);
@@ -6560,21 +6557,18 @@ async function vlozitTestData() {
     const leftSemi = semiZapasy[0] ? [semiZapasy[0]] : [];
     const rightSemi = semiZapasy[1] ? [semiZapasy[1]] : [];
 
-    // === MATCH BOX (lepší barvy!) ===
     const matchBox = (z, realAdmin, varianta = 'default') => {
         const status = statusZapasu(z.vitez, realAdmin);
         const homeIsWinner = z.vitez && eq(z.home, z.vitez);
         const awayIsWinner = z.vitez && eq(z.away, z.vitez);
         
         const styl = (isWinner) => {
-            // Bez tipu - světlejší text
             if (!z.vitez) return { bg:'rgba(255,255,255,0.06)', bd:'rgba(212,175,55,0.15)', col:'#cbd5e1', w:600 };
             if (isWinner) {
                 if (status === 'correct') return { bg:'rgba(34,197,94,0.25)', bd:'rgba(34,197,94,0.6)', col:'#4ade80', w:800 };
                 if (status === 'wrong')   return { bg:'rgba(239,68,68,0.2)', bd:'rgba(239,68,68,0.5)', col:'#f87171', w:800 };
                 return { bg:'rgba(212,175,55,0.22)', bd:'rgba(212,175,55,0.5)', col:'#f0c850', w:800 };
             }
-            // Poražený - světlejší text místo tmavého #5a6480
             return { bg:'rgba(255,255,255,0.05)', bd:'rgba(212,175,55,0.12)', col:'#94a3b8', w:600 };
         };
         
@@ -6591,16 +6585,15 @@ async function vlozitTestData() {
         return `<div style="background:${bg}; border:1px solid ${accent}; border-radius:6px; padding:${padding};">${row(z.home, homeIsWinner)}${row(z.away, awayIsWinner)}</div>`;
     };
 
-  const bracketCol = (zapasy, realAdmin, label) => `
-    <div style="display:flex; flex-direction:column; min-width:0; height:100%;">
-        <div style="text-align:center; font-size:9px; color:rgba(212,175,55,0.9); letter-spacing:1.5px; font-weight:800; margin-bottom:8px;">${label}</div>
-        <div style="flex:1; display:flex; flex-direction:column; justify-content:space-around;">
-            ${zapasy.map(z => matchBox(z, realAdmin)).join('')}
+    const bracketCol = (zapasy, realAdmin, label) => `
+        <div style="display:flex; flex-direction:column; min-width:0; height:100%;">
+            <div style="text-align:center; font-size:9px; color:rgba(212,175,55,0.9); letter-spacing:1.5px; font-weight:800; margin-bottom:8px;">${label}</div>
+            <div style="flex:1; display:flex; flex-direction:column; justify-content:space-around;">
+                ${zapasy.map(z => matchBox(z, realAdmin)).join('')}
+            </div>
         </div>
-    </div>
-`;
+    `;
 
-    // === STRANA 1 (portrait): hlavička + skupiny + vítěz/bronz + bonusy ===
     const skupinyHTML = (tip.groups || []).map((tymy, i) => `
         <div style="background:rgba(255,255,255,0.04); border-left:2px solid rgba(212,175,55,0.5); border-radius:0 8px 8px 0; padding:10px;">
             <div style="font-size:8px; color:rgba(212,175,55,0.8); letter-spacing:1.5px; text-transform:uppercase; font-weight:800; margin-bottom:7px;">Skupina ${String.fromCharCode(65+i)}</div>
@@ -6677,59 +6670,40 @@ async function vlozitTestData() {
             </div>
         </div>`;
 
-    // === STRANA 2 (LANDSCAPE) - split bracket s pohárem uprostřed ===
     const page2Html = `
         <div id="pdf-page2" style="width:1250px; background:#05070f; padding:24px 28px; font-family:Arial,sans-serif; color:#f0e6c8; box-sizing:border-box;">
-            <!-- Header -->
             <div style="text-align:center; padding-bottom:10px; border-bottom:1px solid rgba(212,175,55,0.2); margin-bottom:12px;">
                 <div style="font-size:9px; letter-spacing:3px; color:rgba(212,175,55,0.7); text-transform:uppercase; margin-bottom:4px;">${jmeno} · ${dnes}</div>
                 <div style="font-size:22px; font-weight:900; letter-spacing:2px; text-transform:uppercase; color:#d4af37;">🏆 Pavouk turnaje</div>
                 <div style="font-size:10px; color:#cbd5e1; margin-top:4px;">Skutečné zápasy podle tvého tipu</div>
             </div>
             
-            <!-- Bracket -->
             <div style="background:radial-gradient(ellipse at center, rgba(212,175,55,0.08), rgba(0,0,0,0.4) 70%); border:1px solid rgba(212,175,55,0.25); border-radius:14px; padding:14px 10px;">
                 <div style="display:flex; gap:5px; height:560px; align-items:stretch; justify-content:center;">
                     
-                    <!-- LEVÁ -->
                     <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(leftR32, r.s32, '1/16')}</div>
                     <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(leftR16, r.s16, '1/8')}</div>
                     <div style="flex:0 0 110px; min-width:0; overflow:hidden;">${bracketCol(leftQF, r.s8, 'ČTVRTFINÁLE')}</div>
                     <div style="flex:0 0 115px; min-width:0; overflow:hidden;">${bracketCol(leftSemi, null, 'SEMIFINÁLE')}</div>
                     
-                    <!-- CENTER -->
-                    <div style="flex:0 0 165px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:0 5px;">
+                    <div style="flex:0 0 170px; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:0 5px;">
                         <div style="text-align:center; position:relative;">
                             <div style="position:absolute; inset:-14px; background:radial-gradient(circle, rgba(212,175,55,0.35), transparent 70%); border-radius:50%; z-index:0;"></div>
                             <img src="logo-wc2026.png" style="position:relative; z-index:1; width:90px; height:90px; object-fit:contain; filter:drop-shadow(0 0 22px rgba(212,175,55,0.7));">
                         </div>
-                        
                         <div style="width:100%;">
                             <div style="text-align:center; font-size:10px; color:#d4af37; letter-spacing:2px; font-weight:900; margin-bottom:5px;">🏆 FINÁLE</div>
                             ${matchBox(finaleZapas, r.winner, 'final')}
                         </div>
-                        
-                        ${tip.winner ? `
-                            <div style="width:100%; text-align:center; padding:7px 5px; background:linear-gradient(135deg, rgba(212,175,55,0.3), rgba(212,175,55,0.12)); border:1px solid rgba(212,175,55,0.6); border-radius:8px; font-size:11px; color:#d4af37; font-weight:900; display:flex; align-items:center; justify-content:center; gap:6px;">
-                                🥇 ${flag(tip.winner, 14)}<span>${tip.winner}</span>
-                            </div>
-                        ` : ''}
-                        
+                        ${tip.winner ? `<div style="width:100%; text-align:center; padding:7px 5px; background:linear-gradient(135deg, rgba(212,175,55,0.3), rgba(212,175,55,0.12)); border:1px solid rgba(212,175,55,0.6); border-radius:8px; font-size:11px; color:#d4af37; font-weight:900; display:flex; align-items:center; justify-content:center; gap:6px;">🥇 ${flag(tip.winner, 14)}<span>${tip.winner}</span></div>` : ''}
                         <div style="width:60%; height:1px; background:linear-gradient(90deg, transparent, rgba(180,100,40,0.55), transparent); margin:4px 0;"></div>
-                        
                         <div style="width:100%;">
                             <div style="text-align:center; font-size:9px; color:#d97b3a; letter-spacing:1.5px; font-weight:900; margin-bottom:4px;">🥉 O 3. MÍSTO</div>
                             ${matchBox(bronzZapas, r.bronze, 'bronze')}
                         </div>
-                        
-                        ${tip.bronze ? `
-                            <div style="width:100%; text-align:center; padding:5px; background:rgba(180,100,40,0.14); border:1px solid rgba(180,100,40,0.45); border-radius:6px; font-size:10px; color:#d97b3a; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px;">
-                                3. ${flag(tip.bronze, 12)}<span>${tip.bronze}</span>
-                            </div>
-                        ` : ''}
+                        ${tip.bronze ? `<div style="width:100%; text-align:center; padding:5px; background:rgba(180,100,40,0.14); border:1px solid rgba(180,100,40,0.45); border-radius:6px; font-size:10px; color:#d97b3a; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px;">3. ${flag(tip.bronze, 12)}<span>${tip.bronze}</span></div>` : ''}
                     </div>
                     
-                   <!-- PRAVÁ -->
                     <div style="flex:0 0 115px; min-width:0; overflow:hidden;">${bracketCol(rightSemi, null, 'SEMIFINÁLE')}</div>
                     <div style="flex:0 0 110px; min-width:0; overflow:hidden;">${bracketCol(rightQF, r.s8, 'ČTVRTFINÁLE')}</div>
                     <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(rightR16, r.s16, '1/8')}</div>
@@ -6737,10 +6711,9 @@ async function vlozitTestData() {
                 </div>
             </div>
             
-            <!-- Legenda -->
             <div style="margin-top:10px; padding:8px 12px; background:rgba(255,255,255,0.05); border-radius:8px; display:flex; justify-content:center; gap:16px; flex-wrap:wrap; font-size:10px; color:#cbd5e1;">
-                <span><span style="display:inline-block; width:10px; height:10px; background:#4ade80; border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Trefil postup ✓</span>
-                <span><span style="display:inline-block; width:10px; height:10px; background:#f87171; border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Nepostoupil ✗</span>
+                <span><span style="display:inline-block; width:10px; height:10px; background:#4ade80; border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Trefil postup</span>
+                <span><span style="display:inline-block; width:10px; height:10px; background:#f87171; border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Nepostoupil</span>
                 <span><span style="display:inline-block; width:10px; height:10px; background:#f0c850; border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Tipovaný vítěz</span>
                 <span><span style="display:inline-block; width:10px; height:10px; background:#94a3b8; border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Poražený</span>
             </div>
@@ -6750,28 +6723,22 @@ async function vlozitTestData() {
             </div>
         </div>`;
 
-    // === RENDER & EXPORT ===
     const container = document.createElement('div');
-    // KLÍČOVÁ ZMĚNA: Kontejneru dáme fixní šířku nejširšího elementu (1100px),
-    // aby mobilní prohlížeč nezkracoval layout podle šířky displeje.
-    container.style.cssText = 'position:fixed; left:-9999px; top:0; z-index:-1; width:1250px; overflow:visible;';';
+    container.style.cssText = 'position:fixed; left:-9999px; top:0; z-index:-1; width:1250px; overflow:visible;';
     container.innerHTML = page1Html + page2Html;
     document.body.appendChild(container);
 
-   try {
+    try {
         const { jsPDF } = window.jspdf;
         
-        // Vyrenderuj obě stránky JAKO PRVNÍ - získáme přesné rozměry canvasu
         const c1 = await html2canvas(container.querySelector('#pdf-page1'), {
             scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false
         });
-       const c2 = await html2canvas(container.querySelector('#pdf-page2'), {
+        const c2 = await html2canvas(container.querySelector('#pdf-page2'), {
             scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false,
             width: 1250, windowWidth: 1250
         });
         
-        // 🎯 STRANA 1 - vytvoř PDF s ROZMĚRY PŘESNĚ DLE CANVASU
-        // (žádné bílé pozadí, žádné scaling)
         const w1 = c1.width / 2;
         const h1 = c1.height / 2;
         const pdf = new jsPDF({
@@ -6781,8 +6748,6 @@ async function vlozitTestData() {
         });
         pdf.addImage(c1.toDataURL('image/png'), 'PNG', 0, 0, w1, h1);
         
-        // 🎯 STRANA 2 - vlastní rozměry stránky podle bracket canvasu
-        // (přesně 1100px wide × výška obsahu, nic se neořezává)
         const w2 = c2.width / 2;
         const h2 = c2.height / 2;
         pdf.addPage([w2, h2], w2 > h2 ? 'l' : 'p');
@@ -6796,7 +6761,7 @@ async function vlozitTestData() {
     } finally {
         document.body.removeChild(container);
     }
-      }
+}
     
 function showToast(message, type = 'info', duration = 4000) {
     const container = document.getElementById('toast-container');
