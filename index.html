@@ -21,6 +21,268 @@
     <!-- 🔔 OneSignal Push Notifications -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
+    // 🏆 Zjisti jestli turnaj běží
+function turnajBezi() {
+    const start = new Date('2026-06-11T21:00:00');
+    const konec = new Date('2026-07-20T00:00:00');
+    const now = new Date();
+    return now >= start && now <= konec;
+}
+
+// 📺 Render live/upcoming match banneru
+function renderMatchBanner() {
+    const cont = document.getElementById('match-banner-container');
+    if (!cont) return;
+    
+    if (!turnajBezi()) {
+        cont.innerHTML = '';
+        return;
+    }
+    
+    const live = aktualniZapas();
+    const dalsi = nejblizsiZapas();
+    
+    let html = '';
+    
+    // 🔴 LIVE ZÁPAS
+    if (live) {
+        html += `
+            <div style="background:linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.04)); border:1px solid rgba(239,68,68,0.4); border-radius:14px; padding:14px 16px; margin-bottom:14px; box-shadow:0 4px 16px rgba(239,68,68,0.15);">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                    <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#ef4444; animation:livePulse 1s infinite; box-shadow:0 0 8px rgba(239,68,68,0.6);"></span>
+                    <span style="font-size:0.7rem; color:#ef4444; font-weight:900; letter-spacing:2px;">🔴 LIVE NYNÍ · ${live.faze}</span>
+                </div>
+                <div style="font-size:1.1rem; font-weight:900; color:#f0e6c8; text-align:center;">
+                    ${live.tym1 || 'TBA'} <span style="color:#5a6480; margin:0 8px;">vs</span> ${live.tym2 || 'TBA'}
+                </div>
+                <div style="font-size:0.7rem; color:#94a3b8; text-align:center; margin-top:4px;">
+                    Začátek: ${new Date(live.datum).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                </div>
+            </div>
+        `;
+    }
+    
+    // ⏰ NEJBLIŽŠÍ ZÁPAS
+    if (dalsi && !live) {
+        const diff = new Date(dalsi.datum) - new Date();
+        const dni = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hodiny = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minuty = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        let countdown = '';
+        if (dni > 0) countdown = `za ${dni} d ${hodiny} h`;
+        else if (hodiny > 0) countdown = `za ${hodiny} h ${minuty} min`;
+        else countdown = `za ${minuty} min`;
+        
+        const datumStr = new Date(dalsi.datum).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+        
+        html += `
+            <div style="background:linear-gradient(135deg, rgba(56,189,248,0.08), rgba(212,175,55,0.04)); border:1px solid rgba(56,189,248,0.25); border-radius:14px; padding:14px 16px; margin-bottom:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:0.65rem; color:rgba(56,189,248,0.8); font-weight:900; letter-spacing:2px;">⏰ NEJBLIŽŠÍ ZÁPAS · ${dalsi.faze}</span>
+                    <span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:3px 10px; border-radius:8px; font-size:0.65rem; font-weight:800; letter-spacing:1px;">${countdown}</span>
+                </div>
+                ${dalsi.tym1 ? `
+                    <div style="font-size:1rem; font-weight:900; color:#f0e6c8; text-align:center;">
+                        ${dalsi.tym1} <span style="color:#5a6480; margin:0 8px;">vs</span> ${dalsi.tym2 || 'TBA'}
+                    </div>
+                ` : ''}
+                <div style="font-size:0.7rem; color:#94a3b8; text-align:center; margin-top:4px;">
+                    📅 ${datumStr}
+                </div>
+            </div>
+        `;
+    }
+    
+    cont.innerHTML = html;
+}
+
+// 🎮 Schování/zobrazení tipovacích sekcí
+function aplikujTurnajMode() {
+    const bezi = turnajBezi();
+    
+    // Sekce tipování (všechny step-dot fáze)
+    const sekce = ['phase-skupiny', 'phase-3misto', 'phase-s32', 'phase-s16', 'phase-s8', 'phase-s4', 'phase-s3', 'phase-s2', 'phase-bonus', 'final-box'];
+    sekce.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = bezi ? 'none' : '';
+    });
+    
+    // Step indicator (puntíky)
+    const stepIndicator = document.querySelector('.step-indicator');
+    if (stepIndicator) stepIndicator.style.display = bezi ? 'none' : 'flex';
+    
+    // Tlačítko "Můj tip" - jen pokud je přihlášen a turnaj běží
+    let mujTipBtn = document.getElementById('muj-tip-btn');
+    if (bezi && window.loggedUserIdGlobal) {
+        if (!mujTipBtn) {
+            mujTipBtn = document.createElement('button');
+            mujTipBtn.id = 'muj-tip-btn';
+            mujTipBtn.className = 'btn';
+            mujTipBtn.style.cssText = 'background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:#d4af37; padding:10px 18px; border-radius:10px; font-weight:700; cursor:pointer; margin:14px auto; display:block;';
+            mujTipBtn.innerHTML = '👁️ ZOBRAZIT MŮJ TIP';
+            mujTipBtn.onclick = () => otevritProfil(window.loggedUserIdGlobal);
+            const matchCont = document.getElementById('match-banner-container');
+            if (matchCont && matchCont.parentNode) {
+                matchCont.parentNode.insertBefore(mujTipBtn, matchCont.nextSibling);
+            }
+        }
+        mujTipBtn.style.display = 'block';
+    } else if (mujTipBtn) {
+        mujTipBtn.style.display = 'none';
+    }
+    
+    // Refresh match banner
+    if (typeof renderMatchBanner === 'function') renderMatchBanner();
+}
+    // 📅 Zápasy MS 2026 (datum/čas v Praze - timezone Europe/Prague)
+// 📅 Zápasy MS 2026 - kompletní skupinová fáze (časy v CET/CEST - Praha)
+const ZAPASY_WC2026 = [
+    // ════════ MATCHDAY 1 (11.-18. června) ════════
+    
+    // ČT 11. 6.
+    { datum: '2026-06-11T21:00', tym1: 'Mexiko', tym2: 'JAR', faze: 'Skupina A' },
+    
+    // PÁ 12. 6.
+    { datum: '2026-06-12T04:00', tym1: 'J. Korea', tym2: 'Česko', faze: 'Skupina A' },
+    { datum: '2026-06-12T21:00', tym1: 'Kanada', tym2: 'Bosna a Herc.', faze: 'Skupina B' },
+    
+    // SO 13. 6.
+    { datum: '2026-06-13T03:00', tym1: 'USA', tym2: 'Paraguay', faze: 'Skupina D' },
+    { datum: '2026-06-13T21:00', tym1: 'Katar', tym2: 'Švýcarsko', faze: 'Skupina B' },
+    
+    // NE 14. 6.
+    { datum: '2026-06-14T00:00', tym1: 'Brazílie', tym2: 'Maroko', faze: 'Skupina C' },
+    { datum: '2026-06-14T03:00', tym1: 'Haiti', tym2: 'Skotsko', faze: 'Skupina C' },
+    { datum: '2026-06-14T06:00', tym1: 'Austrálie', tym2: 'Turecko', faze: 'Skupina D' },
+    { datum: '2026-06-14T19:00', tym1: 'Německo', tym2: 'Curaçao', faze: 'Skupina E' },
+    { datum: '2026-06-14T22:00', tym1: 'Nizozemsko', tym2: 'Japonsko', faze: 'Skupina F' },
+    
+    // PO 15. 6.
+    { datum: '2026-06-15T01:00', tym1: 'Pobřeží sl.', tym2: 'Ekvádor', faze: 'Skupina E' },
+    { datum: '2026-06-15T04:00', tym1: 'Švédsko', tym2: 'Tunisko', faze: 'Skupina F' },
+    { datum: '2026-06-15T18:00', tym1: 'Španělsko', tym2: 'Kapverdy', faze: 'Skupina H' },
+    { datum: '2026-06-15T21:00', tym1: 'Belgie', tym2: 'Egypt', faze: 'Skupina G' },
+    
+    // ÚT 16. 6.
+    { datum: '2026-06-16T00:00', tym1: 'S. Arábie', tym2: 'Uruguay', faze: 'Skupina H' },
+    { datum: '2026-06-16T03:00', tym1: 'Írán', tym2: 'N. Zéland', faze: 'Skupina G' },
+    { datum: '2026-06-16T21:00', tym1: 'Francie', tym2: 'Senegal', faze: 'Skupina I' },
+    
+    // ST 17. 6.
+    { datum: '2026-06-17T00:00', tym1: 'Irák', tym2: 'Norsko', faze: 'Skupina I' },
+    { datum: '2026-06-17T03:00', tym1: 'Argentina', tym2: 'Alžírsko', faze: 'Skupina J' },
+    { datum: '2026-06-17T06:00', tym1: 'Rakousko', tym2: 'Jordánsko', faze: 'Skupina J' },
+    { datum: '2026-06-17T19:00', tym1: 'Portugalsko', tym2: 'DR Kongo', faze: 'Skupina K' },
+    { datum: '2026-06-17T22:00', tym1: 'Anglie', tym2: 'Panama', faze: 'Skupina L' },
+    
+    // ČT 18. 6.
+    { datum: '2026-06-18T01:00', tym1: 'Kolumbie', tym2: 'Uzbekistán', faze: 'Skupina K' },
+    { datum: '2026-06-18T04:00', tym1: 'Chorvatsko', tym2: 'Ghana', faze: 'Skupina L' },
+    
+    // ════════ MATCHDAY 2 (17.-23. června) ════════
+    
+    // ČT 18. 6.
+    { datum: '2026-06-18T18:00', tym1: 'Česko', tym2: 'JAR', faze: 'Skupina A' },
+    { datum: '2026-06-18T21:00', tym1: 'Mexiko', tym2: 'J. Korea', faze: 'Skupina A' },
+    
+    // PÁ 19. 6.
+    { datum: '2026-06-19T03:00', tym1: 'Bosna a Herc.', tym2: 'Katar', faze: 'Skupina B' },
+    { datum: '2026-06-19T18:00', tym1: 'Švýcarsko', tym2: 'Kanada', faze: 'Skupina B' },
+    { datum: '2026-06-19T21:00', tym1: 'USA', tym2: 'Austrálie', faze: 'Skupina D' },
+    
+    // SO 20. 6.
+    { datum: '2026-06-20T00:00', tym1: 'Maroko', tym2: 'Haiti', faze: 'Skupina C' },
+    { datum: '2026-06-20T03:00', tym1: 'Skotsko', tym2: 'Brazílie', faze: 'Skupina C' },
+    { datum: '2026-06-20T05:00', tym1: 'Turecko', tym2: 'Paraguay', faze: 'Skupina D' },
+    { datum: '2026-06-20T19:00', tym1: 'Nizozemsko', tym2: 'Švédsko', faze: 'Skupina F' },
+    { datum: '2026-06-20T22:00', tym1: 'Německo', tym2: 'Pobřeží sl.', faze: 'Skupina E' },
+    
+    // NE 21. 6.
+    { datum: '2026-06-21T02:00', tym1: 'Ekvádor', tym2: 'Curaçao', faze: 'Skupina E' },
+    { datum: '2026-06-21T06:00', tym1: 'Tunisko', tym2: 'Japonsko', faze: 'Skupina F' },
+    { datum: '2026-06-21T18:00', tym1: 'Španělsko', tym2: 'S. Arábie', faze: 'Skupina H' },
+    { datum: '2026-06-21T21:00', tym1: 'Belgie', tym2: 'Írán', faze: 'Skupina G' },
+    
+    // PO 22. 6.
+    { datum: '2026-06-22T00:00', tym1: 'Kapverdy', tym2: 'Uruguay', faze: 'Skupina H' },
+    { datum: '2026-06-22T03:00', tym1: 'N. Zéland', tym2: 'Egypt', faze: 'Skupina G' },
+    { datum: '2026-06-22T21:00', tym1: 'Francie', tym2: 'Irák', faze: 'Skupina I' },
+    
+    // ÚT 23. 6.
+    { datum: '2026-06-23T00:00', tym1: 'Norsko', tym2: 'Senegal', faze: 'Skupina I' },
+    { datum: '2026-06-23T03:00', tym1: 'Argentina', tym2: 'Rakousko', faze: 'Skupina J' },
+    { datum: '2026-06-23T06:00', tym1: 'Jordánsko', tym2: 'Alžírsko', faze: 'Skupina J' },
+    { datum: '2026-06-23T19:00', tym1: 'Portugalsko', tym2: 'Kolumbie', faze: 'Skupina K' },
+    { datum: '2026-06-23T22:00', tym1: 'Anglie', tym2: 'Chorvatsko', faze: 'Skupina L' },
+    
+    // ST 24. 6.
+    { datum: '2026-06-24T01:00', tym1: 'Uzbekistán', tym2: 'DR Kongo', faze: 'Skupina K' },
+    { datum: '2026-06-24T04:00', tym1: 'Ghana', tym2: 'Panama', faze: 'Skupina L' },
+    
+    // ════════ MATCHDAY 3 (24.-27. června) - SIMULTÁNNĚ ════════
+    
+    // ST 24. 6.
+    { datum: '2026-06-25T03:00', tym1: 'Mexiko', tym2: 'Česko', faze: 'Skupina A' },
+    { datum: '2026-06-25T03:00', tym1: 'JAR', tym2: 'J. Korea', faze: 'Skupina A' },
+    
+    // ČT 25. 6.
+    { datum: '2026-06-25T21:00', tym1: 'Kanada', tym2: 'Katar', faze: 'Skupina B' },
+    { datum: '2026-06-25T21:00', tym1: 'Švýcarsko', tym2: 'Bosna a Herc.', faze: 'Skupina B' },
+    
+    // PÁ 26. 6.
+    { datum: '2026-06-26T01:00', tym1: 'Brazílie', tym2: 'Skotsko', faze: 'Skupina C' },
+    { datum: '2026-06-26T01:00', tym1: 'Maroko', tym2: 'Haiti', faze: 'Skupina C' },
+    { datum: '2026-06-26T04:00', tym1: 'Turecko', tym2: 'USA', faze: 'Skupina D' },
+    { datum: '2026-06-26T04:00', tym1: 'Paraguay', tym2: 'Austrálie', faze: 'Skupina D' },
+    { datum: '2026-06-26T22:00', tym1: 'Ekvádor', tym2: 'Německo', faze: 'Skupina E' },
+    { datum: '2026-06-26T22:00', tym1: 'Curaçao', tym2: 'Pobřeží sl.', faze: 'Skupina E' },
+    
+    // SO 27. 6.
+    { datum: '2026-06-27T01:00', tym1: 'Japonsko', tym2: 'Švédsko', faze: 'Skupina F' },
+    { datum: '2026-06-27T01:00', tym1: 'Tunisko', tym2: 'Nizozemsko', faze: 'Skupina F' },
+    { datum: '2026-06-27T05:00', tym1: 'Egypt', tym2: 'Írán', faze: 'Skupina G' },
+    { datum: '2026-06-27T05:00', tym1: 'N. Zéland', tym2: 'Belgie', faze: 'Skupina G' },
+    { datum: '2026-06-27T19:00', tym1: 'Uruguay', tym2: 'Španělsko', faze: 'Skupina H' },
+    { datum: '2026-06-27T19:00', tym1: 'Kapverdy', tym2: 'S. Arábie', faze: 'Skupina H' },
+    { datum: '2026-06-27T22:00', tym1: 'Senegal', tym2: 'Irák', faze: 'Skupina I' },
+    { datum: '2026-06-27T22:00', tym1: 'Norsko', tym2: 'Francie', faze: 'Skupina I' },
+    
+    // NE 28. 6. (poslední skupinové zápasy + start play-off)
+    { datum: '2026-06-28T02:00', tym1: 'Alžírsko', tym2: 'Rakousko', faze: 'Skupina J' },
+    { datum: '2026-06-28T02:00', tym1: 'Jordánsko', tym2: 'Argentina', faze: 'Skupina J' },
+    { datum: '2026-06-28T19:00', tym1: 'DR Kongo', tym2: 'Kolumbie', faze: 'Skupina K' },
+    { datum: '2026-06-28T19:00', tym1: 'Uzbekistán', tym2: 'Portugalsko', faze: 'Skupina K' },
+    { datum: '2026-06-28T22:00', tym1: 'Panama', tym2: 'Chorvatsko', faze: 'Skupina L' },
+    { datum: '2026-06-28T22:00', tym1: 'Ghana', tym2: 'Anglie', faze: 'Skupina L' },
+    
+    // ════════ PLAY-OFF (orientační termíny) ════════
+    { datum: '2026-06-29T18:00', faze: '1/16 finále' },
+    { datum: '2026-07-04T20:00', faze: '1/8 finále' },
+    { datum: '2026-07-10T20:00', faze: 'Čtvrtfinále' },
+    { datum: '2026-07-14T20:00', faze: 'Semifinále' },
+    { datum: '2026-07-18T20:00', faze: 'O 3. místo' },
+    { datum: '2026-07-19T20:00', faze: 'FINÁLE', tym1: 'tba', tym2: 'tba' }
+];
+
+
+// Vrátí aktuálně probíhající zápas (90 min od startu)
+function aktualniZapas() {
+    const now = new Date();
+    return ZAPASY_WC2026.find(z => {
+        const start = new Date(z.datum);
+        const konec = new Date(start.getTime() + 105 * 60 * 1000); // 90 min + nastavení
+        return now >= start && now <= konec;
+    });
+}
+
+// Vrátí nejbližší budoucí zápas
+function nejblizsiZapas() {
+    const now = new Date();
+    return ZAPASY_WC2026
+        .filter(z => new Date(z.datum) > now)
+        .sort((a, b) => new Date(a.datum) - new Date(b.datum))[0];
+}
     // 🎯 Render Šance widgetu (oddělený od profilu)
 function renderSanceWidget(p) {
     const maBody = profilData.some(x => x.points > 0);
@@ -2195,6 +2457,7 @@ input:focus {
         <i class="fas fa-lock"></i> Tipování je uzavřeno! Turnaj začal.
     </div>
 </div>
+        <div id="match-banner-container"></div>
       <div class="step-indicator">
     <span class="step-dot active" id="dot-s1" onclick="skocNaFazi('dot-s1')" style="cursor:pointer;">Skupiny</span>
     <span class="step-dot" id="dot-s2" onclick="skocNaFazi('dot-s2')" style="cursor:pointer;">3. místa</span>
@@ -6428,10 +6691,14 @@ if (typeof renderBonusStats === "function") renderBonusStats();
             if (typeof renderBodyVeHre === "function") renderBodyVeHre();
             if (typeof renderAnketa === "function") renderAnketa();
             if (typeof renderStatusPanel === "function") renderStatusPanel();
-           if (typeof aktualizujBonusLiveBanner === "function") aktualizujBonusLiveBanner();
-if (typeof renderBonusStats === "function") renderBonusStats();
+    if (typeof aktualizujBonusLiveBanner === "function") aktualizujBonusLiveBanner();
+            if (typeof renderBonusStats === "function") renderBonusStats();
             if (typeof init === "function") init();
         }
+        
+        // 🏆 Turnajový režim - skryje tipovací sekce po startu, ukáže match banner
+        if (typeof aplikujTurnajMode === 'function') aplikujTurnajMode();
+        
     } catch (error) {
         console.error("❌ Kritická chyba v loadAll:", error);
     }
@@ -8364,7 +8631,15 @@ window.addEventListener('DOMContentLoaded', () => {
 // Spustíme kontrolu hned po načtení stránky
 window.addEventListener('DOMContentLoaded', checkUserSession);
 
-    window.onload = init;
+   window.onload = init;
+
+    // 🏆 Auto-refresh match banneru každou minutu (live countdown)
+    if (!window.__matchBannerInterval) {
+        window.__matchBannerInterval = setInterval(() => {
+            if (typeof renderMatchBanner === 'function') renderMatchBanner();
+        }, 60000);
+    }
+
   // Registrace PWA Service Workeru - DOČASNĚ VYPNUTO pro test OneSignalu
 /*
 if ('serviceWorker' in navigator) {
