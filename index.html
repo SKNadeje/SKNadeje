@@ -6591,15 +6591,14 @@ async function vlozitTestData() {
         return `<div style="background:${bg}; border:1px solid ${accent}; border-radius:6px; padding:${padding};">${row(z.home, homeIsWinner)}${row(z.away, awayIsWinner)}</div>`;
     };
 
-    const bracketCol = (zapasy, realAdmin, label, sub) => `
-        <div style="display:flex; flex-direction:column; min-width:0; height:100%;">
-            <div style="text-align:center; font-size:8px; color:rgba(212,175,55,0.9); letter-spacing:1.5px; font-weight:800; margin-bottom:2px;">${label}</div>
-            <div style="text-align:center; font-size:7px; color:#94a3b8; margin-bottom:8px;">${sub}</div>
-            <div style="flex:1; display:flex; flex-direction:column; justify-content:space-around;">
-                ${zapasy.map(z => matchBox(z, realAdmin)).join('')}
-            </div>
+  const bracketCol = (zapasy, realAdmin, label) => `
+    <div style="display:flex; flex-direction:column; min-width:0; height:100%;">
+        <div style="text-align:center; font-size:9px; color:rgba(212,175,55,0.9); letter-spacing:1.5px; font-weight:800; margin-bottom:8px;">${label}</div>
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:space-around;">
+            ${zapasy.map(z => matchBox(z, realAdmin)).join('')}
         </div>
-    `;
+    </div>
+`;
 
     // === STRANA 1 (portrait): hlavička + skupiny + vítěz/bronz + bonusy ===
     const skupinyHTML = (tip.groups || []).map((tymy, i) => `
@@ -6690,16 +6689,16 @@ async function vlozitTestData() {
             
             <!-- Bracket -->
             <div style="background:radial-gradient(ellipse at center, rgba(212,175,55,0.08), rgba(0,0,0,0.4) 70%); border:1px solid rgba(212,175,55,0.25); border-radius:14px; padding:14px 10px;">
-                <div style="display:flex; gap:6px; height:560px; align-items:stretch;">
+                <div style="display:flex; gap:5px; height:560px; align-items:stretch;">
                     
                     <!-- LEVÁ -->
-                    <div style="flex:0 0 105px;">${bracketCol(leftR32, r.s32, '1/16 FINÁLE')}</div>
-                    <div style="flex:0 0 105px;">${bracketCol(leftR16, r.s16, '1/8 FINÁLE')}</div>
-                    <div style="flex:0 0 110px;">${bracketCol(leftQF, r.s8, 'ČTVRTFINÁLE')}</div>
-                    <div style="flex:0 0 115px;">${bracketCol(leftSemi, null, 'SEMIFINÁLE')}</div>
+                    <div style="flex:0 0 92px;">${bracketCol(leftR32, r.s32, '1/16')}</div>
+                    <div style="flex:0 0 92px;">${bracketCol(leftR16, r.s16, '1/8')}</div>
+                    <div style="flex:0 0 100px;">${bracketCol(leftQF, r.s8, 'ČTVRTFINÁLE')}</div>
+                    <div style="flex:0 0 105px;">${bracketCol(leftSemi, null, 'SEMIFINÁLE')}</div>
                     
                     <!-- CENTER -->
-                    <div style="flex:0 0 180px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:0 6px;">
+                    <div style="flex:0 0 165px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:0 5px;">
                         <div style="text-align:center; position:relative;">
                             <div style="position:absolute; inset:-14px; background:radial-gradient(circle, rgba(212,175,55,0.35), transparent 70%); border-radius:50%; z-index:0;"></div>
                             <img src="logo-wc2026.png" style="position:relative; z-index:1; width:90px; height:90px; object-fit:contain; filter:drop-shadow(0 0 22px rgba(212,175,55,0.7));">
@@ -6730,11 +6729,11 @@ async function vlozitTestData() {
                         ` : ''}
                     </div>
                     
-                    <!-- PRAVÁ -->
-                    <div style="flex:0 0 115px;">${bracketCol(rightSemi, null, 'SEMIFINÁLE')}</div>
-                    <div style="flex:0 0 110px;">${bracketCol(rightQF, r.s8, 'ČTVRTFINÁLE')}</div>
-                    <div style="flex:0 0 105px;">${bracketCol(rightR16, r.s16, '1/8 FINÁLE')}</div>
-                    <div style="flex:0 0 105px;">${bracketCol(rightR32, r.s32, '1/16 FINÁLE')}</div>
+                   <!-- PRAVÁ -->
+                    <div style="flex:0 0 105px;">${bracketCol(rightSemi, null, 'SEMIFINÁLE')}</div>
+                    <div style="flex:0 0 100px;">${bracketCol(rightQF, r.s8, 'ČTVRTFINÁLE')}</div>
+                    <div style="flex:0 0 92px;">${bracketCol(rightR16, r.s16, '1/8')}</div>
+                    <div style="flex:0 0 92px;">${bracketCol(rightR32, r.s32, '1/16')}</div>
                 </div>
             </div>
             
@@ -6777,17 +6776,13 @@ async function vlozitTestData() {
         const h1 = pdfW1 / ratio1;
         pdf.addImage(c1.toDataURL('image/png'), 'PNG', 0, 0, pdfW1, Math.min(h1, pdfH1));
 
-        // Strana 2 - LANDSCAPE (na šířku)
+       // Strana 2 - LANDSCAPE (na šířku)
         pdf.addPage('a4', 'landscape');
         const pdfW2 = pdf.internal.pageSize.getWidth();
         const pdfH2 = pdf.internal.pageSize.getHeight();
-        
         const c2 = await html2canvas(container.querySelector('#pdf-page2'), {
-            scale: 2, 
-            backgroundColor: '#05070f', 
-            useCORS: true, 
-            logging: false,
-            windowWidth: 1100 // Vynutíme, aby si html2canvas myslel, že okno má 1100px
+            scale: 2, backgroundColor: '#05070f', useCORS: true, logging: false,
+            width: 1100, windowWidth: 1100
         });
         
         // Výpočet výšky tak, aby se celý pavouk vešel na šířku A4 landscape
