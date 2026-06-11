@@ -5104,24 +5104,19 @@ async function otevritMujTip() {
     const r = window.currentResults || {};
     const eq = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
     
-    // ════════════════════════════════════════════
-    // HELPER 1: Sestaví 32 týmů 1/16 finále z groups + thirds
-    // (replika prepareS32 logiky pro display)
-    // ════════════════════════════════════════════
+    // ════════ HELPER: 32 týmů 1/16 ════════
     const sestavTymyR32 = (groups, thirds) => {
         const ID = ['A','B','C','D','E','F','G','H','I','J','K','L'];
         const getT = (gl, rank) => {
             const idx = ID.indexOf(gl);
             return idx >= 0 && groups[idx] ? (groups[idx][rank] || '??') : '??';
         };
-        
         const tretiMista = (thirds || []).map(name => {
             for (let i = 0; i < groups.length; i++) {
                 if (eq(groups[i]?.[2], name)) return { team: name, group: ID[i] };
             }
             return { team: name, group: null };
         });
-        
         const sloty = [
             { matchId: 74, allowed: ['A','B','C','D','F'] },
             { matchId: 77, allowed: ['C','D','F','G','H'] },
@@ -5132,7 +5127,6 @@ async function otevritMujTip() {
             { matchId: 85, allowed: ['E','F','G','I','J'] },
             { matchId: 87, allowed: ['D','E','I','J','L'] },
         ];
-        
         function najdi(s, m) {
             if (s.length === 0) return {};
             let bs = null, bc = null;
@@ -5149,7 +5143,6 @@ async function otevritMujTip() {
             }
             return null;
         }
-        
         const mp = najdi(sloty, tretiMista) || {};
         let fi = 0;
         const g3 = (id) => {
@@ -5157,9 +5150,8 @@ async function otevritMujTip() {
             while (fi < (thirds || []).length && Object.values(mp).includes(thirds[fi])) fi++;
             return thirds[fi++] || '??';
         };
-        
         return [
-            getT('E', 0), g3(74),  getT('I', 0), g3(77),
+            getT('E', 0), g3(74), getT('I', 0), g3(77),
             getT('A', 1), getT('B', 1), getT('F', 0), getT('C', 1),
             getT('H', 0), getT('J', 1), getT('K', 1), getT('L', 1),
             getT('D', 0), g3(81), getT('G', 0), g3(82),
@@ -5170,9 +5162,6 @@ async function otevritMujTip() {
         ];
     };
     
-    // ════════════════════════════════════════════
-    // HELPER 2: Sestaví páry zápasů (sousedící indexy)
-    // ════════════════════════════════════════════
     const sestavZapasy = (tymy, vitezi) => {
         const z = [];
         if (!tymy) return z;
@@ -5188,177 +5177,177 @@ async function otevritMujTip() {
         return z;
     };
     
-    // ════════════════════════════════════════════
-    // HELPER 3: Status zápasu vs admin výsledek
-    // ════════════════════════════════════════════
     const statusZapasu = (vitezTip, realAdmin) => {
         if (!vitezTip) return 'no-pick';
         if (!realAdmin) return 'pending';
-        const list = Array.isArray(realAdmin) 
-            ? realAdmin.filter(x => x && String(x).trim()) 
-            : (realAdmin ? [realAdmin] : []);
+        const list = Array.isArray(realAdmin) ? realAdmin.filter(x => x && String(x).trim()) : (realAdmin ? [realAdmin] : []);
         if (list.length === 0) return 'pending';
         return list.some(x => eq(x, vitezTip)) ? 'correct' : 'wrong';
     };
     
-    // ════════════════════════════════════════════
-    // SESTAV VŠECHNA KOLA
-    // ════════════════════════════════════════════
+    // ════════ BUILD ROUNDS ════════
     const r32Teams = sestavTymyR32(tip.groups || [], tip.thirds || []);
-    const r32Zapasy = sestavZapasy(r32Teams, tip.s32);           // 16 zápasů
-    const r16Zapasy = sestavZapasy(tip.s32 || [], tip.s16);       // 8 zápasů
-    const qfZapasy  = sestavZapasy(tip.s16 || [], tip.s8);        // 4 zápasy
-    const semiZapasy = sestavZapasy(tip.s8 || [], tip.s4);        // 2 zápasy
-    
-    // Bronz: poražení ze semifinále = s8 - s4
-    const semiPorazeni = (tip.s8 || []).filter(t => 
-        !(tip.s4 || []).some(x => eq(x, t))
-    );
+    const r32Zapasy = sestavZapasy(r32Teams, tip.s32);
+    const r16Zapasy = sestavZapasy(tip.s32 || [], tip.s16);
+    const qfZapasy = sestavZapasy(tip.s16 || [], tip.s8);
+    const semiZapasy = sestavZapasy(tip.s8 || [], tip.s4);
+    const semiPorazeni = (tip.s8 || []).filter(t => !(tip.s4 || []).some(x => eq(x, t)));
     const bronzZapas = { home: semiPorazeni[0], away: semiPorazeni[1], vitez: tip.bronze };
-    
-    // Finále: 2 finalisté z s4
     const finaleZapas = { home: (tip.s4 || [])[0], away: (tip.s4 || [])[1], vitez: tip.winner };
     
-    // ════════════════════════════════════════════
-    // RENDER zápasu (match box)
-    // ════════════════════════════════════════════
-    const renderMatch = (z, realAdmin, varianta = 'default') => {
+    // ════════ SPLIT LEFT / RIGHT ════════
+    const leftR32 = r32Zapasy.slice(0, 8);
+    const rightR32 = r32Zapasy.slice(8, 16);
+    const leftR16 = r16Zapasy.slice(0, 4);
+    const rightR16 = r16Zapasy.slice(4, 8);
+    const leftQF = qfZapasy.slice(0, 2);
+    const rightQF = qfZapasy.slice(2, 4);
+    const leftSemi = semiZapasy[0] ? [semiZapasy[0]] : [];
+    const rightSemi = semiZapasy[1] ? [semiZapasy[1]] : [];
+    
+    // ════════ MATCH BOX renderer ════════
+    const matchBox = (z, realAdmin, varianta = 'default') => {
         const status = statusZapasu(z.vitez, realAdmin);
         const homeIsWinner = z.vitez && eq(z.home, z.vitez);
         const awayIsWinner = z.vitez && eq(z.away, z.vitez);
         
-        const stylForRow = (isWinner) => {
-            if (!z.vitez) return { bg: 'rgba(255,255,255,0.02)', border: 'rgba(212,175,55,0.08)', color: '#94a3b8', weight: 500 };
+        const styl = (isWinner) => {
+            if (!z.vitez) return { bg:'rgba(255,255,255,0.02)', bd:'rgba(212,175,55,0.08)', col:'#94a3b8', w:500 };
             if (isWinner) {
-                if (status === 'correct') return { bg: 'rgba(34,197,94,0.18)', border: 'rgba(34,197,94,0.45)', color: '#22c55e', weight: 800 };
-                if (status === 'wrong')   return { bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.35)', color: '#ef4444', weight: 800 };
-                return { bg: 'rgba(212,175,55,0.14)', border: 'rgba(212,175,55,0.35)', color: '#d4af37', weight: 800 };
+                if (status === 'correct') return { bg:'rgba(34,197,94,0.18)', bd:'rgba(34,197,94,0.45)', col:'#22c55e', w:800 };
+                if (status === 'wrong')   return { bg:'rgba(239,68,68,0.15)', bd:'rgba(239,68,68,0.35)', col:'#ef4444', w:800 };
+                return { bg:'rgba(212,175,55,0.14)', bd:'rgba(212,175,55,0.35)', col:'#d4af37', w:800 };
             }
-            return { bg: 'rgba(255,255,255,0.02)', border: 'rgba(212,175,55,0.08)', color: '#5a6480', weight: 500 };
+            return { bg:'rgba(255,255,255,0.02)', bd:'rgba(212,175,55,0.06)', col:'#5a6480', w:500 };
         };
         
-        const teamRow = (team, isWinner) => {
-            const c = stylForRow(isWinner);
+        const row = (team, isWinner) => {
+            const c = styl(isWinner);
             const icon = isWinner && status === 'correct' ? ' ✓' : (isWinner && status === 'wrong' ? ' ✗' : '');
-            const flag = (team && typeof flagImg === 'function') ? flagImg(team, 14) : '';
-            return `<div style="background:${c.bg}; border:1px solid ${c.border}; color:${c.color}; padding:5px 7px; border-radius:5px; font-size:0.7rem; font-weight:${c.weight}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:4px;">${flag}<span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${team || '–'}${icon}</span></div>`;
+            const fl = (team && typeof flagImg === 'function') ? flagImg(team, 10) : '';
+            return `<div style="background:${c.bg}; border:1px solid ${c.bd}; color:${c.col}; padding:3px 5px; border-radius:4px; font-size:9px; font-weight:${c.w}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:3px; margin-bottom:1px;">${fl}<span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${team || '–'}${icon}</span></div>`;
         };
         
-        const accent = varianta === 'final' ? 'rgba(212,175,55,0.35)' : (varianta === 'bronze' ? 'rgba(180,100,40,0.35)' : 'rgba(212,175,55,0.12)');
-        const bg = varianta === 'final' ? 'rgba(212,175,55,0.05)' : (varianta === 'bronze' ? 'rgba(180,100,40,0.04)' : 'rgba(0,0,0,0.2)');
+        const accent = varianta === 'final' ? 'rgba(212,175,55,0.5)' : (varianta === 'bronze' ? 'rgba(180,100,40,0.4)' : 'rgba(212,175,55,0.1)');
+        const bg = varianta === 'final' ? 'rgba(212,175,55,0.06)' : (varianta === 'bronze' ? 'rgba(180,100,40,0.04)' : 'rgba(0,0,0,0.25)');
+        const padding = varianta === 'final' ? '5px' : '3px';
         
-        return `
-            <div style="background:${bg}; border:1px solid ${accent}; border-radius:8px; padding:5px; margin-bottom:6px; display:flex; flex-direction:column; gap:3px;">
-                ${teamRow(z.home, homeIsWinner)}
-                ${teamRow(z.away, awayIsWinner)}
-            </div>
-        `;
+        return `<div style="background:${bg}; border:1px solid ${accent}; border-radius:6px; padding:${padding};">${row(z.home, homeIsWinner)}${row(z.away, awayIsWinner)}</div>`;
     };
     
-    // ════════════════════════════════════════════
-    // HTML VÝSTUP
-    // ════════════════════════════════════════════
+    // ════════ BRACKET COLUMN renderer ════════
+    const bracketCol = (zapasy, realAdmin, label, sub) => `
+        <div style="display:flex; flex-direction:column; min-width:0; height:100%;">
+            <div style="text-align:center; font-size:0.5rem; color:rgba(212,175,55,0.7); letter-spacing:1px; font-weight:800; margin-bottom:2px;">${label}</div>
+            <div style="text-align:center; font-size:0.45rem; color:#5a6480; margin-bottom:6px;">${sub}</div>
+            <div style="flex:1; display:flex; flex-direction:column; justify-content:space-around;">
+                ${zapasy.map(z => matchBox(z, realAdmin)).join('')}
+            </div>
+        </div>
+    `;
+    
+    // ════════ HTML ════════
     document.getElementById('muj-tip-obsah').innerHTML = `
         <!-- HEADER -->
-        <div style="text-align:center; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid rgba(212,175,55,0.15);">
+        <div style="text-align:center; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid rgba(212,175,55,0.15);">
             <div style="font-size:0.65rem; letter-spacing:3px; color:rgba(212,175,55,0.5); text-transform:uppercase; margin-bottom:4px;">${me.name}</div>
-            <div style="font-size:1.8rem; font-weight:900; color:#d4af37; letter-spacing:1px;">🏆 Tvůj pavouk</div>
-            <div style="font-size:0.8rem; color:#94a3b8; margin-top:6px;">Body: <b style="color:#d4af37;">${me.points}</b> · Pořadí: <b style="color:#d4af37;">${me.rank}.</b></div>
+            <div style="font-size:1.6rem; font-weight:900; color:#d4af37; letter-spacing:1px;">🏆 Tvůj pavouk</div>
+            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Body: <b style="color:#d4af37;">${me.points}</b> · Pořadí: <b style="color:#d4af37;">${me.rank}.</b></div>
         </div>
         
-        <div style="display:grid; grid-template-columns:minmax(260px, 1fr) minmax(0, 2.2fr); gap:18px; margin-bottom:20px;" class="bracket-layout">
-            
-            <!-- SKUPINY VLEVO -->
-            <div>
-                <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.7); text-transform:uppercase; font-weight:800; margin-bottom:10px; padding-left:4px;">📋 Pořadí ve skupinách</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-                    ${(tip.groups || []).map((g, idx) => {
-                        const adminG = r.groups && r.groups[idx];
-                        const aTeams = adminG?.teams || adminG;
-                        const fGetStat = (real, tipVal) => {
-                            if (!real || String(real).trim() === '') return '';
-                            return eq(real, tipVal) ? 'correct' : 'wrong';
-                        };
-                        return `
-                            <div style="background:linear-gradient(135deg, rgba(212,175,55,0.05), rgba(0,0,0,0.2)); border:1px solid rgba(212,175,55,0.18); border-radius:8px; padding:8px;">
-                                <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.7); font-weight:800; letter-spacing:1.5px; margin-bottom:5px; padding-bottom:3px; border-bottom:1px solid rgba(212,175,55,0.1);">SKUPINA ${String.fromCharCode(65+idx)}</div>
-                                ${(g || []).map((t, pos) => {
-                                    const stat = (aTeams && aTeams[pos]) ? fGetStat(aTeams[pos], t) : '';
-                                    const isFirst = pos === 0;
-                                    return `<div style="display:flex; align-items:center; gap:5px; padding:2px 3px; ${stat === 'correct' ? 'background:rgba(34,197,94,0.1); border-radius:3px;' : stat === 'wrong' ? 'background:rgba(239,68,68,0.05); border-radius:3px;' : ''}">
-                                        <span style="font-size:0.6rem; color:${isFirst ? '#d4af37' : (pos === 1 ? '#cbd5e1' : (pos === 2 ? '#d97b3a' : '#5a6480'))}; font-weight:900; min-width:10px;">${pos+1}.</span>
-                                        <span style="font-size:0.7rem; color:${stat === 'correct' ? '#22c55e' : stat === 'wrong' ? '#ef4444' : (isFirst ? '#f0e6c8' : '#cbd5e1')}; font-weight:${isFirst ? '700' : '500'}; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:4px;">${(t && typeof flagImg === 'function') ? flagImg(t, 12) : ''}<span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${t || '–'}</span></span>
-                                    </div>`;
-                                }).join('')}
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-            
-            <!-- BRACKET SE ZÁPASY -->
-            <div>
-                <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.7); text-transform:uppercase; font-weight:800; margin-bottom:10px; padding-left:4px;">🏆 Pavouk turnaje – zápasy</div>
-                <div style="background:linear-gradient(135deg, rgba(0,0,0,0.3), rgba(212,175,55,0.02)); border:1px solid rgba(212,175,55,0.15); border-radius:14px; padding:14px 8px; overflow-x:auto;">
-                    <div style="display:flex; gap:8px; min-width:max-content; align-items:flex-start;">
-                        
-                        <!-- 1/16 finále -->
-                        <div style="flex:0 0 135px;">
-                            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.75); letter-spacing:1.5px; font-weight:800; margin-bottom:3px;">ŠESTNÁCTIFINÁLE</div>
-                            <div style="font-size:0.5rem; color:#5a6480; text-align:center; margin-bottom:8px;">16 zápasů</div>
-                            ${r32Zapasy.map(z => renderMatch(z, r.s32)).join('')}
-                        </div>
-                        
-                        <!-- 1/8 -->
-                        <div style="flex:0 0 135px;">
-                            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.75); letter-spacing:1.5px; font-weight:800; margin-bottom:3px;">OSMIFINÁLE</div>
-                            <div style="font-size:0.5rem; color:#5a6480; text-align:center; margin-bottom:8px;">8 zápasů</div>
-                            ${r16Zapasy.map(z => renderMatch(z, r.s16)).join('')}
-                        </div>
-                        
-                        <!-- 1/4 -->
-                        <div style="flex:0 0 140px;">
-                            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.75); letter-spacing:1.5px; font-weight:800; margin-bottom:3px;">ČTVRTFINÁLE</div>
-                            <div style="font-size:0.5rem; color:#5a6480; text-align:center; margin-bottom:8px;">4 zápasy</div>
-                            ${qfZapasy.map(z => renderMatch(z, r.s8)).join('')}
-                        </div>
-                        
-                        <!-- Semi -->
-                        <div style="flex:0 0 145px;">
-                            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.75); letter-spacing:1.5px; font-weight:800; margin-bottom:3px;">SEMIFINÁLE</div>
-                            <div style="font-size:0.5rem; color:#5a6480; text-align:center; margin-bottom:8px;">2 zápasy</div>
-                            ${semiZapasy.map(z => renderMatch(z, null)).join('')}
-                        </div>
-                        
-                        <!-- Finále + Bronz -->
-                        <div style="flex:0 0 155px; display:flex; flex-direction:column; gap:14px;">
-                            <div>
-                                <div style="text-align:center; font-size:0.6rem; color:rgba(212,175,55,0.9); letter-spacing:1.5px; font-weight:900; margin-bottom:5px;">🏆 FINÁLE</div>
-                                ${renderMatch(finaleZapas, r.winner, 'final')}
-                                ${tip.winner ? `<div style="text-align:center; font-size:0.65rem; color:#d4af37; font-weight:900; margin-top:6px; padding:6px; background:rgba(212,175,55,0.08); border-radius:6px; border:1px solid rgba(212,175,55,0.2); display:flex; align-items:center; justify-content:center; gap:5px;">🥇 ${typeof flagImg === 'function' ? flagImg(tip.winner, 16) : ''}<span>${tip.winner}</span></div>` : ''}
-                            </div>
-                            
-                            <div>
-                                <div style="text-align:center; font-size:0.6rem; color:#d97b3a; letter-spacing:1.5px; font-weight:900; margin-bottom:5px;">🥉 O 3. MÍSTO</div>
-                                ${renderMatch(bronzZapas, r.bronze, 'bronze')}
-                                ${tip.bronze ? `<div style="text-align:center; font-size:0.6rem; color:#d97b3a; font-weight:900; margin-top:6px; padding:5px; background:rgba(180,100,40,0.06); border-radius:6px; border:1px solid rgba(180,100,40,0.2); display:flex; align-items:center; justify-content:center; gap:5px;">3. ${typeof flagImg === 'function' ? flagImg(tip.bronze, 14) : ''}<span>${tip.bronze}</span></div>` : ''}
-                            </div>
-                        </div>
+        <!-- ═══════ KLASICKÝ BRACKET S POHÁREM UPROSTŘED ═══════ -->
+        <div style="background:radial-gradient(ellipse at center, rgba(212,175,55,0.06), rgba(0,0,0,0.4) 70%); border:1px solid rgba(212,175,55,0.18); border-radius:14px; padding:14px 6px; margin-bottom:20px; overflow-x:auto;">
+            <div style="display:flex; gap:5px; min-width:max-content; align-items:stretch; height:480px;">
+                
+                <!-- ═══ LEVÁ STRANA (1/16 → SEMI) ═══ -->
+                <div style="flex:0 0 100px;">${bracketCol(leftR32, r.s32, '1/16 FINÁLE', '8 zápasů')}</div>
+                <div style="flex:0 0 100px;">${bracketCol(leftR16, r.s16, '1/8 FINÁLE', '4 zápasy')}</div>
+                <div style="flex:0 0 105px;">${bracketCol(leftQF, r.s8, 'ČTVRTFINÁLE', '2 zápasy')}</div>
+                <div style="flex:0 0 110px;">${bracketCol(leftSemi, null, 'SEMIFINÁLE', '1 zápas')}</div>
+                
+                <!-- ═══ CENTER: POHÁR + FINÁLE + BRONZ ═══ -->
+                <div style="flex:0 0 155px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:0 4px; position:relative;">
+                    
+                    <!-- Náš pohár -->
+                    <div style="text-align:center; position:relative;">
+                        <div style="position:absolute; inset:-12px; background:radial-gradient(circle, rgba(212,175,55,0.25), transparent 70%); border-radius:50%; z-index:0;"></div>
+                        <img src="logo-wc2026.png" style="position:relative; z-index:1; width:80px; height:80px; object-fit:contain; filter:drop-shadow(0 0 18px rgba(212,175,55,0.6));">
                     </div>
+                    
+                    <!-- FINÁLE -->
+                    <div style="width:100%;">
+                        <div style="text-align:center; font-size:0.6rem; color:#d4af37; letter-spacing:2px; font-weight:900; margin-bottom:4px; text-shadow:0 0 8px rgba(212,175,55,0.4);">🏆 FINÁLE</div>
+                        ${matchBox(finaleZapas, r.winner, 'final')}
+                    </div>
+                    
+                    <!-- Vítěz badge -->
+                    ${tip.winner ? `
+                        <div style="width:100%; text-align:center; padding:6px 4px; background:linear-gradient(135deg, rgba(212,175,55,0.22), rgba(212,175,55,0.08)); border:1px solid rgba(212,175,55,0.5); border-radius:8px; font-size:0.62rem; color:#d4af37; font-weight:900; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 0 14px rgba(212,175,55,0.2);">
+                            🥇 ${typeof flagImg === 'function' ? flagImg(tip.winner, 13) : ''}<span>${tip.winner}</span>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- BRONZ separátor -->
+                    <div style="width:60%; height:1px; background:linear-gradient(90deg, transparent, rgba(180,100,40,0.4), transparent); margin:4px 0;"></div>
+                    
+                    <!-- BRONZ -->
+                    <div style="width:100%;">
+                        <div style="text-align:center; font-size:0.55rem; color:#d97b3a; letter-spacing:1.5px; font-weight:900; margin-bottom:3px;">🥉 O 3. MÍSTO</div>
+                        ${matchBox(bronzZapas, r.bronze, 'bronze')}
+                    </div>
+                    
+                    ${tip.bronze ? `
+                        <div style="width:100%; text-align:center; padding:4px; background:rgba(180,100,40,0.08); border:1px solid rgba(180,100,40,0.35); border-radius:6px; font-size:0.58rem; color:#d97b3a; font-weight:800; display:flex; align-items:center; justify-content:center; gap:4px;">
+                            3. ${typeof flagImg === 'function' ? flagImg(tip.bronze, 11) : ''}<span>${tip.bronze}</span>
+                        </div>
+                    ` : ''}
                 </div>
-                <div style="text-align:center; font-size:0.6rem; color:#5a6480; margin-top:8px; font-style:italic;">💡 Posuvný bracket – přejeď vpravo</div>
+                
+                <!-- ═══ PRAVÁ STRANA (SEMI → 1/16) ═══ -->
+                <div style="flex:0 0 110px;">${bracketCol(rightSemi, null, 'SEMIFINÁLE', '1 zápas')}</div>
+                <div style="flex:0 0 105px;">${bracketCol(rightQF, r.s8, 'ČTVRTFINÁLE', '2 zápasy')}</div>
+                <div style="flex:0 0 100px;">${bracketCol(rightR16, r.s16, '1/8 FINÁLE', '4 zápasy')}</div>
+                <div style="flex:0 0 100px;">${bracketCol(rightR32, r.s32, '1/16 FINÁLE', '8 zápasů')}</div>
             </div>
         </div>
         
-        <!-- BONUS TIPY -->
+        <!-- SKUPINY -->
+        <div style="margin-bottom:18px;">
+            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.7); text-transform:uppercase; font-weight:800; margin-bottom:10px; padding-left:4px;">📋 Pořadí ve skupinách</div>
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;">
+                ${(tip.groups || []).map((g, idx) => {
+                    const adminG = r.groups && r.groups[idx];
+                    const aTeams = adminG?.teams || adminG;
+                    const fGetStat = (real, tipVal) => {
+                        if (!real || String(real).trim() === '') return '';
+                        return eq(real, tipVal) ? 'correct' : 'wrong';
+                    };
+                    return `
+                        <div style="background:linear-gradient(135deg, rgba(212,175,55,0.05), rgba(0,0,0,0.2)); border:1px solid rgba(212,175,55,0.18); border-radius:8px; padding:8px;">
+                            <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.7); font-weight:800; letter-spacing:1.5px; margin-bottom:5px; padding-bottom:3px; border-bottom:1px solid rgba(212,175,55,0.1);">SKUPINA ${String.fromCharCode(65+idx)}</div>
+                            ${(g || []).map((t, pos) => {
+                                const stat = (aTeams && aTeams[pos]) ? fGetStat(aTeams[pos], t) : '';
+                                const isFirst = pos === 0;
+                                return `<div style="display:flex; align-items:center; gap:5px; padding:2px 3px; ${stat === 'correct' ? 'background:rgba(34,197,94,0.1); border-radius:3px;' : stat === 'wrong' ? 'background:rgba(239,68,68,0.05); border-radius:3px;' : ''}">
+                                    <span style="font-size:0.6rem; color:${isFirst ? '#d4af37' : (pos === 1 ? '#cbd5e1' : (pos === 2 ? '#d97b3a' : '#5a6480'))}; font-weight:900; min-width:10px;">${pos+1}.</span>
+                                    <span style="font-size:0.7rem; color:${stat === 'correct' ? '#22c55e' : stat === 'wrong' ? '#ef4444' : (isFirst ? '#f0e6c8' : '#cbd5e1')}; font-weight:${isFirst ? '700' : '500'}; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:4px;">${(t && typeof flagImg === 'function') ? flagImg(t, 12) : ''}<span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${t || '–'}</span></span>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+        
+        <!-- BONUS -->
         ${typeof renderBonusTipy === 'function' ? renderBonusTipy(tip, r) : ''}
         
         <!-- LEGENDA -->
         <div style="margin-top:16px; padding:10px 14px; background:rgba(255,255,255,0.02); border-radius:10px; display:flex; justify-content:center; gap:14px; flex-wrap:wrap; font-size:0.68rem; color:#94a3b8;">
             <span><span style="display:inline-block; width:10px; height:10px; background:#22c55e; border-radius:2px; vertical-align:middle; margin-right:5px;"></span>Trefil postup ✓</span>
             <span><span style="display:inline-block; width:10px; height:10px; background:#ef4444; border-radius:2px; vertical-align:middle; margin-right:5px;"></span>Nepostoupil ✗</span>
-            <span><span style="display:inline-block; width:10px; height:10px; background:rgba(212,175,55,0.5); border-radius:2px; vertical-align:middle; margin-right:5px;"></span>Tipovaný vítěz (čeká)</span>
-            <span><span style="display:inline-block; width:10px; height:10px; background:#5a6480; border-radius:2px; vertical-align:middle; margin-right:5px;"></span>Tipovaný poražený</span>
+            <span><span style="display:inline-block; width:10px; height:10px; background:rgba(212,175,55,0.5); border-radius:2px; vertical-align:middle; margin-right:5px;"></span>Tipovaný vítěz</span>
+            <span><span style="display:inline-block; width:10px; height:10px; background:#5a6480; border-radius:2px; vertical-align:middle; margin-right:5px;"></span>Poražený</span>
         </div>
     `;
     
