@@ -699,7 +699,11 @@ async function aktualizujBonusSekciVisibility() {
     0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 25px rgba(212,175,55,0.5)); }
     50% { transform: scale(1.15) rotate(-3deg); filter: drop-shadow(0 0 50px rgba(212,175,55,0.9)); }
 }
-
+@keyframes pulseLive {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+}
+    
 .achievement-label-text {
     font-size: 11px;
     letter-spacing: 4px;
@@ -6153,6 +6157,66 @@ function spocitejBodyVeHre() {
     const zbyva = MAX - rozdeleno;
     return { max: MAX, rozdeleno, zbyva };
 }
+function spocitejBodyVeHre() {
+    const r = window.currentResults || {};
+    const MAX = 333;
+    const fs = r.faze_status || {};
+    
+    let live = 0;
+    let final = 0;
+    
+    // Helper: zařadí body do správné poolu
+    function pridej(status, body) {
+        if (status === 'final') final += body;
+        else live += body; // 'live' i nenastaveno = provisional
+    }
+    
+    // Skupiny: jeden status pro všech 12, +4 b za každou vyplněnou pozici
+    const skupinyStatus = fs.skupiny || 'live';
+    (r.groups || []).forEach(g => {
+        const teams = g.teams || g;
+        if (Array.isArray(teams)) {
+            teams.forEach(t => {
+                if (t && String(t).trim() !== "") pridej(skupinyStatus, 4);
+            });
+        }
+    });
+    
+    // Playoff fáze: každá má svůj status
+    const faze = [
+        { key: 's32', bodyZaTym: 2 },
+        { key: 's16', bodyZaTym: 3 },
+        { key: 's8',  bodyZaTym: 4 },
+        { key: 's4',  bodyZaTym: 5 },
+    ];
+    faze.forEach(f => {
+        const status = fs[f.key] || 'live';
+        const arr = r[f.key] || [];
+        if (Array.isArray(arr)) {
+            arr.forEach(t => {
+                if (t && String(t).trim() !== "") pridej(status, f.bodyZaTym);
+            });
+        }
+    });
+    
+    // Vítěz a bronz
+    const winnerStatus = (fs.final === 'final' || fs.winner === 'final') ? 'final' : 'live';
+    const bronzeStatus = (fs.bronze === 'final' || winnerStatus === 'final') ? 'final' : 'live';
+    if (r.winner && String(r.winner).trim() !== "") pridej(winnerStatus, 12);
+    if (r.bronze && String(r.bronze).trim() !== "") pridej(bronzeStatus, 8);
+    
+    // Bonus
+    const bonusStatus = fs.bonus || 'live';
+    const b = r.bonus || {};
+    if (b.topScorer && String(b.topScorer).trim() !== '') pridej(bonusStatus, 8);
+    if (b.topGoalkeeper && String(b.topGoalkeeper).trim() !== '') pridej(bonusStatus, 8);
+    if (b.totalGoals != null && b.totalGoals !== '') pridej(bonusStatus, 15);
+    if (b.zeroZeroResults != null && b.zeroZeroResults !== '') pridej(bonusStatus, 8);
+    
+    const rozdeleno = live + final;
+    const zbyva = MAX - rozdeleno;
+    return { max: MAX, rozdeleno, live, final, zbyva };
+}
 function renderBodyVeHre() {
     const el = document.getElementById('body-ve-hre');
     if (!el) return;
@@ -6174,6 +6238,7 @@ function renderBodyVeHre() {
             </div>
         </div>`;
 }
+    
     
 function skocNaFazi(faze) {
     // Schováme všechny formulářové sekce
