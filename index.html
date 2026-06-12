@@ -6220,8 +6220,19 @@ function spocitejBodyVeHre() {
 function renderBodyVeHre() {
     const el = document.getElementById('body-ve-hre');
     if (!el) return;
-    const { max, rozdeleno, zbyva } = spocitejBodyVeHre();
-
+    const { max, rozdeleno, live, final, zbyva } = spocitejBodyVeHre();
+    
+    const breakdownHtml = (rozdeleno > 0) ? `
+        <div style="display:flex; gap:6px; justify-content:center; margin-top:8px; font-size:0.6rem; font-weight:700;">
+            <span style="color:#ef4444; display:inline-flex; align-items:center; gap:3px;">
+                <span style="width:6px; height:6px; background:#ef4444; border-radius:50%; display:inline-block; box-shadow:0 0 6px #ef4444; animation:pulseLive 1.5s infinite;"></span>
+                LIVE ${live}
+            </span>
+            <span style="color:rgba(212,175,55,0.3);">·</span>
+            <span style="color:#22c55e;">✓ FINAL ${final}</span>
+        </div>
+    ` : '';
+    
     el.innerHTML = `
         <div style="display:flex; gap:8px; margin-top:18px;">
             <div style="flex:1; text-align:center; padding:12px 6px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px;">
@@ -6231,6 +6242,7 @@ function renderBodyVeHre() {
             <div style="flex:1; text-align:center; padding:12px 6px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); border-radius:10px;">
                 <div style="font-size:1.3rem; font-weight:900; color:#22c55e;">${rozdeleno}</div>
                 <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:4px;">Rozděleno</div>
+                ${breakdownHtml}
             </div>
             <div style="flex:1; text-align:center; padding:12px 6px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.15); border-radius:10px;">
                 <div style="font-size:1.3rem; font-weight:900; color:#38bdf8;">${zbyva}</div>
