@@ -4826,9 +4826,12 @@ window.addEventListener('DOMContentLoaded', () => {
         const w = pl.tip?.winner;
         if (w) hlasy[w] = (hlasy[w] || 0) + 1;
     });
-    const sortHlasy = Object.entries(hlasy).sort((a,b) => b[1]-a[1]);
-    const oblibeny = sortHlasy[0]?.[0];
-    const outsider = sortHlasy[sortHlasy.length-1]?.[0];
+    // 🔒 FAZE STATUS - odznáčky za výsledky padají jen u finálních fází
+    const fs = r.faze_status || {};
+    const skupinyFinal = fs.skupiny === 'final';
+    const winnerFinal = fs.final === 'final' || fs.winner === 'final';
+    const bronzeFinal = fs.bronze === 'final' || winnerFinal;
+    const bonusFinal = fs.bonus === 'final';
 
   // === ZÁKLAD ===
     // Kompletní tip = vítěz + všechny 4 bonus tipy
@@ -4867,8 +4870,8 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
     // === TREFY V TURNAJI ===
     const trefilVitez = r.winner && tip.winner && String(r.winner).trim() === String(tip.winner).trim();
     const trefilBronz = r.bronze && tip.bronze && String(r.bronze).trim() === String(tip.bronze).trim();
-    odznaky.push({ icon: '🔮', label: 'Jasnovidec', aktivni: trefilVitez, popis: 'Trefil/a vítěze celého turnaje!' });
-    odznaky.push({ icon: '🏅', label: 'Bronz oko', aktivni: trefilBronz, popis: 'Trefil/a 3. místo turnaje.' });
+   odznaky.push({ icon: '🔮', label: 'Jasnovidec', aktivni: trefilVitez && winnerFinal, popis: 'Trefil/a vítěze celého turnaje!' });
+    odznaky.push({ icon: '🏅', label: 'Bronz oko', aktivni: trefilBronz && bronzeFinal, popis: 'Trefil/a 3. místo turnaje.' });
 
     // === SCHOPNOSTI VE SKUPINÁCH ===
     let presneSkupiny = 0;
@@ -4884,9 +4887,9 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
             }
         });
     }
-    odznaky.push({ icon: '📚', label: 'Profík', aktivni: presneSkupiny >= 1, popis: `Tipoval/a přesné pořadí v ${presneSkupiny} skupin${presneSkupiny === 1 ? 'ě' : 'ách'}.` });
-    odznaky.push({ icon: '🏆', label: 'Vševěd', aktivni: presneSkupiny >= 3, popis: 'Tipoval/a přesné pořadí ve 3+ skupinách – mistrovský výkon!' });
-    odznaky.push({ icon: '🎯', label: 'Snajpr', aktivni: prvniMistaTrefil >= 6, popis: `Trefil/a 1. místo v ${prvniMistaTrefil} skupinách.` });
+    odznaky.push({ icon: '📚', label: 'Profík', aktivni: presneSkupiny >= 1 && skupinyFinal, popis: `Tipoval/a přesné pořadí v ${presneSkupiny} skupin${presneSkupiny === 1 ? 'ě' : 'ách'}.` });
+    odznaky.push({ icon: '🏆', label: 'Vševěd', aktivni: presneSkupiny >= 3 && skupinyFinal, popis: 'Tipoval/a přesné pořadí ve 3+ skupinách – mistrovský výkon!' });
+    odznaky.push({ icon: '🎯', label: 'Snajpr', aktivni: prvniMistaTrefil >= 6 && skupinyFinal, popis: `Trefil/a 1. místo v ${prvniMistaTrefil} skupinách.` });
 
     // === MVP ===
     const pocetMVP = (typeof mvpCacheGlobal !== 'undefined') ? (mvpCacheGlobal[p.rowId] || 0) : 0;
@@ -4912,11 +4915,11 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
     const bonusGoly = bonusFinalni && sediCislo(realBonus.totalGoals, tipBonus.totalGoals);
     const bonusNuly = bonusFinalni && sediCislo(realBonus.zeroZeroResults, tipBonus.zeroZeroResults);
     
-    odznaky.push({ icon: '🥇', label: 'Zlatá noha', aktivni: bonusStrelec, popis: 'Trefil/a nejlepšího střelce turnaje (finální výsledek).' });
-    odznaky.push({ icon: '🧤', label: 'Anděl', aktivni: bonusBrankar, popis: 'Trefil/a nejlepšího brankáře turnaje (finální výsledek).' });
-    odznaky.push({ icon: '⚽', label: 'Gólomat', aktivni: bonusGoly, popis: 'Trefil/a přesný počet branek v turnaji (finální výsledek).' });
-    odznaky.push({ icon: '0️⃣', label: 'Nula', aktivni: bonusNuly, popis: 'Trefil/a přesný počet zápasů 0:0 (finální výsledek).' });
-    odznaky.push({ icon: '🎁', label: 'Bonusový mistr', aktivni: bonusStrelec && bonusBrankar && bonusGoly && bonusNuly, popis: 'Trefil/a všechny 4 bonusové tipy – mistrovský výkon!' });
+    odznaky.push({ icon: '🥇', label: 'Zlatá noha', aktivni: bonusStrelec && bonusFinal, popis: 'Trefil/a nejlepšího střelce turnaje (finální výsledek).' });
+    odznaky.push({ icon: '🧤', label: 'Anděl', aktivni: bonusBrankar && bonusFinal, popis: 'Trefil/a nejlepšího brankáře turnaje (finální výsledek).' });
+    odznaky.push({ icon: '⚽', label: 'Gólomat', aktivni: bonusGoly && bonusFinal, popis: 'Trefil/a přesný počet branek v turnaji (finální výsledek).' });
+    odznaky.push({ icon: '0️⃣', label: 'Nula', aktivni: bonusNuly && bonusFinal, popis: 'Trefil/a přesný počet zápasů 0:0 (finální výsledek).' });
+    odznaky.push({ icon: '🎁', label: 'Bonusový mistr', aktivni: bonusStrelec && bonusBrankar && bonusGoly && bonusNuly && bonusFinal, popis: 'Trefil/a všechny 4 bonusové tipy – mistrovský výkon!' });
      // === MERGE S ULOŽENÝMI (persistence) ===
     const ulozeno = p.achievements_earned || [];
     odznaky.forEach(o => {
