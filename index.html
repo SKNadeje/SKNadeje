@@ -537,7 +537,8 @@ async function ulozLiveBonus() {
     topScorerGoals: parseInt(document.getElementById('quick-bonus-topScorerGoals')?.value) || null,
     topGoalkeeper: (document.getElementById('quick-bonus-topGoalkeeper')?.value || '').trim(),
     totalGoals: parseInt(document.getElementById('quick-bonus-totalGoals')?.value) || null,
-    zeroZeroResults: parseInt(document.getElementById('quick-bonus-zeroZeroResults')?.value) || null
+    zeroZeroResults: parseInt(document.getElementById('quick-bonus-zeroZeroResults')?.value)
+   // zeroZeroResults: parseInt(document.getElementById('quick-bonus-zeroZeroResults')?.value) || null
 };
 
     try {
