@@ -278,6 +278,7 @@ function renderMatchBanner() {
         return `za ${minuty} min`;
     };
    
+    const formatTime = (d) => new Date(d).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
     const formatDate = (d) => {
         const target = new Date(d);
         const today = new Date(); today.setHours(0,0,0,0);
