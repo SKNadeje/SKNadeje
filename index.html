@@ -29,74 +29,6 @@ function turnajBezi() {
     return now >= start && now <= konec;
 }
 
-// 📺 Render live/upcoming match banneru
-function renderMatchBanner() {
-    const cont = document.getElementById('match-banner-container');
-    if (!cont) return;
-    
-    if (!turnajBezi()) {
-        cont.innerHTML = '';
-        return;
-    }
-    
-    const live = aktualniZapas();
-    const dalsi = nejblizsiZapas();
-    
-    let html = '';
-    
-    // 🔴 LIVE ZÁPAS
-    if (live) {
-        html += `
-            <div style="background:linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.04)); border:1px solid rgba(239,68,68,0.4); border-radius:14px; padding:14px 16px; margin-bottom:14px; box-shadow:0 4px 16px rgba(239,68,68,0.15);">
-                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                    <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#ef4444; animation:livePulse 1s infinite; box-shadow:0 0 8px rgba(239,68,68,0.6);"></span>
-                    <span style="font-size:0.7rem; color:#ef4444; font-weight:900; letter-spacing:2px;">🔴 LIVE NYNÍ · ${live.faze}</span>
-                </div>
-                <div style="font-size:1.1rem; font-weight:900; color:#f0e6c8; text-align:center;">
-                    ${live.tym1 || 'TBA'} <span style="color:#5a6480; margin:0 8px;">vs</span> ${live.tym2 || 'TBA'}
-                </div>
-                <div style="font-size:0.7rem; color:#94a3b8; text-align:center; margin-top:4px;">
-                    Začátek: ${new Date(live.datum).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
-                </div>
-            </div>
-        `;
-    }
-    
-    // ⏰ NEJBLIŽŠÍ ZÁPAS
-    if (dalsi && !live) {
-        const diff = new Date(dalsi.datum) - new Date();
-        const dni = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hodiny = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minuty = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        
-        let countdown = '';
-        if (dni > 0) countdown = `za ${dni} d ${hodiny} h`;
-        else if (hodiny > 0) countdown = `za ${hodiny} h ${minuty} min`;
-        else countdown = `za ${minuty} min`;
-        
-        const datumStr = new Date(dalsi.datum).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
-        
-        html += `
-            <div style="background:linear-gradient(135deg, rgba(56,189,248,0.08), rgba(212,175,55,0.04)); border:1px solid rgba(56,189,248,0.25); border-radius:14px; padding:14px 16px; margin-bottom:14px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <span style="font-size:0.65rem; color:rgba(56,189,248,0.8); font-weight:900; letter-spacing:2px;">⏰ NEJBLIŽŠÍ ZÁPAS · ${dalsi.faze}</span>
-                    <span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:3px 10px; border-radius:8px; font-size:0.65rem; font-weight:800; letter-spacing:1px;">${countdown}</span>
-                </div>
-                ${dalsi.tym1 ? `
-                    <div style="font-size:1rem; font-weight:900; color:#f0e6c8; text-align:center;">
-                        ${dalsi.tym1} <span style="color:#5a6480; margin:0 8px;">vs</span> ${dalsi.tym2 || 'TBA'}
-                    </div>
-                ` : ''}
-                <div style="font-size:0.7rem; color:#94a3b8; text-align:center; margin-top:4px;">
-                    📅 ${datumStr}
-                </div>
-            </div>
-        `;
-    }
-    
-    cont.innerHTML = html;
-}
-
 // 🎮 Schování/zobrazení tipovacích sekcí
 function aplikujTurnajMode() {
     const bezi = turnajBezi();
@@ -132,8 +64,10 @@ function aplikujTurnajMode() {
         mujTipBtn.style.display = 'none';
     }
     
-    // Refresh match banner
+  // Auto-refresh banneru každou minutu
+setInterval(() => {
     if (typeof renderMatchBanner === 'function') renderMatchBanner();
+}, 60000); // 60 sekund
 }
     // 📅 Zápasy MS 2026 (datum/čas v Praze - timezone Europe/Prague)
 // 📅 Zápasy MS 2026 - kompletní skupinová fáze (časy v CET/CEST - Praha)
@@ -265,24 +199,143 @@ const ZAPASY_WC2026 = [
     { datum: '2026-07-19T20:00', faze: 'FINÁLE', tym1: 'tba', tym2: 'tba' }
 ];
 
+// ════════════════════════════════════════════════
+// 📺 MATCH BANNER - LIVE + UPCOMING + VLAJKY
+// ════════════════════════════════════════════════
 
-// Vrátí aktuálně probíhající zápas (90 min od startu)
-function aktualniZapas() {
+// 🏳️ Vlaječky týmů (česká jména → emoji)
+const VLAJKY_TYMU = {
+    'Mexiko': '🇲🇽', 'JAR': '🇿🇦', 'J. Korea': '🇰🇷', 'Česko': '🇨🇿',
+    'Kanada': '🇨🇦', 'Bosna a Herc.': '🇧🇦', 'USA': '🇺🇸', 'Paraguay': '🇵🇾',
+    'Katar': '🇶🇦', 'Švýcarsko': '🇨🇭', 'Brazílie': '🇧🇷', 'Maroko': '🇲🇦',
+    'Haiti': '🇭🇹', 'Skotsko': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'Austrálie': '🇦🇺', 'Turecko': '🇹🇷',
+    'Německo': '🇩🇪', 'Curaçao': '🇨🇼', 'Nizozemsko': '🇳🇱', 'Japonsko': '🇯🇵',
+    'Pobřeží sl.': '🇨🇮', 'Ekvádor': '🇪🇨', 'Švédsko': '🇸🇪', 'Tunisko': '🇹🇳',
+    'Španělsko': '🇪🇸', 'Kapverdy': '🇨🇻', 'Belgie': '🇧🇪', 'Egypt': '🇪🇬',
+    'S. Arábie': '🇸🇦', 'Uruguay': '🇺🇾', 'Írán': '🇮🇷', 'N. Zéland': '🇳🇿',
+    'Francie': '🇫🇷', 'Senegal': '🇸🇳', 'Irák': '🇮🇶', 'Norsko': '🇳🇴',
+    'Argentina': '🇦🇷', 'Alžírsko': '🇩🇿', 'Rakousko': '🇦🇹', 'Jordánsko': '🇯🇴',
+    'Portugalsko': '🇵🇹', 'DR Kongo': '🇨🇩', 'Anglie': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'Panama': '🇵🇦',
+    'Kolumbie': '🇨🇴', 'Uzbekistán': '🇺🇿', 'Chorvatsko': '🇭🇷', 'Ghana': '🇬🇭'
+};
+function vlajkaTymu(tym) { return VLAJKY_TYMU[tym] || '🏳️'; }
+
+// 🔴 VŠECHNY aktuálně probíhající zápasy (pole, ne jeden)
+function aktualniZapasy() {
     const now = new Date();
-    return ZAPASY_WC2026.find(z => {
+    return ZAPASY_WC2026.filter(z => {
+        if (!z.tym1 || !z.tym2) return false;
         const start = new Date(z.datum);
         const konec = new Date(start.getTime() + 125 * 60 * 1000); // 90 min + nastavení
         return now >= start && now <= konec;
     });
 }
 
-// Vrátí nejbližší budoucí zápas
-function nejblizsiZapas() {
+// ⏰ Pole nejbližších budoucích zápasů (max N)
+function nadchazejiciZapasy(n = 2) {
     const now = new Date();
     return ZAPASY_WC2026
-        .filter(z => new Date(z.datum) > now)
-        .sort((a, b) => new Date(a.datum) - new Date(b.datum))[0];
+        .filter(z => z.tym1 && z.tym2 && new Date(z.datum) > now)
+        .sort((a, b) => new Date(a.datum) - new Date(b.datum))
+        .slice(0, n);
 }
+
+// Zpětná kompatibilita (kdyby byly volány jinde)
+function aktualniZapas() { return aktualniZapasy()[0] || null; }
+function nejblizsiZapas() { return nadchazejiciZapasy(1)[0] || null; }
+
+// 🎨 Hlavní render
+function renderMatchBanner() {
+    const cont = document.getElementById('match-banner-container');
+    if (!cont) return;
+    
+    if (!turnajBezi()) { cont.innerHTML = ''; return; }
+    
+    const live = aktualniZapasy();
+    // Inteligentní výběr - max 4 celkem:
+    //  0 live → 2 upcoming
+    //  1 live → 1 upcoming (celkem 2)
+    //  2 live → 1 upcoming (celkem 3)
+    //  3+ live → jen live (max 4)
+    const upcomingPocet = live.length === 0 ? 2 : Math.max(1, 4 - live.length);
+    const upcoming = nadchazejiciZapasy(upcomingPocet);
+    
+    if (live.length === 0 && upcoming.length === 0) { cont.innerHTML = ''; return; }
+    
+    // Helpery
+    const formatCountdown = (datum) => {
+        const diff = new Date(datum) - new Date();
+        const dni = Math.floor(diff / 86400000);
+        const hodiny = Math.floor((diff % 86400000) / 3600000);
+        const minuty = Math.floor((diff % 3600000) / 60000);
+        if (dni > 0) return `za ${dni} d ${hodiny} h`;
+        if (hodiny > 0) return `za ${hodiny} h ${minuty} min`;
+        return `za ${minuty} min`;
+    };
+    const formatTime = (d) => new Date(d).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+    const formatDate = (d) => new Date(d).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long' });
+    const minutyOdStartu = (d) => {
+        const m = Math.floor((new Date() - new Date(d)) / 60000);
+        return m > 90 ? "90'+" : `${m}'`;
+    };
+    
+    const tymHtml = (tym) => `
+        <span style="display:inline-flex; align-items:center; gap:5px;">
+            <span style="font-size:1.05rem;">${vlajkaTymu(tym)}</span>
+            <span>${tym}</span>
+        </span>`;
+    
+    let html = '<div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">';
+    
+    // 🔴 LIVE
+    live.forEach(z => {
+        html += `
+            <div style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.04)); border:1px solid rgba(239,68,68,0.4); border-radius:12px; padding:10px 14px; box-shadow:0 3px 12px rgba(239,68,68,0.12);">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span style="display:inline-flex; align-items:center; gap:5px; padding:2px 8px; background:linear-gradient(135deg,#ef4444,#b91c1c); border-radius:8px; font-size:0.6rem; font-weight:900; color:#fff; letter-spacing:1.5px;">
+                            <span style="width:6px; height:6px; border-radius:50%; background:#fff; animation:livePulse 1s infinite;"></span>
+                            LIVE ${minutyOdStartu(z.datum)}
+                        </span>
+                        <span style="font-size:0.62rem; color:rgba(212,175,55,0.6); letter-spacing:1px; text-transform:uppercase;">${z.faze}</span>
+                    </div>
+                    <span style="font-size:0.62rem; color:#94a3b8;">${formatTime(z.datum)}</span>
+                </div>
+                <div style="font-size:0.98rem; font-weight:900; color:#f0e6c8; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;">
+                    ${tymHtml(z.tym1)}
+                    <span style="color:#ef4444; font-weight:700; font-size:0.8rem;">VS</span>
+                    ${tymHtml(z.tym2)}
+                </div>
+            </div>
+        `;
+    });
+    
+    // ⏰ UPCOMING
+    upcoming.forEach(z => {
+        html += `
+            <div style="background:linear-gradient(135deg,rgba(56,189,248,0.08),rgba(212,175,55,0.04)); border:1px solid rgba(56,189,248,0.25); border-radius:12px; padding:10px 14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span style="display:inline-flex; align-items:center; gap:5px; padding:2px 8px; background:rgba(56,189,248,0.15); color:#38bdf8; border-radius:8px; font-size:0.6rem; font-weight:900; letter-spacing:1.5px;">
+                            ⏰ ${formatCountdown(z.datum)}
+                        </span>
+                        <span style="font-size:0.62rem; color:rgba(212,175,55,0.6); letter-spacing:1px; text-transform:uppercase;">${z.faze}</span>
+                    </div>
+                    <span style="font-size:0.62rem; color:#94a3b8;">${formatDate(z.datum)} · ${formatTime(z.datum)}</span>
+                </div>
+                <div style="font-size:0.92rem; font-weight:800; color:#f0e6c8; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;">
+                    ${tymHtml(z.tym1)}
+                    <span style="color:#5a6480; font-size:0.75rem;">vs</span>
+                    ${tymHtml(z.tym2)}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    cont.innerHTML = html;
+}
+
     // 🎯 Render Šance widgetu (oddělený od profilu)
 function renderSanceWidget(p) {
     const maBody = profilData.some(x => x.points > 0);
