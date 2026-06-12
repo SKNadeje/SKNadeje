@@ -203,22 +203,27 @@ const ZAPASY_WC2026 = [
 // 📺 MATCH BANNER - LIVE + UPCOMING + VLAJKY
 // ════════════════════════════════════════════════
 
-// 🏳️ Vlaječky týmů (česká jména → emoji)
+// 🏳️ Vlajky týmů jako obrázky (kompatibilní Win/Mac/iOS/Android)
 const VLAJKY_TYMU = {
-    'Mexiko': '🇲🇽', 'JAR': '🇿🇦', 'J. Korea': '🇰🇷', 'Česko': '🇨🇿',
-    'Kanada': '🇨🇦', 'Bosna a Herc.': '🇧🇦', 'USA': '🇺🇸', 'Paraguay': '🇵🇾',
-    'Katar': '🇶🇦', 'Švýcarsko': '🇨🇭', 'Brazílie': '🇧🇷', 'Maroko': '🇲🇦',
-    'Haiti': '🇭🇹', 'Skotsko': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'Austrálie': '🇦🇺', 'Turecko': '🇹🇷',
-    'Německo': '🇩🇪', 'Curaçao': '🇨🇼', 'Nizozemsko': '🇳🇱', 'Japonsko': '🇯🇵',
-    'Pobřeží sl.': '🇨🇮', 'Ekvádor': '🇪🇨', 'Švédsko': '🇸🇪', 'Tunisko': '🇹🇳',
-    'Španělsko': '🇪🇸', 'Kapverdy': '🇨🇻', 'Belgie': '🇧🇪', 'Egypt': '🇪🇬',
-    'S. Arábie': '🇸🇦', 'Uruguay': '🇺🇾', 'Írán': '🇮🇷', 'N. Zéland': '🇳🇿',
-    'Francie': '🇫🇷', 'Senegal': '🇸🇳', 'Irák': '🇮🇶', 'Norsko': '🇳🇴',
-    'Argentina': '🇦🇷', 'Alžírsko': '🇩🇿', 'Rakousko': '🇦🇹', 'Jordánsko': '🇯🇴',
-    'Portugalsko': '🇵🇹', 'DR Kongo': '🇨🇩', 'Anglie': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'Panama': '🇵🇦',
-    'Kolumbie': '🇨🇴', 'Uzbekistán': '🇺🇿', 'Chorvatsko': '🇭🇷', 'Ghana': '🇬🇭'
+    'Mexiko': 'mx', 'JAR': 'za', 'J. Korea': 'kr', 'Česko': 'cz',
+    'Kanada': 'ca', 'Bosna a Herc.': 'ba', 'USA': 'us', 'Paraguay': 'py',
+    'Katar': 'qa', 'Švýcarsko': 'ch', 'Brazílie': 'br', 'Maroko': 'ma',
+    'Haiti': 'ht', 'Skotsko': 'gb-sct', 'Austrálie': 'au', 'Turecko': 'tr',
+    'Německo': 'de', 'Curaçao': 'cw', 'Nizozemsko': 'nl', 'Japonsko': 'jp',
+    'Pobřeží sl.': 'ci', 'Ekvádor': 'ec', 'Švédsko': 'se', 'Tunisko': 'tn',
+    'Španělsko': 'es', 'Kapverdy': 'cv', 'Belgie': 'be', 'Egypt': 'eg',
+    'S. Arábie': 'sa', 'Uruguay': 'uy', 'Írán': 'ir', 'N. Zéland': 'nz',
+    'Francie': 'fr', 'Senegal': 'sn', 'Irák': 'iq', 'Norsko': 'no',
+    'Argentina': 'ar', 'Alžírsko': 'dz', 'Rakousko': 'at', 'Jordánsko': 'jo',
+    'Portugalsko': 'pt', 'DR Kongo': 'cd', 'Anglie': 'gb-eng', 'Panama': 'pa',
+    'Kolumbie': 'co', 'Uzbekistán': 'uz', 'Chorvatsko': 'hr', 'Ghana': 'gh'
 };
-function vlajkaTymu(tym) { return VLAJKY_TYMU[tym] || '🏳️'; }
+
+function vlajkaTymu(tym) {
+    const kod = VLAJKY_TYMU[tym];
+    if (!kod) return '';
+    return `<img src="https://flagcdn.com/w40/${kod}.png" alt="" style="width:22px; height:15px; object-fit:cover; border-radius:2px; vertical-align:middle; box-shadow:0 1px 3px rgba(0,0,0,0.4); flex-shrink:0;">`;
+}
 
 // 🔴 VŠECHNY aktuálně probíhající zápasy (pole, ne jeden)
 function aktualniZapasy() {
@@ -279,9 +284,9 @@ function renderMatchBanner() {
         return m > 90 ? "90'+" : `${m}'`;
     };
     
-   const tymHtml = (tym) => `
-        <span style="display:inline-flex; align-items:center; gap:5px;">
-            <span style="font-size:1.15rem; font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Twemoji Mozilla',sans-serif; line-height:1;">${vlajkaTymu(tym)}</span>
+  const tymHtml = (tym) => `
+        <span style="display:inline-flex; align-items:center; gap:6px;">
+            ${vlajkaTymu(tym)}
             <span>${tym}</span>
         </span>`;
     
