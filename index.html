@@ -2449,18 +2449,26 @@ input:focus {
         <h1 style="font-size:1.8rem; letter-spacing:6px; margin-bottom:2px;">WORLD CUP 2026</h1>
         <div style="font-size:0.6rem; color:rgba(212,175,55,0.4); letter-spacing:3px; text-transform:uppercase; margin-bottom:18px;">Tipovačka SK Naděje</div>
     <div class="countdown-wrapper" style="display:inline-block; background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.18); box-shadow:0 4px 20px rgba(0,0,0,0.3); padding:14px 28px; max-width:none; margin:0 auto 25px auto;">
-    <div class="countdown-title" style="margin-bottom:12px;">Mundial začíná za:</div>
-    <div id="countdown-timer" style="display:flex; justify-content:center; gap:10px; align-items:flex-start;">
-        <div style="text-align:center;"><div style="font-size:1.6rem; font-weight:900; color:#d4af37; line-height:1;"><span id="cd-days">00</span></div><div style="font-size:0.5rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">dní</div></div>
-        <div style="font-size:1.6rem; color:rgba(212,175,55,0.3); line-height:1;">:</div>
-        <div style="text-align:center;"><div style="font-size:1.6rem; font-weight:900; color:#d4af37; line-height:1;"><span id="cd-hours">00</span></div><div style="font-size:0.5rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">hod</div></div>
-        <div style="font-size:1.6rem; color:rgba(212,175,55,0.3); line-height:1;">:</div>
-        <div style="text-align:center;"><div style="font-size:1.6rem; font-weight:900; color:#d4af37; line-height:1;"><span id="cd-mins">00</span></div><div style="font-size:0.5rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">min</div></div>
-        <div style="font-size:1.6rem; color:rgba(212,175,55,0.3); line-height:1;">:</div>
-        <div style="text-align:center;"><div style="font-size:1.6rem; font-weight:900; color:#d4af37; line-height:1;"><span id="cd-secs">00</span></div><div style="font-size:0.5rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">s</div></div>
+    <!-- 🕐 Před startem turnaje (timer s odpočtem) -->
+    <div id="countdown-pre">
+        <div class="countdown-title" style="margin-bottom:12px;">Mundial začíná za:</div>
+        <div id="countdown-timer" style="display:flex; justify-content:center; gap:10px; align-items:flex-start;">
+            <div style="text-align:center;"><div style="font-size:1.6rem; font-weight:900; color:#d4af37; line-height:1;"><span id="cd-days">00</span></div><div style="font-size:0.5rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">dní</div></div>
+            <div style="font-size:1.6rem; color:rgba(212,175,55,0.3); line-height:1;">:</div>
+            <div style="text-align:center;"><div style="font-size:1.6rem; font-weight:900; color:#d4af37; line-height:1;"><span id="cd-hours">00</span></div><div style="font-size:0.5rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">hod</div></div>
+            <div style="font-size:1.6rem; color:rgba(212,175,55,0.3); line-height:1;">:</div>
+            <div style="text-align:center;"><div style="font-size:1.6rem; font-weight:900; color:#d4af37; line-height:1;"><span id="cd-mins">00</span></div><div style="font-size:0.5rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">min</div></div>
+            <div style="font-size:1.6rem; color:rgba(212,175,55,0.3); line-height:1;">:</div>
+            <div style="text-align:center;"><div style="font-size:1.6rem; font-weight:900; color:#d4af37; line-height:1;"><span id="cd-secs">00</span></div><div style="font-size:0.5rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">s</div></div>
+        </div>
     </div>
-    <div id="countdown-expired" style="display: none; color: #ef4444; font-weight: bold; font-size: 1.2rem;">
-        <i class="fas fa-lock"></i> Tipování je uzavřeno! Turnaj začal.
+    
+    <!-- 🔒 Po startu turnaje (slim proužek) -->
+    <div id="countdown-expired" style="display: none; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.25); border-radius:8px; padding:6px 12px; margin:0 auto; font-size:0.7rem; color:#cbd5e1; max-width:320px; text-align:center;">
+        <i class="fas fa-lock" style="color:#ef4444; margin-right:6px; font-size:0.75rem;"></i>
+        <span style="color:#ef4444; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; font-size:0.68rem;">Tipování uzavřeno</span>
+        <span style="color:rgba(239,68,68,0.3); margin:0 8px;">·</span>
+        <span>Turnaj běží</span>
     </div>
 </div>
         <div id="match-banner-container"></div>
@@ -3271,21 +3279,19 @@ function aktualizujBonusLiveBanner() {
     if (inline) {
         if (bonusStatus === 'live') {
             inline.innerHTML = `
-                <div style="background:linear-gradient(90deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05)); border:1px solid rgba(239,68,68,0.4); border-radius:14px; padding:12px 14px; margin-bottom:18px; display:flex; align-items:center; gap:10px; box-shadow:0 4px 12px rgba(239,68,68,0.15);">
-                    <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#ef4444; flex-shrink:0; animation:livePulse 1s infinite; box-shadow:0 0 8px rgba(239,68,68,0.6);"></span>
-                    <div style="flex:1;">
-                        <div style="font-size:0.7rem; color:#ef4444; font-weight:900; letter-spacing:1.5px; text-transform:uppercase;">🔴 BONUS LIVE</div>
-                        <div style="font-size:0.7rem; color:#94a3b8; margin-top:2px;">Body se průběžně aktualizují</div>
-                    </div>
+                <div style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.25); border-radius:8px; padding:6px 12px; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                    <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#ef4444; flex-shrink:0; animation:livePulse 1s infinite; box-shadow:0 0 6px rgba(239,68,68,0.5);"></span>
+                    <span style="font-size:0.68rem; color:#ef4444; font-weight:800; letter-spacing:1.5px; text-transform:uppercase;">LIVE</span>
+                    <span style="color:rgba(239,68,68,0.3);">·</span>
+                    <span style="font-size:0.7rem; color:#cbd5e1; flex:1;">Body se průběžně aktualizují</span>
                 </div>`;
         } else if (bonusStatus === 'final') {
             inline.innerHTML = `
-                <div style="background:linear-gradient(90deg, rgba(34,197,94,0.12), rgba(34,197,94,0.03)); border:1px solid rgba(34,197,94,0.35); border-radius:14px; padding:12px 14px; margin-bottom:18px; display:flex; align-items:center; gap:10px;">
-                    <span style="font-size:1rem; flex-shrink:0;">✅</span>
-                    <div style="flex:1;">
-                        <div style="font-size:0.7rem; color:#22c55e; font-weight:900; letter-spacing:1.5px; text-transform:uppercase;">Bonus finální</div>
-                        <div style="font-size:0.7rem; color:#94a3b8; margin-top:2px;">Bonusy byly definitivně vyhodnoceny</div>
-                    </div>
+                <div style="background:rgba(34,197,94,0.05); border:1px solid rgba(34,197,94,0.22); border-radius:8px; padding:6px 12px; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                    <span style="color:#22c55e; font-size:0.8rem; flex-shrink:0;">✓</span>
+                    <span style="font-size:0.68rem; color:#22c55e; font-weight:800; letter-spacing:1.5px; text-transform:uppercase;">Finální</span>
+                    <span style="color:rgba(34,197,94,0.3);">·</span>
+                    <span style="font-size:0.7rem; color:#cbd5e1; flex:1;">Bonusy definitivně vyhodnoceny</span>
                 </div>`;
         } else {
             inline.innerHTML = '';
@@ -6964,7 +6970,7 @@ function initCountdown() {
             clearInterval(timerInterval);
             
             // Schováme všechny běžící timery (pomocí třídy nebo ID)
-            document.querySelectorAll("#countdown-timer, .countdown-numbers").forEach(el => el.style.display = "none");
+            document.querySelectorAll("#countdown-pre, .countdown-numbers").forEach(el => el.style.display = "none");
             document.querySelectorAll("#countdown-expired, .countdown-expired").forEach(el => el.style.display = "block");
 
             // Zablokování tlačítek pro odeslání/úpravu
