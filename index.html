@@ -2609,11 +2609,18 @@ input:focus {
     <i class="fas fa-chevron-up" id="bankbody-chevron" style="font-size:0.7rem; transition:transform 0.3s; color:#d4af37;"></i>
 </div>
     <div id="bankbody-content" style="padding:16px;">
-        <!-- Bank -->
-        <div style="text-align:center; padding-bottom:14px; border-bottom:1px solid rgba(212,175,55,0.1); margin-bottom:14px;">
-            <div style="color:rgba(212,175,55,0.6); font-size:0.7rem; text-transform:uppercase; letter-spacing:2px; font-weight:700; margin-bottom:6px;"><i class="fas fa-trophy"></i> Aktuální bank</div>
-            <div id="currentBank">
-                <div class="bank-amount" style="font-size:1.8rem; font-weight:900; color:#d4af37;">0 Kč</div>
+        <!-- Bank - slim -->
+        <div id="currentBank" style="padding-bottom:10px; border-bottom:1px solid rgba(212,175,55,0.1); margin-bottom:12px;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-trophy" style="color:#d4af37; font-size:0.85rem;"></i>
+                    <span class="bank-amount" style="font-size:1.25rem; font-weight:900; color:#d4af37; line-height:1;">0 Kč</span>
+                </div>
+                <div style="display:flex; gap:6px; font-size:0.65rem; font-weight:700;">
+                    <span style="color:#d4af37;">🥇<span id="bank-1st">0</span></span>
+                    <span style="color:#cbd5e1;">🥈<span id="bank-2nd">0</span></span>
+                    <span style="color:#d97b3a;">🥉<span id="bank-3rd">0</span></span>
+                </div>
             </div>
         </div>
         <!-- Body ve hře -->
@@ -2967,7 +2974,7 @@ function renderTiparDNA(p) {
             <div style="background:${dna.gradient}; padding:20px 16px; text-align:center; position:relative; overflow:hidden;">
                 <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:radial-gradient(circle at 30% 50%, rgba(255,255,255,0.15), transparent 70%);"></div>
                 <div style="position:relative; z-index:1;">
-                    <div style="font-size:0.6rem; letter-spacing:3px; color:rgba(255,255,255,0.8); text-transform:uppercase; font-weight:700; margin-bottom:8px;">🧬 TIPAŘ DNA</div>
+                    <div style="font-size:0.6rem; letter-spacing:3px; color:rgba(255,255,255,0.8); text-transform:uppercase; font-weight:700; margin-bottom:8px;">🧬 Moje DNA</div>
                     <div style="font-size:3rem; line-height:1; margin-bottom:6px; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));">${dna.ikona}</div>
                     <div style="font-size:1.6rem; font-weight:900; color:white; letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; text-shadow:0 2px 8px rgba(0,0,0,0.3);">${dna.typ}</div>
                     <div style="font-size:0.75rem; color:rgba(255,255,255,0.9); font-style:italic; line-height:1.4; max-width:280px; margin:0 auto;">${dna.popis}</div>
@@ -3013,7 +3020,7 @@ function renderTiparDNA(p) {
     `;
 }
     
-    // 🎁 Render veřejných bonus statů (lídr střelců, branky, 0:0)
+   // 🎁 Render veřejných bonus statů (slim verze)
 function renderBonusStats() {
     const cont = document.getElementById('bonus-stats-container');
     if (!cont) return;
@@ -3022,54 +3029,47 @@ function renderBonusStats() {
     const b = r.bonus || {};
     const status = r.faze_status?.bonus || 'none';
     
-    // Pokud žádné bonus hodnoty nejsou nastavené, skryj widget
     const maData = b.topScorer || b.topGoalkeeper || b.totalGoals != null || b.zeroZeroResults != null;
     if (!maData) {
         cont.innerHTML = '';
         return;
     }
     
-    // Status badge
+    // Status badge - menší
     let statusBadge = '';
     if (status === 'live') {
-        statusBadge = `<span style="display:inline-flex; align-items:center; gap:5px; padding:3px 9px; background:linear-gradient(135deg,#ef4444,#b91c1c); color:#fff; font-size:0.6rem; font-weight:900; letter-spacing:1.5px; text-transform:uppercase; border-radius:12px; animation:liveBgPulse 1.8s infinite;"><span style="width:6px; height:6px; border-radius:50%; background:#fff; animation:livePulse 1s infinite;"></span>LIVE</span>`;
+        statusBadge = `<span style="display:inline-flex; align-items:center; gap:4px; padding:2px 7px; background:linear-gradient(135deg,#ef4444,#b91c1c); color:#fff; font-size:0.55rem; font-weight:900; letter-spacing:1.2px; text-transform:uppercase; border-radius:10px; animation:liveBgPulse 1.8s infinite;"><span style="width:5px; height:5px; border-radius:50%; background:#fff; animation:livePulse 1s infinite;"></span>LIVE</span>`;
     } else if (status === 'final') {
-        statusBadge = `<span style="display:inline-flex; align-items:center; gap:5px; padding:3px 9px; background:linear-gradient(135deg,#22c55e,#15803d); color:#fff; font-size:0.6rem; font-weight:900; letter-spacing:1.5px; text-transform:uppercase; border-radius:12px;">✓ FINÁLNÍ</span>`;
+        statusBadge = `<span style="display:inline-flex; align-items:center; gap:4px; padding:2px 7px; background:linear-gradient(135deg,#22c55e,#15803d); color:#fff; font-size:0.55rem; font-weight:900; letter-spacing:1.2px; text-transform:uppercase; border-radius:10px;">✓ FINAL</span>`;
     }
     
-    // Render jednotlivých řádků
-    const radek = (icon, label, value, sublabel) => {
+    // Inline chip pro každý stat
+    const chip = (icon, value, sublabel) => {
         if (value == null || value === '') return '';
         return `
-            <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid rgba(212,175,55,0.06);">
-                <span style="font-size:1.1rem; flex-shrink:0;">${icon}</span>
-                <div style="flex:1; min-width:0;">
-                    <div style="font-size:0.6rem; color:rgba(212,175,55,0.5); text-transform:uppercase; letter-spacing:1px; font-weight:700;">${label}</div>
-                    <div style="font-size:0.85rem; color:#f0e6c8; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${value}${sublabel ? `<span style="color:#94a3b8; font-weight:400; font-size:0.75rem; margin-left:5px;">${sublabel}</span>` : ''}</div>
-                </div>
-            </div>
+            <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px; font-size:0.72rem; color:#f0e6c8; font-weight:700;">
+                <span style="font-size:0.85rem;">${icon}</span>
+                ${value}${sublabel ? `<span style="color:#94a3b8; font-weight:400; font-size:0.65rem;">${sublabel}</span>` : ''}
+            </span>
         `;
     };
     
-    const strelecGoly = b.topScorerGoals ? `(${b.topScorerGoals} ${b.topScorerGoals === 1 ? 'gól' : (b.topScorerGoals < 5 ? 'góly' : 'gólů')})` : '';
+    const strelecGoly = b.topScorerGoals ? `(${b.topScorerGoals})` : '';
     
     cont.innerHTML = `
-        <div style="background:rgba(8,12,22,0.6); border:1px solid rgba(212,175,55,0.15); border-radius:14px; padding:16px; margin-bottom:18px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700;">
-                    🎁 Bonus staty
+        <div style="background:rgba(8,12,22,0.6); border:1px solid rgba(212,175,55,0.15); border-radius:12px; padding:10px 12px; margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span style="font-size:0.62rem; letter-spacing:1.8px; color:rgba(212,175,55,0.6); text-transform:uppercase; font-weight:700; white-space:nowrap;">🎁 Bonusy</span>
+                    ${statusBadge}
                 </div>
-                ${statusBadge}
+                <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">
+                    ${chip('🥇', b.topScorer, strelecGoly)}
+                    ${chip('🧤', b.topGoalkeeper, '')}
+                    ${chip('⚽', b.totalGoals != null ? b.totalGoals + ' branek' : null, '')}
+                    ${chip('0️⃣', b.zeroZeroResults != null ? b.zeroZeroResults + '×' : null, '')}
+                </div>
             </div>
-            
-            <div>
-                ${radek('🥇', 'Lídr střelců', b.topScorer, strelecGoly)}
-                ${radek('🧤', 'Top brankář', b.topGoalkeeper, '')}
-                ${radek('⚽', 'Branek v turnaji', b.totalGoals, '')}
-                ${radek('0️⃣', 'Zápasy 0:0', b.zeroZeroResults, '')}
-            </div>
-            
-            ${status === 'live' ? `<div style="font-size:0.65rem; color:#94a3b8; margin-top:10px; text-align:center; font-style:italic;">Hodnoty se aktualizují průběžně</div>` : ''}
         </div>
     `;
 }
@@ -6223,9 +6223,9 @@ function renderBodyVeHre() {
     const { max, rozdeleno, live, final, zbyva } = spocitejBodyVeHre();
     
     const breakdownHtml = (rozdeleno > 0) ? `
-        <div style="display:flex; gap:6px; justify-content:center; margin-top:8px; font-size:0.6rem; font-weight:700;">
+        <div style="display:flex; gap:5px; justify-content:center; margin-top:5px; font-size:0.55rem; font-weight:700;">
             <span style="color:#ef4444; display:inline-flex; align-items:center; gap:3px;">
-                <span style="width:6px; height:6px; background:#ef4444; border-radius:50%; display:inline-block; box-shadow:0 0 6px #ef4444; animation:pulseLive 1.5s infinite;"></span>
+                <span style="width:5px; height:5px; background:#ef4444; border-radius:50%; display:inline-block; box-shadow:0 0 5px #ef4444; animation:pulseLive 1.5s infinite;"></span>
                 LIVE ${live}
             </span>
             <span style="color:rgba(212,175,55,0.3);">·</span>
@@ -6234,19 +6234,19 @@ function renderBodyVeHre() {
     ` : '';
     
     el.innerHTML = `
-        <div style="display:flex; gap:8px; margin-top:18px;">
-            <div style="flex:1; text-align:center; padding:12px 6px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:10px;">
-                <div style="font-size:1.3rem; font-weight:900; color:#d4af37;">${max}</div>
-                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:4px;">Maximum</div>
+        <div style="display:flex; gap:6px; margin-top:12px;">
+            <div style="flex:1; text-align:center; padding:8px 4px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:8px;">
+                <div style="font-size:1.05rem; font-weight:900; color:#d4af37; line-height:1.1;">${max}</div>
+                <div style="font-size:0.55rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:3px;">Maximum</div>
             </div>
-            <div style="flex:1; text-align:center; padding:12px 6px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); border-radius:10px;">
-                <div style="font-size:1.3rem; font-weight:900; color:#22c55e;">${rozdeleno}</div>
-                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:4px;">Rozděleno</div>
+            <div style="flex:1; text-align:center; padding:8px 4px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); border-radius:8px;">
+                <div style="font-size:1.05rem; font-weight:900; color:#22c55e; line-height:1.1;">${rozdeleno}</div>
+                <div style="font-size:0.55rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:3px;">Rozděleno</div>
                 ${breakdownHtml}
             </div>
-            <div style="flex:1; text-align:center; padding:12px 6px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.15); border-radius:10px;">
-                <div style="font-size:1.3rem; font-weight:900; color:#38bdf8;">${zbyva}</div>
-                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:4px;">Ve hře</div>
+            <div style="flex:1; text-align:center; padding:8px 4px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.15); border-radius:8px;">
+                <div style="font-size:1.05rem; font-weight:900; color:#38bdf8; line-height:1.1;">${zbyva}</div>
+                <div style="font-size:0.55rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:3px;">Ve hře</div>
             </div>
         </div>`;
 }
@@ -7670,7 +7670,7 @@ if (loggedUserId) {
 
     body.innerHTML = podiumHtml + rowsHtml;
 
-    // --- 💰 AKTUALIZACE BANKU (Jen od zaplacených hráčů) ---
+   // --- 💰 AKTUALIZACE BANKU - slim inline ---
     const bankEl = document.getElementById('currentBank');
     if (bankEl) {
         const paidPlayers = processed.filter(p => p.paid === true || p.paid === 1 || String(p.paid) === 'true');
@@ -7678,14 +7678,19 @@ if (loggedUserId) {
         const celkovyBank = paidPlayers.length * vklad;
         const p1 = Math.round(celkovyBank * 0.60);
         const p2 = Math.round(celkovyBank * 0.30);
-        const p3 = Math.round(celkovyBank * 0.10);
+        const p3 = celkovyBank - p1 - p2; // dorovnání kvůli zaokrouhlování
 
         bankEl.innerHTML = `
-            <div class="bank-amount" style="font-size:1.8rem; font-weight:900; color:#d4af37;">${celkovyBank.toLocaleString('cs-CZ')} Kč</div>
-            <div class="bank-prizes" style="margin-top:10px;">
-                <span style="color: #d4af37;">🥇 ${p1.toLocaleString('cs-CZ')}</span>
-                <span style="color: #94a3b8;">🥈 ${p2.toLocaleString('cs-CZ')}</span>
-                <span style="color: #d97b3a;">🥉 ${p3.toLocaleString('cs-CZ')}</span>
+            <div style="display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-trophy" style="color:#d4af37; font-size:0.9rem;"></i>
+                    <span class="bank-amount" style="font-size:1.25rem; font-weight:900; color:#d4af37; line-height:1;">${celkovyBank.toLocaleString('cs-CZ')} Kč</span>
+                </div>
+                <div style="display:flex; gap:8px; font-size:0.7rem; font-weight:700;">
+                    <span style="color:#d4af37;">🥇 ${p1.toLocaleString('cs-CZ')}</span>
+                    <span style="color:#cbd5e1;">🥈 ${p2.toLocaleString('cs-CZ')}</span>
+                    <span style="color:#d97b3a;">🥉 ${p3.toLocaleString('cs-CZ')}</span>
+                </div>
             </div>
         `;
     }
