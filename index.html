@@ -277,8 +277,17 @@ function renderMatchBanner() {
         if (hodiny > 0) return `za ${hodiny} h ${minuty} min`;
         return `za ${minuty} min`;
     };
-    const formatTime = (d) => new Date(d).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
-    const formatDate = (d) => new Date(d).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long' });
+   
+    const formatDate = (d) => {
+        const target = new Date(d);
+        const today = new Date(); today.setHours(0,0,0,0);
+        const targetDay = new Date(target); targetDay.setHours(0,0,0,0);
+        const diffDni = Math.round((targetDay - today) / 86400000);
+        if (diffDni === 0) return 'dnes';
+        if (diffDni === 1) return 'zítra';
+        if (diffDni === 2) return 'pozítří';
+        return target.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long' });
+    };
     const minutyOdStartu = (d) => {
         const m = Math.floor((new Date() - new Date(d)) / 60000);
         return m > 90 ? "90'+" : `${m}'`;
@@ -290,7 +299,7 @@ function renderMatchBanner() {
             <span>${tym}</span>
         </span>`;
     
-    let html = '<div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">';
+    let html = '<div style="display:flex; flex-direction:column; gap:8px; margin:0 auto 14px; max-width:640px;">';
     
     // 🔴 LIVE
     live.forEach(z => {
