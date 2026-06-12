@@ -5556,19 +5556,19 @@ async function otevritMujTip() {
             <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Body: <b style="color:#d4af37;">${me.points}</b> · Pořadí: <b style="color:#d4af37;">${me.rank}.</b></div>
         </div>
         
-        <!-- ═══════ KLASICKÝ BRACKET S POHÁREM UPROSTŘED ═══════ -->
-        <div style="background:radial-gradient(ellipse at center, rgba(212,175,55,0.06), rgba(0,0,0,0.4) 70%); border:1px solid rgba(212,175,55,0.18); border-radius:14px; padding:14px 6px; margin-bottom:20px; overflow-x:auto;">
-            <div style="display:flex; gap:5px; min-width:max-content; align-items:stretch; height:480px;">
+        \x3C!-- ═══════ KLASICKÝ BRACKET S POHÁREM UPROSTŘED ═══════ -->
+        <div style="background:radial-gradient(ellipse at center, rgba(212,175,55,0.06), rgba(0,0,0,0.4) 70%); border:1px solid rgba(212,175,55,0.18); border-radius:14px; padding:14px 4px; margin-bottom:20px; overflow-x:auto;">
+            <div style="display:flex; gap:3px; min-width:max-content; align-items:stretch; height:480px; justify-content:center;">
                 
-               <!-- ═══ LEVÁ STRANA (1/16 → SEMI) ═══ -->
-                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(leftR32, r.s32, '1/16')}</div>
-                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(leftR16, r.s16, '1/8')}</div>
-                <div style="flex:0 0 110px; min-width:0; overflow:hidden;">${bracketCol(leftQF, r.s8, 'ČTVRTFINÁLE')}</div>
-                <div style="flex:0 0 115px; min-width:0; overflow:hidden;">${bracketCol(leftSemi, null, 'SEMIFINÁLE')}</div>
+               \x3C!-- ═══ LEVÁ STRANA (1/16 → SEMI) ═══ -->
+                <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(leftR32, r.s32, '1/16')}</div>
+                <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(leftR16, r.s16, '1/8')}</div>
+                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(leftQF, r.s8, 'ČTVRTFINÁLE')}</div>
+                <div style="flex:0 0 105px; min-width:0; overflow:hidden;">${bracketCol(leftSemi, null, 'SEMIFINÁLE')}</div>
                 
-                <!-- ═══ CENTER: POHÁR + FINÁLE + BRONZ ═══ -->
-                <div style="flex:0 0 155px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:0 4px; position:relative;">
-                    
+               \x3C!-- ═══ CENTER: POHÁR + FINÁLE + BRONZ ═══ -->
+                <div style="flex:0 0 140px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:0 3px; position:relative;">   
+                  
                     <!-- Náš pohár -->
                     <div style="text-align:center; position:relative;">
                         <div style="position:absolute; inset:-12px; background:radial-gradient(circle, rgba(212,175,55,0.25), transparent 70%); border-radius:50%; z-index:0;"></div>
@@ -5604,11 +5604,11 @@ async function otevritMujTip() {
                     ` : ''}
                 </div>
                 
-               <!-- ═══ PRAVÁ STRANA (SEMI → 1/16) ═══ -->
-                <div style="flex:0 0 115px; min-width:0; overflow:hidden;">${bracketCol(rightSemi, null, 'SEMIFINÁLE')}</div>
-                <div style="flex:0 0 110px; min-width:0; overflow:hidden;">${bracketCol(rightQF, r.s8, 'ČTVRTFINÁLE')}</div>
-                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(rightR16, r.s16, '1/8')}</div>
-                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(rightR32, r.s32, '1/16')}</div>
+              \x3C!-- ═══ PRAVÁ STRANA (SEMI → 1/16) ═══ -->
+                <div style="flex:0 0 105px; min-width:0; overflow:hidden;">${bracketCol(rightSemi, null, 'SEMIFINÁLE')}</div>
+                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(rightQF, r.s8, 'ČTVRTFINÁLE')}</div>
+                <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(rightR16, r.s16, '1/8')}</div>
+                <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(rightR32, r.s32, '1/16')}</div>
             </div>
         </div>
         
