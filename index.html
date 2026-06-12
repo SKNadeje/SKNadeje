@@ -63,7 +63,7 @@ function aplikujTurnajMode() {
     } else if (mujTipBtn) {
         mujTipBtn.style.display = 'none';
     }
-    
+    if (typeof renderMatchBanner === 'function') renderMatchBanner();
   // Auto-refresh banneru každou minutu
 setInterval(() => {
     if (typeof renderMatchBanner === 'function') renderMatchBanner();
