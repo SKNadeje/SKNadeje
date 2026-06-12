@@ -4192,6 +4192,42 @@ let chatSubscription = null;
 let chatReactionsSubscription = null;
 let chatMessagesCache = [];
 let chatReactionsCache = [];
+    // 🆕 LocalStorage - persistentní "naposledy přečteno"
+function getChatLastSeen() {
+    const stored = localStorage.getItem('chat-last-seen');
+    if (stored) return stored;
+    // Pro nové uživatele: výchozí = teď (žádné staré zprávy jako nepřečtené)
+    const now = new Date().toISOString();
+    localStorage.setItem('chat-last-seen', now);
+    return now;
+}
+
+function setChatLastSeen() {
+    localStorage.setItem('chat-last-seen', new Date().toISOString());
+}
+
+// 🆕 Načti počet nepřečtených z DB (od posledního otevření)
+async function nactiPocetNeprectenych() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (!authData?.user) return;
+    const myId = authData.user.id;
+    const lastSeen = getChatLastSeen();
+    
+    try {
+        const { count, error } = await supabaseClient
+            .from('chat_zpravy')
+            .select('*', { count: 'exact', head: true })
+            .gt('created_at', lastSeen)
+            .neq('user_id', myId);
+        
+        if (!error && count !== null) {
+            chatUnread = count;
+            updateUnreadBadge();
+        }
+    } catch (err) {
+        console.warn('Chyba načtení nepřečtených:', err);
+    }
+}
 
 // Otevření/zavření chatu
 function toggleChat() {
@@ -4201,6 +4237,7 @@ function toggleChat() {
         panel.style.display = 'flex';
         chatUnread = 0;
         updateUnreadBadge();
+        setChatLastSeen(); // 🆕 zaznamenej kdy jsem chat otevřel
         nactiChat();
         setTimeout(() => {
             const msgs = document.getElementById('chat-messages');
@@ -4221,6 +4258,7 @@ async function ukazatChatIkonu() {
     if (data?.user) {
         nastavRealtimeChat();
         await nactiChatPocet();
+        await nactiPocetNeprectenych(); // 🆕 spočítej nepřečtené od minulé návštěvy
     }
 }
 
@@ -4462,7 +4500,7 @@ function nastavRealtimeChat() {
     chatSubscription = supabaseClient
         .channel('chat-channel')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_zpravy' }, async (payload) => {
-    if (payload.eventType === 'INSERT') {
+   if (payload.eventType === 'INSERT') {
         chatMessagesCache.push(payload.new);
         if (chatMessagesCache.length > 50) chatMessagesCache.shift();
         if (!chatOpen) {
@@ -4471,6 +4509,8 @@ function nastavRealtimeChat() {
                 chatUnread++;
                 updateUnreadBadge();
             }
+        } else {
+            setChatLastSeen(); // 🆕 chat je otevřený = zaznamenej zprávu jako viděnou
         }
     } else if (payload.eventType === 'DELETE') {
         chatMessagesCache = chatMessagesCache.filter(z => z.id !== payload.old.id);
