@@ -4187,6 +4187,19 @@ async function vyhlasitMVPTydne() {
         const jmenaVitezu = viteziTydne.map(v => v.name).join(', ');
         showToast(`🌟 MVP kola: ${jmenaVitezu} (+${maxPrirustek} bodů)!`, 'success', 6000);
         
+        // 📧 EMAIL SOUHRN KOLA
+        const emailoviCount = tipy.filter(t => t.email && t.email.includes('@')).length;
+        if (confirm(`📧 Poslat souhrn kola emailem všem hráčům?\n\nMVP: ${jmenaVitezu}\nPříjemců: ${emailoviCount}\n\n(Tato akce odešle ${emailoviCount} emailů přes Brevo.)`)) {
+            showToast(`📧 Odesílám ${emailoviCount} emailů...`, 'info', 4000);
+            try {
+                const vysledek = await posliSouhrnKola(viteziTydne, prirustky, aktualniBody, tipy, datumPredchoziho, dnes, real);
+                showToast(`✅ Odesláno ${vysledek.sent}/${vysledek.total} emailů` + (vysledek.failed > 0 ? ` (${vysledek.failed} selhalo)` : ''), 'success', 6000);
+            } catch (err) {
+                console.error('Souhrn email error:', err);
+                showToast(`⚠️ Chyba při odesílání: ${err.message}`, 'error', 6000);
+            }
+        }
+        
         await nactiMVPCache();
         if (typeof loadAll === "function") await loadAll();
 
@@ -4196,6 +4209,171 @@ async function vyhlasitMVPTydne() {
     }
 }
 
+// 📧 Pošle hráčům emailem souhrn uplynulého kola
+async function posliSouhrnKola(viteziTydne, prirustky, aktualniBody, tipy, datumPredchoziho, dnes, real) {
+    // 1. Načti minulý snapshot pro porovnání ranků
+    const { data: predchozi } = await supabaseClient
+        .from('mvp_snapshoty')
+        .select('*')
+        .eq('snapshot_date', datumPredchoziho);
+    if (!predchozi || predchozi.length === 0) {
+        throw new Error("Předchozí snapshot nenalezen");
+    }
+    
+    // 2. Spočítej ranky před (z minulého snapshotu)
+    const prevSorted = [...predchozi].sort((a, b) => b.body - a.body);
+    const prevRanks = new Map();
+    let lastB = -Infinity, prevRank = 0;
+    prevSorted.forEach((s, i) => {
+        if (s.body !== lastB) prevRank = i + 1;
+        lastB = s.body;
+        prevRanks.set(s.user_id, prevRank);
+    });
+    
+    // 3. Spočítej ranky teď
+    const currSorted = [...aktualniBody].sort((a, b) => b.body - a.body);
+    const currRanks = new Map();
+    let lastB2 = -Infinity, currRank = 0;
+    currSorted.forEach((p, i) => {
+        if (p.body !== lastB2) currRank = i + 1;
+        lastB2 = p.body;
+        currRanks.set(p.user_id, currRank);
+    });
+    
+    // 4. Pohyby
+    const movers = aktualniBody.map(h => {
+        const prev = prevRanks.get(h.user_id);
+        const curr = currRanks.get(h.user_id);
+        if (!prev || !curr) return null;
+        return { name: h.name, prev, curr, diff: prev - curr };
+    }).filter(Boolean);
+    
+    const skokani = movers.filter(m => m.diff > 0).sort((a, b) => b.diff - a.diff).slice(0, 3);
+    const propadaci = movers.filter(m => m.diff < 0).sort((a, b) => a.diff - b.diff).slice(0, 3);
+    
+    // 5. Top 3
+    const top3 = currSorted.slice(0, 3);
+    
+   // 6. Zápasy v období
+    const zacatek = new Date(datumPredchoziho + 'T00:00:00');
+    const konec = new Date(dnes + 'T23:59:59');
+    const zapasy = (typeof ZAPASY_WC2026 !== 'undefined' ? ZAPASY_WC2026 : [])
+        .filter(z => {
+            if (!z.tym1 || !z.tym2) return false;
+            const d = new Date(z.datum);
+            return d >= zacatek && d <= konec;
+        });
+    
+    // 6b. 📊 Aktuální pořadí ve skupinách (z admin_vysledky.groups)
+    const realData = real || {};
+    const groupyData = realData.groups || [];
+    const groupySekce = groupyData.map((g, i) => {
+        const teams = g.teams || g;
+        if (!Array.isArray(teams) || teams.every(t => !t || String(t).trim() === '')) return null;
+        const pismeno = String.fromCharCode(65 + i); // A, B, C, ...
+        const ikony = ['🥇','🥈','🥉','4️⃣'];
+        const radek = teams.map((t, idx) => 
+            t && t.trim() !== '' ? `${ikony[idx] || (idx+1)+'.'} ${t}` : `${ikony[idx] || (idx+1)+'.'} ?`
+        ).join('   ');
+        return `   ${pismeno})  ${radek}`;
+    }).filter(Boolean).join('\n');
+    
+    // 6c. 🏆 Playoff postup (jen pokud něco vyplněno)
+    const fs = realData.faze_status || {};
+    const playoffSekce = [];
+    if (realData.s32 && realData.s32.some(t => t)) {
+        const tymy = realData.s32.filter(t => t).join(', ');
+        playoffSekce.push(`   1/16: ${tymy}`);
+    }
+    if (realData.s16 && realData.s16.some(t => t)) {
+        const tymy = realData.s16.filter(t => t).join(', ');
+        playoffSekce.push(`   1/8:  ${tymy}`);
+    }
+    if (realData.s8 && realData.s8.some(t => t)) {
+        const tymy = realData.s8.filter(t => t).join(', ');
+        playoffSekce.push(`   1/4:  ${tymy}`);
+    }
+    if (realData.s4 && realData.s4.some(t => t)) {
+        const tymy = realData.s4.filter(t => t).join(', ');
+        playoffSekce.push(`   Semifinále: ${tymy}`);
+    }
+    if (realData.bronze) playoffSekce.push(`   🥉 3. místo: ${realData.bronze}`);
+    if (realData.winner) playoffSekce.push(`   🥇 Vítěz: ${realData.winner}`);
+    
+    // 7. Formátování
+    const fmtDate = (s) => new Date(s + 'T00:00:00').toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long' });
+    const mvpJmena = viteziTydne.map(v => v.name).join(', ');
+    const mvpV = viteziTydne[0];
+    const mvpPrev = mvpV ? prevRanks.get(mvpV.user_id) : null;
+    const mvpCurr = mvpV ? currRanks.get(mvpV.user_id) : null;
+    
+    // 8. Postav text emailu (univerzální, neosobní – pošleme jeden ke všem najednou)
+    const text = `🏆 SOUHRN KOLA · WC2026 Tipovačka
+═══════════════════════════════════
+
+Uplynulé kolo (${fmtDate(datumPredchoziho)} – ${fmtDate(dnes)}) je za námi. Co se událo:
+
+🌟 MVP KOLA
+   ${mvpJmena} · +${mvpV.prirustek} bodů${mvpPrev && mvpCurr && mvpPrev !== mvpCurr ? `
+   Skok z ${mvpPrev}. na ${mvpCurr}. místo!` : ''}
+
+📈 NEJVĚTŠÍ SKOKANÉ
+${skokani.length > 0 
+    ? skokani.map(s => `   ↑ ${s.name}  +${s.diff} míst (${s.prev}. → ${s.curr}.)`).join('\n')
+    : '   (nikdo výrazně neskočil)'}
+
+📉 PROPADÁCI
+${propadaci.length > 0
+    ? propadaci.map(p => `   ↓ ${p.name}  ${p.diff} míst (${p.prev}. → ${p.curr}.)`).join('\n')
+    : '   (nikdo nepropad)'}
+
+🏆 AKTUÁLNÍ TOP 3
+${top3.map((t, i) => `   ${['🥇','🥈','🥉'][i]} ${t.name}  ·  ${t.body} b`).join('\n')}
+
+⚽ ZÁPASY V KOLE (${zapasy.length})
+${zapasy.length > 0
+    ? zapasy.slice(0, 12).map(z => {
+        const d = new Date(z.datum);
+        return `   • ${z.tym1} vs ${z.tym2}  (${d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' })})`;
+    }).join('\n') + (zapasy.length > 12 ? `\n   + dalších ${zapasy.length - 12} zápasů` : '')
+    : '   (žádné zápasy v tomto období)'}
+
+📊 AKTUÁLNÍ POŘADÍ VE SKUPINÁCH
+${groupySekce || '   (Skupiny zatím nevyplněny)'}
+${playoffSekce.length > 0 ? `
+🏆 PLAYOFF POSTUP
+${playoffSekce.join('\n')}` : ''}
+
+═══════════════════════════════════
+
+Pokračuj na web a podívej se na detaily:
+https://sknadeje.github.io/SKNadeje/
+
+SK Naděje · WC2026 Tipovačka`;
+    
+    // 9. Pošli všem hráčům s emailem (sekvenčně kvůli Brevo rate limitu)
+    const emailovi = tipy.filter(t => t.email && t.email.includes('@'));
+    let ok = 0, fail = 0;
+    
+    for (const h of emailovi) {
+        try {
+            await supabaseClient.functions.invoke('send-notif', {
+                body: {
+                    emails: [h.email],
+                    subject: `🏆 Souhrn kola · MVP ${mvpJmena}`,
+                    message: text
+                }
+            });
+            ok++;
+        } catch (err) {
+            console.warn('Email selhal pro', h.email, err);
+            fail++;
+        }
+    }
+    
+    return { sent: ok, failed: fail, total: emailovi.length };
+}
+    
 // Načte počet MVP pro každého hráče do cache
 async function nactiMVPCache() {
     const { data, error } = await supabaseClient
