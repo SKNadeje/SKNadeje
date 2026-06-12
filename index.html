@@ -4820,12 +4820,16 @@ window.addEventListener('DOMContentLoaded', () => {
     const total = profilData.length;
     const r = window.currentResults || {};
 
-    // Hlas lidu - oblíbený vítěz a outsider
+   // Hlas lidu - oblíbený vítěz a outsider
     const hlasy = {};
     profilData.forEach(pl => {
         const w = pl.tip?.winner;
         if (w) hlasy[w] = (hlasy[w] || 0) + 1;
     });
+    const sortHlasy = Object.entries(hlasy).sort((a,b) => b[1]-a[1]);
+    const oblibeny = sortHlasy[0]?.[0];
+    const outsider = sortHlasy[sortHlasy.length-1]?.[0];
+    
     // 🔒 FAZE STATUS - odznáčky za výsledky padají jen u finálních fází
     const fs = r.faze_status || {};
     const skupinyFinal = fs.skupiny === 'final';
@@ -4902,25 +4906,23 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
     odznaky.push({ icon: '🎙️', label: 'Showman', aktivni: chatStats.messages >= 50, popis: `Napsal/a ${chatStats.messages} zpráv – chat baví!` });
     odznaky.push({ icon: '❤️', label: 'Oblíbenec', aktivni: chatStats.reactions >= 5, popis: `Dostal/a ${chatStats.reactions} reakcí na zprávy.` });
 // === BONUS TIPY (odznáčky jen při FINÁLNÍM stavu) ===
-    const tipBonus = tip.bonus || {};
+   const tipBonus = tip.bonus || {};
     const realBonus = r.bonus || {};
-    const bonusFinalni = (r.faze_status?.bonus === 'final');
     
     const sedi = (a, b) => a && b && String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
     const sediCislo = (a, b) => a != null && b != null && parseInt(a) === parseInt(b);
     
     // Body se počítají i v LIVE módu (přes spocitejBonusBody), ale odznáčky jen FINAL
-    const bonusStrelec = bonusFinalni && sedi(realBonus.topScorer, tipBonus.topScorer);
-    const bonusBrankar = bonusFinalni && sedi(realBonus.topGoalkeeper, tipBonus.topGoalkeeper);
-    const bonusGoly = bonusFinalni && sediCislo(realBonus.totalGoals, tipBonus.totalGoals);
-    const bonusNuly = bonusFinalni && sediCislo(realBonus.zeroZeroResults, tipBonus.zeroZeroResults);
+    const bonusStrelec = sedi(realBonus.topScorer, tipBonus.topScorer);
+    const bonusBrankar = sedi(realBonus.topGoalkeeper, tipBonus.topGoalkeeper);
+    const bonusGoly = sediCislo(realBonus.totalGoals, tipBonus.totalGoals);
+    const bonusNuly = sediCislo(realBonus.zeroZeroResults, tipBonus.zeroZeroResults);
     
     odznaky.push({ icon: '🥇', label: 'Zlatá noha', aktivni: bonusStrelec && bonusFinal, popis: 'Trefil/a nejlepšího střelce turnaje (finální výsledek).' });
     odznaky.push({ icon: '🧤', label: 'Anděl', aktivni: bonusBrankar && bonusFinal, popis: 'Trefil/a nejlepšího brankáře turnaje (finální výsledek).' });
     odznaky.push({ icon: '⚽', label: 'Gólomat', aktivni: bonusGoly && bonusFinal, popis: 'Trefil/a přesný počet branek v turnaji (finální výsledek).' });
     odznaky.push({ icon: '0️⃣', label: 'Nula', aktivni: bonusNuly && bonusFinal, popis: 'Trefil/a přesný počet zápasů 0:0 (finální výsledek).' });
-    odznaky.push({ icon: '🎁', label: 'Bonusový mistr', aktivni: bonusStrelec && bonusBrankar && bonusGoly && bonusNuly && bonusFinal, popis: 'Trefil/a všechny 4 bonusové tipy – mistrovský výkon!' });
-     // === MERGE S ULOŽENÝMI (persistence) ===
+    odznaky.push({ icon: '🎁', label: 'Bonusový mistr', aktivni: bonusStrelec && bonusBrankar && bonusGoly && bonusNuly && bonusFinal, popis: 'Trefil/a všechny 4 bonusové tipy – mistrovský výkon!' }); // === MERGE S ULOŽENÝMI (persistence) ===
     const ulozeno = p.achievements_earned || [];
     odznaky.forEach(o => {
         if (ulozeno.includes(o.label)) {
