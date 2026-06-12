@@ -7458,19 +7458,37 @@ pts += spocitejBonusBody(tip, r);
 return { id: p.id, points: pts };
         });
 
-        // 3. Seřazení hráčů podle bodů (vytvoření pořadí)
+        // 3. Seřazení hráčů podle bodů
         rankedPlayers.sort((a, b) => b.points - a.points);
-
-        // 4. Hromadný update do Supabase (previous_rank)
-        console.log("Zapisuji nové trendy do DB...");
-        for (let i = 0; i < rankedPlayers.length; i++) {
-            const currentRank = i + 1;
+        
+        // 🛡️ Safety check: pokud má víc než 70 % hráčů 0 bodů, varuj
+        const nulovi = rankedPlayers.filter(p => p.points === 0).length;
+        const procentoNulovych = Math.round((nulovi / rankedPlayers.length) * 100);
+        if (procentoNulovych > 70) {
+            if (!confirm(`⚠️ ${procentoNulovych} % hráčů má 0 bodů – turnaj ještě nezačal?\n\nZmrazené pořadí by bylo nesmyslné: po startu by se hráči falešně posunovali o desítky míst.\n\nOpravdu pokračovat?`)) {
+                showToast("Zmražení trendů zrušeno", 'info');
+                return; // finally obnoví tlačítko
+            }
+        }
+        
+        // 4. Spočítej správné ranky S TIE-BREAKING (stejně jako v žebříčku)
+        const ranksMap = new Map(); // id → správný rank
+        let lastPoints = -Infinity;
+        let currentRank = 0;
+        rankedPlayers.forEach((p, i) => {
+            if (p.points !== lastPoints) currentRank = i + 1; // rank skočí jen u nové bodové hladiny
+            lastPoints = p.points;
+            ranksMap.set(p.id, currentRank);
+        });
+        
+        // 5. Hromadný update do DB se SPRÁVNÝMI ranky
+        console.log("Zapisuji nové trendy do DB (s tie-breaking)...");
+        for (const p of rankedPlayers) {
             await supabaseClient
                 .from('tipy')
-                .update({ previous_rank: currentRank })
-                .eq('id', rankedPlayers[i].id);
+                .update({ previous_rank: ranksMap.get(p.id) })
+                .eq('id', p.id);
         }
-
         showToast("Pořadí uloženo – šipky aktivní!", 'success');
         if (typeof loadAll === "function") await loadAll(); // Obnovit žebříček
 
