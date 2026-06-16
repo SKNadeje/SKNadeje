@@ -7522,7 +7522,10 @@ async function loadAll() {
            if (typeof aktualizujBonusLiveBanner === "function") aktualizujBonusLiveBanner();
 if (typeof renderBonusStats === "function") renderBonusStats();
             if (typeof init === "function") init();
-            console.log("✅ Všechny komponenty vykresleny.");
+           console.log("✅ Všechny komponenty vykresleny.");
+    
+    // 📸 Auto-snapshot dneška (jen admin, jednou za stránku)
+    if (typeof ulozDenniSnapshot === 'function') ulozDenniSnapshot();
         } else {
             console.warn("⚠️ Zatím nebyly nalezeny žádné tipy v databázi.");
             if (typeof renderLeaderboard === "function") {
@@ -8889,6 +8892,40 @@ async function nacistAdminVysledky() {
     } catch (err) {
         console.error("Chyba při ukládání:", err);
        showToast("Chyba při ukládání: " + err.message, 'error');
+    }
+}
+
+    // 📸 Auto-snapshot: uloží body dneška pro všechny hráče
+// Spouští se automaticky při návštěvě admina, takže historie roste sama
+async function ulozDenniSnapshot() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return;
+    
+    try {
+        const { data: tipy } = await supabaseClient.from('tipy').select('*');
+        const { data: real } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).maybeSingle();
+        if (!tipy || !real) return;
+        
+        const dnes = new Date().toISOString().slice(0, 10);
+        let pocet = 0;
+        
+        for (const row of tipy) {
+            let tip = row.tip_data;
+            if (typeof tip === 'string') { try { tip = JSON.parse(tip); } catch { tip = {}; } }
+            const body = spocitejBodyHrace(tip, real);
+            
+            await supabaseClient.from('mvp_snapshoty').upsert({
+                user_id: row.user_id,
+                name: row.name || 'Anonym',
+                body,
+                snapshot_date: dnes
+            }, { onConflict: 'user_id,snapshot_date' });
+            pocet++;
+        }
+        
+        console.log(`📸 Auto-snapshot uložen: ${pocet} hráčů · ${dnes}`);
+    } catch (err) {
+        console.warn('Auto-snapshot failed:', err);
     }
 }
 
