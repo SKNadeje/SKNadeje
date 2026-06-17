@@ -7836,10 +7836,13 @@ if (loggedUserId) {
     const max3RuznychRanku = new Set(ranks.slice(0, 3)).size === 3 || allRanked.length < 3;
     const ukazPodium = maBody && allRanked.length >= 1 && max3RuznychRanku;
     
-    const prvni = ukazPodium ? allRanked.find(p => p.rank === 1) : null;
+   const prvni = ukazPodium ? allRanked.find(p => p.rank === 1) : null;
     const druhy = ukazPodium ? allRanked.find(p => p.rank === 2) : null;
     const treti = ukazPodium ? allRanked.find(p => p.rank === 3) : null;
-    const zbytek = ukazPodium ? allRanked.filter(p => p.rank > 3) : allRanked;
+    
+    // 🔧 Vyloučíme jen konkrétní hráče na podium (ne všechny rank=3)
+    const podiumIds = new Set([prvni, druhy, treti].filter(Boolean).map(p => String(p.rowId)));
+    const zbytek = ukazPodium ? allRanked.filter(p => !podiumIds.has(String(p.rowId))) : allRanked;
 
     const podiumPlace = (p, medal, stageStyle, stageHeight, nameColor, isMid) => {
         if (!p) return '<div style="flex:1; max-width:130px;"></div>';
