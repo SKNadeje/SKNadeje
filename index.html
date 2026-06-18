@@ -4329,13 +4329,6 @@ ${propadaci.length > 0
 🏆 AKTUÁLNÍ TOP 3
 ${top3.map((t, i) => `   ${['🥇','🥈','🥉'][i]} ${t.name}  ·  ${t.body} b`).join('\n')}
 
-⚽ ZÁPASY V KOLE (${zapasy.length})
-${zapasy.length > 0
-    ? zapasy.slice(0, 12).map(z => {
-        const d = new Date(z.datum);
-        return `   • ${z.tym1} vs ${z.tym2}  (${d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' })})`;
-    }).join('\n') + (zapasy.length > 12 ? `\n   + dalších ${zapasy.length - 12} zápasů` : '')
-    : '   (žádné zápasy v tomto období)'}
 
 📊 AKTUÁLNÍ POŘADÍ VE SKUPINÁCH
 ${groupySekce || '   (Skupiny zatím nevyplněny)'}
