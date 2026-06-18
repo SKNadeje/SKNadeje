@@ -4115,14 +4115,25 @@ async function vyhlasitMVPTydne() {
 
        const dnes = new Date().toISOString().slice(0, 10);
         
-        // 2. 🎯 Najdi POSLEDNÍ MVP vyhlášení (z mvp_tydne, ne ze snapshotů!)
+       // 2. 🎯 Najdi POSLEDNÍ MVP vyhlášení (z mvp_tydne, ne ze snapshotů!)
         const { data: posledniMVPList } = await supabaseClient
             .from('mvp_tydne')
             .select('tyden_do')
             .order('tyden_do', { ascending: false })
             .limit(1);
         
-        const datumPredchoziho = posledniMVPList?.[0]?.tyden_do || null;
+        let datumPredchoziho = posledniMVPList?.[0]?.tyden_do || null;
+        
+        // Pokud žádné MVP nebylo, použij NEJSTARŠÍ snapshot (= start turnaje s 0 body)
+        if (!datumPredchoziho) {
+            const { data: nejstarsiSnap } = await supabaseClient
+                .from('mvp_snapshoty')
+                .select('snapshot_date')
+                .order('snapshot_date', { ascending: true })
+                .limit(1);
+            datumPredchoziho = nejstarsiSnap?.[0]?.snapshot_date || null;
+            if (datumPredchoziho) console.log(`📸 První MVP – baseline = nejstarší snapshot (${datumPredchoziho})`);
+        }
         
         // Kontrola: MVP už dnes vyhlášeno?
         if (datumPredchoziho === dnes) {
