@@ -2475,7 +2475,37 @@ input:focus {
 </style>
 </head>
 <body>
- 
+<!-- 📸 BACKFILL SNAPSHOT MODAL (admin) -->
+<div id="backfill-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); z-index:100000; justify-content:center; align-items:center; padding:20px;" onclick="if(event.target===this) this.style.display='none'">
+    <div style="background:linear-gradient(145deg,#0f1423,#080c18); border:1px solid rgba(212,175,55,0.3); border-radius:20px; max-width:700px; width:100%; max-height:92vh; box-shadow:0 25px 60px rgba(0,0,0,0.7); display:flex; flex-direction:column; overflow:hidden;">
+        <div style="padding:24px; flex:1; overflow-y:auto;">
+            <h3 style="color:#d4af37; margin:0 0 16px 0; text-align:center; font-size:1.3rem;">📸 Backfill snapshot</h3>
+            <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:16px; text-align:center;">Doplň body pro libovolný den. Nepřepíše ani neresetuje existující data jiných dnů.</p>
+            
+            <div style="display:flex; gap:10px; align-items:center; margin-bottom:16px;">
+                <label style="color:#f0e6c8; font-weight:600;">📅 Datum:</label>
+                <input type="date" id="backfill-date" style="background:rgba(255,255,255,0.05); color:#f0e6c8; border:1px solid rgba(212,175,55,0.3); padding:8px; border-radius:6px;">
+                <button onclick="nactiBackfillData()" style="background:rgba(212,175,55,0.15); border:1px solid rgba(212,175,55,0.4); color:#d4af37; padding:8px 14px; border-radius:6px; font-weight:600; cursor:pointer;">🔄 Načíst</button>
+                <button onclick="predvyplnAktualni()" style="background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.4); color:#4ade80; padding:8px 14px; border-radius:6px; font-weight:600; cursor:pointer;">⚡ Předvyplnit aktuální</button>
+            </div>
+            
+            <table id="backfill-table" style="width:100%; border-collapse:collapse; color:#f0e6c8;">
+                <thead>
+                    <tr style="background:rgba(212,175,55,0.1); border-bottom:1px solid rgba(212,175,55,0.2);">
+                        <th style="padding:8px; text-align:left;">Hráč</th>
+                        <th style="padding:8px; text-align:right; width:120px;">Body</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div style="padding:14px 20px; background:rgba(8,12,24,0.85); border-top:1px solid rgba(212,175,55,0.15); flex-shrink:0; display:flex; gap:10px;">
+            <button onclick="ulozBackfillData()" style="flex:1; background:linear-gradient(135deg,#d4af37,#b8941e); color:#000; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:700;">💾 Uložit snapshot</button>
+            <button onclick="document.getElementById('backfill-modal').style.display='none'" style="flex:1; background:rgba(30,40,60,0.8); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); padding:12px; border-radius:10px; cursor:pointer; font-weight:700;">✕ Zavřít</button>
+        </div>
+    </div>
+</div>
+    
 <img src="logo-wc2026.png" class="side-decor left" alt="">
 <img src="logo-wc2026.png" class="side-decor right" alt="">
     
@@ -2615,6 +2645,7 @@ input:focus {
     🗑️ RESET MVP
 </button>
 </div>
+        <button onclick="otevritBackfillModal()" style="background:rgba(212,175,55,0.15); border:1px solid rgba(212,175,55,0.4); color:#d4af37; padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:700;">📸 Backfill snapshot</button>
     <button id="btn-update-trends" type="button" class="btn" 
             style="background: #38bdf8; color: #0f172a; font-weight: 800; padding: 10px 20px; font-size: 0.85rem;" 
             onclick="updateRankTrends()">
@@ -2912,6 +2943,103 @@ input:focus {
 </div>
     
 <script>
+// 📸 Otevři backfill modal (admin)
+async function otevritBackfillModal() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+        showToast("Pouze pro admina!", 'error');
+        return;
+    }
+    document.getElementById('backfill-modal').style.display = 'flex';
+    document.getElementById('backfill-date').value = new Date().toISOString().slice(0, 10);
+    await nactiBackfillData();
+}
+
+// 🔄 Načti existující snapshot pro vybrané datum
+async function nactiBackfillData() {
+    const datum = document.getElementById('backfill-date').value;
+    if (!datum) return;
+    
+    const tbody = document.querySelector('#backfill-table tbody');
+    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding:20px; color:#94a3b8;">Načítám...</td></tr>';
+    
+    const { data: tipy } = await supabaseClient.from('tipy').select('user_id, name').order('name');
+    if (!tipy) { tbody.innerHTML = '<tr><td colspan="2">Chyba načítání</td></tr>'; return; }
+    
+    const { data: existing } = await supabaseClient
+        .from('mvp_snapshoty')
+        .select('user_id, body')
+        .eq('snapshot_date', datum);
+    
+    const mapaBody = {};
+    (existing || []).forEach(s => mapaBody[s.user_id] = s.body);
+    
+    tbody.innerHTML = '';
+    tipy.forEach(t => {
+        const vychozi = mapaBody[t.user_id] !== undefined ? mapaBody[t.user_id] : 0;
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(212,175,55,0.08)';
+        tr.innerHTML = `
+            <td style="padding:8px;">${t.name}</td>
+            <td style="padding:8px; text-align:right;">
+                <input type="number" 
+                    data-user-id="${t.user_id}" 
+                    data-name="${t.name}" 
+                    value="${vychozi}" 
+                    min="0" max="333" 
+                    style="width:80px; background:rgba(255,255,255,0.05); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); padding:6px; border-radius:4px; text-align:right;">
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// ⚡ Předvyplnit aktuální spočítané body (užitečné pro dnešek)
+async function predvyplnAktualni() {
+    if (!confirm("Předvyplnit políčka aktuálně spočítanými body? Přepíše ručně zadané hodnoty v této tabulce.")) return;
+    
+    const { data: tipy } = await supabaseClient.from('tipy').select('*');
+    const { data: real } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).maybeSingle();
+    if (!tipy || !real) return;
+    
+    const mapaCurrent = {};
+    tipy.forEach(row => {
+        let tip = row.tip_data;
+        if (typeof tip === 'string') { try { tip = JSON.parse(tip); } catch { tip = {}; } }
+        mapaCurrent[row.user_id] = spocitejBodyHrace(tip, real);
+    });
+    
+    document.querySelectorAll('#backfill-table input[type="number"]').forEach(input => {
+        const userId = input.dataset.userId;
+        input.value = mapaCurrent[userId] || 0;
+    });
+}
+
+// 💾 Ulož snapshot pro vybrané datum
+async function ulozBackfillData() {
+    const datum = document.getElementById('backfill-date').value;
+    if (!datum) return showToast("Vyber datum!", 'error');
+    
+    const inputs = document.querySelectorAll('#backfill-table input[type="number"]');
+    if (inputs.length === 0) return showToast("Žádná data k uložení", 'error');
+    
+    if (!confirm(`Uložit ${inputs.length} hráčů pro datum ${datum}?`)) return;
+    
+    let count = 0;
+    for (const input of inputs) {
+        await supabaseClient.from('mvp_snapshoty').upsert({
+            user_id: input.dataset.userId,
+            name: input.dataset.name,
+            body: parseInt(input.value) || 0,
+            snapshot_date: datum
+        }, { onConflict: 'user_id,snapshot_date' });
+        count++;
+    }
+    
+    showToast(`✅ Uloženo ${count} hráčů pro ${datum}`, 'success', 4000);
+    document.getElementById('backfill-modal').style.display = 'none';
+}
+    
 // 🧬 Tipař DNA - klasifikace a vizualizace stylu hráče
 function vypocetTiparDNA(p) {
     const tip = p.tip || {};
@@ -4187,15 +4315,53 @@ async function vyhlasitMVPTydne() {
             });
         }
 
-        // 7. Ulož nový snapshot pro příští týden
+     // 7. Ulož nový snapshot pro příští týden
         for (const h of aktualniBody) {
             await supabaseClient.from('mvp_snapshoty').upsert({
                 user_id: h.user_id, name: h.name, body: h.body, snapshot_date: dnes
             }, { onConflict: 'user_id,snapshot_date' });
         }
+        
+        // 8. 🪜 SKLEPNÍ ODZNÁČKY pro posledního/poslední hráče
+        const minBody = Math.min(...aktualniBody.map(p => p.body));
+        const posledniHraci = aktualniBody.filter(p => p.body === minBody);
+        const sklepniNoviniky = [];
+        
+        for (const p of posledniHraci) {
+            const { data: hrac } = await supabaseClient
+                .from('tipy')
+                .select('achievements_earned')
+                .eq('user_id', p.user_id)
+                .single();
+            
+            const achievs = Array.isArray(hrac?.achievements_earned) ? [...hrac.achievements_earned] : [];
+            let novyOdznak = null;
+            
+            if (!achievs.includes('Pán sklepa')) {
+                achievs.push('Pán sklepa');
+                novyOdznak = '🏚️ Pán sklepa';
+            } else if (!achievs.includes('Permanentní rezident sklepa')) {
+                achievs.push('Permanentní rezident sklepa');
+                novyOdznak = '🪜 Permanentní rezident sklepa';
+            } else if (!achievs.includes('Sommelier zatuchliny')) {
+                achievs.push('Sommelier zatuchliny');
+                novyOdznak = '🍷 Sommelier zatuchliny';
+            }
+            
+            if (novyOdznak) {
+                await supabaseClient.from('tipy')
+                    .update({ achievements_earned: achievs })
+                    .eq('user_id', p.user_id);
+                sklepniNoviniky.push(`${p.name} → ${novyOdznak}`);
+                console.log(`🪜 ${p.name} získává: ${novyOdznak}`);
+            }
+        }
 
         const jmenaVitezu = viteziTydne.map(v => v.name).join(', ');
         showToast(`🌟 MVP kola: ${jmenaVitezu} (+${maxPrirustek} bodů)!`, 'success', 6000);
+        if (sklepniNoviniky.length > 0) {
+            setTimeout(() => showToast(`🪜 ${sklepniNoviniky.join(' · ')}`, 'info', 8000), 1500);
+        }
         
         // 📧 EMAIL SOUHRN KOLA
         const emailoviCount = tipy.filter(t => t.email && t.email.includes('@')).length;
@@ -5149,11 +5315,15 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
     odznaky.push({ icon: '🏆', label: 'Vševěd', aktivni: presneSkupiny >= 3 && skupinyFinal, popis: 'Tipoval/a přesné pořadí ve 3+ skupinách – mistrovský výkon!' });
     odznaky.push({ icon: '🎯', label: 'Snajpr', aktivni: prvniMistaTrefil >= 6 && skupinyFinal, popis: `Trefil/a 1. místo v ${prvniMistaTrefil} skupinách.` });
 
-    // === MVP ===
+   // === MVP ===
     const pocetMVP = (typeof mvpCacheGlobal !== 'undefined') ? (mvpCacheGlobal[p.rowId] || 0) : 0;
     odznaky.push({ icon: '🌟', label: 'MVP', aktivni: pocetMVP >= 1, popis: `Získal/a MVP kola ${pocetMVP}×.` });
     odznaky.push({ icon: '💎', label: 'Hvězda kol', aktivni: pocetMVP >= 3, popis: `Získal/a MVP kola ${pocetMVP}× – legendární výkon!` });
 
+    // === SKLEPNÍ TIERY (poslední místo při MVP) ===
+    odznaky.push({ icon: '🏚️', label: 'Pán sklepa', aktivni: false, popis: 'Při prvním MVP skončil/a poslední. Vítej ve sklepě.' });
+    odznaky.push({ icon: '🪜', label: 'Permanentní rezident sklepa', aktivni: false, popis: 'Podruhé poslední při MVP. Nájem na neurčito.' });
+    odznaky.push({ icon: '🍷', label: 'Sommelier zatuchliny', aktivni: false, popis: 'Třikrát+ poslední při MVP. Z dna sudu vybírá nejlepší ročníky bezbodí.' });
     // === CHAT AKTIVITA ===
     const chatStats = (typeof chatStatsCache !== 'undefined') ? (chatStatsCache[p.rowId] || { messages: 0, reactions: 0 }) : { messages: 0, reactions: 0 };
     odznaky.push({ icon: '💬', label: 'Klábosil', aktivni: chatStats.messages >= 10, popis: `Napsal/a ${chatStats.messages} zpráv v chatu.` });
@@ -5186,7 +5356,7 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
     });
 
     // === FALLBACK – Pohodář ===
-    const dulezite = ['Kompletní tip','Zaplaceno','Král','Stříbro','Bronz','Jasnovidec','Bronz oko','Profík','Vševěd','Snajpr','MVP','Hvězda kol','Klábosil','Showman','Oblíbenec','Černý kůň','Sázkař','S davem','Šťastlivec','Raketa','Propadák','Vlastenec','Naivka','Zlatá noha','Anděl','Gólomat','Nula','Bonusový mistr'];
+    const dulezite = ['Kompletní tip','Zaplaceno','Král','Stříbro','Bronz','Jasnovidec','Bronz oko','Profík','Vševěd','Snajpr','MVP','Hvězda kol','Klábosil','Showman','Oblíbenec','Černý kůň','Sázkař','S davem','Šťastlivec','Raketa','Propadák','Vlastenec','Naivka','Zlatá noha','Anděl','Gólomat','Nula','Bonusový mistr','Pán sklepa','Permanentní rezident sklepa','Sommelier zatuchliny'];
     const maDulezity = odznaky.some(o => o.aktivni && dulezite.includes(o.label));
     odznaky.push({ icon: '🦥', label: 'Pohodář', aktivni: !maDulezity, popis: 'V klidu sleduje turnaj a nestresuje se pořadím.' });
 
