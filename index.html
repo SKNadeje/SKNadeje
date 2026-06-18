@@ -4113,40 +4113,39 @@ async function vyhlasitMVPTydne() {
             };
         });
 
-        // 2. Načti POSLEDNÍ snapshot (pokud existuje)
-        const { data: posledniSnap } = await supabaseClient
-            .from('mvp_snapshoty')
-            .select('*')
-            .order('snapshot_date', { ascending: false })
-            .limit(100);
-
-        const dnes = new Date().toISOString().slice(0, 10);
+       const dnes = new Date().toISOString().slice(0, 10);
         
-        // Pokud už dnes byl snapshot, zeptej se
-        if (posledniSnap && posledniSnap.length > 0 && posledniSnap[0].snapshot_date === dnes) {
-            if (!confirm("Dnes už byl snapshot proveden. Pokračovat a přepsat?")) return;
+        // 2. 🎯 Najdi POSLEDNÍ MVP vyhlášení (z mvp_tydne, ne ze snapshotů!)
+        const { data: posledniMVPList } = await supabaseClient
+            .from('mvp_tydne')
+            .select('tyden_do')
+            .order('tyden_do', { ascending: false })
+            .limit(1);
+        
+        const datumPredchoziho = posledniMVPList?.[0]?.tyden_do || null;
+        
+        // Kontrola: MVP už dnes vyhlášeno?
+        if (datumPredchoziho === dnes) {
+            if (!confirm("MVP už pro dnešek bylo vyhlášeno. Pokračovat a přepsat?")) return;
         }
-
-        // 3. Najdi nejnovější předchozí snapshot (jiné datum než dnes)
-        const predchoziSnap = (posledniSnap || []).filter(s => s.snapshot_date !== dnes);
-        const datumPredchoziho = predchoziSnap[0]?.snapshot_date;
-
-        if (!datumPredchoziho) {
-            // PRVNÍ snapshot – jen ulož současné body, žádný MVP zatím
-            for (const h of aktualniBody) {
-                await supabaseClient.from('mvp_snapshoty').upsert({
-                    user_id: h.user_id, name: h.name, body: h.body, snapshot_date: dnes
-                }, { onConflict: 'user_id,snapshot_date' });
-            }
-            showToast("📸 První snapshot uložen! MVP se vyhlásí příští týden.", 'success', 4000);
-            return;
-        }
-
-        // 4. Spočítej přírůstky
+        
+        // 3. Načti snapshot z data POSLEDNÍHO MVP (ne z včerejška!)
         const mapaPredchozich = {};
-        predchoziSnap.filter(s => s.snapshot_date === datumPredchoziho).forEach(s => {
-            mapaPredchozich[s.user_id] = s.body;
-        });
+        if (datumPredchoziho && datumPredchoziho !== dnes) {
+            const { data: predchoziSnap } = await supabaseClient
+                .from('mvp_snapshoty')
+                .select('user_id, body')
+                .eq('snapshot_date', datumPredchoziho);
+            
+            (predchoziSnap || []).forEach(s => {
+                mapaPredchozich[s.user_id] = s.body;
+            });
+            
+            if (Object.keys(mapaPredchozich).length === 0) {
+                console.warn(`⚠️ Chybí snapshot pro ${datumPredchoziho} – baseline = 0`);
+            }
+        }
+        // Pokud žádné předchozí MVP → baseline = 0 (všichni začínají od nuly)
 
         const prirustky = aktualniBody.map(h => ({
             ...h,
