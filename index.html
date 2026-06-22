@@ -2723,6 +2723,34 @@ input:focus {
                 </div>
             </div>
         </div>
+        <!-- 🤖 AI KOMENTÁTOR -->
+<div id="ai-komentator-widget" style="max-width:640px; margin:24px auto; background:linear-gradient(145deg, rgba(20,15,40,0.85), rgba(8,12,24,0.95)); border:1px solid rgba(212,175,55,0.25); border-radius:16px; padding:18px 22px; box-shadow:0 12px 28px rgba(0,0,0,0.4); position:relative; overflow:hidden;">
+    
+    <!-- Pozadí svit -->
+    <div style="position:absolute; inset:0; background:radial-gradient(circle at top right, rgba(212,175,55,0.08), transparent 60%); pointer-events:none;"></div>
+    
+    <!-- Header -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; position:relative; z-index:1;">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:1.5rem;">🤖</span>
+            <div>
+                <div style="font-weight:900; color:#d4af37; letter-spacing:1.5px; font-size:0.7rem; text-transform:uppercase;">AI Komentátor</div>
+                <div style="font-size:0.65rem; color:#94a3b8;">Sarkastický průvodce tipovačkou</div>
+            </div>
+        </div>
+        <button id="ai-refresh-btn" onclick="refreshAIKomentar()" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:#d4af37; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.7rem; font-weight:700; transition:all 0.2s;">
+            🔄 Nový
+        </button>
+    </div>
+    
+    <!-- Tělo komentáře -->
+    <div id="ai-komentator-text" style="color:#f0e6c8; font-size:0.95rem; line-height:1.5; font-style:italic; min-height:60px; position:relative; z-index:1;">
+        <span style="opacity:0.5;">🤔 Komentátor přemýšlí...</span>
+    </div>
+    
+    <!-- Footer s časem -->
+    <div id="ai-komentator-timestamp" style="margin-top:10px; text-align:right; font-size:0.65rem; color:#5a6480; position:relative; z-index:1;"></div>
+</div>
         <!-- Body ve hře -->
         <div id="body-ve-hre"></div>
     </div>
@@ -2943,6 +2971,49 @@ input:focus {
 </div>
     
 <script>
+// 🤖 Načti AI komentář (auto = z cache, force = nový)
+async function nactiAIKomentar(force = false) {
+    const textEl = document.getElementById('ai-komentator-text');
+    const tsEl = document.getElementById('ai-komentator-timestamp');
+    const btn = document.getElementById('ai-refresh-btn');
+    if (!textEl || !tsEl) return;
+    
+    textEl.innerHTML = '<span style="opacity:0.5;">🤔 Komentátor přemýšlí...</span>';
+    tsEl.textContent = '';
+    if (btn) btn.disabled = true;
+    
+    try {
+        const { data, error } = await supabaseClient.functions.invoke('ai-komentator', {
+            body: force ? { force: true } : undefined
+        });
+        
+        if (error) throw error;
+        if (!data?.komentar) throw new Error('Prázdný komentář');
+        
+        textEl.textContent = data.komentar;
+        const cas = new Date(data.created_at).toLocaleString('cs-CZ', { 
+            day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' 
+        });
+        tsEl.innerHTML = `${data.cached ? '💾 z cache' : '✨ čerstvý'} · ${cas}`;
+    } catch (err) {
+        textEl.innerHTML = `<span style="color:#ef4444; font-style:normal;">⚠️ ${err.message || 'Něco se pokazilo'}</span>`;
+        console.error('AI Komentátor:', err);
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+// 🔄 Refresh tlačítko (admin nebo kdokoliv – nový stojí ~0.4 ¢)
+async function refreshAIKomentar() {
+    if (!confirm('Vygenerovat NOVÝ komentář? (stojí ~0.4 ¢)')) return;
+    await nactiAIKomentar(true);
+}
+
+// Auto-load při načtení stránky
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => nactiAIKomentar(false), 500);
+});
+    
 // 📸 Otevři backfill modal (admin)
 async function otevritBackfillModal() {
     const { data: authData } = await supabaseClient.auth.getUser();
