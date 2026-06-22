@@ -5048,7 +5048,36 @@ return `
     // Scroll dolů
     cont.scrollTop = cont.scrollHeight;
 }
-
+// 🤖 Zpracuj @bot zmínku – zavolá Edge Function a vlož odpověď do chatu
+async function zpracujBotMention(text, askerName, userId) {
+    const otazka = text.replace(/@bot\b/gi, '').trim();
+    if (otazka.length === 0) {
+        showToast('Napiš @bot a otázku, např. "@bot kdo vyhraje?"', 'info', 4000);
+        return;
+    }
+    
+    showToast('🤖 Bot přemýšlí...', 'info', 3000);
+    
+    try {
+        const { data, error } = await supabaseClient.functions.invoke('ai-chat-bot', {
+            body: { question: otazka, askerName }
+        });
+        
+        if (error) throw error;
+        if (!data?.odpoved) throw new Error('Bot neodpověděl');
+        
+        // Vlož bot zprávu pod tvým user_id (FK respektována), ale s názvem "🤖 AI Bot"
+        await supabaseClient.from('chat_zpravy').insert({
+            user_id: userId,
+            name: '🤖 AI Bot',
+            message: data.odpoved
+        });
+    } catch (err) {
+        console.error('Bot chyba:', err);
+        showToast('🤖 Bot není v tuhle chvíli k zastižení', 'error', 3000);
+    }
+}
+    
 // Odeslání zprávy
 async function odeslatChatZpravu() {
     const input = document.getElementById('chat-input');
@@ -5088,23 +5117,10 @@ async function odeslatChatZpravu() {
         chatLastSent = now;
         document.getElementById('emoji-picker').style.display = 'none';
         
-        // 🤖 AI Bot detection
+       // 🤖 AI Bot detection
         if (/@bot\b/i.test(text)) {
-            const otazka = text.replace(/@bot\b/gi, '').trim();
-            if (otazka.length > 0) {
-                showToast('🤖 Bot přemýšlí...', 'info', 3000);
-                
-                // Volání není await – bot odpoví asynchronně přes real-time
-                supabaseClient.functions.invoke('ai-chat-bot', {
-                    body: { question: otazka, askerName: name }
-                }).then(({ error: botErr }) => {
-                    if (botErr) console.error('Bot chyba:', botErr);
-                }).catch(err => console.error('Bot chyba:', err));
-            } else {
-                showToast('Napiš @bot a otázku, např. @bot kdo vyhraje?', 'info', 4000);
-            }
-        }
-    } catch (err) {
+            zpracujBotMention(text, name, authData.user.id);
+        }    } catch (err) {
         showToast('Chyba: ' + err.message, 'error');
     } finally {
         btn.disabled = false;
