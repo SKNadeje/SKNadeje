@@ -2476,6 +2476,33 @@ input:focus {
 </style>
 </head>
 <body>
+<!-- 🎉 NEW ACHIEVEMENT UNLOCK -->
+<div id="unlock-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.96); backdrop-filter:blur(20px); z-index:1000000; justify-content:center; align-items:center;">
+    <div style="text-align:center; max-width:90%;">
+        <div style="font-size:0.8rem; color:#d4af37; letter-spacing:5px; font-weight:900; margin-bottom:30px; opacity:0; animation:fadeInUp 0.6s 0.3s forwards;">⭐ NOVÝ ODZNAK ⭐</div>
+        
+        <div id="unlock-icon" style="font-size:8rem; opacity:0; transform:scale(0.3); animation:popIn 0.8s 0.6s forwards; filter:drop-shadow(0 0 60px rgba(212,175,55,0.8));">🚀</div>
+        
+        <div id="unlock-label" style="font-size:2.5rem; color:#d4af37; font-weight:900; margin-top:30px; opacity:0; animation:fadeInUp 0.6s 1.2s forwards; text-shadow:0 0 30px rgba(212,175,55,0.6); letter-spacing:2px;"></div>
+        
+        <div id="unlock-popis" style="font-size:1rem; color:#f0e6c8; margin-top:16px; max-width:500px; padding:0 20px; line-height:1.5; font-style:italic; opacity:0; animation:fadeInUp 0.6s 1.5s forwards;"></div>
+        
+        <div onclick="document.getElementById('unlock-modal').style.display='none'" style="margin-top:40px; color:#94a3b8; font-size:0.75rem; cursor:pointer; opacity:0; animation:fadeInUp 0.6s 2s forwards;">klepni kamkoliv pro zavření</div>
+    </div>
+</div>
+
+<style>
+@keyframes fadeInUp {
+    from { opacity:0; transform:translateY(20px); }
+    to { opacity:1; transform:translateY(0); }
+}
+@keyframes popIn {
+    0% { opacity:0; transform:scale(0.3) rotate(-15deg); }
+    60% { opacity:1; transform:scale(1.2) rotate(5deg); }
+    100% { opacity:1; transform:scale(1) rotate(0); }
+}
+</style>
+    
 <!-- 🎉 MVP REVEAL SHOW -->
 <div id="mvp-reveal-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.97); backdrop-filter:blur(20px); z-index:999999; justify-content:center; align-items:center;">
     
@@ -3023,6 +3050,63 @@ input:focus {
 </div>
     
 <script>
+// 🎉 Zobraz unlock animaci
+function zobrazUnlockAnimace(odznak) {
+    document.getElementById('unlock-icon').textContent = odznak.icon || '🏆';
+    document.getElementById('unlock-label').textContent = odznak.label || '';
+    document.getElementById('unlock-popis').textContent = odznak.popis || '';
+    
+    const modal = document.getElementById('unlock-modal');
+    modal.style.display = 'flex';
+    modal.onclick = () => modal.style.display = 'none';
+    
+    // KONFETY
+    if (typeof confetti === 'function') {
+        setTimeout(() => {
+            const colors = ['#d4af37', '#f0c850', '#ffffff', '#fbbf24'];
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors });
+            setTimeout(() => confetti({ particleCount: 100, spread: 60, angle: 60, origin: { x: 0, y: 0.7 }, colors }), 400);
+            setTimeout(() => confetti({ particleCount: 100, spread: 60, angle: 120, origin: { x: 1, y: 0.7 }, colors }), 700);
+        }, 800);
+    }
+}
+
+// 🔍 Detekuj nové odznáčky při načtení
+function zkontrolujNoveOdznaky() {
+    if (!window.loggedUserIdGlobal) return;
+    
+    const me = profilData.find(p => String(p.rowId) === String(window.loggedUserIdGlobal));
+    if (!me) return;
+    
+    const aktualni = me.achievements_earned || [];
+    const klic = `seen-achievements-${me.rowId}`;
+    
+    let videny;
+    try { videny = JSON.parse(localStorage.getItem(klic) || '[]'); }
+    catch { videny = []; }
+    
+    // První návštěva: jen označ jako viděné, neukazuj
+    if (videny.length === 0) {
+        localStorage.setItem(klic, JSON.stringify(aktualni));
+        return;
+    }
+    
+    const novy = aktualni.filter(a => !videny.includes(a));
+    if (novy.length === 0) return;
+    
+    // Najdi detaily prvního nového odznáčku
+    if (typeof ziskejOdznaky !== 'function') return;
+    const odznaky = ziskejOdznaky(me);
+    const noviOdznak = odznaky.find(o => o.label === novy[0]);
+    
+    if (noviOdznak) {
+        setTimeout(() => zobrazUnlockAnimace(noviOdznak), 1500);
+    }
+    
+    // Aktualizuj seen list
+    localStorage.setItem(klic, JSON.stringify(aktualni));
+}
+    
 async function ukazMVPReveal(jmeno, prirustek) {
     const modal = document.getElementById('mvp-reveal-modal');
     const stage1 = document.getElementById('mvp-stage-1');
@@ -4999,10 +5083,27 @@ async function odeslatChatZpravu() {
         const { error } = await supabaseClient
             .from('chat_zpravy')
             .insert({ user_id: authData.user.id, name, message: text });
-        if (error) throw error;
+       if (error) throw error;
         input.value = '';
         chatLastSent = now;
         document.getElementById('emoji-picker').style.display = 'none';
+        
+        // 🤖 AI Bot detection
+        if (/@bot\b/i.test(text)) {
+            const otazka = text.replace(/@bot\b/gi, '').trim();
+            if (otazka.length > 0) {
+                showToast('🤖 Bot přemýšlí...', 'info', 3000);
+                
+                // Volání není await – bot odpoví asynchronně přes real-time
+                supabaseClient.functions.invoke('ai-chat-bot', {
+                    body: { question: otazka, askerName: name }
+                }).then(({ error: botErr }) => {
+                    if (botErr) console.error('Bot chyba:', botErr);
+                }).catch(err => console.error('Bot chyba:', err));
+            } else {
+                showToast('Napiš @bot a otázku, např. @bot kdo vyhraje?', 'info', 4000);
+            }
+        }
     } catch (err) {
         showToast('Chyba: ' + err.message, 'error');
     } finally {
@@ -7891,6 +7992,9 @@ if (typeof renderBonusStats === "function") renderBonusStats();
     
     // 📸 Auto-snapshot dneška (jen admin, jednou za stránku)
     if (typeof ulozDenniSnapshot === 'function') ulozDenniSnapshot();
+    
+    // 🎉 Detekuj nové odznáčky a zobraz unlock animaci
+    if (typeof zkontrolujNoveOdznaky === 'function') zkontrolujNoveOdznaky();
         } else {
             console.warn("⚠️ Zatím nebyly nalezeny žádné tipy v databázi.");
             if (typeof renderLeaderboard === "function") {
