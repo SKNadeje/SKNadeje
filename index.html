@@ -697,6 +697,23 @@ async function aktualizujBonusSekciVisibility() {
 </header>
 
 <style>
+    <style>
+/* Mobile fix - banner se nesmí ztratit */
+#match-banner-container {
+    min-height: 60px !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 10 !important;
+    position: relative !important;
+}
+
+/* AI komentář widget nesmí překrývat */
+#ai-komentator-widget {
+    z-index: 1 !important;
+    position: relative !important;
+}
+</style>
     /* Mobile fix pro bracket layout */
 @media (max-width: 768px) {
     .bracket-layout {
@@ -3059,6 +3076,23 @@ input:focus {
 </div>
     
 <script>
+// 🔒 Ukaž ovládání AI Komentátora jen adminovi
+async function aplikujAdminOvladaniKomentator() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    const jeAdmin = authData?.user?.id === "92a1e51b-e03c-48d7-99df-76c2f60a455f";
+    
+    const refreshBtn = document.getElementById('ai-refresh-btn');
+    const personalitySelect = document.getElementById('ai-personality-select');
+    
+    if (refreshBtn) refreshBtn.style.display = jeAdmin ? '' : 'none';
+    if (personalitySelect) personalitySelect.style.display = jeAdmin ? '' : 'none';
+}
+
+// Spusť při načtení
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(aplikujAdminOvladaniKomentator, 800);
+});
+    
 // 🎉 Zobraz unlock animaci
 function zobrazUnlockAnimace(odznak) {
     document.getElementById('unlock-icon').textContent = odznak.icon || '🏆';
@@ -3200,7 +3234,34 @@ async function nactiAIKomentar(force = false) {
     if (btn) btn.disabled = true;
     
     try {
-      const personality = document.getElementById('ai-personality-select')?.value || 'strejda';
+     const { data: authData } = await supabaseClient.auth.getUser();
+        const jeAdmin = authData?.user?.id === "92a1e51b-e03c-48d7-99df-76c2f60a455f";
+        const personality = document.getElementById('ai-personality-select')?.value || 'strejda';
+        
+        // Ne-admin čte cache PŘÍMO z DB, nevolá Edge Function (nevolá API)
+        if (!jeAdmin) {
+            const { data: cached } = await supabaseClient
+                .from('ai_komentar')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            
+            if (cached) {
+                textEl.textContent = cached.komentar;
+                const cas = new Date(cached.created_at).toLocaleString('cs-CZ', { 
+                    day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' 
+                });
+                tsEl.innerHTML = `💾 ${cas}`;
+                return;
+            } else {
+                textEl.innerHTML = '<span style="opacity:0.5;">⏳ Komentátor zatím nic neřekl. Admin spustí brzy.</span>';
+                tsEl.innerHTML = '';
+                return;
+            }
+        }
+        
+        // Admin: volá Edge Function (může generovat nový)
         const { data, error } = await supabaseClient.functions.invoke('ai-komentator', {
             body: { force, personality }
         });
@@ -3208,11 +3269,16 @@ async function nactiAIKomentar(force = false) {
         if (error) throw error;
         if (!data?.komentar) throw new Error('Prázdný komentář');
         
-        textEl.textContent = data.komentar;
+       textEl.textContent = data.komentar;
         const cas = new Date(data.created_at).toLocaleString('cs-CZ', { 
             day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' 
         });
         tsEl.innerHTML = `${data.cached ? '💾 z cache' : '✨ čerstvý'} · ${cas}`;
+        
+        // Re-render banner pro jistotu (mobile fix)
+        setTimeout(() => {
+            if (typeof renderMatchBanner === 'function') renderMatchBanner();
+        }, 200);
     } catch (err) {
         textEl.innerHTML = `<span style="color:#ef4444; font-style:normal;">⚠️ ${err.message || 'Něco se pokazilo'}</span>`;
         console.error('AI Komentátor:', err);
