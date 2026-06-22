@@ -2817,9 +2817,18 @@ input:focus {
                 <div style="font-size:0.65rem; color:#94a3b8;">Sarkastický průvodce tipovačkou</div>
             </div>
         </div>
-        <button id="ai-refresh-btn" onclick="refreshAIKomentar()" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:#d4af37; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.7rem; font-weight:700; transition:all 0.2s;">
-            🔄 Nový
-        </button>
+       <div style="display:flex; gap:6px; align-items:center;">
+            <select id="ai-personality-select" onchange="zmenitOsobnost()" style="background:rgba(20,15,40,0.8); color:#d4af37; border:1px solid rgba(212,175,55,0.3); padding:5px 8px; border-radius:6px; font-size:0.7rem; font-weight:700; cursor:pointer;">
+                <option value="strejda">🍺 Strýc z hospody</option>
+                <option value="profesor">🎩 Profesor</option>
+                <option value="buddhista">🧘 Buddhista</option>
+                <option value="deda">👴 Děda Antonín</option>
+                <option value="cirkusak">🤡 Cirkusánek</option>
+            </select>
+            <button id="ai-refresh-btn" onclick="refreshAIKomentar()" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:#d4af37; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.7rem; font-weight:700; transition:all 0.2s;">
+                🔄 Nový
+            </button>
+        </div>
     </div>
     
     <!-- Tělo komentáře -->
@@ -3163,6 +3172,21 @@ async function zeptejSeVesce(userId, jmeno) {
         console.error('Věštec:', err);
     }
 }
+// 🎭 Změna osobnosti = načti nový komentář
+async function zmenitOsobnost() {
+    const personality = document.getElementById('ai-personality-select').value;
+    localStorage.setItem('ai-personality', personality);
+    await nactiAIKomentar(false);  // try cache for that personality first
+}
+
+// Při loadu načti uloženou preferenci
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('ai-personality');
+    if (saved) {
+        const sel = document.getElementById('ai-personality-select');
+        if (sel) sel.value = saved;
+    }
+});
     
 // 🤖 Načti AI komentář (auto = z cache, force = nový)
 async function nactiAIKomentar(force = false) {
@@ -3176,8 +3200,9 @@ async function nactiAIKomentar(force = false) {
     if (btn) btn.disabled = true;
     
     try {
+      const personality = document.getElementById('ai-personality-select')?.value || 'strejda';
         const { data, error } = await supabaseClient.functions.invoke('ai-komentator', {
-            body: force ? { force: true } : undefined
+            body: { force, personality }
         });
         
         if (error) throw error;
