@@ -36,7 +36,7 @@ function aplikujTurnajMode() {
    const bezi = turnajBezi();
     
     // Sekce tipování (všechny step-dot fáze)
-    const sekce = ['phase-skupiny', 'phase-groups', 'phase-3misto', 'phase-thirds', 'phase-s32', 'phase-s16', 'phase-s8', 'phase-s4', 'phase-s3', 'phase-s2', 'phase-bonus', 'final-box'];
+    const sekce = ['phase-skupiny', 'phase-3misto', 'phase-s32', 'phase-s16', 'phase-s8', 'phase-s4', 'phase-s3', 'phase-s2', 'phase-bonus', 'final-box'];
     sekce.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = bezi ? 'none' : '';
@@ -705,6 +705,47 @@ async function aktualizujBonusSekciVisibility() {
 </header>
 
 <style>
+/* 📐 Desktop: 2 sloupce v aside */
+@media (min-width: 1280px) {
+    aside {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        max-width: 1300px !important;
+        margin: 0 auto;
+        align-items: start;
+    }
+    
+    /* Levý sloupec */
+    #progress-container,
+    #bonus-status-inline,
+    #bankbody-section,
+    #ai-komentator-widget,
+    #hlas-lidu-container {
+        grid-column: 1;
+    }
+    
+    /* Pravý sloupec */
+    #bonus-stats-container,
+    #turnaj-stats-widget,
+    #anketa-container,
+    #turnaj-zabava {
+        grid-column: 2;
+    }
+    
+    /* Žebříček = full width pod oběma sloupci */
+    #section-leaderboard {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Mobile / tablet: vertikálně jak je teď */
+@media (max-width: 1279px) {
+    aside {
+        display: block;
+    }
+}
+    
 /* 📱 Mobile fix - AI widget nesmí překrývat banner */
 @media (max-width: 768px) {
     #ai-komentator-widget {
