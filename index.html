@@ -110,7 +110,15 @@ const __cbObserver = new MutationObserver(() => {
         nactiBonusAutoUpdateStav();
     }
 });
-__cbObserver.observe(document.body, { childList: true, subtree: true });
+
+// Spustit observer až po načtení body
+if (document.body) {
+    __cbObserver.observe(document.body, { childList: true, subtree: true });
+} else {
+    document.addEventListener('DOMContentLoaded', () => {
+        __cbObserver.observe(document.body, { childList: true, subtree: true });
+    });
+}
 
 // 🏆 Zjisti jestli turnaj běží
 function turnajBezi() {
@@ -169,7 +177,7 @@ setInterval(() => {
 }
     // 📅 Zápasy MS 2026 (datum/čas v Praze - timezone Europe/Prague)
 // 📅 Zápasy MS 2026 - kompletní skupinová fáze (časy v CET/CEST - Praha)
-const ZAPASY_WC2026 = [
+var ZAPASY_WC2026 = [
     // ════════ MATCHDAY 1 (11.-18. června) ════════
     
     // ČT 11. 6.
@@ -302,7 +310,7 @@ const ZAPASY_WC2026 = [
 // ════════════════════════════════════════════════
 
 // 🏳️ Vlajky týmů jako obrázky (kompatibilní Win/Mac/iOS/Android)
-const VLAJKY_TYMU = {
+var VLAJKY_TYMU = {
     'Mexiko': 'mx', 'JAR': 'za', 'J. Korea': 'kr', 'Česko': 'cz',
     'Kanada': 'ca', 'Bosna a Herc.': 'ba', 'USA': 'us', 'Paraguay': 'py',
     'Katar': 'qa', 'Švýcarsko': 'ch', 'Brazílie': 'br', 'Maroko': 'ma',
