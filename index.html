@@ -33,11 +33,18 @@ function turnajBezi() {
 
 // 🎮 Schování/zobrazení tipovacích sekcí
 function aplikujTurnajMode() {
-    const bezi = turnajBezi();
+   const bezi = turnajBezi();
     
     // Sekce tipování (všechny step-dot fáze)
     const sekce = ['phase-skupiny', 'phase-3misto', 'phase-s32', 'phase-s16', 'phase-s8', 'phase-s4', 'phase-s3', 'phase-s2', 'phase-bonus', 'final-box'];
     sekce.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = bezi ? 'none' : '';
+    });
+    
+    // 🎯 Tlačítka "Pokračovat..." - schovat při běhu turnaje
+    const pokracovatBtns = ['btn-pokracovat-3misto', 'btn-pokracovat-pavouka', 'btn-pokracovat-odeslani', 'btn-pokracovat-s32', 'btn-pokracovat-s16', 'btn-pokracovat-s8', 'btn-pokracovat-s4', 'btn-pokracovat-bonus'];
+    pokracovatBtns.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = bezi ? 'none' : '';
     });
@@ -2893,7 +2900,7 @@ input:focus {
                 <div class="section-content" style="padding: 25px;">
                     <div class="groups-grid" id="groups-grid"></div>
                   
-                    <button class="btn btn-primary" style="margin-top:25px; font-size: 1.1rem; padding: 16px;" onclick="confirmAllGroups()">Pokračovat na 3. místa <i class="fas fa-arrow-right" style="margin-left: 8px;"></i></button>
+                    <button id="btn-pokracovat-3misto" class="btn btn-primary" style="margin-top:25px; font-size: 1.1rem; padding: 16px;" onclick="confirmAllGroups()">Pokračovat na 3. místa <i class="fas fa-arrow-right" style="margin-left: 8px;"></i></button>
                 </div>
             </div>
 
@@ -2904,7 +2911,7 @@ input:focus {
                 </div>
                 <div class="section-content" style="padding: 25px;">
                     <div id="thirds-grid" class="groups-grid"></div>
-                    <button class="btn btn-primary" style="margin-top:25px; font-size: 1.1rem; padding: 16px;" onclick="confirmThirds()">Generovat pavouka <i class="fas fa-sitemap" style="margin-left: 8px;"></i></button>
+                    <button id="btn-pokracovat-pavouka" class="btn btn-primary" style="margin-top:25px; font-size: 1.1rem; padding: 16px;" onclick="confirmThirds()">Generovat pavouka <i class="fas fa-sitemap" style="margin-left: 8px;"></i></button>
                 </div>
             </div>
 
