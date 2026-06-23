@@ -21,23 +21,7 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.0/dist/confetti.browser.min.js"></script>
     <!-- 🔔 OneSignal Push Notifications -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-     <style>
-/* Mobile fix - banner se nesmí ztratit */
-#match-banner-container {
-    min-height: 60px !important;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    z-index: 10 !important;
-    position: relative !important;
-}
 
-/* AI komentář widget nesmí překrývat */
-#ai-komentator-widget {
-    z-index: 1 !important;
-    position: relative !important;
-}
-</style>
 <script>
     // 🏆 Zjisti jestli turnaj běží
 function turnajBezi() {
@@ -714,7 +698,30 @@ async function aktualizujBonusSekciVisibility() {
 </header>
 
 <style>
-   
+/* 📱 Mobile fix - AI widget nesmí překrývat banner */
+@media (max-width: 768px) {
+    #ai-komentator-widget {
+        position: static !important;
+        z-index: auto !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        margin-top: 20px !important;
+        margin-bottom: 20px !important;
+    }
+    
+    #match-banner-container {
+        position: relative;
+        z-index: 100;
+        margin-bottom: 16px;
+    }
+    
+    /* Žádné widget kompozitní vrstvy které by blokovaly banner */
+    #ai-komentator-widget * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}
+    
     /* Mobile fix pro bracket layout */
 @media (max-width: 768px) {
     .bracket-layout {
@@ -2820,14 +2827,20 @@ input:focus {
                 </div>
             </div>
         </div>
-        <!-- 🤖 AI KOMENTÁTOR -->
-<div id="ai-komentator-widget" style="max-width:640px; margin:24px auto; background:linear-gradient(145deg, rgba(20,15,40,0.85), rgba(8,12,24,0.95)); border:1px solid rgba(212,175,55,0.25); border-radius:16px; padding:18px 22px; box-shadow:0 12px 28px rgba(0,0,0,0.4); position:relative; overflow:hidden;">
+      
+        <!-- Body ve hře -->
+        <div id="body-ve-hre"></div>
+    </div>
+</div>
+           
+           \x3C!-- 🤖 AI KOMENTÁTOR (samostatná sekce mimo bankbody) -->
+<div id="ai-komentator-widget" style="max-width:640px; margin:24px auto; background:linear-gradient(145deg, rgb(20,15,40), rgb(8,12,24)); border:1px solid rgba(212,175,55,0.25); border-radius:16px; padding:18px 22px; box-shadow:0 12px 28px rgba(0,0,0,0.4); position:relative;">
     
-    <!-- Pozadí svit -->
-    <div style="position:absolute; inset:0; background:radial-gradient(circle at top right, rgba(212,175,55,0.08), transparent 60%); pointer-events:none;"></div>
+    \x3C!-- Pozadí svit -->
+    <div style="position:absolute; inset:0; background:radial-gradient(circle at top right, rgba(212,175,55,0.08), transparent 60%); pointer-events:none; border-radius:16px;"></div>
     
-    <!-- Header -->
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; position:relative; z-index:1;">
+    \x3C!-- Header -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; position:relative; z-index:1; flex-wrap:wrap; gap:8px;">
         <div style="display:flex; align-items:center; gap:10px;">
             <span style="font-size:1.5rem;">🤖</span>
             <div>
@@ -2849,18 +2862,15 @@ input:focus {
         </div>
     </div>
     
-    <!-- Tělo komentáře -->
+    \x3C!-- Tělo komentáře -->
     <div id="ai-komentator-text" style="color:#f0e6c8; font-size:0.95rem; line-height:1.5; font-style:italic; min-height:60px; position:relative; z-index:1;">
         <span style="opacity:0.5;">🤔 Komentátor přemýšlí...</span>
     </div>
     
-    <!-- Footer s časem -->
+    \x3C!-- Footer s časem -->
     <div id="ai-komentator-timestamp" style="margin-top:10px; text-align:right; font-size:0.65rem; color:#5a6480; position:relative; z-index:1;"></div>
 </div>
-        <!-- Body ve hře -->
-        <div id="body-ve-hre"></div>
-    </div>
-</div>
+           
            <div id="hlas-lidu-container"></div>
             <div id="anketa-container"></div>
             <div id="turnaj-zabava"></div>
