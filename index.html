@@ -705,44 +705,57 @@ async function aktualizujBonusSekciVisibility() {
 </header>
 
 <style>
-/* 📐 Desktop: 2 sloupce v aside */
+/* 📐 Desktop: 2-sloupcový layout uvnitř aside */
 @media (min-width: 1280px) {
     aside {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 16px !important;
         max-width: 1300px !important;
-        margin: 0 auto;
-        align-items: start;
+        margin: 0 auto !important;
+        align-items: start !important;
     }
     
-    /* Levý sloupec */
-    #progress-container,
-    #bonus-status-inline,
-    #bankbody-section,
-    #ai-komentator-widget,
-    #hlas-lidu-container {
-        grid-column: 1;
+    /* LEVÝ SLOUPEC */
+    aside > #progress-container,
+    aside > #bonus-status-inline,
+    aside > #bankbody-section,
+    aside > #ai-komentator-widget,
+    aside > #hlas-lidu-container {
+        grid-column: 1 / 2 !important;
     }
     
-    /* Pravý sloupec */
-    #bonus-stats-container,
-    #turnaj-stats-widget,
-    #anketa-container,
-    #turnaj-zabava {
-        grid-column: 2;
+    /* PRAVÝ SLOUPEC */
+    aside > #bonus-stats-container,
+    aside > #turnaj-stats-widget,
+    aside > #anketa-container,
+    aside > #turnaj-zabava {
+        grid-column: 2 / 3 !important;
     }
     
-    /* Žebříček = full width pod oběma sloupci */
-    #section-leaderboard {
-        grid-column: 1 / -1;
+    /* FULL WIDTH - žebříček dole */
+    aside > #section-leaderboard {
+        grid-column: 1 / -1 !important;
+    }
+    
+    /* POŘADÍ VE SKUPINÁCH - ošetříme zvlášť */
+    /* Tady musíme najít kde se rendere veřejné pořadí skupin */
+    aside > [id*="skupin"]:not(#phase-groups):not(#phase-skupiny),
+    aside > #phase-groups,
+    aside > #groups-grid {
+        grid-column: 1 / -1 !important;
+    }
+    
+    /* Vše bez explicitního column → full width pro jistotu */
+    aside > *:not(#progress-container):not(#bonus-status-inline):not(#bankbody-section):not(#ai-komentator-widget):not(#hlas-lidu-container):not(#bonus-stats-container):not(#turnaj-stats-widget):not(#anketa-container):not(#turnaj-zabava):not(#section-leaderboard) {
+        grid-column: 1 / -1 !important;
     }
 }
 
 /* Mobile / tablet: vertikálně jak je teď */
 @media (max-width: 1279px) {
     aside {
-        display: block;
+        display: block !important;
     }
 }
     
