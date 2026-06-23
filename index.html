@@ -52,12 +52,56 @@ async function prepniBonusAutoUpdate() {
         
         aktualizujBonusUIStyl(novaHodnota);
         
-    } catch (err) {
+   } catch (err) {
         console.error('Toggle chyba:', err);
         showToast('Chyba: ' + err.message, 'error', 4000);
-        checkbox.checked = !novaHodnota;  // vrát
-    
-    // 🏆 Zjisti jestli turnaj běží
+        checkbox.checked = !novaHodnota;  // vrátit zpět
+    }
+}
+
+// 🎨 Vizuální indikace zapnutého auto-update
+function aktualizujBonusUIStyl(autoOn) {
+    const fields = ['quick-bonus-topScorer', 'quick-bonus-topScorerGoals', 'quick-bonus-totalGoals', 'quick-bonus-zeroZeroResults'];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (autoOn) {
+            el.style.background = 'rgba(34,197,94,0.08)';
+            el.style.borderColor = 'rgba(34,197,94,0.3)';
+            el.title = '🤖 Auto-update z API (ruční editace bude přepsána)';
+        } else {
+            el.style.background = 'rgba(0,0,0,0.4)';
+            el.style.borderColor = 'rgba(212,175,55,0.2)';
+            el.title = '';
+        }
+    });
+}
+
+// 📥 Načti stav auto-update při loadu
+async function nactiBonusAutoUpdateStav() {
+    try {
+        const { data } = await supabaseClient
+            .from('admin_vysledky')
+            .select('bonus_auto_update')
+            .eq('id', 1)
+            .maybeSingle();
+        
+        const checkbox = document.getElementById('bonus-auto-update-check');
+        if (checkbox && data) {
+            checkbox.checked = !!data.bonus_auto_update;
+            aktualizujBonusUIStyl(!!data.bonus_auto_update);
+        }
+    } catch (err) {
+        console.warn('Nelze načíst bonus_auto_update:', err);
+    }
+}
+
+// Spusť při loadu (po renderu admin panelu)
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(nactiBonusAutoUpdateStav, 1500);
+});
+
+// 🏆 Zjisti jestli turnaj běží
 function turnajBezi() {
     const start = new Date('2026-06-11T21:00:00');
     const konec = new Date('2026-07-20T00:00:00');
