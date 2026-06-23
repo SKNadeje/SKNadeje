@@ -99,7 +99,18 @@ async function nactiBonusAutoUpdateStav() {
 // Spusť při loadu (po renderu admin panelu)
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(nactiBonusAutoUpdateStav, 1500);
+    setTimeout(nactiBonusAutoUpdateStav, 3500);  // záloha
 });
+
+// 🕵️ MutationObserver: jakmile checkbox vznikne v DOM, načti stav z DB
+const __cbObserver = new MutationObserver(() => {
+    const cb = document.getElementById('bonus-auto-update-check');
+    if (cb && !cb.dataset.statLoaded) {
+        cb.dataset.statLoaded = 'true';
+        nactiBonusAutoUpdateStav();
+    }
+});
+__cbObserver.observe(document.body, { childList: true, subtree: true });
 
 // 🏆 Zjisti jestli turnaj běží
 function turnajBezi() {
