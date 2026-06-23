@@ -36,7 +36,7 @@ function aplikujTurnajMode() {
    const bezi = turnajBezi();
     
     // Sekce tipování (všechny step-dot fáze)
-    const sekce = ['phase-skupiny', 'phase-3misto', 'phase-s32', 'phase-s16', 'phase-s8', 'phase-s4', 'phase-s3', 'phase-s2', 'phase-bonus', 'final-box'];
+    const sekce = ['phase-skupiny', 'phase-groups', 'phase-3misto', 'phase-thirds', 'phase-s32', 'phase-s16', 'phase-s8', 'phase-s4', 'phase-s3', 'phase-s2', 'phase-bonus', 'final-box'];
     sekce.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = bezi ? 'none' : '';
@@ -3037,7 +3037,7 @@ input:focus {
 
         </div>
 
-        <button class="btn btn-primary" style="margin-top:10px; font-size: 1.1rem; padding: 16px;" onclick="confirmBonus()">
+        <button id="btn-pokracovat-odeslani" class="btn btn-primary"" style="margin-top:10px; font-size: 1.1rem; padding: 16px;" onclick="confirmBonus()">
             Pokračovat na odeslání <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
         </button>
     </div>
