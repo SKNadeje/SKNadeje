@@ -3161,27 +3161,36 @@ input:focus {
 </div>
     
 <script>
-// 📐 Desktop layout: přesuň turnaj-stats-widget do main (nad skupiny)
+// 📐 Desktop layout: přesuň turnaj-stats-widget do main jako PRVNÍ element
 function presunWidgetyDoMain() {
-    if (window.innerWidth < 1024) return;  // jen na PC
-    
     const main = document.querySelector('main');
+    const aside = document.querySelector('aside');
     const widget = document.getElementById('turnaj-stats-widget');
-    const skupiny = document.getElementById('phase-groups');
     
-    if (!main || !widget || !skupiny) return;
+    if (!main || !widget || !aside) return;
     
-    // Pokud už widget není přímo v main, přesunout
-    if (widget.parentElement !== main) {
-        // Vlož PŘED skupiny
-        main.insertBefore(widget, skupiny);
-        console.log('✅ Widget přesunut do main nad skupiny');
+    if (window.innerWidth >= 1024) {
+        // PC: widget musí být PRVNÍ element v main
+        if (main.firstElementChild !== widget) {
+            main.insertBefore(widget, main.firstElementChild);
+        }
+    } else {
+        // Mobil: widget zpět do aside na původní pozici (např. po bankbody-section)
+        if (widget.parentElement !== aside) {
+            const bankbody = document.getElementById('bankbody-section');
+            if (bankbody && bankbody.nextSibling) {
+                aside.insertBefore(widget, bankbody.nextSibling);
+            } else {
+                aside.appendChild(widget);
+            }
+        }
     }
 }
 
 // Spustit při loadu + při resize
 document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(presunWidgetyDoMain, 1000);  // počkat na render
+    setTimeout(presunWidgetyDoMain, 800);
+    setTimeout(presunWidgetyDoMain, 2000);  // pro jistotu (po render dashboardu)
 });
 
 window.addEventListener('resize', () => {
@@ -3189,13 +3198,19 @@ window.addEventListener('resize', () => {
     window.__resizeT = setTimeout(presunWidgetyDoMain, 300);
 });
 
-// Sledovat změny dashboardu (re-render)
-const observer = new MutationObserver(() => {
-    setTimeout(presunWidgetyDoMain, 100);
+// Sledovat re-render dashboardu – ale jen 1× za 500ms (debounce)
+let __mvObserverT;
+const __mvObserver = new MutationObserver(() => {
+    clearTimeout(__mvObserverT);
+    __mvObserverT = setTimeout(presunWidgetyDoMain, 200);
 });
-if (document.querySelector('main')) {
-    observer.observe(document.querySelector('main'), { childList: true });
-}
+
+setTimeout(() => {
+    const main = document.querySelector('main');
+    const aside = document.querySelector('aside');
+    if (main) __mvObserver.observe(main, { childList: true });
+    if (aside) __mvObserver.observe(aside, { childList: true });
+}, 1000);
     
 // 🔄 Auto-vyplnit quick-bonus pole z football-data.org
 async function autoVyplnQuickBonus() {
