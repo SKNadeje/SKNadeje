@@ -2879,6 +2879,51 @@ input:focus {
 </div>
            
            <div id="hlas-lidu-container"></div>
+
+<!-- 📊 TURNAJ V ČÍSLECH (real-time) -->
+<div id="turnaj-stats-widget" style="max-width:640px; margin:24px auto; background:linear-gradient(135deg, rgb(15,30,15), rgb(8,18,12)); border:1px solid rgba(34,197,94,0.3); border-radius:16px; padding:20px; position:relative; overflow:hidden;">
+    
+    <!-- Pozadí svit -->
+    <div style="position:absolute; inset:0; background:radial-gradient(circle at top right, rgba(34,197,94,0.1), transparent 60%); pointer-events:none; border-radius:16px;"></div>
+    
+    <!-- Header -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; position:relative; z-index:1;">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:1.4rem;">📊</span>
+            <div>
+                <div style="font-weight:900; color:#22c55e; letter-spacing:1.5px; font-size:0.7rem; text-transform:uppercase;">Turnaj v číslech</div>
+                <div style="font-size:0.62rem; color:#94a3b8;">Live data z football-data.org</div>
+            </div>
+        </div>
+        <div id="turnaj-stats-cas" style="font-size:0.6rem; color:#5a6480;"></div>
+    </div>
+    
+    <!-- 3 hlavní statistiky -->
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; position:relative; z-index:1;">
+        <div style="text-align:center; padding:12px 6px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); border-radius:10px;">
+            <div id="ts-branek" style="font-size:1.6rem; font-weight:900; color:#22c55e;">—</div>
+            <div style="font-size:0.55rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">⚽ Branek</div>
+        </div>
+        <div style="text-align:center; padding:12px 6px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); border-radius:10px;">
+            <div id="ts-nula" style="font-size:1.6rem; font-weight:900; color:#22c55e;">—</div>
+            <div style="font-size:0.55rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">0️⃣ Zápasy 0:0</div>
+        </div>
+        <div style="text-align:center; padding:12px 6px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); border-radius:10px;">
+            <div id="ts-zapasy" style="font-size:1.6rem; font-weight:900; color:#22c55e;">—</div>
+            <div style="font-size:0.55rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">📅 Z / Celkem</div>
+        </div>
+    </div>
+    
+    <!-- Top 5 střelců -->
+    <div style="position:relative; z-index:1;">
+        <div style="font-size:0.6rem; color:rgba(34,197,94,0.7); letter-spacing:1.5px; font-weight:700; margin-bottom:8px; text-transform:uppercase;">🥇 Top střelci</div>
+        <div id="ts-strelci" style="display:flex; flex-direction:column; gap:5px; font-size:0.85rem;">
+            <span style="opacity:0.5;">Načítám...</span>
+        </div>
+    </div>
+</div>
+
+          
             <div id="anketa-container"></div>
             <div id="turnaj-zabava"></div>
 
@@ -3094,6 +3139,133 @@ input:focus {
 </div>
     
 <script>
+// 🔄 Auto-vyplnit quick-bonus pole z football-data.org
+async function autoVyplnQuickBonus() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+        showToast("Pouze pro admina!", 'error');
+        return;
+    }
+    
+    showToast('🔄 Tahám čerstvá data z API...', 'info', 3000);
+    
+    try {
+        // Vynutit nové stažení (force=true) pro maximální aktuálnost
+        const { data, error } = await supabaseClient.functions.invoke('turnaj-stats', {
+            body: { force: true }
+        });
+        if (error) throw error;
+        if (!data) throw new Error('Žádná data');
+        
+        // Helper na změnu hodnoty + trigger 'input' event
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el && val !== null && val !== undefined) {
+                el.value = val;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+                // Krátký highlight
+                el.style.transition = 'background 0.5s';
+                el.style.background = 'rgba(34,197,94,0.2)';
+                setTimeout(() => el.style.background = '', 1500);
+            }
+        };
+        
+        // Vyplň pole
+        setVal('quick-bonus-topScorer', data.top_strelec);
+        setVal('quick-bonus-topScorerGoals', data.top_strelec_branek);
+        setVal('quick-bonus-totalGoals', data.celkem_branek);
+        setVal('quick-bonus-zeroZeroResults', data.nula_nula_pocet);
+        
+        // Souhrn
+        const cas = new Date(data.aktualizovano).toLocaleString('cs-CZ', {
+            day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        
+        showToast(
+            `✅ Vyplněno z API:\n⚽ Branek: ${data.celkem_branek}\n0️⃣ Nul: ${data.nula_nula_pocet}\n🥇 Top: ${data.top_strelec} (${data.top_strelec_branek})\n🕐 ${cas}`,
+            'success', 8000
+        );
+        
+    } catch (err) {
+        console.error('Auto-vyplnit chyba:', err);
+        showToast(`⚠️ Chyba: ${err.message}`, 'error', 5000);
+    }
+}
+    
+// 📊 Načti turnaj statistiky (cache 1h v DB)
+async function nactiTurnajStats(force = false) {
+    const widget = document.getElementById('turnaj-stats-widget');
+    if (!widget) return;
+    
+    try {
+        // Zkontroluj nejdřív cache v DB (rychlejší než Edge Function)
+        const { data: cached } = await supabaseClient
+            .from('turnaj_statistiky')
+            .select('*')
+            .order('aktualizovano', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        
+        let stats = cached;
+        
+        // Pokud nic, nebo data starší než 1h, nebo force → vytáhni nové
+        const ageMs = stats ? Date.now() - new Date(stats.aktualizovano).getTime() : Infinity;
+        if (!stats || ageMs > 60 * 60 * 1000 || force) {
+            const { data, error } = await supabaseClient.functions.invoke('turnaj-stats', {
+                body: { force }
+            });
+            if (error) throw error;
+            stats = data;
+        }
+        
+        if (!stats) return;
+        
+        // Vyplň UI
+        document.getElementById('ts-branek').textContent = stats.celkem_branek;
+        document.getElementById('ts-nula').textContent = stats.nula_nula_pocet;
+        document.getElementById('ts-zapasy').textContent = `${stats.zapasy_odehrane} / ${stats.zapasy_celkem}`;
+        
+        const cas = new Date(stats.aktualizovano).toLocaleString('cs-CZ', { 
+            day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' 
+        });
+        document.getElementById('turnaj-stats-cas').textContent = `🕐 ${cas}`;
+        
+        // Top 5 střelců
+        const strelciEl = document.getElementById('ts-strelci');
+        const top = stats.top_strelci || [];
+        if (top.length > 0) {
+            strelciEl.innerHTML = top.map((s, i) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:rgba(34,197,94,0.04); border-radius:6px;">
+                    <span style="color:#f0e6c8;">
+                        <span style="color:${i === 0 ? '#fbbf24' : '#94a3b8'}; font-weight:900; margin-right:8px;">${i+1}.</span>
+                        ${s.jmeno}
+                        <span style="color:#5a6480; font-size:0.75rem; margin-left:6px;">${s.tym || ''}</span>
+                    </span>
+                    <span style="color:#22c55e; font-weight:900;">${s.branek} ⚽</span>
+                </div>
+            `).join('');
+        } else {
+            strelciEl.innerHTML = '<span style="opacity:0.5;">Zatím žádné branky</span>';
+        }
+        
+    } catch (err) {
+        console.error('Turnaj stats:', err);
+        const strelciEl = document.getElementById('ts-strelci');
+        if (strelciEl) strelciEl.innerHTML = '<span style="color:#f87171;">⚠️ Chyba načtení</span>';
+    }
+}
+
+// Auto-load při startu
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => nactiTurnajStats(false), 800);
+});
+
+// Auto-refresh každých 15 min
+setInterval(() => {
+    if (!document.hidden) nactiTurnajStats(false);
+}, 15 * 60 * 1000);
+    
 // 🔒 Ukaž ovládání AI Komentátora jen adminovi
 async function aplikujAdminOvladaniKomentator() {
     const { data: authData } = await supabaseClient.auth.getUser();
@@ -5485,9 +5657,14 @@ function renderStatusPanel() {
 
             <!-- 🎁 QUICK EDIT BONUS HODNOTY -->
             <div style="border-top:1px solid rgba(212,175,55,0.15); padding-top:12px; margin-top:6px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px; flex-wrap:wrap;">
                     <div style="font-size:0.7rem; color:#d4af37; font-weight:800; text-transform:uppercase; letter-spacing:1px;">🎁 Live bonus hodnoty</div>
-                    <div style="font-size:0.6rem; color:#5a6480;">Enter / blur = uložit</div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <button onclick="autoVyplnQuickBonus()" title="Načti čerstvá data z football-data.org" style="background:linear-gradient(135deg,#22c55e,#16a34a); color:#fff; border:none; padding:5px 10px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.65rem; display:flex; align-items:center; gap:4px;">
+                            🔄 <span>Auto z API</span>
+                        </button>
+                        <div style="font-size:0.6rem; color:#5a6480;">Enter = uložit</div>
+                    </div>
                 </div>
                <div style="display:grid; grid-template-columns:2fr 1fr; gap:8px; margin-bottom:8px;">
                     <input type="text" id="quick-bonus-topScorer" value="${(window.currentResults?.bonus?.topScorer || '').replace(/"/g, '&quot;')}" placeholder="🥇 Lídr střelců" onchange="ulozLiveBonus()" onkeydown="if(event.key==='Enter') ulozLiveBonus()" style="padding:7px 10px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:6px; font-size:0.75rem;">
