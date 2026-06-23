@@ -705,6 +705,34 @@ async function aktualizujBonusSekciVisibility() {
 </header>
 
 <style>
+/* 📐 PC: main jako flex sloupec, widget nahoře */
+@media (min-width: 1024px) {
+    main {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        height: auto !important;
+        align-items: stretch !important;
+    }
+    
+    main > #turnaj-stats-widget {
+        order: 0 !important;
+        margin: 0 !important;
+    }
+    
+    main > #phase-groups {
+        order: 1 !important;
+    }
+    
+    main > #phase-thirds,
+    main > #playoff-container,
+    main > #sec-thirds,
+    main > #phase-bonus,
+    main > #final-box {
+        order: 2 !important;
+    }
+}
+    
 /* 📐 Pravý sloupec (main) – Turnaj v číslech nahoře, skupiny pod */
 @media (min-width: 1024px) {
     main {
