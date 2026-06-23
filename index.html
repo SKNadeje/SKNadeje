@@ -2930,45 +2930,49 @@ input:focus {
            
            <div id="hlas-lidu-container"></div>
 
-<!-- 📊 TURNAJ V ČÍSLECH (real-time) -->
-<div id="turnaj-stats-widget" style="max-width:640px; margin:24px auto; background:linear-gradient(135deg, rgb(15,30,15), rgb(8,18,12)); border:1px solid rgba(34,197,94,0.3); border-radius:16px; padding:20px; position:relative; overflow:hidden;">
-    
-    <!-- Pozadí svit -->
-    <div style="position:absolute; inset:0; background:radial-gradient(circle at top right, rgba(34,197,94,0.1), transparent 60%); pointer-events:none; border-radius:16px;"></div>
+<!-- 📊 TURNAJ V ČÍSLECH (real-time, gold style) -->
+<div id="turnaj-stats-widget" style="max-width:none; margin:0 0 18px; background:rgba(212,175,55,0.03); border:1px solid rgba(212,175,55,0.18); border-radius:14px; position:relative; overflow:hidden;">
     
     <!-- Header -->
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; position:relative; z-index:1;">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <span style="font-size:1.4rem;">📊</span>
-            <div>
-                <div style="font-weight:900; color:#22c55e; letter-spacing:1.5px; font-size:0.7rem; text-transform:uppercase;">Turnaj v číslech</div>
-                <div style="font-size:0.62rem; color:#94a3b8;">Live data z football-data.org</div>
+    <div style="padding:12px 16px; border-bottom:1px solid rgba(212,175,55,0.1); display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:#d4af37; font-weight:800; letter-spacing:1.5px; font-size:0.75rem; text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+            📊 <span>Turnaj v číslech</span>
+            <span style="font-size:0.55rem; padding:2px 6px; background:rgba(34,197,94,0.15); color:#22c55e; border-radius:4px; letter-spacing:1px;">● LIVE</span>
+        </span>
+        <span id="turnaj-stats-cas" style="font-size:0.6rem; color:#5a6480;"></span>
+    </div>
+    
+    <!-- Obsah -->
+    <div style="padding:16px;">
+        
+        <!-- 4 hlavní statistiky -->
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px;">
+            <div style="text-align:center; padding:12px 4px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.12); border-radius:10px;">
+                <div id="ts-branek" style="font-size:1.5rem; font-weight:900; color:#d4af37; line-height:1;">—</div>
+                <div style="font-size:0.5rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-top:4px;">⚽ Branek</div>
+            </div>
+            <div style="text-align:center; padding:12px 4px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.12); border-radius:10px;">
+                <div id="ts-prumer" style="font-size:1.5rem; font-weight:900; color:#d4af37; line-height:1;">—</div>
+                <div style="font-size:0.5rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-top:4px;">📈 Ø na zápas</div>
+            </div>
+            <div style="text-align:center; padding:12px 4px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.12); border-radius:10px;">
+                <div id="ts-nula" style="font-size:1.5rem; font-weight:900; color:#d4af37; line-height:1;">—</div>
+                <div style="font-size:0.5rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-top:4px;">0️⃣ Bez gólu</div>
+            </div>
+            <div style="text-align:center; padding:12px 4px; background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.12); border-radius:10px;">
+                <div id="ts-zapasy" style="font-size:1.5rem; font-weight:900; color:#d4af37; line-height:1;">—</div>
+                <div style="font-size:0.5rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-top:4px;">📅 Z / 104</div>
             </div>
         </div>
-        <div id="turnaj-stats-cas" style="font-size:0.6rem; color:#5a6480;"></div>
-    </div>
-    
-    <!-- 3 hlavní statistiky -->
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; position:relative; z-index:1;">
-        <div style="text-align:center; padding:12px 6px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); border-radius:10px;">
-            <div id="ts-branek" style="font-size:1.6rem; font-weight:900; color:#22c55e;">—</div>
-            <div style="font-size:0.55rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">⚽ Branek</div>
-        </div>
-        <div style="text-align:center; padding:12px 6px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); border-radius:10px;">
-            <div id="ts-nula" style="font-size:1.6rem; font-weight:900; color:#22c55e;">—</div>
-            <div style="font-size:0.55rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">0️⃣ Zápasy 0:0</div>
-        </div>
-        <div style="text-align:center; padding:12px 6px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15); border-radius:10px;">
-            <div id="ts-zapasy" style="font-size:1.6rem; font-weight:900; color:#22c55e;">—</div>
-            <div style="font-size:0.55rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-top:3px;">📅 Z / Celkem</div>
-        </div>
-    </div>
-    
-    <!-- Top 5 střelců -->
-    <div style="position:relative; z-index:1;">
-        <div style="font-size:0.6rem; color:rgba(34,197,94,0.7); letter-spacing:1.5px; font-weight:700; margin-bottom:8px; text-transform:uppercase;">🥇 Top střelci</div>
-        <div id="ts-strelci" style="display:flex; flex-direction:column; gap:5px; font-size:0.85rem;">
-            <span style="opacity:0.5;">Načítám...</span>
+        
+        <!-- Top střelci -->
+        <div>
+            <div style="font-size:0.6rem; color:rgba(212,175,55,0.65); letter-spacing:1.5px; font-weight:800; margin-bottom:8px; text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+                🥇 <span>Top střelci</span>
+            </div>
+            <div id="ts-strelci" style="display:flex; flex-direction:column; gap:4px; font-size:0.82rem;">
+                <span style="opacity:0.5;">Načítám...</span>
+            </div>
         </div>
     </div>
 </div>
@@ -3323,9 +3327,18 @@ async function nactiTurnajStats(force = false) {
         if (!stats) return;
         
         // Vyplň UI
-        document.getElementById('ts-branek').textContent = stats.celkem_branek;
+       document.getElementById('ts-branek').textContent = stats.celkem_branek;
         document.getElementById('ts-nula').textContent = stats.nula_nula_pocet;
-        document.getElementById('ts-zapasy').textContent = `${stats.zapasy_odehrane} / ${stats.zapasy_celkem}`;
+        document.getElementById('ts-zapasy').textContent = stats.zapasy_odehrane;
+        
+        // 📈 Průměr branek na zápas (1 desetinné místo)
+        const prumerEl = document.getElementById('ts-prumer');
+        if (prumerEl) {
+            const prumer = stats.zapasy_odehrane > 0 
+                ? (stats.celkem_branek / stats.zapasy_odehrane).toFixed(1)
+                : '—';
+            prumerEl.textContent = prumer;
+        }
         
         const cas = new Date(stats.aktualizovano).toLocaleString('cs-CZ', { 
             day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' 
@@ -3336,16 +3349,19 @@ async function nactiTurnajStats(force = false) {
         const strelciEl = document.getElementById('ts-strelci');
         const top = stats.top_strelci || [];
         if (top.length > 0) {
-            strelciEl.innerHTML = top.map((s, i) => `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:rgba(34,197,94,0.04); border-radius:6px;">
-                    <span style="color:#f0e6c8;">
-                        <span style="color:${i === 0 ? '#fbbf24' : '#94a3b8'}; font-weight:900; margin-right:8px;">${i+1}.</span>
-                        ${s.jmeno}
-                        <span style="color:#5a6480; font-size:0.75rem; margin-left:6px;">${s.tym || ''}</span>
+            strelciEl.innerHTML = top.map((s, i) => {
+                const medaile = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
+                const rankColor = i === 0 ? '#fbbf24' : i === 1 ? '#cbd5e1' : i === 2 ? '#d97b3a' : '#94a3b8';
+                return `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 12px; background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.08); border-radius:6px;">
+                    <span style="color:#f0e6c8; display:flex; align-items:center; gap:8px;">
+                        <span style="color:${rankColor}; font-weight:900; min-width:24px; text-align:center;">${medaile}</span>
+                        <span style="font-weight:700;">${s.jmeno}</span>
+                        <span style="color:#5a6480; font-size:0.72rem;">${s.tym || ''}</span>
                     </span>
-                    <span style="color:#22c55e; font-weight:900;">${s.branek} ⚽</span>
+                    <span style="color:#d4af37; font-weight:900; font-size:0.95rem;">${s.branek}<span style="font-size:0.7rem; margin-left:3px;">⚽</span></span>
                 </div>
-            `).join('');
+            `}).join('');
         } else {
             strelciEl.innerHTML = '<span style="opacity:0.5;">Zatím žádné branky</span>';
         }
