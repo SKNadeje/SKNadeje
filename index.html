@@ -3427,7 +3427,7 @@ async function nactiTurnajStats(force = false) {
         const prumerEl = document.getElementById('ts-prumer');
         if (prumerEl) {
             const prumer = stats.zapasy_odehrane > 0 
-                ? (stats.celkem_branek / stats.zapasy_odehrane).toFixed(1)
+                ? (stats.celkem_branek / stats.zapasy_odehrane).toFixed(2)
                 : '—';
             prumerEl.textContent = prumer;
         }
