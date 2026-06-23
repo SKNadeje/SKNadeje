@@ -705,6 +705,27 @@ async function aktualizujBonusSekciVisibility() {
 </header>
 
 <style>
+/* 📐 Pravý sloupec (main) – Turnaj v číslech nahoře, skupiny pod */
+@media (min-width: 1024px) {
+    main {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+    }
+    
+    /* Pořadí v pravém sloupci */
+    main #turnaj-stats-widget-clone,  /* pokud bys ho duplikoval */
+    main > * {
+        order: 99;  /* default na konec */
+    }
+    
+    /* Vyšší priorita zobrazení */
+    main > #phase-groups { order: 2; }
+    main > #phase-thirds { order: 3; }
+    main > #playoff-container { order: 4; }
+    main > #phase-bonus { order: 5; }
+    main > #final-box { order: 6; }
+}
     
 /* 📱 Mobile fix - AI widget nesmí překrývat banner */
 @media (max-width: 768px) {
@@ -3140,6 +3161,42 @@ input:focus {
 </div>
     
 <script>
+// 📐 Desktop layout: přesuň turnaj-stats-widget do main (nad skupiny)
+function presunWidgetyDoMain() {
+    if (window.innerWidth < 1024) return;  // jen na PC
+    
+    const main = document.querySelector('main');
+    const widget = document.getElementById('turnaj-stats-widget');
+    const skupiny = document.getElementById('phase-groups');
+    
+    if (!main || !widget || !skupiny) return;
+    
+    // Pokud už widget není přímo v main, přesunout
+    if (widget.parentElement !== main) {
+        // Vlož PŘED skupiny
+        main.insertBefore(widget, skupiny);
+        console.log('✅ Widget přesunut do main nad skupiny');
+    }
+}
+
+// Spustit při loadu + při resize
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(presunWidgetyDoMain, 1000);  // počkat na render
+});
+
+window.addEventListener('resize', () => {
+    clearTimeout(window.__resizeT);
+    window.__resizeT = setTimeout(presunWidgetyDoMain, 300);
+});
+
+// Sledovat změny dashboardu (re-render)
+const observer = new MutationObserver(() => {
+    setTimeout(presunWidgetyDoMain, 100);
+});
+if (document.querySelector('main')) {
+    observer.observe(document.querySelector('main'), { childList: true });
+}
+    
 // 🔄 Auto-vyplnit quick-bonus pole z football-data.org
 async function autoVyplnQuickBonus() {
     const { data: authData } = await supabaseClient.auth.getUser();
