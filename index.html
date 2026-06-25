@@ -7421,7 +7421,7 @@ function spocitejBodyVeHre() {
         }
     });
     
-    // Playoff fáze: každá má svůj status
+   // Playoff fáze: každá má svůj status (none = nepočítá se vůbec)
     const faze = [
         { key: 's32', bodyZaTym: 2 },
         { key: 's16', bodyZaTym: 3 },
@@ -7429,7 +7429,8 @@ function spocitejBodyVeHre() {
         { key: 's4',  bodyZaTym: 5 },
     ];
     faze.forEach(f => {
-        const status = fs[f.key] || 'live';
+        const status = fs[f.key] || 'none';
+        if (status === 'none') return;  // nehraje se = přeskočit
         const arr = r[f.key] || [];
         if (Array.isArray(arr)) {
             arr.forEach(t => {
@@ -7438,19 +7439,26 @@ function spocitejBodyVeHre() {
         }
     });
     
-    // Vítěz a bronz
-    const winnerStatus = (fs.final === 'final' || fs.winner === 'final') ? 'final' : 'live';
-    const bronzeStatus = (fs.bronze === 'final' || winnerStatus === 'final') ? 'final' : 'live';
-    if (r.winner && String(r.winner).trim() !== "") pridej(winnerStatus, 12);
-    if (r.bronze && String(r.bronze).trim() !== "") pridej(bronzeStatus, 8);
+   // Vítěz a bronz (none = nepočítá se)
+    const winnerRaw = fs.final || fs.winner || 'none';
+    const bronzeRaw = fs.bronze || 'none';
     
-    // Bonus
-    const bonusStatus = fs.bonus || 'live';
-    const b = r.bonus || {};
-    if (b.topScorer && String(b.topScorer).trim() !== '') pridej(bonusStatus, 8);
-    if (b.topGoalkeeper && String(b.topGoalkeeper).trim() !== '') pridej(bonusStatus, 8);
-    if (b.totalGoals != null && b.totalGoals !== '') pridej(bonusStatus, 15);
-    if (b.zeroZeroResults != null && b.zeroZeroResults !== '') pridej(bonusStatus, 8);
+    if (winnerRaw !== 'none' && r.winner && String(r.winner).trim() !== "") {
+        pridej(winnerRaw === 'final' ? 'final' : 'live', 12);
+    }
+    if (bronzeRaw !== 'none' && r.bronze && String(r.bronze).trim() !== "") {
+        pridej(bronzeRaw === 'final' ? 'final' : 'live', 8);
+    }
+    
+   // Bonus (none = nepočítá se)
+    const bonusStatus = fs.bonus || 'none';
+    if (bonusStatus !== 'none') {
+        const b = r.bonus || {};
+        if (b.topScorer && String(b.topScorer).trim() !== '') pridej(bonusStatus, 8);
+        if (b.topGoalkeeper && String(b.topGoalkeeper).trim() !== '') pridej(bonusStatus, 8);
+        if (b.totalGoals != null && b.totalGoals !== '') pridej(bonusStatus, 15);
+        if (b.zeroZeroResults != null && b.zeroZeroResults !== '') pridej(bonusStatus, 8);
+    }
     
     const rozdeleno = live + final;
     const zbyva = MAX - rozdeleno;
