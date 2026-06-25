@@ -7407,13 +7407,16 @@ function spocitejBodyVeHre() {
         else live += body; // 'live' i nenastaveno = provisional
     }
     
-    // Skupiny: jeden status pro všech 12, +4 b za každou vyplněnou pozici
-    const skupinyStatus = fs.skupiny || 'live';
-    (r.groups || []).forEach(g => {
+   // Skupiny: PER-GROUP status (fs.groups objekt), +4 b za každou vyplněnou pozici
+    const groupStatusMap = fs.groups || {};
+    const groupLetters = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+    (r.groups || []).forEach((g, idx) => {
         const teams = g.teams || g;
+        const letter = groupLetters[idx];
+        const status = groupStatusMap[letter] || 'live';
         if (Array.isArray(teams)) {
             teams.forEach(t => {
-                if (t && String(t).trim() !== "") pridej(skupinyStatus, 4);
+                if (t && String(t).trim() !== "") pridej(status, 4);
             });
         }
     });
