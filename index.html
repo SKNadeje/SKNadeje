@@ -23,6 +23,217 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <script>
+// 🔍 Toggle expand/collapse detailu zápasu dne
+function toggleZapasDetail(id) {
+    const detail = document.getElementById(id);
+    const arrow = document.getElementById(id + '-arrow');
+    if (!detail) return;
+    
+    const skryt = detail.style.display !== 'none';
+    detail.style.display = skryt ? 'none' : 'block';
+    if (arrow) arrow.textContent = skryt ? '▼' : '▲';
+}
+
+// 📊 Vyrobí detail zápasu (statistiky, tipy hráčů)
+function vyrobZapasDetail(z) {
+    // Spočítej kolik lidí tipuje co
+    const tipyT1 = [], tipyT2 = [];
+    if (window.allTips && Array.isArray(window.allTips)) {
+        window.allTips.forEach(t => {
+            try {
+                const tip = typeof t.tip_data === 'string' ? JSON.parse(t.tip_data) : t.tip_data;
+                // Hledej tým v různých fázích tipu
+                const allTeams = [
+                    ...(tip.winner ? [tip.winner] : []),
+                    ...(tip.bronze ? [tip.bronze] : []),
+                    ...(tip.s4 || []),
+                    ...(tip.s8 || []),
+                ];
+                if (allTeams.includes(z.tym1)) tipyT1.push(t.name);
+                if (allTeams.includes(z.tym2)) tipyT2.push(t.name);
+            } catch {}
+        });
+    }
+    
+    const datumCas = new Date(z.datum).toLocaleString('cs-CZ', {
+        weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
+    });
+    
+    return `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:10px;">
+            <div style="text-align:center; padding:10px; background:rgba(0,0,0,0.3); border-radius:8px;">
+                <div style="font-size:1.5rem; margin-bottom:2px;">${vlajkaTymu(z.tym1).replace('22px', '36px').replace('15px', '24px')}</div>
+                <div style="font-size:0.8rem; font-weight:800; color:#f0e6c8;">${z.tym1}</div>
+                <div style="font-size:0.62rem; color:#94a3b8; margin-top:4px;">${tipyT1.length} hráčů věří</div>
+            </div>
+            <div style="text-align:center; padding:10px; background:rgba(0,0,0,0.3); border-radius:8px;">
+                <div style="font-size:1.5rem; margin-bottom:2px;">${vlajkaTymu(z.tym2).replace('22px', '36px').replace('15px', '24px')}</div>
+                <div style="font-size:0.8rem; font-weight:800; color:#f0e6c8;">${z.tym2}</div>
+                <div style="font-size:0.62rem; color:#94a3b8; margin-top:4px;">${tipyT2.length} hráčů věří</div>
+            </div>
+        </div>
+        
+        <div style="padding:8px 12px; background:rgba(212,175,55,0.04); border-radius:8px; margin-bottom:8px;">
+            <div style="font-size:0.62rem; color:rgba(212,175,55,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">📅 Kdy</div>
+            <div style="color:#f0e6c8;">${datumCas}</div>
+        </div>
+        
+        <div style="padding:8px 12px; background:rgba(212,175,55,0.04); border-radius:8px;">
+            <div style="font-size:0.62rem; color:rgba(212,175,55,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">🏆 Fáze</div>
+            <div style="color:#f0e6c8;">${z.faze || '—'}</div>
+        </div>
+    `;
+}
+    
+// 🎯 ADMIN: Načti a vyrenderuj dnešní zápasy s checkboxy
+async function nactiZapasyDne() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return;
+    
+    const listEl = document.getElementById('zapasy-dne-list');
+    const countEl = document.getElementById('zapasy-dne-count');
+    if (!listEl) return;
+    
+    // Načti uložené zápasy dne z DB
+    let oznacene = [];
+    try {
+        const { data } = await supabaseClient
+            .from('admin_vysledky')
+            .select('zapasy_dne')
+            .eq('id', 1)
+            .single();
+        oznacene = data?.zapasy_dne || [];
+    } catch (err) {
+        console.warn('zapasy_dne column may not exist:', err);
+    }
+    
+    // Filtruj dnešní + zítřejší ranní zápasy (do +18h)
+    const ted = new Date();
+    const limit = new Date(ted.getTime() + 24 * 60 * 60 * 1000);
+    const dnesniZapasy = ZAPASY_WC2026
+        .filter(z => z.tym1 && z.tym2 && z.tym1 !== 'tba')
+        .filter(z => {
+            const dt = new Date(z.datum);
+            return dt >= ted && dt <= limit;
+        })
+        .sort((a, b) => new Date(a.datum) - new Date(b.datum));
+    
+    if (dnesniZapasy.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center; color:#5a6480; padding:14px; font-size:0.75rem;">Žádné zápasy v nejbližších 24 hodinách.</div>';
+        countEl.textContent = '0 zápasů';
+        return;
+    }
+    
+    listEl.innerHTML = dnesniZapasy.map(z => {
+        const datum = new Date(z.datum);
+        const cas = datum.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+        const den = datum.getDate() === ted.getDate() ? 'dnes' : 'zítra';
+        const isOznaceny = oznacene.includes(z.datum);
+        
+        return `
+            <label style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:${isOznaceny ? 'rgba(212,175,55,0.12)' : 'rgba(0,0,0,0.3)'}; border:1px solid ${isOznaceny ? 'rgba(212,175,55,0.4)' : 'rgba(212,175,55,0.1)'}; border-radius:8px; cursor:pointer; transition:all 0.2s;">
+                <input type="checkbox" 
+                       data-datum="${z.datum}" 
+                       ${isOznaceny ? 'checked' : ''} 
+                       onchange="ulozZapasyDne()" 
+                       style="cursor:pointer; transform:scale(1.1);">
+                <span style="font-size:0.65rem; color:${isOznaceny ? '#d4af37' : '#5a6480'}; font-weight:700; min-width:40px;">${den} ${cas}</span>
+                <span style="font-size:0.75rem; color:${isOznaceny ? '#f0e6c8' : '#94a3b8'}; flex:1; font-weight:${isOznaceny ? '700' : '500'};">
+                    ${isOznaceny ? '⭐ ' : ''}${z.tym1} <span style="color:#5a6480;">vs</span> ${z.tym2}
+                </span>
+                <span style="font-size:0.6rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px;">${(z.faze || '').replace('Skupina ', 'Sk. ')}</span>
+            </label>
+        `;
+    }).join('');
+    
+    const pocet = oznacene.length;
+    countEl.textContent = pocet === 0 ? `${dnesniZapasy.length} dostupné` : `⭐ ${pocet} vybráno z ${dnesniZapasy.length}`;
+}
+
+// 💾 ULOŽIT vybrané zápasy dne
+async function ulozZapasyDne() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return;
+    
+    const checked = Array.from(document.querySelectorAll('#zapasy-dne-list input[type="checkbox"]:checked'));
+    const oznacene = checked.map(c => c.dataset.datum);
+    
+    try {
+        const { error } = await supabaseClient
+            .from('admin_vysledky')
+            .update({ zapasy_dne: oznacene })
+            .eq('id', 1);
+        if (error) throw error;
+        
+        showToast(`⭐ Uloženo ${oznacene.length} zápasů dne`, 'success', 2500);
+        
+        // Re-render banner i tabulku
+        nactiZapasyDne();
+        if (typeof renderMatchBanner === 'function') renderMatchBanner();
+        
+    } catch (err) {
+        console.error('Uložit zapasy_dne:', err);
+        showToast('⚠️ Chyba ukládání: ' + err.message, 'error', 3000);
+    }
+}
+
+// Spustit při loadu (admin se ukáže)
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(nactiZapasyDne, 1800);
+});
+
+// Při změně admin panelu re-renderuj
+const __zapObserver = new MutationObserver(() => {
+    if (document.getElementById('zapasy-dne-list') && !document.getElementById('zapasy-dne-list').dataset.loaded) {
+        document.getElementById('zapasy-dne-list').dataset.loaded = '1';
+        nactiZapasyDne();
+    }
+});
+if (document.body) {
+    __zapObserver.observe(document.body, { childList: true, subtree: true });
+}
+    
+// 🤖 AI Komentátor – skrytí / zobrazení
+function prepniAIKomentar() {
+    const widget = document.getElementById('ai-komentator-widget');
+    const placeholder = document.getElementById('ai-komentator-placeholder');
+    if (!widget) return;
+    
+    const skryt = widget.style.display !== 'none';
+    
+    if (skryt) {
+        widget.style.display = 'none';
+        // Vytvoř malý "zobrazit" pruh
+        if (!placeholder) {
+            const p = document.createElement('div');
+            p.id = 'ai-komentator-placeholder';
+            p.style.cssText = 'margin:0 0 14px; padding:10px 16px; background:rgba(212,175,55,0.05); border:1px dashed rgba(212,175,55,0.2); border-radius:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#94a3b8; transition:all 0.2s;';
+            p.innerHTML = '<span>🤖 AI Komentátor je skrytý</span><span style="color:#d4af37; font-weight:700;">Zobrazit ↓</span>';
+            p.onmouseover = () => p.style.background = 'rgba(212,175,55,0.1)';
+            p.onmouseout = () => p.style.background = 'rgba(212,175,55,0.05)';
+            p.onclick = prepniAIKomentar;
+            widget.parentNode.insertBefore(p, widget);
+        } else {
+            placeholder.style.display = 'flex';
+        }
+        localStorage.setItem('ai-komentator-hidden', '1');
+    } else {
+        widget.style.display = '';
+        if (placeholder) placeholder.style.display = 'none';
+        localStorage.removeItem('ai-komentator-hidden');
+    }
+}
+
+// Po loadu zkontroluj uložený stav
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (localStorage.getItem('ai-komentator-hidden') === '1') {
+            const widget = document.getElementById('ai-komentator-widget');
+            if (widget) prepniAIKomentar();
+        }
+    }, 1500);
+});
+    
 // 🤖 Přepni auto-update bonus z API
 async function prepniBonusAutoUpdate() {
     const { data: authData } = await supabaseClient.auth.getUser();
@@ -356,11 +567,29 @@ function aktualniZapas() { return aktualniZapasy()[0] || null; }
 function nejblizsiZapas() { return nadchazejiciZapasy(1)[0] || null; }
 
 // 🎨 Hlavní render
-function renderMatchBanner() {
+async function renderMatchBanner() {
     const cont = document.getElementById('match-banner-container');
     if (!cont) return;
     
     if (!turnajBezi()) { cont.innerHTML = ''; return; }
+    
+    // 🎯 Načti zápasy dne (cache 5 min v paměti)
+    let zapasyDne = window.__cachedZapasyDne || [];
+    const cacheVek = Date.now() - (window.__cachedZapasyDneCas || 0);
+    if (cacheVek > 5 * 60 * 1000) {
+        try {
+            const { data } = await supabaseClient
+                .from('admin_vysledky')
+                .select('zapasy_dne')
+                .eq('id', 1)
+                .single();
+            zapasyDne = data?.zapasy_dne || [];
+            window.__cachedZapasyDne = zapasyDne;
+            window.__cachedZapasyDneCas = Date.now();
+        } catch (err) {
+            zapasyDne = [];
+        }
+    }
     
     const live = aktualniZapasy();
     // Inteligentní výběr - max 4 celkem:
@@ -431,12 +660,31 @@ function renderMatchBanner() {
         `;
     });
     
-    // ⏰ UPCOMING
-    upcoming.forEach(z => {
+  // ⏰ UPCOMING
+    upcoming.forEach((z, idx) => {
+        const isZapasDne = zapasyDne.includes(z.datum);
+        const detailId = `zapas-detail-${idx}-${z.datum.replace(/[:T.-]/g, '')}`;
+        
+        // Styling: zápas dne = zlatý glow, jinak modrý
+        const bg = isZapasDne 
+            ? 'linear-gradient(135deg,rgba(212,175,55,0.18),rgba(212,175,55,0.06))'
+            : 'linear-gradient(135deg,rgba(56,189,248,0.08),rgba(212,175,55,0.04))';
+        const border = isZapasDne 
+            ? '2px solid rgba(212,175,55,0.55)'
+            : '1px solid rgba(56,189,248,0.25)';
+        const shadow = isZapasDne 
+            ? 'box-shadow:0 0 24px rgba(212,175,55,0.2);'
+            : '';
+        
         html += `
-            <div style="background:linear-gradient(135deg,rgba(56,189,248,0.08),rgba(212,175,55,0.04)); border:1px solid rgba(56,189,248,0.25); border-radius:12px; padding:10px 14px;">
+            <div style="background:${bg}; border:${border}; border-radius:12px; padding:10px 14px; ${shadow} ${isZapasDne ? 'cursor:pointer;' : ''}" ${isZapasDne ? `onclick="toggleZapasDetail('${detailId}')"` : ''}>
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        ${isZapasDne ? `
+                            <span style="display:inline-flex; align-items:center; gap:5px; padding:2px 8px; background:linear-gradient(135deg,#d4af37,#b8941f); color:#000; border-radius:8px; font-size:0.6rem; font-weight:900; letter-spacing:1.5px; box-shadow:0 2px 6px rgba(212,175,55,0.3);">
+                                ⭐ ZÁPAS DNE
+                            </span>
+                        ` : ''}
                         <span style="display:inline-flex; align-items:center; gap:5px; padding:2px 8px; background:rgba(56,189,248,0.15); color:#38bdf8; border-radius:8px; font-size:0.6rem; font-weight:900; letter-spacing:1.5px;">
                             ⏰ ${formatCountdown(z.datum)}
                         </span>
@@ -444,11 +692,19 @@ function renderMatchBanner() {
                     </div>
                     <span style="font-size:0.62rem; color:#94a3b8;">${formatDate(z.datum)} · ${formatTime(z.datum)}</span>
                 </div>
-                <div style="font-size:0.92rem; font-weight:800; color:#f0e6c8; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;">
+                <div style="font-size:${isZapasDne ? '1.05rem' : '0.92rem'}; font-weight:${isZapasDne ? '900' : '800'}; color:#f0e6c8; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;">
                     ${tymHtml(z.tym1)}
-                    <span style="color:#5a6480; font-size:0.75rem;">vs</span>
+                    <span style="color:${isZapasDne ? '#d4af37' : '#5a6480'}; font-size:0.75rem;">vs</span>
                     ${tymHtml(z.tym2)}
                 </div>
+                ${isZapasDne ? `
+                    <div style="text-align:center; margin-top:6px; font-size:0.62rem; color:rgba(212,175,55,0.7);">
+                        <span id="${detailId}-arrow">▼</span> Klikni pro detaily
+                    </div>
+                    <div id="${detailId}" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid rgba(212,175,55,0.2); font-size:0.8rem; color:#f0e6c8;">
+                        ${vyrobZapasDetail(z)}
+                    </div>
+                ` : ''}
             </div>
         `;
     });
@@ -2877,6 +3133,25 @@ input:focus {
     <div id="admin-panel" class="hidden section-box" style="border-color: var(--lose);">
     <div class="section-header" style="background: var(--lose)">🔧 ADMIN PANEL</div>
         <div id="status-panel" style="padding:20px 20px 0 20px;"></div>
+
+        <!-- 🎯 ZÁPASY DNE – výběr admin -->
+<div id="zapasy-dne-admin" style="background:linear-gradient(135deg, rgba(212,175,55,0.05), rgba(212,175,55,0.02)); border:1px solid rgba(212,175,55,0.2); border-radius:12px; padding:16px; margin-bottom:14px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <div style="color:#d4af37; font-weight:900; letter-spacing:1.5px; font-size:0.8rem; text-transform:uppercase; display:flex; align-items:center; gap:8px;">
+            ⭐ <span>Zápasy dne</span>
+        </div>
+        <div id="zapasy-dne-count" style="font-size:0.7rem; color:#94a3b8;">Načítám...</div>
+    </div>
+    
+    <div id="zapasy-dne-list" style="display:flex; flex-direction:column; gap:6px;">
+        <div style="text-align:center; color:#5a6480; padding:10px; font-size:0.75rem;">Načítání zápasů...</div>
+    </div>
+    
+    <div style="font-size:0.65rem; color:#5a6480; margin-top:10px; text-align:center;">
+        💡 Označené zápasy se na webu zobrazí s ⭐ a možností rozbalit detaily.
+    </div>
+</div>
+        
     <div class="section-content" id="admin-form-container" style="padding:20px; display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:15px;"></div>
     <div style="grid-column: 1 / -1; margin: 10px 0 20px 0; padding: 20px; background: rgba(56, 189, 248, 0.05); border: 2px dashed rgba(56, 189, 248, 0.3); border-radius: 12px; text-align: center;">
     <h4 style="color: #38bdf8; margin: 0 0 10px 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
@@ -3013,6 +3288,7 @@ input:focus {
             <button id="ai-refresh-btn" onclick="refreshAIKomentar()" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:#d4af37; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.7rem; font-weight:700; transition:all 0.2s;">
                 🔄 Nový
             </button>
+           <button onclick="prepniAIKomentar()" title="Skrýt komentátor" style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); color:#ef4444; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:0.7rem; font-weight:700; transition:all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.08)'">✕</button>
         </div>
     </div>
     
