@@ -23,6 +23,86 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <script>
+// 📊 Render sekce bleskových tipů v profilu hráče
+async function renderBleskoveSekce(userId) {
+    const stats = window.__bleskoveStatsMap?.[userId] || { tipu: 0, trefa: 0, maxStreak: 0 };
+    
+    if (stats.tipu === 0) {
+        return `
+            <div style="margin-top:18px; padding:16px; background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.15); border-radius:12px; text-align:center;">
+                <div style="font-size:1.8rem; opacity:0.4; margin-bottom:6px;">⚡</div>
+                <div style="font-size:0.75rem; color:#94a3b8;">Žádné bleskové tipy</div>
+                <div style="font-size:0.65rem; color:#5a6480; margin-top:4px;">Tipuj 1-X-2 v detailu zápasu dne!</div>
+            </div>
+        `;
+    }
+    
+    const miss = stats.tipu - stats.trefa;
+    const uspesnost = ((stats.trefa / stats.tipu) * 100).toFixed(0);
+    
+    // Načti posledních 5 tipů hráče
+    let posledniTipy = [];
+    try {
+        const { data } = await supabaseClient
+            .from('bleskove_tipy')
+            .select('zapas_datum, tym1, tym2, tip, vysledek')
+            .eq('user_id', userId)
+            .not('vysledek', 'is', null)
+            .order('zapas_datum', { ascending: false })
+            .limit(5);
+        posledniTipy = data || [];
+    } catch {}
+    
+    return `
+        <div style="margin-top:18px; padding:16px; background:linear-gradient(135deg, rgba(212,175,55,0.06), rgba(56,189,248,0.04)); border:1px solid rgba(212,175,55,0.2); border-radius:12px;">
+            <div style="font-size:0.7rem; letter-spacing:2px; color:rgba(212,175,55,0.7); text-transform:uppercase; font-weight:800; margin-bottom:12px; text-align:center;">
+                ⚡ Bleskové tipy
+            </div>
+            
+            <!-- 3 statistiky -->
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px;">
+                <div style="text-align:center; padding:10px 6px; background:rgba(0,0,0,0.3); border-radius:8px;">
+                    <div style="font-size:1.4rem; font-weight:900; color:#d4af37;">${stats.tipu}</div>
+                    <div style="font-size:0.55rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">⚡ Tipů</div>
+                </div>
+                <div style="text-align:center; padding:10px 6px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); border-radius:8px;">
+                    <div style="font-size:1.4rem; font-weight:900; color:#22c55e;">${stats.trefa}</div>
+                    <div style="font-size:0.55rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">✅ Trefa</div>
+                </div>
+                <div style="text-align:center; padding:10px 6px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.18); border-radius:8px;">
+                    <div style="font-size:1.4rem; font-weight:900; color:#ef4444;">${miss}</div>
+                    <div style="font-size:0.55rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">❌ Miss</div>
+                </div>
+            </div>
+            
+            <!-- Úspěšnost + streak -->
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(0,0,0,0.25); border-radius:8px; margin-bottom:12px; font-size:0.8rem;">
+                <span style="color:#94a3b8;">📊 Úspěšnost:</span>
+                <span style="color:${uspesnost >= 70 ? '#22c55e' : uspesnost >= 50 ? '#d4af37' : '#ef4444'}; font-weight:900;">${uspesnost} %</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(0,0,0,0.25); border-radius:8px; margin-bottom:12px; font-size:0.8rem;">
+                <span style="color:#94a3b8;">🔥 Nejdelší streak:</span>
+                <span style="color:#d4af37; font-weight:900;">${stats.maxStreak}×</span>
+            </div>
+            
+            ${posledniTipy.length > 0 ? `
+                <div style="font-size:0.6rem; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; font-weight:700; margin-bottom:6px;">📜 Posledních ${posledniTipy.length}</div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    ${posledniTipy.map(t => {
+                        const ok = t.tip === t.vysledek;
+                        return `
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:${ok ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.04)'}; border-radius:5px; font-size:0.72rem;">
+                                <span style="color:#f0e6c8;">${ok ? '✅' : '❌'} ${t.tym1} vs ${t.tym2}</span>
+                                <span style="color:${ok ? '#22c55e' : '#ef4444'}; font-weight:700;">${t.tip}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+    
 // 📊 Načti statistiky bleskových tipů pro všechny hráče (1× při loadu)
 async function nactiBleskoveStats() {
     try {
@@ -3881,6 +3961,100 @@ input:focus {
 </div>
     
 <script>
+// 🎯 Po otevření profilu vlož bleskové tipy do HUBu
+async function vlozBleskoveDoProfilu() {
+    const obsah = document.getElementById('profil-obsah');
+    if (!obsah) return;
+    
+    const hub = obsah.children[0];  // HUB je první view
+    if (!hub) return;
+    
+    // Najdi user_id z otevřeného profilu (globální proměnná)
+    const userId = window.__profilOpenUserId || window.openProfilUserId;
+    if (!userId) return;
+    
+    // Pokud už tam je, nepřidávat znovu
+    if (hub.querySelector('#bleskove-sekce-profil')) return;
+    
+    // Renderuj a vlož
+    const html = await renderBleskoveSekce(userId);
+    const wrapper = document.createElement('div');
+    wrapper.id = 'bleskove-sekce-profil';
+    wrapper.innerHTML = html;
+    hub.appendChild(wrapper);
+}
+
+// MutationObserver – sleduj, kdy se profil otevře
+const __profilObs = new MutationObserver(() => {
+    const modal = document.getElementById('profil-modal');
+    if (modal && modal.style.display !== 'none' && !modal.dataset.bleskoveLoaded) {
+        modal.dataset.bleskoveLoaded = '1';
+        setTimeout(vlozBleskoveDoProfilu, 200);
+    }
+    // Reset flag když se zavře
+    if (modal && (modal.style.display === 'none' || !modal.style.display)) {
+        delete modal.dataset.bleskoveLoaded;
+        const existujici = document.getElementById('bleskove-sekce-profil');
+        if (existujici) existujici.remove();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (document.body) {
+            __profilObs.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['style'] });
+        }
+    }, 1500);
+});
+    
+// 🎊 Subscribe na nové odznáčky (realtime)
+function subscribeBleskoveOdznacky() {
+    const channel = supabaseClient.channel('odznacky-channel');
+    
+    channel.on('broadcast', { event: 'novy-odznacek' }, async (payload) => {
+        const { data: authData } = await supabaseClient.auth.getUser();
+        if (!authData?.user) return;
+        
+        // Týká se mě?
+        if (payload.payload?.user_id !== authData.user.id) return;
+        
+        const noveOdznaky = payload.payload?.odznaky || [];
+        console.log('🎊 Nové odznáčky pro mě:', noveOdznaky);
+        
+        // Smaž "seen" cache, aby zkontrolujNoveOdznaky animaci spustil
+        if (window.loggedUserIdGlobal) {
+            // Načti aktuální tip
+            const { data: hrac } = await supabaseClient
+                .from('tipy')
+                .select('id, achievements_earned')
+                .eq('user_id', authData.user.id)
+                .maybeSingle();
+            
+            if (hrac) {
+                // Vyčisti seen cache pro toto rowId – aby zkontrolujNoveOdznaky spustila animaci
+                const seenKey = `seen-achievements-${hrac.id}`;
+                const seen = JSON.parse(localStorage.getItem(seenKey) || '[]');
+                const filtered = seen.filter(o => !noveOdznaky.includes(o));
+                localStorage.setItem(seenKey, JSON.stringify(filtered));
+                
+                // Trigger reload aby se zobrazila animace
+                if (typeof loadAll === 'function') {
+                    await loadAll();
+                }
+            }
+        }
+    });
+    
+    channel.subscribe((status) => {
+        console.log('🎊 Odznáčky channel:', status);
+    });
+}
+
+// Spustit při loadu
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(subscribeBleskoveOdznacky, 2000);
+});
+    
 // 📐 Desktop layout: přesuň turnaj-stats-widget do main jako PRVNÍ element
 function presunWidgetyDoMain() {
     const main = document.querySelector('main');
@@ -6950,10 +7124,13 @@ async function otevritProfil(rowId) {
                                 <div style="font-size:0.7rem; color:#d4af37; font-weight:700; margin-top:2px;">${aktivniOdznaky}/${odznaky.length} získáno</div>
                             </div>
                         </div>
-                        <span style="color:rgba(212,175,55,0.5); font-size:1.2rem;">›</span>
+                      <span style="color:rgba(212,175,55,0.5); font-size:1.2rem;">›</span>
                     </div>
                 </div>
             </div>
+            
+            <!-- ⚡ BLESKOVÉ TIPY mini-widget (async načte) -->
+            <div id="bleskove-sekce-hub"></div>
         </div>
         
         <!-- ════════════ DNA VIEW ════════════ -->
@@ -7013,7 +7190,15 @@ async function otevritProfil(rowId) {
         </div>
     `;
 
-    document.getElementById('profil-modal').style.display = 'flex';
+   document.getElementById('profil-modal').style.display = 'flex';
+    
+    // ⚡ Async načti bleskové tipy do HUBu
+    if (typeof renderBleskoveSekce === 'function') {
+        renderBleskoveSekce(p.rowId).then(html => {
+            const target = document.getElementById('bleskove-sekce-hub');
+            if (target) target.innerHTML = html;
+        }).catch(err => console.warn('Bleskové sekce:', err));
+    }
 }
    
  // 🏆 Otevři vlastní tipovaný pavouk - SE ZÁPASY (kdo proti komu)
