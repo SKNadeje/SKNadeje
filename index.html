@@ -23,6 +23,46 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <script>
+// ✍️ Ulož komentář k zápasu dne (admin only)
+async function ulozKomentarZapasu(zapasKey, komentar) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return;
+    
+    try {
+        // Načti aktuální komentáře
+        const { data } = await supabaseClient
+            .from('admin_vysledky')
+            .select('zapasy_dne_komentare')
+            .eq('id', 1)
+            .single();
+        
+        const komentare = data?.zapasy_dne_komentare || {};
+        
+        // Update nebo smazat (prázdný = remove)
+        if (komentar && komentar.trim()) {
+            komentare[zapasKey] = komentar.trim();
+        } else {
+            delete komentare[zapasKey];
+        }
+        
+        const { error } = await supabaseClient
+            .from('admin_vysledky')
+            .update({ zapasy_dne_komentare: komentare })
+            .eq('id', 1);
+        
+        if (error) throw error;
+        
+        showToast(komentar.trim() ? '💬 Komentář uložen' : '🗑️ Komentář smazán', 'success', 2000);
+        
+        // Refresh banner
+        if (typeof renderMatchBanner === 'function') renderMatchBanner();
+        
+    } catch (err) {
+        console.error('Uložit komentář:', err);
+        showToast('Chyba: ' + err.message, 'error', 3000);
+    }
+}
+    
 // ⚡ BLESKOVÝ TIP: Uložit/změnit hlas
 async function bleskovyTip(zapasKey, zapasDatum, tym1, tym2, tip) {
     const { data: authData } = await supabaseClient.auth.getUser();
@@ -128,6 +168,17 @@ async function toggleZapasDetail(id) {
 async function vyrobZapasDetail(z, containerId) {
     const zapasKey = `${z.datum}::${z.tym1}vs${z.tym2}`;
     
+    // 💬 Načti admin komentář
+    let adminKomentar = '';
+    try {
+        const { data } = await supabaseClient
+            .from('admin_vysledky')
+            .select('zapasy_dne_komentare')
+            .eq('id', 1)
+            .single();
+        adminKomentar = data?.zapasy_dne_komentare?.[zapasKey] || '';
+    } catch {}
+    
     // Spočítej kolik lidí z TIPOVAČKY (skupinové tipy) tipuje co
     const tipyT1 = [], tipyT2 = [];
     if (window.allTips && Array.isArray(window.allTips)) {
@@ -214,8 +265,8 @@ async function vyrobZapasDetail(z, containerId) {
             ${zapasZacal ? '<div style="text-align:center; font-size:0.6rem; color:#ef4444; margin-top:6px;">⏰ Zápas už začal</div>' : `<div style="text-align:center; font-size:0.6rem; color:#5a6480; margin-top:6px;">Klikni pro hlas · celkem hlasů: ${celkemHlasu}</div>`}
         </div>
         
-        <!-- Info -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <!-- Info -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:${adminKomentar ? '12px' : '0'};">
             <div style="padding:8px 10px; background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.1); border-radius:8px;">
                 <div style="font-size:0.55rem; color:rgba(212,175,55,0.7); text-transform:uppercase; letter-spacing:1px;">📅 Kdy</div>
                 <div style="color:#f0e6c8; font-size:0.72rem; margin-top:2px;">${datumCas}</div>
@@ -225,6 +276,15 @@ async function vyrobZapasDetail(z, containerId) {
                 <div style="color:#f0e6c8; font-size:0.72rem; margin-top:2px;">${z.faze || '—'}</div>
             </div>
         </div>
+        
+        ${adminKomentar ? `
+            <div style="padding:12px 14px; background:linear-gradient(135deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02)); border:1px solid rgba(212,175,55,0.25); border-radius:10px;">
+                <div style="font-size:0.55rem; color:rgba(212,175,55,0.7); text-transform:uppercase; letter-spacing:1.5px; font-weight:800; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                    💬 <span>Slovo redakce</span>
+                </div>
+                <div style="color:#f0e6c8; font-size:0.78rem; line-height:1.5; font-style:italic;">"${adminKomentar.replace(/"/g, '&quot;').replace(/\n/g, '<br>')}"</div>
+            </div>
+        ` : ''}
     `;
     
     // Pokud máme container, vlož přímo
@@ -274,26 +334,50 @@ async function nactiZapasyDne() {
         return;
     }
     
+   // Načti i komentáře z DB
+let komentare = {};
+    try {
+        const { data: kData } = await supabaseClient
+            .from('admin_vysledky')
+            .select('zapasy_dne_komentare')
+            .eq('id', 1)
+            .single();
+        komentare = kData?.zapasy_dne_komentare || {};
+    } catch {}
+    
     listEl.innerHTML = dnesniZapasy.map(z => {
         const datum = new Date(z.datum);
         const cas = datum.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
         const den = datum.getDate() === ted.getDate() ? 'dnes' : 'zítra';
-       const zapasKey = `${z.datum}::${z.tym1}vs${z.tym2}`;
+        const zapasKey = `${z.datum}::${z.tym1}vs${z.tym2}`;
         const isOznaceny = oznacene.includes(zapasKey);
+        const komentar = komentare[zapasKey] || '';
         
         return `
-            <label style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:${isOznaceny ? 'rgba(212,175,55,0.12)' : 'rgba(0,0,0,0.3)'}; border:1px solid ${isOznaceny ? 'rgba(212,175,55,0.4)' : 'rgba(212,175,55,0.1)'}; border-radius:8px; cursor:pointer; transition:all 0.2s;">
-                <input type="checkbox" 
-                       data-zapas-key="${zapasKey}" 
-                       ${isOznaceny ? 'checked' : ''} 
-                       onchange="ulozZapasyDne()" 
-                       style="cursor:pointer; transform:scale(1.1);">
-                <span style="font-size:0.65rem; color:${isOznaceny ? '#d4af37' : '#5a6480'}; font-weight:700; min-width:40px;">${den} ${cas}</span>
-                <span style="font-size:0.75rem; color:${isOznaceny ? '#f0e6c8' : '#94a3b8'}; flex:1; font-weight:${isOznaceny ? '700' : '500'};">
-                    ${isOznaceny ? '⭐ ' : ''}${z.tym1} <span style="color:#5a6480;">vs</span> ${z.tym2}
-                </span>
-                <span style="font-size:0.6rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px;">${(z.faze || '').replace('Skupina ', 'Sk. ')}</span>
-            </label>
+            <div style="background:${isOznaceny ? 'rgba(212,175,55,0.08)' : 'rgba(0,0,0,0.25)'}; border:1px solid ${isOznaceny ? 'rgba(212,175,55,0.4)' : 'rgba(212,175,55,0.1)'}; border-radius:10px; padding:10px; transition:all 0.2s;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                    <input type="checkbox" 
+                           data-zapas-key="${zapasKey}" 
+                           ${isOznaceny ? 'checked' : ''} 
+                           onchange="ulozZapasyDne()" 
+                           style="cursor:pointer; transform:scale(1.1);">
+                    <span style="font-size:0.65rem; color:${isOznaceny ? '#d4af37' : '#5a6480'}; font-weight:700; min-width:60px;">${den} ${cas}</span>
+                    <span style="font-size:0.78rem; color:${isOznaceny ? '#f0e6c8' : '#94a3b8'}; flex:1; font-weight:${isOznaceny ? '700' : '500'};">
+                        ${isOznaceny ? '⭐ ' : ''}${z.tym1} <span style="color:#5a6480;">vs</span> ${z.tym2}
+                    </span>
+                    <span style="font-size:0.6rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px;">${(z.faze || '').replace('Skupina ', 'Sk. ')}</span>
+                </label>
+                ${isOznaceny ? `
+                    <div style="margin-top:8px; padding-top:8px; border-top:1px dashed rgba(212,175,55,0.15);">
+                        <textarea 
+                            placeholder="✍️ Komentář k zápasu (volitelně) – uvidí ho hráči v detailu" 
+                            data-zapas-key="${zapasKey}"
+                            onblur="ulozKomentarZapasu('${zapasKey}', this.value)"
+                            rows="2"
+                            style="width:100%; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:6px; padding:6px 10px; font-size:0.72rem; font-family:inherit; resize:vertical; box-sizing:border-box;">${komentar}</textarea>
+                    </div>
+                ` : ''}
+            </div>
         `;
     }).join('');
     
@@ -788,12 +872,29 @@ async function renderMatchBanner() {
     
     let html = '<div style="display:flex; flex-direction:column; gap:8px; margin:0 auto 14px; max-width:640px;">';
     
-    // 🔴 LIVE
-    live.forEach(z => {
+   // 🔴 LIVE
+    live.forEach((z, idx) => {
+        const zapasKey = `${z.datum}::${z.tym1}vs${z.tym2}`;
+        const isZapasDne = zapasyDne.includes(zapasKey);
+        const detailId = `zapas-live-detail-${idx}-${z.datum.replace(/[:T.-]/g, '')}`;
+        
+        // Když je zápas dne, kombinuj červené LIVE + zlatý border
+        const border = isZapasDne 
+            ? '2px solid rgba(212,175,55,0.55)'
+            : '1px solid rgba(239,68,68,0.4)';
+        const shadow = isZapasDne 
+            ? 'box-shadow:0 0 24px rgba(212,175,55,0.2), 0 3px 12px rgba(239,68,68,0.12);'
+            : 'box-shadow:0 3px 12px rgba(239,68,68,0.12);';
+        
         html += `
-            <div style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.04)); border:1px solid rgba(239,68,68,0.4); border-radius:12px; padding:10px 14px; box-shadow:0 3px 12px rgba(239,68,68,0.12);">
+            <div style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.04)); border:${border}; border-radius:12px; padding:10px 14px; ${shadow} ${isZapasDne ? 'cursor:pointer;' : ''}" ${isZapasDne ? `onclick="toggleZapasDetail('${detailId}')"` : ''}>
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        ${isZapasDne ? `
+                            <span style="display:inline-flex; align-items:center; gap:5px; padding:2px 8px; background:linear-gradient(135deg,#d4af37,#b8941f); color:#000; border-radius:8px; font-size:0.6rem; font-weight:900; letter-spacing:1.5px; box-shadow:0 2px 6px rgba(212,175,55,0.3);">
+                                ⭐ ZÁPAS DNE
+                            </span>
+                        ` : ''}
                         <span style="display:inline-flex; align-items:center; gap:5px; padding:2px 8px; background:linear-gradient(135deg,#ef4444,#b91c1c); border-radius:8px; font-size:0.6rem; font-weight:900; color:#fff; letter-spacing:1.5px;">
                             <span style="width:6px; height:6px; border-radius:50%; background:#fff; animation:livePulse 1s infinite;"></span>
                             LIVE
@@ -802,11 +903,24 @@ async function renderMatchBanner() {
                     </div>
                     <span style="font-size:0.62rem; color:#94a3b8;">${formatTime(z.datum)}</span>
                 </div>
-                <div style="font-size:0.98rem; font-weight:900; color:#f0e6c8; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;">
+                <div style="font-size:${isZapasDne ? '1.05rem' : '0.98rem'}; font-weight:900; color:#f0e6c8; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;">
                     ${tymHtml(z.tym1)}
                     <span style="color:#ef4444; font-weight:700; font-size:0.8rem;">VS</span>
                     ${tymHtml(z.tym2)}
                 </div>
+                ${isZapasDne ? `
+                    <div style="text-align:center; margin-top:6px; font-size:0.62rem; color:rgba(212,175,55,0.7);">
+                        <span id="${detailId}-arrow">▼</span> Klikni pro detaily
+                    </div>
+                    <div id="${detailId}" 
+                         data-zapas-datum="${z.datum}" 
+                         data-tym1="${z.tym1}" 
+                         data-tym2="${z.tym2}" 
+                         data-faze="${z.faze || ''}"
+                         style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid rgba(212,175,55,0.2); font-size:0.8rem; color:#f0e6c8;">
+                        <div style="text-align:center; padding:10px; color:#5a6480; font-size:0.7rem;">⏳ Načítám detail...</div>
+                    </div>
+                ` : ''}
             </div>
         `;
     });
