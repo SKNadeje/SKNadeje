@@ -23,6 +23,47 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <script>
+// 📊 Načti statistiky bleskových tipů pro všechny hráče (1× při loadu)
+async function nactiBleskoveStats() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('bleskove_tipy')
+            .select('user_id, tip, vysledek, zapas_datum')
+            .not('vysledek', 'is', null)
+            .order('zapas_datum', { ascending: true });
+        
+        if (error) throw error;
+        
+        const map = {};
+        (data || []).forEach(t => {
+            if (!map[t.user_id]) {
+                map[t.user_id] = { tipu: 0, trefa: 0, maxStreak: 0, _streak: 0 };
+            }
+            const s = map[t.user_id];
+            s.tipu++;
+            if (t.tip === t.vysledek) {
+                s.trefa++;
+                s._streak++;
+                if (s._streak > s.maxStreak) s.maxStreak = s._streak;
+            } else {
+                s._streak = 0;
+            }
+        });
+        
+        window.__bleskoveStatsMap = map;
+        console.log('⚡ Bleskové stats načteny pro', Object.keys(map).length, 'hráčů');
+        
+    } catch (err) {
+        console.warn('Bleskové stats:', err);
+        window.__bleskoveStatsMap = {};
+    }
+}
+
+// Spustit při loadu PŘED prvním renderem žebříčku
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(nactiBleskoveStats, 1200);
+});
+    
 // ✍️ Ulož komentář k zápasu dne (admin only)
 async function ulozKomentarZapasu(zapasKey, komentar) {
     const { data: authData } = await supabaseClient.auth.getUser();
@@ -6675,6 +6716,7 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
     odznaky.push({ icon: '🌟', label: 'MVP', aktivni: pocetMVP >= 1, popis: `Získal/a MVP kola ${pocetMVP}×.` });
     odznaky.push({ icon: '💎', label: 'Hvězda kol', aktivni: pocetMVP >= 3, popis: `Získal/a MVP kola ${pocetMVP}× – legendární výkon!` });
 
+     
     // === SKLEPNÍ TIERY (poslední místo při MVP) ===
     odznaky.push({ icon: '🏚️', label: 'Pán sklepa', aktivni: false, popis: 'Při prvním MVP skončil/a poslední. Vítej ve sklepě.' });
     odznaky.push({ icon: '🪜', label: 'Permanentní rezident sklepa', aktivni: false, popis: 'Podruhé poslední při MVP. Nájem na neurčito.' });
@@ -6701,7 +6743,50 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
     odznaky.push({ icon: '🧤', label: 'Anděl', aktivni: bonusBrankar && bonusFinal, popis: 'Trefil/a nejlepšího brankáře turnaje (finální výsledek).' });
     odznaky.push({ icon: '⚽', label: 'Gólomat', aktivni: bonusGoly && bonusFinal, popis: 'Trefil/a přesný počet branek v turnaji (finální výsledek).' });
     odznaky.push({ icon: '0️⃣', label: 'Nula', aktivni: bonusNuly && bonusFinal, popis: 'Trefil/a přesný počet zápasů 0:0 (finální výsledek).' });
-    odznaky.push({ icon: '🎁', label: 'Bonusový mistr', aktivni: bonusStrelec && bonusBrankar && bonusGoly && bonusNuly && bonusFinal, popis: 'Trefil/a všechny 4 bonusové tipy – mistrovský výkon!' }); // === MERGE S ULOŽENÝMI (persistence) ===
+   odznaky.push({ icon: '🎁', label: 'Bonusový mistr', aktivni: bonusStrelec && bonusBrankar && bonusGoly && bonusNuly && bonusFinal, popis: 'Trefil/a všechny 4 bonusové tipy – mistrovský výkon!' });
+    
+    // === ⚡ BLESKOVÉ TIPY 1-X-2 ===
+    const bleskoveStats = window.__bleskoveStatsMap?.[p.user_id] || { tipu: 0, trefa: 0, maxStreak: 0 };
+    const uspesnost = bleskoveStats.tipu > 0 ? (bleskoveStats.trefa / bleskoveStats.tipu) * 100 : 0;
+    
+    odznaky.push({ 
+        icon: '🪙', 
+        label: 'Šťastný groš', 
+        aktivni: bleskoveStats.trefa >= 1, 
+        popis: `Trefil/a alespoň 1 bleskový tip 1-X-2. (${bleskoveStats.trefa}/${bleskoveStats.tipu})` 
+    });
+    odznaky.push({ 
+        icon: '🔮', 
+        label: 'Bleskový věštec', 
+        aktivni: bleskoveStats.maxStreak >= 3, 
+        popis: `Trefil/a 3 bleskové tipy po sobě. (max streak: ${bleskoveStats.maxStreak})` 
+    });
+    odznaky.push({ 
+        icon: '🌟', 
+        label: 'Bleskový vidoucí', 
+        aktivni: bleskoveStats.maxStreak >= 5, 
+        popis: `Trefil/a 5 bleskových tipů po sobě. (max streak: ${bleskoveStats.maxStreak})` 
+    });
+    odznaky.push({ 
+        icon: '🧙', 
+        label: 'Bleskový mistr', 
+        aktivni: bleskoveStats.maxStreak >= 10, 
+        popis: `Trefil/a 10 bleskových tipů po sobě – legendární! (max streak: ${bleskoveStats.maxStreak})` 
+    });
+    odznaky.push({ 
+        icon: '🪄', 
+        label: 'Bleskový snajpr', 
+        aktivni: bleskoveStats.tipu >= 10 && uspesnost >= 70, 
+        popis: `70%+ úspěšnost při min. 10 tipech. (${uspesnost.toFixed(0)}% z ${bleskoveStats.tipu})` 
+    });
+    odznaky.push({ 
+        icon: '🦇', 
+        label: 'Slepý prorok', 
+        aktivni: bleskoveStats.tipu >= 5 && bleskoveStats.trefa === 0, 
+        popis: '5+ bleskových tipů a žádný trefa. Karma. 😅' 
+    });
+    
+    // === MERGE S ULOŽENÝMI (persistence) ===
     const ulozeno = p.achievements_earned || [];
     odznaky.forEach(o => {
         if (ulozeno.includes(o.label)) {
@@ -6711,7 +6796,7 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
     });
 
     // === FALLBACK – Pohodář ===
-    const dulezite = ['Kompletní tip','Zaplaceno','Král','Stříbro','Bronz','Jasnovidec','Bronz oko','Profík','Vševěd','Snajpr','MVP','Hvězda kol','Klábosil','Showman','Oblíbenec','Černý kůň','Sázkař','S davem','Šťastlivec','Raketa','Propadák','Vlastenec','Naivka','Zlatá noha','Anděl','Gólomat','Nula','Bonusový mistr','Pán sklepa','Permanentní rezident sklepa','Sommelier zatuchliny'];
+    const dulezite = ['Kompletní tip','Zaplaceno','Král','Stříbro','Bronz','Jasnovidec','Bronz oko','Profík','Vševěd','Snajpr','MVP','Hvězda kol','Klábosil','Showman','Oblíbenec','Černý kůň','Sázkař','S davem','Šťastlivec','Raketa','Propadák','Vlastenec','Naivka','Zlatá noha','Anděl','Gólomat','Nula','Bonusový mistr','Pán sklepa','Permanentní rezident sklepa','Sommelier zatuchliny','Šťastný groš','Bleskový věštec','Bleskový vidoucí','Bleskový mistr','Bleskový snajpr','Slepý prorok'];
     const maDulezity = odznaky.some(o => o.aktivni && dulezite.includes(o.label));
     odznaky.push({ icon: '🦥', label: 'Pohodář', aktivni: !maDulezity, popis: 'V klidu sleduje turnaj a nestresuje se pořadím.' });
 
@@ -9036,8 +9121,13 @@ async function loadAll() {
 
         if (n) {
             // Uložíme do globální proměnné, aby k datům měly přístup všechny funkce
-            window.currentResults = n; 
+           window.currentResults = n; 
             console.log("✅ Reálné výsledky (Admin) připraveny.");
+        }
+        
+        // ⚡ Načti bleskové statistiky před renderem žebříčku
+        if (typeof nactiBleskoveStats === 'function') {
+            await nactiBleskoveStats();
         }
 
         // 2. STÁHNEME TIPY VŠECH HRÁČŮ
