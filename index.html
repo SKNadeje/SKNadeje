@@ -128,12 +128,13 @@ async function nactiZapasyDne() {
         const datum = new Date(z.datum);
         const cas = datum.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
         const den = datum.getDate() === ted.getDate() ? 'dnes' : 'zítra';
-        const isOznaceny = oznacene.includes(z.datum);
+       const zapasKey = `${z.datum}::${z.tym1}vs${z.tym2}`;
+        const isOznaceny = oznacene.includes(zapasKey);
         
         return `
             <label style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:${isOznaceny ? 'rgba(212,175,55,0.12)' : 'rgba(0,0,0,0.3)'}; border:1px solid ${isOznaceny ? 'rgba(212,175,55,0.4)' : 'rgba(212,175,55,0.1)'}; border-radius:8px; cursor:pointer; transition:all 0.2s;">
                 <input type="checkbox" 
-                       data-datum="${z.datum}" 
+                       data-zapas-key="${zapasKey}" 
                        ${isOznaceny ? 'checked' : ''} 
                        onchange="ulozZapasyDne()" 
                        style="cursor:pointer; transform:scale(1.1);">
@@ -155,8 +156,8 @@ async function ulozZapasyDne() {
     const { data: authData } = await supabaseClient.auth.getUser();
     if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return;
     
-    const checked = Array.from(document.querySelectorAll('#zapasy-dne-list input[type="checkbox"]:checked'));
-    const oznacene = checked.map(c => c.dataset.datum);
+   const checked = Array.from(document.querySelectorAll('#zapasy-dne-list input[type="checkbox"]:checked'));
+    const oznacene = checked.map(c => c.dataset.zapasKey);
     
     try {
         const { error } = await supabaseClient
@@ -662,7 +663,8 @@ async function renderMatchBanner() {
     
   // ⏰ UPCOMING
     upcoming.forEach((z, idx) => {
-        const isZapasDne = zapasyDne.includes(z.datum);
+       const zapasKey = `${z.datum}::${z.tym1}vs${z.tym2}`;
+        const isZapasDne = zapasyDne.includes(zapasKey);
         const detailId = `zapas-detail-${idx}-${z.datum.replace(/[:T.-]/g, '')}`;
         
         // Styling: zápas dne = zlatý glow, jinak modrý
