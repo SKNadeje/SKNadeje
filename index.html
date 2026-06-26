@@ -23,8 +23,84 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <script>
+// ⚡ BLESKOVÝ TIP: Uložit/změnit hlas
+async function bleskovyTip(zapasKey, zapasDatum, tym1, tym2, tip) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (!authData?.user) {
+        showToast('Přihlas se nejdřív', 'error', 2500);
+        return;
+    }
+    
+    // Zápas už začal? Nepřijímáme.
+    const start = new Date(zapasDatum);
+    if (new Date() >= start) {
+        showToast('⏰ Zápas už začal, tipovat nelze', 'error', 3000);
+        return;
+    }
+    
+    try {
+        // Najdi jméno hráče
+        const { data: tipData } = await supabaseClient
+            .from('tipy')
+            .select('name')
+            .eq('user_id', authData.user.id)
+            .maybeSingle();
+        const userName = tipData?.name || authData.user.email?.split('@')[0] || 'Anonym';
+        
+        // Upsert (vytvoří nebo updatuje)
+        const { error } = await supabaseClient
+            .from('bleskove_tipy')
+            .upsert({
+                user_id: authData.user.id,
+                user_name: userName,
+                zapas_key: zapasKey,
+                zapas_datum: zapasDatum,
+                tym1, tym2,
+                tip
+            }, { onConflict: 'user_id,zapas_key' });
+        
+        if (error) throw error;
+        
+        showToast(`⚡ Hlasovals ${tip === '1' ? tym1 + ' vyhraje' : tip === '2' ? tym2 + ' vyhraje' : 'remízu'}`, 'success', 2000);
+        
+        // Re-render banner
+        if (typeof renderMatchBanner === 'function') renderMatchBanner();
+        
+    } catch (err) {
+        console.error('Bleskový tip:', err);
+        showToast('Chyba: ' + err.message, 'error', 3000);
+    }
+}
+
+// 📊 Načti hlasy pro zápas
+async function nactiHlasyZapasu(zapasKey) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('bleskove_tipy')
+            .select('user_id, user_name, tip')
+            .eq('zapas_key', zapasKey);
+        
+        if (error) throw error;
+        
+        const hlasy = { '1': [], 'X': [], '2': [] };
+        (data || []).forEach(r => {
+            if (hlasy[r.tip]) hlasy[r.tip].push(r.user_name);
+        });
+        
+        // Můj hlas
+        const { data: authData } = await supabaseClient.auth.getUser();
+        const myUid = authData?.user?.id;
+        const myRow = (data || []).find(r => r.user_id === myUid);
+        
+        return { hlasy, mujTip: myRow?.tip || null };
+    } catch (err) {
+        console.warn('Hlasy nelze načíst:', err);
+        return { hlasy: { '1':[], 'X':[], '2':[] }, mujTip: null };
+    }
+}
+    
 // 🔍 Toggle expand/collapse detailu zápasu dne
-function toggleZapasDetail(id) {
+async function toggleZapasDetail(id) {
     const detail = document.getElementById(id);
     const arrow = document.getElementById(id + '-arrow');
     if (!detail) return;
@@ -32,17 +108,32 @@ function toggleZapasDetail(id) {
     const skryt = detail.style.display !== 'none';
     detail.style.display = skryt ? 'none' : 'block';
     if (arrow) arrow.textContent = skryt ? '▼' : '▲';
+    
+    // Při OPEN načti async detail (pokud ještě není načten)
+    if (!skryt && !detail.dataset.loaded) {
+        const zapasDatum = detail.dataset.zapasDatum;
+        const tym1 = detail.dataset.tym1;
+        const tym2 = detail.dataset.tym2;
+        const faze = detail.dataset.faze;
+        
+        if (zapasDatum && tym1 && tym2) {
+            const zapas = { datum: zapasDatum, tym1, tym2, faze };
+            await vyrobZapasDetail(zapas, id);
+            detail.dataset.loaded = '1';
+        }
+    }
 }
 
-// 📊 Vyrobí detail zápasu (statistiky, tipy hráčů)
-function vyrobZapasDetail(z) {
-    // Spočítej kolik lidí tipuje co
+// 📊 Vyrobí detail zápasu (rozšířený s bleskovým tipem)
+async function vyrobZapasDetail(z, containerId) {
+    const zapasKey = `${z.datum}::${z.tym1}vs${z.tym2}`;
+    
+    // Spočítej kolik lidí z TIPOVAČKY (skupinové tipy) tipuje co
     const tipyT1 = [], tipyT2 = [];
     if (window.allTips && Array.isArray(window.allTips)) {
         window.allTips.forEach(t => {
             try {
                 const tip = typeof t.tip_data === 'string' ? JSON.parse(t.tip_data) : t.tip_data;
-                // Hledej tým v různých fázích tipu
                 const allTeams = [
                     ...(tip.winner ? [tip.winner] : []),
                     ...(tip.bronze ? [tip.bronze] : []),
@@ -55,36 +146,95 @@ function vyrobZapasDetail(z) {
         });
     }
     
+    // Načti bleskové hlasy
+    const { hlasy, mujTip } = await nactiHlasyZapasu(zapasKey);
+    const celkemHlasu = hlasy['1'].length + hlasy['X'].length + hlasy['2'].length;
+    
     const datumCas = new Date(z.datum).toLocaleString('cs-CZ', {
         weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
     });
     
-    return `
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:10px;">
-            <div style="text-align:center; padding:10px; background:rgba(0,0,0,0.3); border-radius:8px;">
-                <div style="font-size:1.5rem; margin-bottom:2px;">${vlajkaTymu(z.tym1).replace('22px', '36px').replace('15px', '24px')}</div>
+    const zapasZacal = new Date() >= new Date(z.datum);
+    
+    // Funkce pro tip tlačítko
+    const tipBtn = (val, label) => {
+        const pocet = hlasy[val].length;
+        const isMine = mujTip === val;
+        const procento = celkemHlasu > 0 ? Math.round((pocet / celkemHlasu) * 100) : 0;
+        
+        return `
+            <button onclick="event.stopPropagation(); bleskovyTip('${zapasKey}', '${z.datum}', '${z.tym1}', '${z.tym2}', '${val}')" 
+                ${zapasZacal ? 'disabled' : ''}
+                style="
+                    flex:1; 
+                    padding:10px 8px; 
+                    background:${isMine ? 'linear-gradient(135deg,#d4af37,#b8941f)' : 'rgba(0,0,0,0.4)'}; 
+                    color:${isMine ? '#000' : '#f0e6c8'};
+                    border:1px solid ${isMine ? '#d4af37' : 'rgba(212,175,55,0.2)'}; 
+                    border-radius:8px; 
+                    cursor:${zapasZacal ? 'not-allowed' : 'pointer'};
+                    opacity:${zapasZacal ? 0.5 : 1};
+                    font-weight:${isMine ? '900' : '600'};
+                    font-size:0.75rem;
+                    transition:all 0.2s;
+                    position:relative;
+                ">
+                <div style="font-size:0.9rem;">${label}</div>
+                <div style="font-size:0.6rem; opacity:0.8; margin-top:2px;">${pocet} ${pocet === 1 ? 'hlas' : pocet < 5 ? 'hlasy' : 'hlasů'} (${procento}%)</div>
+                ${isMine ? '<div style="position:absolute; top:-6px; right:-6px; background:#22c55e; color:#fff; border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center; font-size:0.55rem;">✓</div>' : ''}
+            </button>
+        `;
+    };
+    
+    const html = `
+        <!-- Hlavičky obou týmů -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+            <div style="text-align:center; padding:12px 8px; background:rgba(0,0,0,0.35); border:1px solid rgba(212,175,55,0.15); border-radius:10px;">
+                <div style="font-size:0.95rem; margin-bottom:4px;">${vlajkaTymu(z.tym1).replace('22px', '34px').replace('15px', '24px')}</div>
                 <div style="font-size:0.8rem; font-weight:800; color:#f0e6c8;">${z.tym1}</div>
-                <div style="font-size:0.62rem; color:#94a3b8; margin-top:4px;">${tipyT1.length} hráčů věří</div>
+                <div style="font-size:0.6rem; color:#94a3b8; margin-top:4px;">${tipyT1.length} v tipovačce</div>
             </div>
-            <div style="text-align:center; padding:10px; background:rgba(0,0,0,0.3); border-radius:8px;">
-                <div style="font-size:1.5rem; margin-bottom:2px;">${vlajkaTymu(z.tym2).replace('22px', '36px').replace('15px', '24px')}</div>
+            <div style="text-align:center; padding:12px 8px; background:rgba(0,0,0,0.35); border:1px solid rgba(212,175,55,0.15); border-radius:10px;">
+                <div style="font-size:0.95rem; margin-bottom:4px;">${vlajkaTymu(z.tym2).replace('22px', '34px').replace('15px', '24px')}</div>
                 <div style="font-size:0.8rem; font-weight:800; color:#f0e6c8;">${z.tym2}</div>
-                <div style="font-size:0.62rem; color:#94a3b8; margin-top:4px;">${tipyT2.length} hráčů věří</div>
+                <div style="font-size:0.6rem; color:#94a3b8; margin-top:4px;">${tipyT2.length} v tipovačce</div>
             </div>
         </div>
         
-        <div style="padding:8px 12px; background:rgba(212,175,55,0.04); border-radius:8px; margin-bottom:8px;">
-            <div style="font-size:0.62rem; color:rgba(212,175,55,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">📅 Kdy</div>
-            <div style="color:#f0e6c8;">${datumCas}</div>
+        <!-- Bleskový tip 1-X-2 -->
+        <div style="margin-bottom:14px;">
+            <div style="font-size:0.62rem; color:rgba(212,175,55,0.7); text-transform:uppercase; letter-spacing:1.5px; font-weight:800; margin-bottom:8px; text-align:center;">
+                ⚡ Bleskový tip <span style="color:#5a6480; font-weight:600;">(pro zábavu)</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+                ${tipBtn('1', '1')}
+                ${tipBtn('X', 'X')}
+                ${tipBtn('2', '2')}
+            </div>
+            ${zapasZacal ? '<div style="text-align:center; font-size:0.6rem; color:#ef4444; margin-top:6px;">⏰ Zápas už začal</div>' : `<div style="text-align:center; font-size:0.6rem; color:#5a6480; margin-top:6px;">Klikni pro hlas · celkem hlasů: ${celkemHlasu}</div>`}
         </div>
         
-        <div style="padding:8px 12px; background:rgba(212,175,55,0.04); border-radius:8px;">
-            <div style="font-size:0.62rem; color:rgba(212,175,55,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">🏆 Fáze</div>
-            <div style="color:#f0e6c8;">${z.faze || '—'}</div>
+        <!-- Info -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div style="padding:8px 10px; background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.1); border-radius:8px;">
+                <div style="font-size:0.55rem; color:rgba(212,175,55,0.7); text-transform:uppercase; letter-spacing:1px;">📅 Kdy</div>
+                <div style="color:#f0e6c8; font-size:0.72rem; margin-top:2px;">${datumCas}</div>
+            </div>
+            <div style="padding:8px 10px; background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.1); border-radius:8px;">
+                <div style="font-size:0.55rem; color:rgba(212,175,55,0.7); text-transform:uppercase; letter-spacing:1px;">🏆 Fáze</div>
+                <div style="color:#f0e6c8; font-size:0.72rem; margin-top:2px;">${z.faze || '—'}</div>
+            </div>
         </div>
     `;
-}
     
+    // Pokud máme container, vlož přímo
+    if (containerId) {
+        const cont = document.getElementById(containerId);
+        if (cont) cont.innerHTML = html;
+    }
+    
+    return html;
+}    
 // 🎯 ADMIN: Načti a vyrenderuj dnešní zápasy s checkboxy
 async function nactiZapasyDne() {
     const { data: authData } = await supabaseClient.auth.getUser();
@@ -699,12 +849,17 @@ async function renderMatchBanner() {
                     <span style="color:${isZapasDne ? '#d4af37' : '#5a6480'}; font-size:0.75rem;">vs</span>
                     ${tymHtml(z.tym2)}
                 </div>
-                ${isZapasDne ? `
+               ${isZapasDne ? `
                     <div style="text-align:center; margin-top:6px; font-size:0.62rem; color:rgba(212,175,55,0.7);">
                         <span id="${detailId}-arrow">▼</span> Klikni pro detaily
                     </div>
-                    <div id="${detailId}" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid rgba(212,175,55,0.2); font-size:0.8rem; color:#f0e6c8;">
-                        ${vyrobZapasDetail(z)}
+                   <div id="${detailId}" 
+                         data-zapas-datum="${z.datum}" 
+                         data-tym1="${z.tym1}" 
+                         data-tym2="${z.tym2}" 
+                         data-faze="${z.faze || ''}"
+                         style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid rgba(212,175,55,0.2); font-size:0.8rem; color:#f0e6c8;">
+                        <div style="text-align:center; padding:10px; color:#5a6480; font-size:0.7rem;">⏳ Načítám detail...</div>
                     </div>
                 ` : ''}
             </div>
