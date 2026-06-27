@@ -701,24 +701,14 @@ async function nactiZapasyDne() {
         ? [...ZAPASY_WC2026.filter(z => z.faze?.startsWith('Skupina')), ...window.__playoffCache]
         : ZAPASY_WC2026;
     
+   // 🎯 Vezmi 6 nejbližších budoucích zápasů (skupiny + playoff)
     const dnesniZapasy = vsechnyZapasy
         .filter(z => z.tym1 && z.tym2 && z.tym1 !== 'TBD' && z.tym2 !== 'TBD' && z.tym1 !== 'tba')
-        .filter(z => {
-            const dt = new Date(z.datum);
-            return dt >= ted && dt <= limit;
-        })
-        .sort((a, b) => new Date(a.datum) - new Date(b.datum));
+        .filter(z => new Date(z.datum) > ted)
+        .sort((a, b) => new Date(a.datum) - new Date(b.datum))
+        .slice(0, 6);
     
-    // 🆕 Pokud máme méně než 6 nadcházejících, rozšiř na další chronologicky
-    const MIN_ZAPASU = 6;
-    if (dnesniZapasy.length < MIN_ZAPASU) {
-        const extra = vsechnyZapasy
-            .filter(z => z.tym1 && z.tym2 && z.tym1 !== 'TBD' && z.tym2 !== 'TBD' && z.tym1 !== 'tba')
-            .filter(z => new Date(z.datum) > limit)
-            .sort((a, b) => new Date(a.datum) - new Date(b.datum))
-            .slice(0, MIN_ZAPASU - dnesniZapasy.length);
-        dnesniZapasy.push(...extra);
-    }
+  
     
     // 🆕 SKONČENÉ zápasy které byly označené pro predikci (pro vyhodnocení)
    const skoncene = vsechnyZapasy
