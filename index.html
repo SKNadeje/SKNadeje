@@ -464,11 +464,11 @@ async function vyrobZapasDetail(z, containerId) {
         kontrolniFaze = 'winner';
     }
     
-    if (window.allTips && Array.isArray(window.allTips)) {
-        totalHracu = window.allTips.length;
-        window.allTips.forEach(t => {
+   if (typeof profilData !== 'undefined' && Array.isArray(profilData)) {
+        totalHracu = profilData.length;
+        profilData.forEach(p => {
             try {
-                const tip = typeof t.tip_data === 'string' ? JSON.parse(t.tip_data) : t.tip_data;
+                const tip = p.tip || {};
                 
                 let t1Match = false, t2Match = false;
                 
