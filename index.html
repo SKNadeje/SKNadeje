@@ -488,7 +488,7 @@ let komentare = {};
                     </span>
                     <span style="font-size:0.6rem; color:#5a6480; text-transform:uppercase; letter-spacing:1px;">${(z.faze || '').replace('Skupina ', 'Sk. ')}</span>
                 </label>
-                ${isOznaceny ? `
+               ${isOznaceny ? `
                     <div style="margin-top:8px; padding-top:8px; border-top:1px dashed rgba(212,175,55,0.15);">
                         <textarea 
                             placeholder="✍️ Komentář k zápasu (volitelně) – uvidí ho hráči v detailu" 
@@ -496,14 +496,58 @@ let komentare = {};
                             onblur="ulozKomentarZapasu('${zapasKey}', this.value)"
                             rows="2"
                             style="width:100%; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:6px; padding:6px 10px; font-size:0.72rem; font-family:inherit; resize:vertical; box-sizing:border-box;">${komentar}</textarea>
+                        
+                        <!-- 🎯 Výsledek pro bleskové tipy -->
+                        <div style="margin-top:8px; padding:8px; background:rgba(0,0,0,0.3); border-radius:6px;">
+                            <div style="font-size:0.55rem; color:rgba(212,175,55,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">⚡ Výsledek (pro vyhodnocení tipů)</div>
+                            <div id="vysledek-buttons-${zapasKey.replace(/[^a-z0-9]/gi, '')}" style="display:flex; gap:4px;">
+                                <button onclick="ulozVysledekZapasu('${zapasKey}', '${z.datum}', '${z.tym1.replace(/'/g, '')}', '${z.tym2.replace(/'/g, '')}', '1')" 
+                                        data-vysledek="1"
+                                        style="flex:1; padding:6px 4px; background:rgba(0,0,0,0.4); color:#94a3b8; border:1px solid rgba(212,175,55,0.15); border-radius:5px; cursor:pointer; font-weight:700; font-size:0.7rem;">
+                                    ${z.tym1} ✓
+                                </button>
+                                <button onclick="ulozVysledekZapasu('${zapasKey}', '${z.datum}', '${z.tym1.replace(/'/g, '')}', '${z.tym2.replace(/'/g, '')}', 'X')" 
+                                        data-vysledek="X"
+                                        style="flex:1; padding:6px 4px; background:rgba(0,0,0,0.4); color:#94a3b8; border:1px solid rgba(212,175,55,0.15); border-radius:5px; cursor:pointer; font-weight:700; font-size:0.7rem;">
+                                    Remíza
+                                </button>
+                                <button onclick="ulozVysledekZapasu('${zapasKey}', '${z.datum}', '${z.tym1.replace(/'/g, '')}', '${z.tym2.replace(/'/g, '')}', '2')" 
+                                        data-vysledek="2"
+                                        style="flex:1; padding:6px 4px; background:rgba(0,0,0,0.4); color:#94a3b8; border:1px solid rgba(212,175,55,0.15); border-radius:5px; cursor:pointer; font-weight:700; font-size:0.7rem;">
+                                    ${z.tym2} ✓
+                                </button>
+                            </div>
+                            <div id="vysledek-status-${zapasKey.replace(/[^a-z0-9]/gi, '')}" style="font-size:0.6rem; color:#5a6480; margin-top:4px; text-align:center;"></div>
+                        </div>
                     </div>
                 ` : ''}
             </div>
         `;
     }).join('');
     
-    const pocet = oznacene.length;
+   const pocet = oznacene.length;
     countEl.textContent = pocet === 0 ? `${dnesniZapasy.length} dostupné` : `⭐ ${pocet} vybráno z ${dnesniZapasy.length}`;
+    
+    // Načti existující výsledky pro označení uloženého tlačítka
+    try {
+        const { data: vysledky } = await supabaseClient
+            .from('zapas_vysledky')
+            .select('*');
+        
+        (vysledky || []).forEach(v => {
+            const safeId = v.zapas_key.replace(/[^a-z0-9]/gi, '');
+            const btns = document.querySelectorAll(`#vysledek-buttons-${safeId} button`);
+            btns.forEach(b => {
+                if (b.dataset.vysledek === v.vysledek) {
+                    b.style.background = 'linear-gradient(135deg,#22c55e,#16a34a)';
+                    b.style.color = '#fff';
+                    b.style.borderColor = '#22c55e';
+                }
+            });
+            const status = document.getElementById(`vysledek-status-${safeId}`);
+            if (status) status.textContent = `✅ Výsledek uložen: ${v.vysledek} · klikni jiný pro změnu`;
+        });
+    } catch {}
 }
 
 // 💾 ULOŽIT vybrané zápasy dne
