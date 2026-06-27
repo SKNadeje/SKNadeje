@@ -23,6 +23,137 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <script>
+// 🎯 ADMIN: Uložit výsledek zápasu (1/X/2) + auto-vyhodnotit bleskové tipy
+async function ulozVysledekZapasu(zapasKey, zapasDatum, tym1, tym2, vysledek) {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+        showToast('Pouze pro admina', 'error');
+        return;
+    }
+    
+    try {
+        // 1. Ulož výsledek
+        const { error } = await supabaseClient
+            .from('zapas_vysledky')
+            .upsert({
+                zapas_key: zapasKey,
+                zapas_datum: zapasDatum,
+                tym1, tym2,
+                vysledek,
+                aktualizovano: new Date().toISOString()
+            }, { onConflict: 'zapas_key' });
+        
+        if (error) throw error;
+        
+        // 2. Updatuj bleskové tipy – zaznač výsledek
+        await supabaseClient
+            .from('bleskove_tipy')
+            .update({ vysledek })
+            .eq('zapas_key', zapasKey);
+        
+        // 3. Vyhodnoť odznáčky pro každého hráče
+        const { data: tipy } = await supabaseClient
+            .from('bleskove_tipy')
+            .select('user_id, user_name, tip')
+            .eq('zapas_key', zapasKey);
+        
+        let trefa = 0, miss = 0;
+        for (const t of (tipy || [])) {
+            if (t.tip === vysledek) trefa++; else miss++;
+            await vyhodnotOdznackyBleskoveTipy(t.user_id);
+        }
+        
+        showToast(`✅ Výsledek ${vysledek} · ${trefa} trefa, ${miss} miss`, 'success', 3500);
+        
+        // Refresh adminu + bleskové stats
+        if (typeof nactiBleskoveStats === 'function') await nactiBleskoveStats();
+        if (typeof nactiZapasyDne === 'function') await nactiZapasyDne();
+        if (typeof renderMatchBanner === 'function') renderMatchBanner();
+        if (typeof loadAll === 'function') await loadAll();
+        
+    } catch (err) {
+        console.error('Uložit výsledek:', err);
+        showToast('Chyba: ' + err.message, 'error', 4000);
+    }
+}
+
+// 🏆 Vyhodnoť odznáčky pro hráče (po každém uloženém výsledku)
+async function vyhodnotOdznackyBleskoveTipy(userId) {
+    try {
+        // Vezmi všechny tipy hráče s výsledkem (chronologicky)
+        const { data: tipy } = await supabaseClient
+            .from('bleskove_tipy')
+            .select('zapas_datum, tip, vysledek')
+            .eq('user_id', userId)
+            .not('vysledek', 'is', null)
+            .order('zapas_datum', { ascending: true });
+        
+        if (!tipy || tipy.length === 0) return;
+        
+        // Spočítej streak (po sobě jdoucí trefa)
+        let aktualniStreak = 0;
+        let maxStreak = 0;
+        let pocetTrefa = 0;
+        
+        tipy.forEach(t => {
+            if (t.tip === t.vysledek) {
+                aktualniStreak++;
+                pocetTrefa++;
+                if (aktualniStreak > maxStreak) maxStreak = aktualniStreak;
+            } else {
+                aktualniStreak = 0;
+            }
+        });
+        
+        const uspesnost = (pocetTrefa / tipy.length) * 100;
+        
+        // Načti hráče
+        const { data: hrac } = await supabaseClient
+            .from('tipy')
+            .select('achievements_earned')
+            .eq('user_id', userId)
+            .maybeSingle();
+        
+        if (!hrac) return;
+        
+        const existing = hrac.achievements_earned || [];
+        const novy = [...existing];
+        
+        const checkAdd = (id) => {
+            if (!novy.includes(id)) novy.push(id);
+        };
+        
+        if (pocetTrefa >= 1) checkAdd('Šťastný groš');
+        if (maxStreak >= 3) checkAdd('Bleskový věštec');
+        if (maxStreak >= 5) checkAdd('Bleskový vidoucí');
+        if (maxStreak >= 10) checkAdd('Bleskový mistr');
+        if (tipy.length >= 10 && uspesnost >= 70) checkAdd('Bleskový snajpr');
+        if (tipy.length >= 5 && pocetTrefa === 0) checkAdd('Slepý prorok');
+        
+        // Update jen pokud něco přibylo
+        const noveOdznaky = novy.filter(x => !existing.includes(x));
+        if (noveOdznaky.length > 0) {
+            await supabaseClient
+                .from('tipy')
+                .update({ achievements_earned: novy })
+                .eq('user_id', userId);
+            console.log(`✨ Hráč ${userId}: nové odznáčky`, noveOdznaky);
+            
+            // 🎊 Broadcast – signal pro hráče že má nový odznak
+            try {
+                await supabaseClient.channel('odznacky-channel').send({
+                    type: 'broadcast',
+                    event: 'novy-odznacek',
+                    payload: { user_id: userId, odznaky: noveOdznaky }
+                });
+            } catch {}
+        }
+        
+    } catch (err) {
+        console.error('Vyhodnocení odznáčků:', err);
+    }
+}
+    
 // 📊 Render sekce bleskových tipů v profilu hráče
 async function renderBleskoveSekce(userId) {
     const stats = window.__bleskoveStatsMap?.[userId] || { tipu: 0, trefa: 0, maxStreak: 0 };
