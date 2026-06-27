@@ -696,8 +696,13 @@ async function nactiZapasyDne() {
     // Filtruj dnešní + zítřejší ranní zápasy (do +18h)
     const ted = new Date();
    const limit = new Date(ted.getTime() + 24 * 60 * 60 * 1000);
-   const dnesniZapasy = ZAPASY_WC2026
-        .filter(z => z.tym1 && z.tym2 && z.tym1 !== 'tba')
+ // Slij skupiny + playoff
+    const vsechnyZapasy = window.__playoffCache 
+        ? [...ZAPASY_WC2026.filter(z => z.faze?.startsWith('Skupina')), ...window.__playoffCache]
+        : ZAPASY_WC2026;
+    
+    const dnesniZapasy = vsechnyZapasy
+        .filter(z => z.tym1 && z.tym2 && z.tym1 !== 'TBD' && z.tym2 !== 'TBD' && z.tym1 !== 'tba')
         .filter(z => {
             const dt = new Date(z.datum);
             return dt >= ted && dt <= limit;
@@ -707,24 +712,24 @@ async function nactiZapasyDne() {
     // 🆕 Pokud máme méně než 6 nadcházejících, rozšiř na další chronologicky
     const MIN_ZAPASU = 6;
     if (dnesniZapasy.length < MIN_ZAPASU) {
-        const extra = ZAPASY_WC2026
-            .filter(z => z.tym1 && z.tym2 && z.tym1 !== 'tba')
-            .filter(z => new Date(z.datum) > limit)  // dál než 24h
+        const extra = vsechnyZapasy
+            .filter(z => z.tym1 && z.tym2 && z.tym1 !== 'TBD' && z.tym2 !== 'TBD' && z.tym1 !== 'tba')
+            .filter(z => new Date(z.datum) > limit)
             .sort((a, b) => new Date(a.datum) - new Date(b.datum))
             .slice(0, MIN_ZAPASU - dnesniZapasy.length);
         dnesniZapasy.push(...extra);
     }
     
     // 🆕 SKONČENÉ zápasy které byly označené pro predikci (pro vyhodnocení)
-    const skoncene = ZAPASY_WC2026
-        .filter(z => z.tym1 && z.tym2 && z.tym1 !== 'tba')
+   const skoncene = vsechnyZapasy
+        .filter(z => z.tym1 && z.tym2 && z.tym1 !== 'TBD' && z.tym2 !== 'TBD' && z.tym1 !== 'tba')
         .filter(z => {
             const zapasKey = `${z.datum}::${z.tym1}vs${z.tym2}`;
             if (!oznacene.includes(zapasKey)) return false;
             const konec = new Date(new Date(z.datum).getTime() + 125 * 60 * 1000);
-            return konec < ted;  // už skončil
+            return konec < ted;
         })
-        .sort((a, b) => new Date(b.datum) - new Date(a.datum));  // nejnovější první
+        .sort((a, b) => new Date(b.datum) - new Date(a.datum));
     
     if (dnesniZapasy.length === 0 && skoncene.length === 0) {
         listEl.innerHTML = '<div style="text-align:center; color:#5a6480; padding:14px; font-size:0.75rem;">Žádné zápasy v nejbližších 24 hodinách.</div>';
@@ -1256,13 +1261,17 @@ function vlajkaTymu(tym) {
     return `<img src="https://flagcdn.com/w40/${kod}.png" alt="" style="width:22px; height:15px; object-fit:cover; border-radius:2px; vertical-align:middle; box-shadow:0 1px 3px rgba(0,0,0,0.4); flex-shrink:0;">`;
 }
 
-// 🔴 VŠECHNY aktuálně probíhající zápasy (pole, ne jeden)
+// 🔴 VŠECHNY aktuálně probíhající zápasy (skupiny + playoff)
 function aktualniZapasy() {
     const now = new Date();
-    return ZAPASY_WC2026.filter(z => {
-        if (!z.tym1 || !z.tym2) return false;
+    const vse = window.__playoffCache 
+        ? [...ZAPASY_WC2026.filter(z => z.faze?.startsWith('Skupina')), ...window.__playoffCache]
+        : ZAPASY_WC2026;
+    
+    return vse.filter(z => {
+        if (!z.tym1 || !z.tym2 || z.tym1 === 'TBD' || z.tym2 === 'TBD' || z.tym1 === 'tba') return false;
         const start = new Date(z.datum);
-        const konec = new Date(start.getTime() + 125 * 60 * 1000); // 90 min + nastavení
+        const konec = new Date(start.getTime() + 125 * 60 * 1000);
         return now >= start && now <= konec;
     });
 }
@@ -1270,12 +1279,15 @@ function aktualniZapasy() {
 // ⏰ Pole nejbližších budoucích zápasů (max N)
 function nadchazejiciZapasy(n = 2) {
     const now = new Date();
-    return ZAPASY_WC2026
-        .filter(z => z.tym1 && z.tym2 && new Date(z.datum) > now)
+    const vse = window.__playoffCache 
+        ? [...ZAPASY_WC2026.filter(z => z.faze?.startsWith('Skupina')), ...window.__playoffCache]
+        : ZAPASY_WC2026;
+    
+    return vse
+        .filter(z => z.tym1 && z.tym2 && z.tym1 !== 'TBD' && z.tym2 !== 'TBD' && z.tym1 !== 'tba' && new Date(z.datum) > now)
         .sort((a, b) => new Date(a.datum) - new Date(b.datum))
         .slice(0, n);
 }
-
 // Zpětná kompatibilita (kdyby byly volány jinde)
 function aktualniZapas() { return aktualniZapasy()[0] || null; }
 function nejblizsiZapas() { return nadchazejiciZapasy(1)[0] || null; }
