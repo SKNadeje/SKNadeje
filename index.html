@@ -416,7 +416,7 @@ async function toggleZapasDetail(id) {
     }
 }
 
-// 📊 Vyrobí detail zápasu (rozšířený s bleskovým tipem)
+// 📊 Vyrobí detail zápasu (rozšířený s bleskovým tipem a smart tipy podle fáze)
 async function vyrobZapasDetail(z, containerId) {
     const zapasKey = `${z.datum}::${z.tym1}vs${z.tym2}`;
     
@@ -431,20 +431,83 @@ async function vyrobZapasDetail(z, containerId) {
         adminKomentar = data?.zapasy_dne_komentare?.[zapasKey] || '';
     } catch {}
     
-    // Spočítej kolik lidí z TIPOVAČKY (skupinové tipy) tipuje co
-    const tipyT1 = [], tipyT2 = [];
+    // 📊 Spočítej tipy podle FÁZE zápasu
+    let tipyT1 = 0, tipyT2 = 0;
+    let tipyT1Vitez = 0, tipyT2Vitez = 0;
+    let totalHracu = 0;
+    
+    // Určit cílovou fázi (co znamená "postup" pro tento zápas)
+    const fazeText = (z.faze || '').toLowerCase();
+    let labelText = 'věří v tým';
+    let kontrolniFaze = null;
+    
+    if (fazeText.includes('skupina')) {
+        labelText = 'tipuje postup ze skupiny';
+        kontrolniFaze = 'groups';
+    } else if (fazeText.includes('1/16')) {
+        labelText = 'tipuje postup do 1/8';
+        kontrolniFaze = 's16';
+    } else if (fazeText.includes('1/8') || fazeText.includes('osmifinále')) {
+        labelText = 'tipuje postup do čtvrtfinále';
+        kontrolniFaze = 's8';
+    } else if (fazeText.includes('čtvrtfin')) {
+        labelText = 'tipuje postup do semifinále';
+        kontrolniFaze = 's4';
+    } else if (fazeText.includes('semifin')) {
+        labelText = 'tipuje postup do finále';
+        kontrolniFaze = 'final';
+    } else if (fazeText.includes('3. místo') || fazeText.includes('bronz')) {
+        labelText = 'tipuje na 3. místo';
+        kontrolniFaze = 'bronze';
+    } else if (fazeText.includes('finále')) {
+        labelText = 'tipuje na vítěze';
+        kontrolniFaze = 'winner';
+    }
+    
     if (window.allTips && Array.isArray(window.allTips)) {
+        totalHracu = window.allTips.length;
         window.allTips.forEach(t => {
             try {
                 const tip = typeof t.tip_data === 'string' ? JSON.parse(t.tip_data) : t.tip_data;
-                const allTeams = [
-                    ...(tip.winner ? [tip.winner] : []),
-                    ...(tip.bronze ? [tip.bronze] : []),
-                    ...(tip.s4 || []),
-                    ...(tip.s8 || []),
-                ];
-                if (allTeams.includes(z.tym1)) tipyT1.push(t.name);
-                if (allTeams.includes(z.tym2)) tipyT2.push(t.name);
+                
+                let t1Match = false, t2Match = false;
+                
+                if (kontrolniFaze === 'groups') {
+                    // Top 3 ze skupiny postupují
+                    (tip.groups || []).forEach(g => {
+                        const teams = Array.isArray(g) ? g : (g.teams || []);
+                        teams.slice(0, 3).forEach(team => {
+                            const name = String(team || '').trim();
+                            if (name === z.tym1) t1Match = true;
+                            if (name === z.tym2) t2Match = true;
+                        });
+                    });
+                } else if (kontrolniFaze === 's16' || kontrolniFaze === 's8' || kontrolniFaze === 's4') {
+                    const arr = tip[kontrolniFaze] || [];
+                    arr.forEach(team => {
+                        const name = String(team || '').trim();
+                        if (name === z.tym1) t1Match = true;
+                        if (name === z.tym2) t2Match = true;
+                    });
+                } else if (kontrolniFaze === 'final') {
+                    // Finalisté = winner + bronze (kdo se dostal do finále)
+                    const finalists = [tip.winner, tip.bronze].filter(x => x).map(x => String(x).trim());
+                    if (finalists.includes(z.tym1)) t1Match = true;
+                    if (finalists.includes(z.tym2)) t2Match = true;
+                } else if (kontrolniFaze === 'bronze') {
+                    if (String(tip.bronze || '').trim() === z.tym1) t1Match = true;
+                    if (String(tip.bronze || '').trim() === z.tym2) t2Match = true;
+                } else if (kontrolniFaze === 'winner') {
+                    if (String(tip.winner || '').trim() === z.tym1) t1Match = true;
+                    if (String(tip.winner || '').trim() === z.tym2) t2Match = true;
+                }
+                
+                if (t1Match) tipyT1++;
+                if (t2Match) tipyT2++;
+                
+                // Bonus: kolik tipuje tým na vítěze celého turnaje
+                if (String(tip.winner || '').trim() === z.tym1) tipyT1Vitez++;
+                if (String(tip.winner || '').trim() === z.tym2) tipyT2Vitez++;
             } catch {}
         });
     }
@@ -490,17 +553,23 @@ async function vyrobZapasDetail(z, containerId) {
     };
     
     const html = `
-        <!-- Hlavičky obou týmů -->
+        <!-- Hlavičky obou týmů s tipy podle fáze -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
             <div style="text-align:center; padding:12px 8px; background:rgba(0,0,0,0.35); border:1px solid rgba(212,175,55,0.15); border-radius:10px;">
                 <div style="font-size:0.95rem; margin-bottom:4px;">${vlajkaTymu(z.tym1).replace('22px', '34px').replace('15px', '24px')}</div>
                 <div style="font-size:0.8rem; font-weight:800; color:#f0e6c8;">${z.tym1}</div>
-                <div style="font-size:0.6rem; color:#94a3b8; margin-top:4px;">${tipyT1.length} v tipovačce</div>
+                <div style="font-size:0.6rem; color:#94a3b8; margin-top:6px; line-height:1.5;">
+                    📊 <b style="color:#d4af37;">${tipyT1}/${totalHracu}</b> ${labelText}
+                    ${tipyT1Vitez > 0 && kontrolniFaze !== 'winner' ? `<br>🏆 <b style="color:#d4af37;">${tipyT1Vitez}/${totalHracu}</b> sázejí na vítězství turnaje` : ''}
+                </div>
             </div>
             <div style="text-align:center; padding:12px 8px; background:rgba(0,0,0,0.35); border:1px solid rgba(212,175,55,0.15); border-radius:10px;">
                 <div style="font-size:0.95rem; margin-bottom:4px;">${vlajkaTymu(z.tym2).replace('22px', '34px').replace('15px', '24px')}</div>
                 <div style="font-size:0.8rem; font-weight:800; color:#f0e6c8;">${z.tym2}</div>
-                <div style="font-size:0.6rem; color:#94a3b8; margin-top:4px;">${tipyT2.length} v tipovačce</div>
+                <div style="font-size:0.6rem; color:#94a3b8; margin-top:6px; line-height:1.5;">
+                    📊 <b style="color:#d4af37;">${tipyT2}/${totalHracu}</b> ${labelText}
+                    ${tipyT2Vitez > 0 && kontrolniFaze !== 'winner' ? `<br>🏆 <b style="color:#d4af37;">${tipyT2Vitez}/${totalHracu}</b> sázejí na vítězství turnaje` : ''}
+                </div>
             </div>
         </div>
         
@@ -517,7 +586,7 @@ async function vyrobZapasDetail(z, containerId) {
             ${zapasZacal ? '<div style="text-align:center; font-size:0.6rem; color:#ef4444; margin-top:6px;">⏰ Zápas už začal</div>' : `<div style="text-align:center; font-size:0.6rem; color:#5a6480; margin-top:6px;">Klikni pro hlas · celkem hlasů: ${celkemHlasu}</div>`}
         </div>
         
-      <!-- Info -->
+        <!-- Info -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:${adminKomentar ? '12px' : '0'};">
             <div style="padding:8px 10px; background:rgba(212,175,55,0.04); border:1px solid rgba(212,175,55,0.1); border-radius:8px;">
                 <div style="font-size:0.55rem; color:rgba(212,175,55,0.7); text-transform:uppercase; letter-spacing:1px;">📅 Kdy</div>
@@ -546,7 +615,7 @@ async function vyrobZapasDetail(z, containerId) {
     }
     
     return html;
-}    
+}  
 // 🎯 ADMIN: Načti a vyrenderuj dnešní zápasy s checkboxy
 async function nactiZapasyDne() {
     const { data: authData } = await supabaseClient.auth.getUser();
