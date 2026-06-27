@@ -1187,7 +1187,7 @@ async function renderMatchBanner() {
     //  1 live → 1 upcoming (celkem 2)
     //  2 live → 1 upcoming (celkem 3)
     //  3+ live → jen live (max 4)
-    const upcomingPocet = live.length === 0 ? 2 : Math.max(1, 4 - live.length);
+   const upcomingPocet = Math.max(1, 6 - live.length);
     const upcoming = nadchazejiciZapasy(upcomingPocet);
     
     if (live.length === 0 && upcoming.length === 0) { cont.innerHTML = ''; return; }
