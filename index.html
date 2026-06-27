@@ -571,7 +571,7 @@ async function nactiZapasyDne() {
     
     // Filtruj dnešní + zítřejší ranní zápasy (do +18h)
     const ted = new Date();
-    const limit = new Date(ted.getTime() + 24 * 60 * 60 * 1000);
+   const limit = new Date(ted.getTime() + 24 * 60 * 60 * 1000);
    const dnesniZapasy = ZAPASY_WC2026
         .filter(z => z.tym1 && z.tym2 && z.tym1 !== 'tba')
         .filter(z => {
@@ -579,6 +579,17 @@ async function nactiZapasyDne() {
             return dt >= ted && dt <= limit;
         })
         .sort((a, b) => new Date(a.datum) - new Date(b.datum));
+    
+    // 🆕 Pokud máme méně než 6 nadcházejících, rozšiř na další chronologicky
+    const MIN_ZAPASU = 6;
+    if (dnesniZapasy.length < MIN_ZAPASU) {
+        const extra = ZAPASY_WC2026
+            .filter(z => z.tym1 && z.tym2 && z.tym1 !== 'tba')
+            .filter(z => new Date(z.datum) > limit)  // dál než 24h
+            .sort((a, b) => new Date(a.datum) - new Date(b.datum))
+            .slice(0, MIN_ZAPASU - dnesniZapasy.length);
+        dnesniZapasy.push(...extra);
+    }
     
     // 🆕 SKONČENÉ zápasy které byly označené pro predikci (pro vyhodnocení)
     const skoncene = ZAPASY_WC2026
