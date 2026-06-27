@@ -23,6 +23,61 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <script>
+// 🏆 Načti playoff zápasy z DB (auto-sync z API)
+async function nactiPlayoffZapasy() {
+    try {
+        // Cache 5 min v paměti
+        if (window.__playoffCache && (Date.now() - window.__playoffCacheCas) < 5 * 60 * 1000) {
+            return window.__playoffCache;
+        }
+        
+        // Pošli Edge Function aby si stáhla aktualizace (nebo dostala cache z DB)
+        await supabaseClient.functions.invoke('turnaj-zapasy').catch(() => {});
+        
+        // Načti z DB
+        const { data } = await supabaseClient
+            .from('turnaj_zapasy')
+            .select('*')
+            .order('datum', { ascending: true });
+        
+        const playoff = (data || []).map(z => ({
+            datum: z.datum.replace('Z', '').substring(0, 16), // ISO bez Z, jen YYYY-MM-DDTHH:MM
+            tym1: z.tym1 || 'TBD',
+            tym2: z.tym2 || 'TBD',
+            faze: z.faze,
+            status: z.status,
+            skore_1: z.skore_1,
+            skore_2: z.skore_2,
+            _fromAPI: true
+        }));
+        
+        window.__playoffCache = playoff;
+        window.__playoffCacheCas = Date.now();
+        console.log(`🏆 Načteno ${playoff.length} playoff zápasů z API`);
+        return playoff;
+    } catch (err) {
+        console.warn('Playoff zápasy:', err);
+        return [];
+    }
+}
+
+// 🔄 Slijí statické skupiny + dynamické playoff
+async function ziskejVsechnyZapasy() {
+    const playoff = await nactiPlayoffZapasy();
+    
+    // Filtruj ZAPASY_WC2026 – nech jen skupiny (playoff bude z API)
+    const skupiny = ZAPASY_WC2026.filter(z => 
+        z.faze && z.faze.startsWith('Skupina')
+    );
+    
+    return [...skupiny, ...playoff];
+}
+
+// Init při loadu
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(nactiPlayoffZapasy, 2000);
+});
+    
 // 🎯 ADMIN: Uložit výsledek zápasu (1/X/2) + auto-vyhodnotit bleskové tipy
 async function ulozVysledekZapasu(zapasKey, zapasDatum, tym1, tym2, vysledek) {
     const { data: authData } = await supabaseClient.auth.getUser();
@@ -1127,8 +1182,8 @@ var ZAPASY_WC2026 = [
     { datum: '2026-06-23T22:00', tym1: 'Anglie', tym2: 'Ghana', faze: 'Skupina L' },
     
     // ST 24. 6.
-    { datum: '2026-06-24T01:00', tym1: 'Panama', tym2: 'Chorvatsko', faze: 'Skupina K' },
-    { datum: '2026-06-24T04:00', tym1: 'Kolumbie', tym2: 'DR Kongo', faze: 'Skupina L' },
+    { datum: '2026-06-24T01:00', tym1: 'Panama', tym2: 'Chorvatsko', faze: 'Skupina L' },
+    { datum: '2026-06-24T04:00', tym1: 'Kolumbie', tym2: 'DR Kongo', faze: 'Skupina K' },
     
     // ════════ MATCHDAY 3 (24.-27. června) - SIMULTÁNNĚ ════════
     
