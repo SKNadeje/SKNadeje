@@ -580,7 +580,7 @@ async function nactiZapasyDne() {
         })
         .sort((a, b) => new Date(a.datum) - new Date(b.datum));
     
-    // 🆕 SKONČENÉ zápasy které byly označené jako zápas dne (pro vyhodnocení)
+    // 🆕 SKONČENÉ zápasy které byly označené pro predikci (pro vyhodnocení)
     const skoncene = ZAPASY_WC2026
         .filter(z => z.tym1 && z.tym2 && z.tym1 !== 'tba')
         .filter(z => {
@@ -1222,7 +1222,7 @@ async function renderMatchBanner() {
         const isZapasDne = zapasyDne.includes(zapasKey);
         const detailId = `zapas-live-detail-${idx}-${z.datum.replace(/[:T.-]/g, '')}`;
         
-        // Když je zápas dne, kombinuj červené LIVE + zlatý border
+        // Když je zápas pro predikci, kombinuj červené LIVE + zlatý border
         const border = isZapasDne 
             ? '2px solid rgba(212,175,55,0.55)'
             : '1px solid rgba(239,68,68,0.4)';
@@ -1292,7 +1292,7 @@ async function renderMatchBanner() {
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                         ${isZapasDne ? `
                             <span style="display:inline-flex; align-items:center; gap:5px; padding:2px 8px; background:linear-gradient(135deg,#d4af37,#b8941f); color:#000; border-radius:8px; font-size:0.6rem; font-weight:900; letter-spacing:1.5px; box-shadow:0 2px 6px rgba(212,175,55,0.3);">
-                                ⭐ ZÁPAS DNE
+                                🔮 ZÁPAS PRO PREDIKCI
                             </span>
                         ` : ''}
                         <span style="display:inline-flex; align-items:center; gap:5px; padding:2px 8px; background:rgba(56,189,248,0.15); color:#38bdf8; border-radius:8px; font-size:0.6rem; font-weight:900; letter-spacing:1.5px;">
@@ -3753,7 +3753,7 @@ input:focus {
 <div id="zapasy-dne-admin" style="background:linear-gradient(135deg, rgba(212,175,55,0.05), rgba(212,175,55,0.02)); border:1px solid rgba(212,175,55,0.2); border-radius:12px; padding:16px; margin-bottom:14px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
         <div style="color:#d4af37; font-weight:900; letter-spacing:1.5px; font-size:0.8rem; text-transform:uppercase; display:flex; align-items:center; gap:8px;">
-            ⭐ <span>Zápasy dne</span>
+            🔮 <span>Zápasy pro predikci</span>
         </div>
         <div id="zapasy-dne-count" style="font-size:0.7rem; color:#94a3b8;">Načítám...</div>
     </div>
