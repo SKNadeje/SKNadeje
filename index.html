@@ -40,16 +40,28 @@ async function nactiPlayoffZapasy() {
             .select('*')
             .order('datum', { ascending: true });
         
-        const playoff = (data || []).map(z => ({
-            datum: z.datum.replace('Z', '').substring(0, 16), // ISO bez Z, jen YYYY-MM-DDTHH:MM
-            tym1: z.tym1 || 'TBD',
-            tym2: z.tym2 || 'TBD',
-            faze: z.faze,
-            status: z.status,
-            skore_1: z.skore_1,
-            skore_2: z.skore_2,
-            _fromAPI: true
-        }));
+        const playoff = (data || []).map(z => {
+            // Konverze UTC ISO → local CET/CEST format (jako v ZAPASY_WC2026)
+            const utc = new Date(z.datum);
+            // Místo .toISOString() použij local components
+            const yyyy = utc.getFullYear();
+            const mm = String(utc.getMonth() + 1).padStart(2, '0');
+            const dd = String(utc.getDate()).padStart(2, '0');
+            const hh = String(utc.getHours()).padStart(2, '0');
+            const min = String(utc.getMinutes()).padStart(2, '0');
+            const datumLocal = `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+            
+            return {
+                datum: datumLocal,
+                tym1: z.tym1 || 'TBD',
+                tym2: z.tym2 || 'TBD',
+                faze: z.faze,
+                status: z.status,
+                skore_1: z.skore_1,
+                skore_2: z.skore_2,
+                _fromAPI: true
+            };
+        });
         
         window.__playoffCache = playoff;
         window.__playoffCacheCas = Date.now();
