@@ -898,17 +898,37 @@ async function ulozZapasyDne() {
     const { data: authData } = await supabaseClient.auth.getUser();
     if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") return;
     
-   const checked = Array.from(document.querySelectorAll('#zapasy-dne-list input[type="checkbox"]:checked'));
+    const checked = Array.from(document.querySelectorAll('#zapasy-dne-list input[type="checkbox"]:checked'));
     const oznacene = checked.map(c => c.dataset.zapasKey);
     
     try {
+        // 🔒 Načti zápasy které mají tipy v bleskove_tipy (NEMAZAT!)
+        const { data: tipy } = await supabaseClient
+            .from('bleskove_tipy')
+            .select('zapas_key');
+        const sTipy = [...new Set((tipy || []).map(t => t.zapas_key))];
+        
+        // 🔒 Načti zápasy které mají uložený výsledek (NEMAZAT!)
+        const { data: vysledky } = await supabaseClient
+            .from('zapas_vysledky')
+            .select('zapas_key');
+        const sVysledkem = (vysledky || []).map(v => v.zapas_key);
+        
+        // Slij vše dohromady (bez duplikátů)
+        const vse = [...new Set([...oznacene, ...sTipy, ...sVysledkem])];
+        
         const { error } = await supabaseClient
             .from('admin_vysledky')
-            .update({ zapasy_dne: oznacene })
+            .update({ zapasy_dne: vse })
             .eq('id', 1);
         if (error) throw error;
         
-        showToast(`⭐ Uloženo ${oznacene.length} zápasů dne`, 'success', 2500);
+        const skoncene = vse.length - oznacene.length;
+        showToast(
+            `⭐ Uloženo ${oznacene.length} zápasů${skoncene > 0 ? ` (+${skoncene} k vyhodnocení)` : ''}`, 
+            'success', 
+            2500
+        );
         
         // Re-render banner i tabulku
         nactiZapasyDne();
@@ -918,22 +938,6 @@ async function ulozZapasyDne() {
         console.error('Uložit zapasy_dne:', err);
         showToast('⚠️ Chyba ukládání: ' + err.message, 'error', 3000);
     }
-}
-
-// Spustit při loadu (admin se ukáže)
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(nactiZapasyDne, 1800);
-});
-
-// Při změně admin panelu re-renderuj
-const __zapObserver = new MutationObserver(() => {
-    if (document.getElementById('zapasy-dne-list') && !document.getElementById('zapasy-dne-list').dataset.loaded) {
-        document.getElementById('zapasy-dne-list').dataset.loaded = '1';
-        nactiZapasyDne();
-    }
-});
-if (document.body) {
-    __zapObserver.observe(document.body, { childList: true, subtree: true });
 }
     
 // 🤖 AI Komentátor – skrytí / zobrazení
