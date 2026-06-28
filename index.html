@@ -74,9 +74,7 @@ async function ziskejVsechnyZapasy() {
 }
 
 // Init při loadu
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(nactiPlayoffZapasy, 2000);
-});
+
     
 // 🎯 ADMIN: Uložit výsledek zápasu (1/X/2) + auto-vyhodnotit bleskové tipy
 async function ulozVysledekZapasu(zapasKey, zapasDatum, tym1, tym2, vysledek) {
@@ -496,21 +494,21 @@ async function vyrobZapasDetail(z, containerId) {
     let labelText = 'věří v tým';
     let kontrolniFaze = null;
     
-    if (fazeText.includes('skupina')) {
+   if (fazeText.includes('skupina')) {
         labelText = 'tipuje postup ze skupiny';
         kontrolniFaze = 'groups';
     } else if (fazeText.includes('1/16')) {
-        labelText = 'tipuje postup do 1/8';
-        kontrolniFaze = 's16';
+        labelText = 'tipuje postup z 1/16';
+        kontrolniFaze = 's32';  // tip.s32 = kdo postupuje z 1/16 (16 týmů)
     } else if (fazeText.includes('1/8') || fazeText.includes('osmifinále')) {
         labelText = 'tipuje postup do čtvrtfinále';
-        kontrolniFaze = 's8';
+        kontrolniFaze = 's16';  // tip.s16 = kdo postupuje z 1/8 (8 týmů)
     } else if (fazeText.includes('čtvrtfin')) {
         labelText = 'tipuje postup do semifinále';
-        kontrolniFaze = 's4';
+        kontrolniFaze = 's8';  // tip.s8 = kdo postupuje z 1/4 (4 týmy)
     } else if (fazeText.includes('semifin')) {
         labelText = 'tipuje postup do finále';
-        kontrolniFaze = 'final';
+        kontrolniFaze = 's4';  // tip.s4 = finalisté (2 týmy)
     } else if (fazeText.includes('3. místo') || fazeText.includes('bronz')) {
         labelText = 'tipuje na 3. místo';
         kontrolniFaze = 'bronze';
@@ -537,7 +535,7 @@ async function vyrobZapasDetail(z, containerId) {
                             if (name === z.tym2) t2Match = true;
                         });
                     });
-                } else if (kontrolniFaze === 's16' || kontrolniFaze === 's8' || kontrolniFaze === 's4') {
+               } else if (kontrolniFaze === 's32' || kontrolniFaze === 's16' || kontrolniFaze === 's8' || kontrolniFaze === 's4') {
                     const arr = tip[kontrolniFaze] || [];
                     arr.forEach(team => {
                         const name = String(team || '').trim();
@@ -1305,6 +1303,14 @@ async function renderMatchBanner() {
         } catch (err) {
             zapasyDne = [];
         }
+    }
+    
+    // 🚀 Pre-fetch playoff zápasů na pozadí (neblokuj render)
+    if (!window.__playoffCache || (Date.now() - (window.__playoffCacheCas || 0)) > 5 * 60 * 1000) {
+        nactiPlayoffZapasy().then(() => {
+            // Po načtení udělej re-render banneru s aktualizovanými daty
+            setTimeout(() => renderMatchBanner(), 100);
+        });
     }
     
     const live = aktualniZapasy();
