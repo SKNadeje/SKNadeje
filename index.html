@@ -903,15 +903,12 @@ async function ulozZapasyDne() {
     
     try {
         // 🔒 Načti zápasy které mají tipy v bleskove_tipy (NEMAZAT!)
-        const { data: tipy } = await supabaseClient
-            .from('bleskove_tipy')
-            .select('zapas_key');
+        // 🔒 Načti zápasy s tipy + s výsledkem PARALELNĚ
+        const [{ data: tipy }, { data: vysledky }] = await Promise.all([
+            supabaseClient.from('bleskove_tipy').select('zapas_key'),
+            supabaseClient.from('zapas_vysledky').select('zapas_key')
+        ]);
         const sTipy = [...new Set((tipy || []).map(t => t.zapas_key))];
-        
-        // 🔒 Načti zápasy které mají uložený výsledek (NEMAZAT!)
-        const { data: vysledky } = await supabaseClient
-            .from('zapas_vysledky')
-            .select('zapas_key');
         const sVysledkem = (vysledky || []).map(v => v.zapas_key);
         
         // Slij vše dohromady (bez duplikátů)
