@@ -10876,6 +10876,10 @@ function cfS(sid, count) {
     panel.classList.toggle('hidden');
     if (!panel.classList.contains('hidden')) {
         genAdminForm();
+        // 🆕 Auto-load zápasů pro predikci
+        setTimeout(() => {
+            if (typeof nactiZapasyDne === 'function') nactiZapasyDne();
+        }, 200);
     }
 }
    function genAdminForm() {
@@ -11782,6 +11786,37 @@ if ('serviceWorker' in navigator) {
     });
 }
 */
+    // 🔄 Auto-load zápasů pro predikci když se admin panel zobrazí
+const __adminPanelObs = new MutationObserver(() => {
+    const panel = document.getElementById('admin-panel');
+    if (!panel) return;
+    
+    const visible = panel.style.display !== 'none' && panel.offsetParent !== null;
+    
+    if (visible && !panel.dataset.zapasyLoaded) {
+        panel.dataset.zapasyLoaded = '1';
+        setTimeout(() => {
+            if (typeof nactiZapasyDne === 'function') nactiZapasyDne();
+        }, 300);
+    }
+    
+    if (!visible) {
+        delete panel.dataset.zapasyLoaded;
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        const panel = document.getElementById('admin-panel');
+        if (panel) {
+            __adminPanelObs.observe(panel, { 
+                attributes: true, 
+                attributeFilter: ['style', 'class'] 
+            });
+            console.log('✅ Admin panel observer aktivní');
+        }
+    }, 2000);
+});
 </script>
 
 <div id="custom-alert" class="modal-overlay hidden">
