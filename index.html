@@ -221,17 +221,18 @@ async function renderBleskoveSekce(userId) {
         `;
     }
     
-    const miss = stats.tipu - stats.trefa;
-    const uspesnost = ((stats.trefa / stats.tipu) * 100).toFixed(0);
+    const vyhodnoceno = stats.vyhodnoceno || 0;
+    const miss = vyhodnoceno - stats.trefa;
+    const uspesnost = vyhodnoceno > 0 ? ((stats.trefa / vyhodnoceno) * 100).toFixed(0) : '—';
+    const pending = stats.pending || 0;
     
     // Načti posledních 5 tipů hráče
     let posledniTipy = [];
     try {
-        const { data } = await supabaseClient
+       const { data } = await supabaseClient
             .from('bleskove_tipy')
             .select('zapas_datum, tym1, tym2, tip, vysledek')
             .eq('user_id', userId)
-            .not('vysledek', 'is', null)
             .order('zapas_datum', { ascending: false })
             .limit(5);
         posledniTipy = data || [];
@@ -243,20 +244,26 @@ async function renderBleskoveSekce(userId) {
                 ⚡ Bleskové tipy
             </div>
             
-            <!-- 3 statistiky -->
-            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px;">
-                <div style="text-align:center; padding:10px 6px; background:rgba(0,0,0,0.3); border-radius:8px;">
-                    <div style="font-size:1.4rem; font-weight:900; color:#d4af37;">${stats.tipu}</div>
-                    <div style="font-size:0.55rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">⚡ Tipů</div>
+           <!-- 4 statistiky -->
+            <div style="display:grid; grid-template-columns:repeat(${pending > 0 ? '4' : '3'},1fr); gap:6px; margin-bottom:14px;">
+                <div style="text-align:center; padding:10px 4px; background:rgba(0,0,0,0.3); border-radius:8px;">
+                    <div style="font-size:1.3rem; font-weight:900; color:#d4af37;">${stats.tipu}</div>
+                    <div style="font-size:0.5rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">⚡ Tipů</div>
                 </div>
-                <div style="text-align:center; padding:10px 6px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); border-radius:8px;">
-                    <div style="font-size:1.4rem; font-weight:900; color:#22c55e;">${stats.trefa}</div>
-                    <div style="font-size:0.55rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">✅ Trefa</div>
+                <div style="text-align:center; padding:10px 4px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); border-radius:8px;">
+                    <div style="font-size:1.3rem; font-weight:900; color:#22c55e;">${stats.trefa}</div>
+                    <div style="font-size:0.5rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">✅ Trefa</div>
                 </div>
-                <div style="text-align:center; padding:10px 6px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.18); border-radius:8px;">
-                    <div style="font-size:1.4rem; font-weight:900; color:#ef4444;">${miss}</div>
-                    <div style="font-size:0.55rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">❌ Miss</div>
+                <div style="text-align:center; padding:10px 4px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.18); border-radius:8px;">
+                    <div style="font-size:1.3rem; font-weight:900; color:#ef4444;">${miss}</div>
+                    <div style="font-size:0.5rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">❌ Miss</div>
                 </div>
+                ${pending > 0 ? `
+                    <div style="text-align:center; padding:10px 4px; background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15); border-radius:8px;">
+                        <div style="font-size:1.3rem; font-weight:900; color:#d4af37;">${pending}</div>
+                        <div style="font-size:0.5rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">⏳ Pending</div>
+                    </div>
+                ` : ''}
             </div>
             
             <!-- Úspěšnost + streak -->
@@ -265,19 +272,23 @@ async function renderBleskoveSekce(userId) {
                 <span style="color:${uspesnost >= 70 ? '#22c55e' : uspesnost >= 50 ? '#d4af37' : '#ef4444'}; font-weight:900;">${uspesnost} %</span>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(0,0,0,0.25); border-radius:8px; margin-bottom:12px; font-size:0.8rem;">
-                <span style="color:#94a3b8;">🔥 Nejdelší streak:</span>
-                <span style="color:#d4af37; font-weight:900;">${stats.maxStreak}×</span>
+                <span style="color:#94a3b8;">📊 Úspěšnost:</span>
+                <span style="color:${vyhodnoceno === 0 ? '#5a6480' : uspesnost >= 70 ? '#22c55e' : uspesnost >= 50 ? '#d4af37' : '#ef4444'}; font-weight:900;">${vyhodnoceno === 0 ? '— (čeká na vyhodnocení)' : uspesnost + ' %'}</span>
             </div>
             
             ${posledniTipy.length > 0 ? `
-                <div style="font-size:0.6rem; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; font-weight:700; margin-bottom:6px;">📜 Posledních ${posledniTipy.length}</div>
+               <div style="font-size:0.6rem; color:rgba(212,175,55,0.6); letter-spacing:1.5px; text-transform:uppercase; font-weight:700; margin-bottom:6px;">📜 Posledních ${posledniTipy.length}</div>
                 <div style="display:flex; flex-direction:column; gap:4px;">
-                    ${posledniTipy.map(t => {
-                        const ok = t.tip === t.vysledek;
+                   ${posledniTipy.map(t => {
+                        const pending = t.vysledek === null || t.vysledek === undefined;
+                        const ok = !pending && t.tip === t.vysledek;
+                        const icon = pending ? '⏳' : (ok ? '✅' : '❌');
+                        const bg = pending ? 'rgba(212,175,55,0.04)' : (ok ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.04)');
+                        const tipColor = pending ? '#d4af37' : (ok ? '#22c55e' : '#ef4444');
                         return `
-                            <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:${ok ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.04)'}; border-radius:5px; font-size:0.72rem;">
-                                <span style="color:#f0e6c8;">${ok ? '✅' : '❌'} ${t.tym1} vs ${t.tym2}</span>
-                                <span style="color:${ok ? '#22c55e' : '#ef4444'}; font-weight:700;">${t.tip}</span>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:${bg}; border-radius:5px; font-size:0.72rem;">
+                                <span style="color:#f0e6c8;">${icon} ${t.tym1} vs ${t.tym2}</span>
+                                <span style="color:${tipColor}; font-weight:700;">${t.tip}${pending ? ' (⏳)' : ''}</span>
                             </div>
                         `;
                     }).join('')}
@@ -290,27 +301,40 @@ async function renderBleskoveSekce(userId) {
 // 📊 Načti statistiky bleskových tipů pro všechny hráče (1× při loadu)
 async function nactiBleskoveStats() {
     try {
+       // Vezmi VŠECHNY tipy (i bez výsledku) – pending se zobrazí v profilu
         const { data, error } = await supabaseClient
             .from('bleskove_tipy')
             .select('user_id, tip, vysledek, zapas_datum')
-            .not('vysledek', 'is', null)
             .order('zapas_datum', { ascending: true });
         
         if (error) throw error;
         
         const map = {};
-        (data || []).forEach(t => {
+       (data || []).forEach(t => {
             if (!map[t.user_id]) {
-                map[t.user_id] = { tipu: 0, trefa: 0, maxStreak: 0, _streak: 0 };
+                map[t.user_id] = { 
+                    tipu: 0,        // všechny tipy (i pending)
+                    vyhodnoceno: 0, // jen s výsledkem
+                    trefa: 0, 
+                    maxStreak: 0, 
+                    _streak: 0,
+                    pending: 0      // bez výsledku
+                };
             }
             const s = map[t.user_id];
             s.tipu++;
-            if (t.tip === t.vysledek) {
-                s.trefa++;
-                s._streak++;
-                if (s._streak > s.maxStreak) s.maxStreak = s._streak;
+            
+            if (t.vysledek === null || t.vysledek === undefined) {
+                s.pending++;
             } else {
-                s._streak = 0;
+                s.vyhodnoceno++;
+                if (t.tip === t.vysledek) {
+                    s.trefa++;
+                    s._streak++;
+                    if (s._streak > s.maxStreak) s.maxStreak = s._streak;
+                } else {
+                    s._streak = 0;
+                }
             }
         });
         
