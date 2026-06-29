@@ -7616,6 +7616,13 @@ async function otevritMujTip() {
     
     const tip = me.tip;
     const r = window.currentResults || {};
+    
+    // 🎯 Načti admin_vysledky pro faze_status
+    let adminVys = {};
+    try {
+        const { data } = await supabaseClient.from('admin_vysledky').select('*').eq('id', 1).single();
+        adminVys = data || {};
+    } catch {}
     const eq = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
     
     // ════════ HELPER: 32 týmů 1/16 ════════
@@ -7700,30 +7707,41 @@ async function otevritMujTip() {
     );
     const apiHotovo = postupujici.size >= 32;  // všech 32 postupujících známo
     
-   const statusZapasu = (vitezTip, realAdmin) => {
+  const statusZapasu = (vitezTip, realAdmin, fazeKlic) => {
         if (!vitezTip) return 'no-pick';
         
-        // 🆕 Auto: nepostoupil ze skupin (jen pokud API už má všech 32 postupujících)
+        // 🆕 Auto: nepostoupil ze skupin (priorita)
         if (apiHotovo && !postupujici.has(vitezTip)) {
             return 'eliminated';
         }
         
-        if (!realAdmin) {
-            // 🆕 Auto: postoupil, ale admin ještě neoznačil → "advanced"
-            if (apiHotovo && postupujici.has(vitezTip)) {
-                return 'advanced';
-            }
-            return 'pending';
-        }
         const list = Array.isArray(realAdmin) ? realAdmin.filter(x => x && String(x).trim()) : (realAdmin ? [realAdmin] : []);
-        if (list.length === 0) {
-            // 🆕 Auto: postoupil
+        const fazeStatus = adminVys?.faze_status?.[fazeKlic] || 'none';
+        
+        // ✅ Tip je v admin listu → správně
+        if (list.length > 0 && list.some(x => eq(x, vitezTip))) {
+            return 'correct';
+        }
+        
+        // 🆕 Fáze je live (admin označuje průběžně, nevíme všechny správné)
+        //     → pokud tým postoupil z 1/16 podle API, ukaž advanced
+        if (fazeStatus === 'live') {
             if (apiHotovo && postupujici.has(vitezTip)) {
                 return 'advanced';
             }
             return 'pending';
         }
-        return list.some(x => eq(x, vitezTip)) ? 'correct' : 'wrong';
+        
+        // ❌ Fáze final + tip není v listu → wrong
+        if (fazeStatus === 'final' && list.length > 0) {
+            return 'wrong';
+        }
+        
+        // 🟡 Default: pending
+        if (apiHotovo && postupujici.has(vitezTip)) {
+            return 'advanced';
+        }
+        return 'pending';
     };
     
     // ════════ BUILD ROUNDS ════════
@@ -7747,8 +7765,8 @@ async function otevritMujTip() {
     const rightSemi = semiZapasy[1] ? [semiZapasy[1]] : [];
     
     // ════════ MATCH BOX renderer ════════
-    const matchBox = (z, realAdmin, varianta = 'default') => {
-        const status = statusZapasu(z.vitez, realAdmin);
+   const matchBox = (z, realAdmin, varianta = 'default', fazeKlic = null) => {
+        const status = statusZapasu(z.vitez, realAdmin, fazeKlic);
         const homeIsWinner = z.vitez && eq(z.home, z.vitez);
         const awayIsWinner = z.vitez && eq(z.away, z.vitez);
         
@@ -7782,11 +7800,11 @@ async function otevritMujTip() {
     };
     
     // ════════ BRACKET COLUMN renderer ════════
-    const bracketCol = (zapasy, realAdmin, label) => `
+   const bracketCol = (zapasy, realAdmin, label, fazeKlic) => `
         <div style="display:flex; flex-direction:column; min-width:0; height:100%;">
             <div style="text-align:center; font-size:0.55rem; color:rgba(212,175,55,0.85); letter-spacing:1px; font-weight:800; margin-bottom:8px;">${label}</div>
             <div style="flex:1; display:flex; flex-direction:column; justify-content:space-around;">
-                ${zapasy.map(z => matchBox(z, realAdmin)).join('')}
+                ${zapasy.map(z => matchBox(z, realAdmin, 'default', fazeKlic)).join('')}
             </div>
         </div>
     `;
@@ -7805,10 +7823,10 @@ async function otevritMujTip() {
             <div style="display:flex; gap:3px; min-width:max-content; align-items:stretch; height:480px; justify-content:center;">
                 
                <!-- ═══ LEVÁ STRANA (1/16 → SEMI) ═══ -->
-                <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(leftR32, r.s32, '1/16')}</div>
-                <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(leftR16, r.s16, '1/8')}</div>
-                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(leftQF, r.s8, 'ČTVRTFINÁLE')}</div>
-                <div style="flex:0 0 105px; min-width:0; overflow:hidden;">${bracketCol(leftSemi, null, 'SEMIFINÁLE')}</div>
+                <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(leftR32, r.s32, '1/16', 's32')}</div>
+                <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(leftR16, r.s16, '1/8', 's16')}</div>
+                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(leftQF, r.s8, 'ČTVRTFINÁLE', 's8')}</div>
+                <div style="flex:0 0 105px; min-width:0; overflow:hidden;">${bracketCol(leftSemi, null, 'SEMIFINÁLE', 's4')}</div>
                 
                <!-- ═══ CENTER: POHÁR + FINÁLE + BRONZ ═══ -->
                 <div style="flex:0 0 140px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:0 3px; position:relative;">   
@@ -7849,10 +7867,10 @@ async function otevritMujTip() {
                 </div>
                 
               <!-- ═══ PRAVÁ STRANA (SEMI → 1/16) ═══ -->
-                <div style="flex:0 0 105px; min-width:0; overflow:hidden;">${bracketCol(rightSemi, null, 'SEMIFINÁLE')}</div>
-                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(rightQF, r.s8, 'ČTVRTFINÁLE')}</div>
-                <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(rightR16, r.s16, '1/8')}</div>
-                <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(rightR32, r.s32, '1/16')}</div>
+                <div style="flex:0 0 105px; min-width:0; overflow:hidden;">${bracketCol(rightSemi, null, 'SEMIFINÁLE', 's4')}</div>
+                <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(rightQF, r.s8, 'ČTVRTFINÁLE', 's8')}</div>
+                <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(rightR16, r.s16, '1/8', 's16')}</div>
+                <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(rightR32, r.s32, '1/16', 's32')}</div>
             </div>
         </div>
         
