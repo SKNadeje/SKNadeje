@@ -1125,10 +1125,7 @@ function aplikujTurnajMode() {
         mujTipBtn.style.display = 'none';
     }
     if (typeof renderMatchBanner === 'function') renderMatchBanner();
-  // Auto-refresh banneru každou minutu
-setInterval(() => {
-    if (typeof renderMatchBanner === 'function') renderMatchBanner();
-}, 60000); // 60 sekund
+ 
 }
     // 📅 Zápasy MS 2026 (datum/čas v Praze - timezone Europe/Prague)
 // 📅 Zápasy MS 2026 - kompletní skupinová fáze (časy v CET/CEST - Praha)
