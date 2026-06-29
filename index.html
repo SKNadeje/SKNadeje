@@ -1342,12 +1342,18 @@ async function renderMatchBanner() {
         }
     }
     
-    // 🚀 Pre-fetch playoff zápasů na pozadí (neblokuj render)
-    if (!window.__playoffCache || (Date.now() - (window.__playoffCacheCas || 0)) > 5 * 60 * 1000) {
-        nactiPlayoffZapasy().then(() => {
-            // Po načtení udělej re-render banneru s aktualizovanými daty
-            setTimeout(() => renderMatchBanner(), 100);
-        });
+   // 🚀 Pre-fetch playoff zápasů – ale POZOR na smyčku
+    if (!window.__playoffCache && !window.__playoffFetching) {
+        window.__playoffFetching = true;
+        nactiPlayoffZapasy()
+            .then(() => {
+                window.__playoffFetching = false;
+                if (!window.__playoffInitRender) {
+                    window.__playoffInitRender = true;
+                    setTimeout(() => renderMatchBanner(), 300);
+                }
+            })
+            .catch(() => { window.__playoffFetching = false; });
     }
     
     const live = aktualniZapasy();
