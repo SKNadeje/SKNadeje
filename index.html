@@ -7691,8 +7691,23 @@ async function otevritMujTip() {
         return z;
     };
     
+   // 🎯 Set týmů, které postoupily do 1/16 (z API)
+    const postupujici = new Set(
+        (window.__playoffCache || [])
+            .filter(z => z.faze === '1/16 finále')
+            .flatMap(z => [z.tym1, z.tym2])
+            .filter(t => t && t !== 'TBD')
+    );
+    const apiHotovo = postupujici.size >= 32;  // všech 32 postupujících známo
+    
     const statusZapasu = (vitezTip, realAdmin) => {
         if (!vitezTip) return 'no-pick';
+        
+        // 🆕 Auto: nepostoupil ze skupin (jen pokud API už má všech 32 postupujících)
+        if (apiHotovo && !postupujici.has(vitezTip)) {
+            return 'eliminated';
+        }
+        
         if (!realAdmin) return 'pending';
         const list = Array.isArray(realAdmin) ? realAdmin.filter(x => x && String(x).trim()) : (realAdmin ? [realAdmin] : []);
         if (list.length === 0) return 'pending';
@@ -7725,11 +7740,12 @@ async function otevritMujTip() {
         const homeIsWinner = z.vitez && eq(z.home, z.vitez);
         const awayIsWinner = z.vitez && eq(z.away, z.vitez);
         
-        const styl = (isWinner) => {
+       const styl = (isWinner) => {
             if (!z.vitez) return { bg:'rgba(255,255,255,0.06)', bd:'rgba(212,175,55,0.15)', col:'#cbd5e1', w:600 };
             if (isWinner) {
                 if (status === 'correct') return { bg:'rgba(34,197,94,0.25)', bd:'rgba(34,197,94,0.6)', col:'#4ade80', w:800 };
                 if (status === 'wrong')   return { bg:'rgba(239,68,68,0.2)', bd:'rgba(239,68,68,0.5)', col:'#f87171', w:800 };
+                if (status === 'eliminated') return { bg:'rgba(239,68,68,0.18)', bd:'rgba(239,68,68,0.45)', col:'#f87171', w:700 };
                 return { bg:'rgba(212,175,55,0.22)', bd:'rgba(212,175,55,0.5)', col:'#f0c850', w:800 };
             }
             return { bg:'rgba(255,255,255,0.05)', bd:'rgba(212,175,55,0.12)', col:'#94a3b8', w:600 };
@@ -7737,7 +7753,9 @@ async function otevritMujTip() {
         
         const row = (team, isWinner) => {
             const c = styl(isWinner);
-            const icon = isWinner && status === 'correct' ? ' ✓' : (isWinner && status === 'wrong' ? ' ✗' : '');
+           const icon = isWinner && status === 'correct' ? ' ✓' : 
+                     isWinner && status === 'wrong' ? ' ✗' :
+                     isWinner && status === 'eliminated' ? ' ⊘' : '';
             const fl = (team && typeof flagImg === 'function') ? flagImg(team, 10) : '';
             return `<div style="background:${c.bg}; border:1px solid ${c.bd}; color:${c.col}; padding:3px 5px; border-radius:4px; font-size:9px; font-weight:${c.w}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:3px; margin-bottom:1px;">${fl}<span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${team || '–'}${icon}</span></div>`;
         };
@@ -7843,7 +7861,7 @@ async function otevritMujTip() {
                                 const isFirst = pos === 0;
                                 return `<div style="display:flex; align-items:center; gap:5px; padding:2px 3px; ${stat === 'correct' ? 'background:rgba(34,197,94,0.1); border-radius:3px;' : stat === 'wrong' ? 'background:rgba(239,68,68,0.05); border-radius:3px;' : ''}">
                                     <span style="font-size:0.6rem; color:${isFirst ? '#d4af37' : (pos === 1 ? '#cbd5e1' : (pos === 2 ? '#d97b3a' : '#5a6480'))}; font-weight:900; min-width:10px;">${pos+1}.</span>
-                                    <span style="font-size:0.7rem; color:${stat === 'correct' ? '#22c55e' : stat === 'wrong' ? '#ef4444' : (isFirst ? '#f0e6c8' : '#cbd5e1')}; font-weight:${isFirst ? '700' : '500'}; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:4px;">${(t && typeof flagImg === 'function') ? flagImg(t, 12) : ''}<span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${t || '–'}</span></span>
+                                    <span style="font-size:0.7rem; color:${stat === 'correct' ? '#22c55e' : (stat === 'wrong' || stat === 'eliminated') ? '#ef4444' : (isFirst ? '#f0e6c8' : '#cbd5e1')}; font-weight:${isFirst ? '700' : '500'}; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:4px;">${(t && typeof flagImg === 'function') ? flagImg(t, 12) : ''}<span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${t || '–'}</span></span>
                                 </div>`;
                             }).join('')}
                         </div>
