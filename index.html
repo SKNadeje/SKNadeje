@@ -104,13 +104,13 @@ async function generujKroniku() {
         doc.addPage();
         header(doc, 'TURNAJ V ČÍSLECH', 'Statistiky FIFA WC 2026');
         
-        let { data: stats } = await supabaseClient
-            .from('turnaj_statistiky')
-            .select('*')
-            .order('aktualizovano', { ascending: false })
-            .limit(1)
-            .single();
-        stats = stats || {};
+        // Načti turnajové statistiky + admin výsledky paralelně
+        const [statsRes, admRes] = await Promise.all([
+            supabaseClient.from('turnaj_statistiky').select('*').order('aktualizovano', { ascending: false }).limit(1).single(),
+            supabaseClient.from('admin_vysledky').select('*').eq('id', 1).single()
+        ]);
+        const stats = statsRes.data || {};
+        const adm = admRes.data || {};
         
         doc.setFontSize(11);
         doc.setTextColor(240, 230, 200);
