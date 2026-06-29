@@ -200,56 +200,138 @@ async function generujKroniku() {
                 y += 8;
             });
         }
-        // ════════ STRANA: SKUPINOVÁ FÁZE ════════
-        const skupinyAdmin = adm.groups || [];
-        for (let blok = 0; blok < 2; blok++) {
-            doc.addPage();
-            header(doc, 'SKUPINOVÁ FÁZE', `Skupiny ${blok === 0 ? 'A–F' : 'G–L'}`);
-            
-            const skupinyVBloku = blok === 0 ? [0,1,2,3,4,5] : [6,7,8,9,10,11];
-            const pismena = 'ABCDEFGHIJKL';
-            
-            let yStart = 55;
-            const sirkaSkupiny = (W - 50) / 2;
-            const vyskaSkupiny = 60;
-            
-            skupinyVBloku.forEach((idx, pozice) => {
-                const col = pozice % 2;
-                const row = Math.floor(pozice / 2);
-                const x = 20 + col * (sirkaSkupiny + 10);
-                const y = yStart + row * (vyskaSkupiny + 8);
-                
-                // Box
-                doc.setFillColor(20, 25, 40);
-                doc.rect(x, y, sirkaSkupiny, vyskaSkupiny, 'F');
-                doc.setDrawColor(212, 175, 55);
-                doc.setLineWidth(0.3);
-                doc.rect(x, y, sirkaSkupiny, vyskaSkupiny);
-                
-                // Header skupiny
-                doc.setFillColor(212, 175, 55);
-                doc.rect(x, y, sirkaSkupiny, 8, 'F');
-                doc.setTextColor(0, 0, 0);
-                doc.setFont(undefined, 'bold');
-                doc.setFontSize(10);
-                doc.text(`SKUPINA ${pismena[idx]}`, x + sirkaSkupiny / 2, y + 5.5, { align: 'center' });
-                
-                // Týmy (z adminu = realne pořadí, nebo placeholder)
-                const tymy = skupinyAdmin[idx] || ['—', '—', '—', '—'];
-                doc.setFont(undefined, 'normal');
-                doc.setFontSize(9);
-                tymy.forEach((tym, i) => {
-                    const ty = y + 14 + i * 11;
-                    const symb = ['1.', '2.', '3.', '4.'][i];
-                    const barva = i < 3 ? [212, 175, 55] : [120, 120, 120];
-                    doc.setTextColor(...barva);
-                    doc.setFont(undefined, i < 2 ? 'bold' : 'normal');
-                    doc.text(symb, x + 5, ty);
-                    doc.setTextColor(i < 3 ? 240 : 140, i < 3 ? 230 : 140, i < 3 ? 200 : 140);
-                    doc.text(tym || '—', x + 13, ty);
-                });
-            });
-        }
+       // ════════ STRANY: SKUPINOVÁ FÁZE (tabulky + výsledky) ════════
+let skupinyData = [], zapasySkupin = [];
+try {
+    const [skRes, zsRes] = await Promise.all([
+        supabaseClient.from('turnaj_skupiny').select('*'),
+        supabaseClient.from('turnaj_zapasy_skupiny').select('*').order('datum', { ascending: true })
+    ]);
+    skupinyData = skRes.data || [];
+    zapasySkupin = zsRes.data || [];
+} catch (e) { console.warn('Skupiny pro kroniku:', e); }
+
+const pismena = 'ABCDEFGHIJKL';
+const skupinyAdmin = adm.groups || [];
+
+const tabulkaMap = {};
+skupinyData.forEach(s => { tabulkaMap[s.skupina] = s.tabulka || []; });
+const zapasyMap = {};
+zapasySkupin.forEach(z => {
+    if (!z.skupina) return;
+    (zapasyMap[z.skupina] = zapasyMap[z.skupina] || []).push(z);
+});
+
+// Vykreslí jednu skupinu, vrátí novou y pozici
+const vykresliSkupinu = (d, pismeno, x, y, sirka) => {
+    const tabulka = tabulkaMap[pismeno] || [];
+    const zapasy = zapasyMap[pismeno] || [];
+    const adminTymy = skupinyAdmin[pismena.indexOf(pismeno)] || [];
+
+    const cZ = x + 110, cV = x + 122, cR = x + 132, cP = x + 142, cSkore = x + 158, cB = x + 176;
+    const cTym = x + 8;
+
+    // Header skupiny
+    d.setFillColor(212, 175, 55);
+    d.rect(x, y, sirka, 7, 'F');
+    d.setTextColor(0, 0, 0);
+    d.setFont(undefined, 'bold');
+    d.setFontSize(10);
+    d.text(`SKUPINA ${pismeno}`, x + 4, y + 5);
+    y += 7;
+
+    // Hlavička tabulky
+    d.setFillColor(30, 35, 52);
+    d.rect(x, y, sirka, 6, 'F');
+    d.setTextColor(150, 150, 150);
+    d.setFont(undefined, 'bold');
+    d.setFontSize(6.5);
+    d.text('#', x + 2, y + 4);
+    d.text('TÝM', cTym, y + 4);
+    d.text('Z', cZ, y + 4, { align: 'center' });
+    d.text('V', cV, y + 4, { align: 'center' });
+    d.text('R', cR, y + 4, { align: 'center' });
+    d.text('P', cP, y + 4, { align: 'center' });
+    d.text('SKÓRE', cSkore, y + 4, { align: 'center' });
+    d.text('B', cB, y + 4, { align: 'right' });
+    y += 6;
+
+    // Řádky (z API, jinak fallback na admin pořadí)
+    const radky = tabulka.length > 0 ? tabulka :
+        adminTymy.map((t, i) => ({ poradi: i + 1, tym: t, odehrano: '-', v: '-', r: '-', p: '-', vstrelene: null, obdrzene: null, body: '-' }));
+
+    radky.forEach((row, i) => {
+        const postupuje = i < 2, treti = i === 2;
+        d.setFillColor(i % 2 === 0 ? 22 : 17, i % 2 === 0 ? 27 : 22, i % 2 === 0 ? 42 : 34);
+        d.rect(x, y, sirka, 6, 'F');
+
+        const cNum = postupuje ? [212, 175, 55] : (treti ? [205, 165, 95] : [140, 140, 140]);
+        const cTymBarva = postupuje ? [240, 230, 200] : (treti ? [205, 195, 165] : [135, 135, 135]);
+
+        d.setFontSize(7);
+        d.setFont(undefined, postupuje ? 'bold' : 'normal');
+        d.setTextColor(...cNum);
+        d.text(`${row.poradi}.`, x + 2, y + 4.2);
+        d.setTextColor(...cTymBarva);
+        let jm = String(row.tym || '—');
+        if (jm.length > 18) jm = jm.substring(0, 17) + '.';
+        d.text(jm, cTym, y + 4.2);
+
+        d.setFont(undefined, 'normal');
+        d.setTextColor(...cNum);
+        d.text(String(row.odehrano), cZ, y + 4.2, { align: 'center' });
+        d.text(String(row.v), cV, y + 4.2, { align: 'center' });
+        d.text(String(row.r), cR, y + 4.2, { align: 'center' });
+        d.text(String(row.p), cP, y + 4.2, { align: 'center' });
+        const skore = (row.vstrelene != null) ? `${row.vstrelene}:${row.obdrzene}` : '—';
+        d.text(skore, cSkore, y + 4.2, { align: 'center' });
+        d.setFont(undefined, 'bold');
+        d.text(String(row.body), cB, y + 4.2, { align: 'right' });
+        y += 6;
+    });
+
+    y += 3;
+
+    // Výsledky zápasů (2 sloupce)
+    if (zapasy.length > 0) {
+        d.setFont(undefined, 'bold');
+        d.setFontSize(6.5);
+        d.setTextColor(150, 150, 150);
+        d.text('VÝSLEDKY ZÁPASŮ', x + 2, y + 3);
+        y += 5;
+
+        const sloupecW = sirka / 2;
+        zapasy.forEach((z, i) => {
+            const col = i % 2, rad = Math.floor(i / 2);
+            const zx = x + col * sloupecW;
+            const zy = y + rad * 5;
+            const odehrano = z.skore_1 != null && z.skore_2 != null;
+            let t1 = String(z.tym1 || '?'), t2 = String(z.tym2 || '?');
+            if (t1.length > 14) t1 = t1.substring(0, 13) + '.';
+            if (t2.length > 14) t2 = t2.substring(0, 13) + '.';
+            d.setFont(undefined, 'normal');
+            d.setFontSize(7);
+            d.setTextColor(200, 190, 160);
+            const stred = odehrano ? `${z.skore_1}:${z.skore_2}` : 'vs';
+            d.text(`${t1}  ${stred}  ${t2}`, zx + 2, zy + 3);
+        });
+        y += Math.ceil(zapasy.length / 2) * 5;
+    }
+
+    return y;
+};
+
+// 4 strany po 3 skupinách (A–C, D–F, G–I, J–L)
+for (let strana = 0; strana < 4; strana++) {
+    doc.addPage();
+    const od = strana * 3;
+    header(doc, 'SKUPINOVÁ FÁZE', `Skupiny ${pismena[od]}–${pismena[od + 2]}`);
+    let yPos = 52;
+    for (let j = 0; j < 3; j++) {
+        yPos = vykresliSkupinu(doc, pismena[od + j], 15, yPos, W - 30);
+        yPos += 8;
+    }
+}
         // ════════ STRANA 3: SÍŇ SLÁVY (TOP 3) ════════
         doc.addPage();
         header(doc, 'SÍŇ SLÁVY', 'Vítězové WC 2026 Tipovačky');
