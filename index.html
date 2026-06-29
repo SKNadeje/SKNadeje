@@ -190,7 +190,7 @@ async function generujKroniku() {
                 const medaile = ['1.', '2.', '3.', '4.', '5.'][i];
                 // Zkus různé klíče které mohou být v API
                 const jmeno = s.name || s.jmeno || s.player || s.scorer?.name || s.scorer || 'Neznámý';
-                const goly = s.goals || s.golu || s.branky || s.scored || 0;
+                const goly = s.branek || s.goals || s.golu || s.branky || s.scored || 0;
                 doc.setFontSize(10);
                 doc.setFont(undefined, 'normal');
                 doc.setTextColor(240, 230, 200);
