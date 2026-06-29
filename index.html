@@ -188,16 +188,68 @@ async function generujKroniku() {
             y += 25;
             stats.top_strelci.slice(0, 5).forEach((s, i) => {
                 const medaile = ['1.', '2.', '3.', '4.', '5.'][i];
+                // Zkus různé klíče které mohou být v API
+                const jmeno = s.name || s.jmeno || s.player || s.scorer?.name || s.scorer || 'Neznámý';
+                const goly = s.goals || s.golu || s.branky || s.scored || 0;
                 doc.setFontSize(10);
                 doc.setFont(undefined, 'normal');
                 doc.setTextColor(240, 230, 200);
-                doc.text(`${medaile} ${s.name}`, 35, y);
+                doc.text(`${medaile} ${jmeno}`, 35, y);
                 doc.setTextColor(212, 175, 55);
-                doc.text(`${s.goals} gólů`, W - 35, y, { align: 'right' });
+                doc.text(`${goly} gólů`, W - 35, y, { align: 'right' });
                 y += 8;
             });
         }
-        
+        // ════════ STRANA: SKUPINOVÁ FÁZE ════════
+        const skupinyAdmin = adm.groups || [];
+        for (let blok = 0; blok < 2; blok++) {
+            doc.addPage();
+            header(doc, 'SKUPINOVÁ FÁZE', `Skupiny ${blok === 0 ? 'A–F' : 'G–L'}`);
+            
+            const skupinyVBloku = blok === 0 ? [0,1,2,3,4,5] : [6,7,8,9,10,11];
+            const pismena = 'ABCDEFGHIJKL';
+            
+            let yStart = 55;
+            const sirkaSkupiny = (W - 50) / 2;
+            const vyskaSkupiny = 60;
+            
+            skupinyVBloku.forEach((idx, pozice) => {
+                const col = pozice % 2;
+                const row = Math.floor(pozice / 2);
+                const x = 20 + col * (sirkaSkupiny + 10);
+                const y = yStart + row * (vyskaSkupiny + 8);
+                
+                // Box
+                doc.setFillColor(20, 25, 40);
+                doc.rect(x, y, sirkaSkupiny, vyskaSkupiny, 'F');
+                doc.setDrawColor(212, 175, 55);
+                doc.setLineWidth(0.3);
+                doc.rect(x, y, sirkaSkupiny, vyskaSkupiny);
+                
+                // Header skupiny
+                doc.setFillColor(212, 175, 55);
+                doc.rect(x, y, sirkaSkupiny, 8, 'F');
+                doc.setTextColor(0, 0, 0);
+                doc.setFont(undefined, 'bold');
+                doc.setFontSize(10);
+                doc.text(`SKUPINA ${pismena[idx]}`, x + sirkaSkupiny / 2, y + 5.5, { align: 'center' });
+                
+                // Týmy (z adminu = realne pořadí, nebo placeholder)
+                const tymy = skupinyAdmin[idx] || ['—', '—', '—', '—'];
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(9);
+                tymy.forEach((tym, i) => {
+                    const ty = y + 14 + i * 11;
+                    const symb = ['1.', '2.', '3.', '4.'][i];
+                    const barva = i < 3 ? [212, 175, 55] : [120, 120, 120];
+                    doc.setTextColor(...barva);
+                    doc.setFont(undefined, i < 2 ? 'bold' : 'normal');
+                    doc.text(symb, x + 5, ty);
+                    doc.setTextColor(i < 3 ? 240 : 140, i < 3 ? 230 : 140, i < 3 ? 200 : 140);
+                    doc.text(tym || '—', x + 13, ty);
+                });
+            });
+        }
         // ════════ STRANA 3: SÍŇ SLÁVY (TOP 3) ════════
         doc.addPage();
         header(doc, 'SÍŇ SLÁVY', 'Vítězové WC 2026 Tipovačky');
@@ -394,7 +446,128 @@ const tituly = ['MISTR TIPOVAČKY', 'STŘÍBRNÝ TIPAŘ', 'BRONZOVÝ HRDINA'];
             doc.setTextColor(100, 100, 100);
             doc.text(`Strana ${doc.getNumberOfPages()} · Kronika WC 2026`, W / 2, H - 12, { align: 'center' });
         }
+        // ════════ STRANA: PLAYOFF BRACKET ════════
+        doc.addPage();
+        header(doc, 'CESTA TURNAJEM', 'Playoff bracket - reálné výsledky');
         
+        const adminGroups = adm.s32 || [];
+        const adminS16 = adm.s16 || [];
+        const adminS8 = adm.s8 || [];
+        const adminS4 = adm.s4 || [];
+        const winner = adm.winner;
+        const bronze = adm.bronze;
+        
+        doc.setFontSize(10);
+        doc.setTextColor(240, 230, 200);
+        
+        let yy = 55;
+        
+        // 1/16 finále – 16 týmů
+        if (adminGroups.filter(t => t).length > 0) {
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(212, 175, 55);
+            doc.text('1/16 FINÁLE - 16 postupujících', W / 2, yy, { align: 'center' });
+            yy += 8;
+            
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(240, 230, 200);
+            const tymy16 = adminGroups.filter(t => t).slice(0, 16);
+            tymy16.forEach((tym, i) => {
+                const col = i % 4;
+                const row = Math.floor(i / 4);
+                doc.text(`• ${tym}`, 25 + col * 42, yy + row * 6);
+            });
+            yy += Math.ceil(tymy16.length / 4) * 6 + 8;
+        }
+        
+        // 1/8 finále
+        if (adminS16.filter(t => t).length > 0) {
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(212, 175, 55);
+            doc.text('1/8 FINÁLE - 8 postupujících', W / 2, yy, { align: 'center' });
+            yy += 8;
+            
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(240, 230, 200);
+            const tymy8 = adminS16.filter(t => t).slice(0, 8);
+            tymy8.forEach((tym, i) => {
+                const col = i % 4;
+                const row = Math.floor(i / 4);
+                doc.text(`• ${tym}`, 25 + col * 42, yy + row * 6);
+            });
+            yy += Math.ceil(tymy8.length / 4) * 6 + 8;
+        }
+        
+        // Čtvrtfinále
+        if (adminS8.filter(t => t).length > 0) {
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(212, 175, 55);
+            doc.text('ČTVRTFINÁLE - 4 postupující', W / 2, yy, { align: 'center' });
+            yy += 8;
+            
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(240, 230, 200);
+            const tymy4 = adminS8.filter(t => t).slice(0, 4);
+            tymy4.forEach((tym, i) => {
+                doc.text(`• ${tym}`, 25 + i * 42, yy);
+            });
+            yy += 12;
+        }
+        
+        // Semifinále
+        if (adminS4.filter(t => t).length > 0) {
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(212, 175, 55);
+            doc.text('SEMIFINÁLE - 2 finalisté', W / 2, yy, { align: 'center' });
+            yy += 8;
+            
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(11);
+            doc.setTextColor(240, 230, 200);
+            const semi = adminS4.filter(t => t).slice(0, 2);
+            doc.text(semi.join('  vs  '), W / 2, yy, { align: 'center' });
+            yy += 14;
+        }
+        
+        // Finále podium
+        if (winner || bronze) {
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(14);
+            doc.setTextColor(212, 175, 55);
+            doc.text('PODIUM', W / 2, yy + 5, { align: 'center' });
+            yy += 16;
+            
+            // 3 sloupce pro 1. 2. 3.
+            const podiumW = 50;
+            const podiumX = (W - 3 * podiumW - 20) / 2;
+            
+            const podiumData = [
+                { titul: '1. MISTR', tym: winner, color: [212, 175, 55], outset: 8 },
+                { titul: '2. STŘÍBRO', tym: adminS4?.find(t => t !== winner) || '—', color: [192, 192, 192], outset: 12 },
+                { titul: '3. BRONZ', tym: bronze, color: [205, 127, 50], outset: 16 }
+            ];
+            
+            podiumData.forEach((p, i) => {
+                const x = podiumX + i * (podiumW + 10);
+                const [r, g, b] = p.color;
+                doc.setFillColor(r, g, b);
+                doc.rect(x, yy + p.outset, podiumW, 30 - p.outset, 'F');
+                
+                doc.setTextColor(0, 0, 0);
+                doc.setFont(undefined, 'bold');
+                doc.setFontSize(9);
+                doc.text(p.titul, x + podiumW / 2, yy + p.outset + 6, { align: 'center' });
+                doc.setFontSize(11);
+                doc.text(p.tym || '—', x + podiumW / 2, yy + p.outset + 14, { align: 'center' });
+            });
+        }
         // ════════ ZÁVĚREČNÁ STRANA ════════
         doc.addPage();
         header(doc, 'DĚKUJEME', 'Závěrečné slovo admina');
