@@ -23,6 +23,387 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <script>
+// 📖 ════════ KRONIKA TURNAJE – GENERATOR ════════
+async function generujKroniku() {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (authData?.user?.id !== "92a1e51b-e03c-48d7-99df-76c2f60a455f") {
+        showToast('Pouze pro admina', 'error');
+        return;
+    }
+    
+    showToast('📖 Generuji kroniku... může to trvat 30 sekund', 'success', 5000);
+    
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const W = 210, H = 297;
+        
+        // 🎨 Helper barvy a fonty
+        const GOLD = '#d4af37';
+        const DARK = '#1a2342';
+        const TEXT = '#f0e6c8';
+        
+        // 🎨 Helper: pozadí strany
+        const pozadi = (d) => {
+            d.setFillColor(15, 18, 30);
+            d.rect(0, 0, W, H, 'F');
+            // Zlatý border
+            d.setDrawColor(212, 175, 55);
+            d.setLineWidth(0.8);
+            d.rect(8, 8, W - 16, H - 16);
+            d.setLineWidth(0.3);
+            d.rect(10, 10, W - 20, H - 20);
+        };
+        
+        // 🎨 Helper: header strany
+        const header = (d, titul, podtitul) => {
+            pozadi(d);
+            d.setTextColor(212, 175, 55);
+            d.setFontSize(22);
+            d.setFont(undefined, 'bold');
+            d.text(titul, W / 2, 30, { align: 'center' });
+            if (podtitul) {
+                d.setFontSize(10);
+                d.setFont(undefined, 'normal');
+                d.setTextColor(150, 150, 150);
+                d.text(podtitul, W / 2, 38, { align: 'center' });
+            }
+            // Zlatá čára pod nadpisem
+            d.setDrawColor(212, 175, 55);
+            d.setLineWidth(0.4);
+            d.line(W * 0.3, 42, W * 0.7, 42);
+        };
+        
+        // ════════ STRANA 1: OBÁLKA ════════
+        pozadi(doc);
+        doc.setTextColor(212, 175, 55);
+        doc.setFontSize(60);
+        doc.setFont(undefined, 'bold');
+        doc.text('🏆', W / 2, 100, { align: 'center' });
+        doc.setFontSize(32);
+        doc.text('KRONIKA', W / 2, 130, { align: 'center' });
+        doc.setFontSize(24);
+        doc.text('WC 2026 TIPOVAČKA', W / 2, 145, { align: 'center' });
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(240, 230, 200);
+        doc.text('SK NADĚJE', W / 2, 160, { align: 'center' });
+        doc.setFontSize(11);
+        doc.setTextColor(150, 150, 150);
+        doc.text('11.6. - 19.7. 2026', W / 2, 170, { align: 'center' });
+        
+        // Decorative
+        doc.setDrawColor(212, 175, 55);
+        doc.line(W * 0.25, 200, W * 0.75, 200);
+        doc.setFontSize(9);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Vydáno: ${new Date().toLocaleDateString('cs-CZ')}`, W / 2, 270, { align: 'center' });
+        doc.text(`25 hráčů · 104 zápasů · 6 týdnů`, W / 2, 277, { align: 'center' });
+        
+        // ════════ STRANA 2: TURNAJ V ČÍSLECH ════════
+        doc.addPage();
+        header(doc, 'TURNAJ V ČÍSLECH', 'Statistiky FIFA WC 2026');
+        
+        let { data: stats } = await supabaseClient
+            .from('turnaj_statistiky')
+            .select('*')
+            .order('aktualizovano', { ascending: false })
+            .limit(1)
+            .single();
+        stats = stats || {};
+        
+        doc.setFontSize(11);
+        doc.setTextColor(240, 230, 200);
+        const statyData = [
+            ['⚽ Celkem branek', stats.celkem_branek || '—'],
+            ['📊 Průměr na zápas', stats.celkem_branek ? (stats.celkem_branek / (stats.zapasy_odehrane || 1)).toFixed(2) : '—'],
+            ['🥅 Zápasy 0:0', stats.nula_nula_pocet || '—'],
+            ['👟 Top střelec', `${stats.top_strelec || '—'} (${stats.top_strelec_branek || 0} gólů)`],
+            ['🏆 Vítěz turnaje', adm.winner || '— (zatím nehotovo)'],
+            ['🥈 2. místo', adm.s4?.find(t => t !== adm.winner && t !== adm.bronze) || '—'],
+            ['🥉 Bronz', adm.bronze || '— (zatím nehotovo)']
+        ];
+        
+        let y = 65;
+        statyData.forEach(([popisek, hodnota]) => {
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(150, 150, 150);
+            doc.setFontSize(10);
+            doc.text(popisek, 30, y);
+            
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(212, 175, 55);
+            doc.setFontSize(12);
+            doc.text(String(hodnota), W - 30, y, { align: 'right' });
+            
+            doc.setDrawColor(60, 60, 80);
+            doc.setLineWidth(0.1);
+            doc.line(30, y + 3, W - 30, y + 3);
+            
+            y += 15;
+        });
+        
+        // Top 5 střelci
+        if (stats.top_strelci && Array.isArray(stats.top_strelci) && stats.top_strelci.length > 0) {
+            doc.setFontSize(13);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(212, 175, 55);
+            doc.text('🥇 TOP 5 STŘELCŮ', W / 2, y + 15, { align: 'center' });
+            y += 25;
+            stats.top_strelci.slice(0, 5).forEach((s, i) => {
+                const medaile = ['🥇', '🥈', '🥉', '4.', '5.'][i];
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(240, 230, 200);
+                doc.text(`${medaile} ${s.name}`, 35, y);
+                doc.setTextColor(212, 175, 55);
+                doc.text(`${s.goals} gólů`, W - 35, y, { align: 'right' });
+                y += 8;
+            });
+        }
+        
+        // ════════ STRANA 3: SÍŇ SLÁVY (TOP 3) ════════
+        doc.addPage();
+        header(doc, 'SÍŇ SLÁVY', 'Vítězové WC 2026 Tipovačky');
+        
+        const top3 = [...profilData].sort((a, b) => a.rank - b.rank).slice(0, 3);
+        const medaile = ['🥇', '🥈', '🥉'];
+        const tituly = ['MISTR TIPOVAČKY', 'STŘÍBRNÝ TIPAŘ', 'BRONZOVÝ HRDINA'];
+        const barvy = [[212, 175, 55], [192, 192, 192], [205, 127, 50]];
+        
+        y = 65;
+        top3.forEach((p, i) => {
+            const [r, g, b] = barvy[i];
+            doc.setFillColor(r, g, b, 0.08);
+            doc.rect(20, y, W - 40, 55, 'F');
+            doc.setDrawColor(r, g, b);
+            doc.setLineWidth(0.3);
+            doc.rect(20, y, W - 40, 55);
+            
+            doc.setFontSize(34);
+            doc.text(medaile[i], 30, y + 28);
+            
+            doc.setFontSize(11);
+            doc.setTextColor(150, 150, 150);
+            doc.setFont(undefined, 'normal');
+            doc.text(tituly[i], 60, y + 15);
+            
+            doc.setFontSize(18);
+            doc.setTextColor(212, 175, 55);
+            doc.setFont(undefined, 'bold');
+            doc.text(p.name || 'Anonym', 60, y + 28);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(240, 230, 200);
+            doc.setFont(undefined, 'normal');
+            doc.text(`${p.points} bodů · Rank ${p.rank}.`, 60, y + 38);
+            
+            doc.setTextColor(150, 150, 150);
+            doc.setFontSize(8);
+            const odznaky = (p.achievements_earned || []).length;
+            doc.text(`${odznaky} odznáčků získáno`, 60, y + 47);
+            
+            y += 70;
+        });
+        
+        // ════════ STRANA 4: ŽEBŘÍČEK ════════
+        doc.addPage();
+        header(doc, 'KOMPLETNÍ ŽEBŘÍČEK', `${profilData.length} hráčů`);
+        
+        y = 55;
+        const serazene = [...profilData].sort((a, b) => a.rank - b.rank);
+        serazene.forEach((p, i) => {
+            const bg = i < 3 ? [212, 175, 55] : (i % 2 === 0 ? [30, 40, 60] : [25, 35, 50]);
+            doc.setFillColor(...bg);
+            doc.rect(20, y, W - 40, 9, 'F');
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(i < 3 ? 0 : 212, i < 3 ? 0 : 175, i < 3 ? 0 : 55);
+            doc.text(`${p.rank}.`, 25, y + 6);
+            
+            doc.setTextColor(i < 3 ? 0 : 240, i < 3 ? 0 : 230, i < 3 ? 0 : 200);
+            doc.setFont(undefined, i < 3 ? 'bold' : 'normal');
+            doc.text(p.name || 'Anonym', 38, y + 6);
+            
+            doc.setFontSize(9);
+            doc.text(`${(p.achievements_earned || []).length} 🏅`, W / 2, y + 6);
+            
+            doc.setFont(undefined, 'bold');
+            doc.text(`${p.points} b`, W - 25, y + 6, { align: 'right' });
+            
+            y += 10;
+            
+            if (y > H - 25) {
+                doc.addPage();
+                header(doc, 'KOMPLETNÍ ŽEBŘÍČEK', '(pokračování)');
+                y = 55;
+            }
+        });
+        
+        // ════════ STRANY 5+: CESTA KAŽDÉHO HRÁČE ════════
+        for (const p of serazene) {
+            doc.addPage();
+            header(doc, p.name || 'Anonym', `${p.rank}. místo · ${p.points} bodů`);
+            
+            // 📊 Profil
+            y = 60;
+            doc.setFontSize(11);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(212, 175, 55);
+            doc.text('📊 PROFIL', 25, y);
+            y += 8;
+            
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(240, 230, 200);
+            doc.setFontSize(10);
+            doc.text(`Body: ${p.points} / 333`, 30, y);
+            y += 6;
+            doc.text(`Úspěšnost: ${Math.round((p.points / 333) * 100)}%`, 30, y);
+            y += 6;
+            doc.text(`Pořadí: ${p.rank}. z ${profilData.length}`, 30, y);
+            y += 6;
+            
+            // 🏅 Odznáčky
+            if (p.achievements_earned && p.achievements_earned.length > 0) {
+                y += 8;
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(212, 175, 55);
+                doc.text(`🏅 ODZNÁČKY (${p.achievements_earned.length})`, 25, y);
+                y += 8;
+                
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(240, 230, 200);
+                doc.setFontSize(9);
+                
+                const odznaky = p.achievements_earned.slice(0, 20);
+                const sloupce = 2;
+                const sloupecW = (W - 60) / sloupce;
+                odznaky.forEach((o, i) => {
+                    const col = i % sloupce;
+                    const row = Math.floor(i / sloupce);
+                    doc.text(`• ${o}`, 30 + col * sloupecW, y + row * 6);
+                });
+                y += Math.ceil(odznaky.length / sloupce) * 6 + 5;
+            }
+            
+            // 🎯 Bleskové tipy
+            const blesk = window.__bleskoveStatsMap?.[p.rowId];
+            if (blesk && blesk.tipu > 0) {
+                y += 8;
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(212, 175, 55);
+                doc.text('⚡ BLESKOVÉ TIPY', 25, y);
+                y += 8;
+                
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(240, 230, 200);
+                doc.setFontSize(10);
+                const usp = blesk.vyhodnoceno > 0 
+                    ? Math.round((blesk.trefa / blesk.vyhodnoceno) * 100) 
+                    : 0;
+                doc.text(`Tipů: ${blesk.tipu}`, 30, y); y += 5;
+                doc.text(`Trefa: ${blesk.trefa} · Miss: ${blesk.vyhodnoceno - blesk.trefa}`, 30, y); y += 5;
+                doc.text(`Úspěšnost: ${blesk.vyhodnoceno > 0 ? usp + '%' : '— (čeká)'}`, 30, y); y += 5;
+                doc.text(`Nejdelší streak: ${blesk.maxStreak}×`, 30, y);
+            }
+            
+            // Tipař DNA (pokud existuje funkce)
+            if (typeof vypocetTiparDNA === 'function') {
+                const dna = vypocetTiparDNA(p);
+                if (dna) {
+                    y += 12;
+                    doc.setFontSize(11);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(212, 175, 55);
+                    doc.text('🧬 TIPAŘ DNA', 25, y);
+                    y += 8;
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(240, 230, 200);
+                    doc.setFontSize(12);
+                    doc.text(`${dna.ikona} ${dna.typ}`, 30, y);
+                }
+            }
+            
+            // 🎯 Klíčové tipy
+            y = H - 90;
+            doc.setFontSize(11);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(212, 175, 55);
+            doc.text('🎯 KLÍČOVÉ TIPY', 25, y);
+            y += 8;
+            
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(240, 230, 200);
+            doc.setFontSize(9);
+            const klicTipy = [
+                ['Vítěz turnaje', p.tip?.winner],
+                ['3. místo', p.tip?.bronze],
+                ['Top střelec', p.tip?.bonus?.topScorer],
+                ['Celkem branek', p.tip?.bonus?.totalGoals]
+            ];
+            klicTipy.forEach(([popisek, hodnota]) => {
+                doc.text(`${popisek}: `, 30, y);
+                doc.setFont(undefined, 'bold');
+                doc.text(String(hodnota || '—'), 75, y);
+                doc.setFont(undefined, 'normal');
+                y += 6;
+            });
+            
+            // Footer
+            doc.setFontSize(7);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Strana ${doc.getNumberOfPages()} · Kronika WC 2026`, W / 2, H - 12, { align: 'center' });
+        }
+        
+        // ════════ ZÁVĚREČNÁ STRANA ════════
+        doc.addPage();
+        header(doc, 'DĚKUJEME', 'Závěrečné slovo admina');
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(240, 230, 200);
+        
+        const zaverText = [
+            'Vám 25 statečným tipařům, kteří se rozhodli pro 5 týdnů',
+            'soupeřit se sebou samým i s nepředvídatelností fotbalu.',
+            '',
+            'Děkujeme za měsíc plný emocí, vtipných tipů,',
+            'občasných nervů a překvapivých výsledků.',
+            '',
+            'Příští turnaj 2027 (Euro 2028) počítáme s každým z vás!',
+            '',
+            'A jak se říká:',
+            '"Fotbal je hra 90 minut a na konci vyhrává tipař,',
+            'který má štěstí."',
+            '',
+            '',
+            '🍻 Na zdraví!'
+        ];
+        
+        y = 65;
+        zaverText.forEach(radek => {
+            doc.text(radek, W / 2, y, { align: 'center' });
+            y += 8;
+        });
+        
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text('— SK Naděje admin', W / 2, y + 20, { align: 'center' });
+        doc.text(new Date().toLocaleDateString('cs-CZ', { year: 'numeric', month: 'long', day: 'numeric' }), W / 2, y + 28, { align: 'center' });
+        
+        // 💾 Stáhnout
+        doc.save(`Kronika_WC2026_SKNadeje_${new Date().toISOString().substring(0, 10)}.pdf`);
+        showToast('✅ Kronika hotova! Stažena do Downloads', 'success', 4000);
+        
+    } catch (err) {
+        console.error('Kronika error:', err);
+        showToast('❌ Chyba: ' + err.message, 'error', 5000);
+    }
+}
+    
 // 🏆 Načti playoff zápasy z DB (auto-sync z API)
 async function nactiPlayoffZapasy() {
     try {
@@ -4011,6 +4392,12 @@ input:focus {
         🔔 POSLAT PUSH NOTIFIKACI
     </button>
 </div>
+</div>
+       <div style="padding: 0 20px 10px;">
+    <button type="button" class="btn" onclick="generujKroniku()" 
+        style="background:linear-gradient(135deg,#d4af37,#b8941f); border:1px solid #d4af37; color:#000; width:100%; font-size:0.8rem; font-weight:800;">
+        📖 GENEROVAT KRONIKU TURNAJE
+    </button>
 </div>
         <div style="padding: 0 20px 10px;">
     <button type="button" class="btn" onclick="otevritAnketuAdmin()" 
