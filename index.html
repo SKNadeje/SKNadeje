@@ -33,15 +33,49 @@ async function generujKroniku() {
     
     showToast('📖 Generuji kroniku... může to trvat 30 sekund', 'success', 5000);
     
-    try {
-        const { jsPDF } = window.jspdf;
+   try {
+    // 🔤 Nahraj font který umí češtinu (Roboto z Google Fonts CDN)
+    await new Promise((resolve) => {
+        if (window.__robotoFontLoaded) { resolve(); return; }
+        fetch('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf')
+            .then(r => r.arrayBuffer())
+            .then(buf => {
+                const bytes = new Uint8Array(buf);
+                let binary = '';
+                bytes.forEach(b => binary += String.fromCharCode(b));
+                window.__robotoBase64 = btoa(binary);
+                window.__robotoFontLoaded = true;
+                resolve();
+            })
+            .catch(err => { console.warn('Font load:', err); resolve(); });
+    });
+    
+   const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         const W = 210, H = 297;
         
-        // 🎨 Helper barvy a fonty
-        const GOLD = '#d4af37';
-        const DARK = '#1a2342';
-        const TEXT = '#f0e6c8';
+        // Vlož český font
+        if (window.__robotoBase64) {
+            doc.addFileToVFS('Roboto.ttf', window.__robotoBase64);
+            doc.addFont('Roboto.ttf', 'Roboto', 'normal');
+            doc.addFont('Roboto.ttf', 'Roboto', 'bold');
+            doc.setFont('Roboto');
+        }
+    
+    // Vlož český font
+    if (window.__robotoBase64) {
+        doc.addFileToVFS('Roboto.ttf', window.__robotoBase64);
+        doc.addFont('Roboto.ttf', 'Roboto', 'normal');
+        doc.addFont('Roboto.ttf', 'Roboto', 'bold');
+        doc.setFont('Roboto');
+    }
+    
+    // 🎨 Helper barvy a fonty
+    const GOLD = '#d4af37';
+    const DARK = '#1a2342';
+    const TEXT = '#f0e6c8';
+    
+    // ... zbytek kódu
         
         // 🎨 Helper: pozadí strany
         const pozadi = (d) => {
@@ -77,9 +111,11 @@ async function generujKroniku() {
         // ════════ STRANA 1: OBÁLKA ════════
         pozadi(doc);
         doc.setTextColor(212, 175, 55);
+       // 🏆 Trofej jako vykreslený symbol (ne emoji)
         doc.setFontSize(60);
         doc.setFont(undefined, 'bold');
-        doc.text('🏆', W / 2, 100, { align: 'center' });
+        doc.setTextColor(212, 175, 55);
+        doc.text('★', W / 2, 100, { align: 'center' });
         doc.setFontSize(32);
         doc.text('KRONIKA', W / 2, 130, { align: 'center' });
         doc.setFontSize(24);
@@ -114,14 +150,14 @@ async function generujKroniku() {
         
         doc.setFontSize(11);
         doc.setTextColor(240, 230, 200);
-        const statyData = [
-            ['⚽ Celkem branek', stats.celkem_branek || '—'],
-            ['📊 Průměr na zápas', stats.celkem_branek ? (stats.celkem_branek / (stats.zapasy_odehrane || 1)).toFixed(2) : '—'],
-            ['🥅 Zápasy 0:0', stats.nula_nula_pocet || '—'],
-            ['👟 Top střelec', `${stats.top_strelec || '—'} (${stats.top_strelec_branek || 0} gólů)`],
-            ['🏆 Vítěz turnaje', adm.winner || '— (zatím nehotovo)'],
-            ['🥈 2. místo', adm.s4?.find(t => t !== adm.winner && t !== adm.bronze) || '—'],
-            ['🥉 Bronz', adm.bronze || '— (zatím nehotovo)']
+       const statyData = [
+            ['Celkem branek', stats.celkem_branek || '—'],
+            ['Průměr na zápas', stats.celkem_branek ? (stats.celkem_branek / (stats.zapasy_odehrane || 1)).toFixed(2) : '—'],
+            ['Zápasy 0:0', stats.nula_nula_pocet || '—'],
+            ['Top střelec', `${stats.top_strelec || '—'} (${stats.top_strelec_branek || 0} gólů)`],
+            ['Vítěz turnaje', adm.winner || '— (zatím nehotovo)'],
+            ['2. místo', adm.s4?.find(t => t !== adm.winner && t !== adm.bronze) || '—'],
+            ['3. místo (bronz)', adm.bronze || '— (zatím nehotovo)']
         ];
         
         let y = 65;
@@ -148,10 +184,10 @@ async function generujKroniku() {
             doc.setFontSize(13);
             doc.setFont(undefined, 'bold');
             doc.setTextColor(212, 175, 55);
-            doc.text('🥇 TOP 5 STŘELCŮ', W / 2, y + 15, { align: 'center' });
+            doc.text('TOP 5 STŘELCŮ', W / 2, y + 15, { align: 'center' });
             y += 25;
             stats.top_strelci.slice(0, 5).forEach((s, i) => {
-                const medaile = ['🥇', '🥈', '🥉', '4.', '5.'][i];
+                const medaile = ['1.', '2.', '3.', '4.', '5.'][i];
                 doc.setFontSize(10);
                 doc.setFont(undefined, 'normal');
                 doc.setTextColor(240, 230, 200);
@@ -167,8 +203,8 @@ async function generujKroniku() {
         header(doc, 'SÍŇ SLÁVY', 'Vítězové WC 2026 Tipovačky');
         
         const top3 = [...profilData].sort((a, b) => a.rank - b.rank).slice(0, 3);
-        const medaile = ['🥇', '🥈', '🥉'];
-        const tituly = ['MISTR TIPOVAČKY', 'STŘÍBRNÝ TIPAŘ', 'BRONZOVÝ HRDINA'];
+        const medaile = ['1.', '2.', '3.'];
+const tituly = ['MISTR TIPOVAČKY', 'STŘÍBRNÝ TIPAŘ', 'BRONZOVÝ HRDINA'];
         const barvy = [[212, 175, 55], [192, 192, 192], [205, 127, 50]];
         
         y = 65;
@@ -180,8 +216,9 @@ async function generujKroniku() {
             doc.setLineWidth(0.3);
             doc.rect(20, y, W - 40, 55);
             
-            doc.setFontSize(34);
-            doc.text(medaile[i], 30, y + 28);
+            doc.setFontSize(28);
+            doc.setTextColor(r, g, b);
+            doc.text(medaile[i], 32, y + 32);
             
             doc.setFontSize(11);
             doc.setTextColor(150, 150, 150);
@@ -251,7 +288,7 @@ async function generujKroniku() {
             doc.setFontSize(11);
             doc.setFont(undefined, 'bold');
             doc.setTextColor(212, 175, 55);
-            doc.text('📊 PROFIL', 25, y);
+            doc.text('PROFIL', 25, y);
             y += 8;
             
             doc.setFont(undefined, 'normal');
@@ -270,7 +307,7 @@ async function generujKroniku() {
                 doc.setFontSize(11);
                 doc.setFont(undefined, 'bold');
                 doc.setTextColor(212, 175, 55);
-                doc.text(`🏅 ODZNÁČKY (${p.achievements_earned.length})`, 25, y);
+                doc.text(`ODZNÁČKY (${p.achievements_earned.length})`, 25, y);
                 y += 8;
                 
                 doc.setFont(undefined, 'normal');
@@ -295,7 +332,7 @@ async function generujKroniku() {
                 doc.setFontSize(11);
                 doc.setFont(undefined, 'bold');
                 doc.setTextColor(212, 175, 55);
-                doc.text('⚡ BLESKOVÉ TIPY', 25, y);
+                doc.text('BLESKOVÉ TIPY', 25, y);
                 y += 8;
                 
                 doc.setFont(undefined, 'normal');
@@ -318,7 +355,7 @@ async function generujKroniku() {
                     doc.setFontSize(11);
                     doc.setFont(undefined, 'bold');
                     doc.setTextColor(212, 175, 55);
-                    doc.text('🧬 TIPAŘ DNA', 25, y);
+                    doc.text('TIPAŘ DNA', 25, y);
                     y += 8;
                     doc.setFont(undefined, 'bold');
                     doc.setTextColor(240, 230, 200);
@@ -332,7 +369,7 @@ async function generujKroniku() {
             doc.setFontSize(11);
             doc.setFont(undefined, 'bold');
             doc.setTextColor(212, 175, 55);
-            doc.text('🎯 KLÍČOVÉ TIPY', 25, y);
+            doc.text('KLÍČOVÉ TIPY', 25, y);
             y += 8;
             
             doc.setFont(undefined, 'normal');
@@ -380,7 +417,7 @@ async function generujKroniku() {
             'který má štěstí."',
             '',
             '',
-            '🍻 Na zdraví!'
+            'Na zdraví!'
         ];
         
         y = 65;
