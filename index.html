@@ -119,7 +119,7 @@ async function generujKroniku() {
         doc.setFontSize(32);
         doc.text('KRONIKA', W / 2, 130, { align: 'center' });
         doc.setFontSize(24);
-        doc.text('WC 2026 TIPOVAČKA', W / 2, 145, { align: 'center' });
+        doc.text('FIFA WORLD CUP 2026 TIPOVAČKA', W / 2, 145, { align: 'center' });
         doc.setFontSize(14);
         doc.setFont(undefined, 'normal');
         doc.setTextColor(240, 230, 200);
@@ -138,7 +138,7 @@ async function generujKroniku() {
         
         // ════════ STRANA 2: TURNAJ V ČÍSLECH ════════
         doc.addPage();
-        header(doc, 'TURNAJ V ČÍSLECH', 'Statistiky FIFA WC 2026');
+        header(doc, 'TURNAJ V ČÍSLECH', 'Statistiky FIFA WORLD CUP 2026');
         
         // Načti turnajové statistiky + admin výsledky paralelně
         const [statsRes, admRes] = await Promise.all([
