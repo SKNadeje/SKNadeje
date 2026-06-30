@@ -23,6 +23,25 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <script>
+function renderVyrazeniChips() {
+    const cont = document.getElementById('vyrazeni-chips');
+    if (!cont) return;
+    const allTeams = state.groups.flatMap(g => g.teams);
+    const sel = window.vyrazeniState || [];
+    cont.innerHTML = allTeams.map(t => {
+        const aktivni = sel.some(x => String(x).trim().toLowerCase() === String(t).trim().toLowerCase());
+        return `<button type="button" onclick="toggleVyrazeny('${t.replace(/'/g, "\\'")}')" style="padding:6px 12px; border-radius:8px; font-size:0.78rem; font-weight:700; cursor:pointer; border:1px solid ${aktivni ? 'rgba(239,68,68,0.6)' : 'rgba(212,175,55,0.2)'}; background:${aktivni ? 'rgba(239,68,68,0.25)' : 'rgba(0,0,0,0.3)'}; color:${aktivni ? '#fca5a5' : '#94a3b8'};">${aktivni ? '⊘ ' : ''}${t}</button>`;
+    }).join('');
+}
+
+function toggleVyrazeny(team) {
+    if (!window.vyrazeniState) window.vyrazeniState = [];
+    const i = window.vyrazeniState.findIndex(x => String(x).trim().toLowerCase() === String(team).trim().toLowerCase());
+    if (i > -1) window.vyrazeniState.splice(i, 1);
+    else window.vyrazeniState.push(team);
+    renderVyrazeniChips();
+}
+    
 // 📖 ════════ KRONIKA TURNAJE – GENERATOR ════════
 async function generujKroniku() {
     const { data: authData } = await supabaseClient.auth.getUser();
@@ -8386,42 +8405,31 @@ async function otevritMujTip() {
     );
     const apiHotovo = postupujici.size >= 32;  // všech 32 postupujících známo
     
-  const statusZapasu = (vitezTip, realAdmin, fazeKlic) => {
-        if (!vitezTip) return 'no-pick';
-        
-        // 🆕 Auto: nepostoupil ze skupin (priorita)
-        if (apiHotovo && !postupujici.has(vitezTip)) {
-            return 'eliminated';
-        }
-        
-        const list = Array.isArray(realAdmin) ? realAdmin.filter(x => x && String(x).trim()) : (realAdmin ? [realAdmin] : []);
-        const fazeStatus = adminVys?.faze_status?.[fazeKlic] || 'none';
-        
-        // ✅ Tip je v admin listu → správně
-        if (list.length > 0 && list.some(x => eq(x, vitezTip))) {
-            return 'correct';
-        }
-        
-        // 🆕 Fáze je live (admin označuje průběžně, nevíme všechny správné)
-        //     → pokud tým postoupil z 1/16 podle API, ukaž advanced
-        if (fazeStatus === 'live') {
-            if (apiHotovo && postupujici.has(vitezTip)) {
-                return 'advanced';
-            }
-            return 'pending';
-        }
-        
-        // ❌ Fáze final + tip není v listu → wrong
-        if (fazeStatus === 'final' && list.length > 0) {
-            return 'wrong';
-        }
-        
-        // 🟡 Default: pending
-        if (apiHotovo && postupujici.has(vitezTip)) {
-            return 'advanced';
-        }
+  const vyrazeniSet = new Set((adminVys.vyrazeni || []).map(t => String(t).trim().toLowerCase()));
+
+const statusZapasu = (vitezTip, realAdmin, fazeKlic) => {
+    if (!vitezTip) return 'no-pick';
+    const list = Array.isArray(realAdmin) ? realAdmin.filter(x => x && String(x).trim()) : (realAdmin ? [realAdmin] : []);
+    const tipLower = String(vitezTip).trim().toLowerCase();
+
+    // 1. Postoupil v této fázi → správně (má přednost, drží zelenou v už odehraných kolech)
+    if (list.length > 0 && list.some(x => eq(x, vitezTip))) return 'correct';
+
+    // 2. Ručně označen jako vyřazený → eliminated (jen v kolech, kde nepostoupil)
+    if (vyrazeniSet.has(tipLower)) return 'eliminated';
+
+    // 3. Auto z API: nepostoupil ze skupin
+    if (apiHotovo && !postupujici.has(vitezTip)) return 'eliminated';
+
+    const fazeStatus = adminVys?.faze_status?.[fazeKlic] || 'none';
+    if (fazeStatus === 'live') {
+        if (apiHotovo && postupujici.has(vitezTip)) return 'advanced';
         return 'pending';
-    };
+    }
+    if (fazeStatus === 'final' && list.length > 0) return 'wrong';
+    if (apiHotovo && postupujici.has(vitezTip)) return 'advanced';
+    return 'pending';
+};
     
     // ════════ BUILD ROUNDS ════════
     const r32Teams = sestavTymyR32(tip.groups || [], tip.thirds || []);
@@ -11714,7 +11722,16 @@ finalHTML += `
             </div>
         </div>
     </div>`;
+       // === VYŘAZENÉ TÝMY (okamžité červené obarvení v pavoukovi) ===
+window.vyrazeniState = Array.isArray(res.vyrazeni) ? [...res.vyrazeni] : [];
+finalHTML += `
+    <div style="background:linear-gradient(180deg, rgba(15,20,35,0.9) 0%, rgba(239,68,68,0.08) 100%); padding:20px; border-radius:12px; border:2px solid var(--lose); grid-column:1 / -1;">
+        <b style="font-size:1.2rem; color:#ef4444;">❌ Vyřazené týmy</b>
+        <div style="font-size:0.75rem; color:#94a3b8; margin:6px 0 14px;">Klikni na týmy, které vypadly. V pavoukovi se hned obarví červeně (⊘) — nemusíš dávat celou fázi na „final".</div>
+        <div id="vyrazeni-chips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+    </div>`;
     cont.innerHTML = finalHTML;
+       renderVyrazeniChips();
 }
     // 1. TUTO FUNKCI NAPOJ NA TLAČÍTKO "ULOŽIT VÝSLEDKY" V ADMINU
 async function ulozitAdminVysledky() {
@@ -11828,6 +11845,7 @@ async function nacistAdminVysledky() {
     s4:  Array.from({length: 4},  (_, j) => getV(`a-s4-${j}`)),
     winner: getV('a-win'),
     bronze: getV('a-bro'),
+        vyrazeni: window.vyrazeniState || [],
    bonus: {
         topScorer: getV('a-bonus-topScorer'),
         topScorerGoals: parseInt(getV('a-bonus-topScorerGoals')) || null,
