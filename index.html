@@ -2328,20 +2328,45 @@ function vypocetSance(rowId) {
         totalPlayers: profilData.length
     };
 }
-// 🎯 Spočítá MAXIMÁLNÍ MOŽNÉ body hráče (current + vše co ještě může získat)
 function vypocetMaxMozneBody(tip, real) {
     if (!tip || !real) return 0;
-    
+
     const fs = real.faze_status || {};
     const grpStatus = fs.groups || {};
     let maxPts = 0;
-    
-    // SKUPINY
+
+    const low = (x) => String(x || '').trim().toLowerCase();
+    const eqL = (a, b) => low(a) !== '' && low(a) === low(b);
+
+    // Kdo je mrtvý: ručně vyřazení + (po dohrání skupin z API) kdo nepostoupil
+    const vyrazeniSet = new Set((real.vyrazeni || []).map(low));
+    const postupujici = new Set(
+        (window.__playoffCache || [])
+            .filter(z => z.faze === '1/16 finále')
+            .flatMap(z => [z.tym1, z.tym2])
+            .filter(t => t && t !== 'TBD')
+            .map(low)
+    );
+    const apiHotovo = postupujici.size >= 32;
+    const jeMrtvy = (team) => {
+        const t = low(team);
+        if (vyrazeniSet.has(t)) return true;
+        if (apiHotovo && !postupujici.has(t)) return true;
+        return false;
+    };
+
+    // Tip přispěje body, pokud už toho dosáhl (je v reálu fáze) NEBO ještě žije
+    const pricti = (team, body, realList) => {
+        if (!team) return;
+        if ((realList || []).some(x => eqL(x, team))) { maxPts += body; return; } // zamčeno
+        if (!jeMrtvy(team)) maxPts += body; // ještě možné
+    };
+
+    // SKUPINY (beze změny)
     const groups = ['A','B','C','D','E','F','G','H','I','J','K','L'];
     groups.forEach((letter, i) => {
         const status = grpStatus[letter] || 'none';
         const tipG = tip.groups?.[i] || [];
-        
         if (status === 'final' && real.groups?.[i]) {
             const realTeams = real.groups[i].teams || real.groups[i];
             if (Array.isArray(realTeams)) {
@@ -2353,34 +2378,40 @@ function vypocetMaxMozneBody(tip, real) {
             tipG.forEach(t => { if (t) maxPts += 4; });
         }
     });
-    
+
     // PLAYOFF
-    const playoffMax = { s32: 2, s16: 3, s8: 4, s4: 5 };
-    Object.entries(playoffMax).forEach(([sid, body]) => {
-        const status = fs[sid] || 'none';
-        const tipTymy = tip[sid] || [];
-        const realTymy = real[sid] || [];
-        
+    const faze = [
+        { key: 's32', body: 2 },
+        { key: 's16', body: 3 },
+        { key: 's8',  body: 4 },
+        { key: 's4',  body: 5 },
+    ];
+    faze.forEach(({ key, body }) => {
+        const status = fs[key] || 'none';
+        const realList = real[key] || [];
+        const tipList = tip[key] || [];
         if (status === 'final') {
-            tipTymy.forEach(t => {
-                if (t && realTymy.some(x => String(x).trim() === String(t).trim())) maxPts += body;
-            });
+            tipList.forEach(t => { if (t && realList.some(x => eqL(x, t))) maxPts += body; });
         } else {
-            tipTymy.forEach(t => { if (t) maxPts += body; });
+            tipList.forEach(t => pricti(t, body, realList));
         }
     });
-    
+
     // BRONZ
     if ((fs.bronze || 'none') === 'final') {
-        if (real.bronze && tip.bronze && String(real.bronze).trim() === String(tip.bronze).trim()) maxPts += 8;
-    } else if (tip.bronze) maxPts += 8;
-    
+        if (eqL(real.bronze, tip.bronze)) maxPts += 8;
+    } else {
+        pricti(tip.bronze, 8, real.bronze ? [real.bronze] : []);
+    }
+
     // VÍTĚZ
     if ((fs.winner || 'none') === 'final') {
-        if (real.winner && tip.winner && String(real.winner).trim() === String(tip.winner).trim()) maxPts += 12;
-    } else if (tip.winner) maxPts += 12;
-    
-    // BONUS
+        if (eqL(real.winner, tip.winner)) maxPts += 12;
+    } else {
+        pricti(tip.winner, 12, real.winner ? [real.winner] : []);
+    }
+
+    // BONUS (beze změny – optimisticky)
     if ((fs.bonus || 'none') === 'final') {
         maxPts += spocitejBonusBody(tip, real);
     } else {
@@ -2390,7 +2421,7 @@ function vypocetMaxMozneBody(tip, real) {
         if (tb.totalGoals != null && tb.totalGoals !== '') maxPts += 15;
         if (tb.zeroZeroResults != null && tb.zeroZeroResults !== '') maxPts += 8;
     }
-    
+
     return maxPts;
 }
     
