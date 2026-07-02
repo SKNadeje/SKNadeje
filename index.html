@@ -2411,14 +2411,11 @@ function souperuvVylucnyZisk(souperTip, mujTip, real) {
     
 function vypocetMaxMozneBody(tip, real) {
     if (!tip || !real) return 0;
-
     const fs = real.faze_status || {};
     const grpStatus = fs.groups || {};
     let maxPts = 0;
-
     const low = (x) => String(x || '').trim().toLowerCase();
     const eqL = (a, b) => low(a) !== '' && low(a) === low(b);
-
     // Kdo je mrtvý: ručně vyřazení + (po dohrání skupin z API) kdo nepostoupil
     const vyrazeniSet = new Set((real.vyrazeni || []).map(low));
     const postupujici = new Set(
@@ -2435,14 +2432,12 @@ function vypocetMaxMozneBody(tip, real) {
         if (apiHotovo && !postupujici.has(t)) return true;
         return false;
     };
-
     // Tip přispěje body, pokud už toho dosáhl (je v reálu fáze) NEBO ještě žije
     const pricti = (team, body, realList) => {
         if (!team) return;
         if ((realList || []).some(x => eqL(x, team))) { maxPts += body; return; } // zamčeno
         if (!jeMrtvy(team)) maxPts += body; // ještě možné
     };
-
     // SKUPINY (beze změny)
     const groups = ['A','B','C','D','E','F','G','H','I','J','K','L'];
     groups.forEach((letter, i) => {
@@ -2459,7 +2454,6 @@ function vypocetMaxMozneBody(tip, real) {
             tipG.forEach(t => { if (t) maxPts += 4; });
         }
     });
-
     // PLAYOFF
     const faze = [
         { key: 's32', body: 2 },
@@ -2477,32 +2471,41 @@ function vypocetMaxMozneBody(tip, real) {
             tipList.forEach(t => pricti(t, body, realList));
         }
     });
-
     // BRONZ
     if ((fs.bronze || 'none') === 'final') {
         if (eqL(real.bronze, tip.bronze)) maxPts += 8;
     } else {
         pricti(tip.bronze, 8, real.bronze ? [real.bronze] : []);
     }
-
     // VÍTĚZ
     if ((fs.winner || 'none') === 'final') {
         if (eqL(real.winner, tip.winner)) maxPts += 12;
     } else {
         pricti(tip.winner, 12, real.winner ? [real.winner] : []);
     }
-
-    // BONUS (beze změny – optimisticky)
+    // BONUS
     if ((fs.bonus || 'none') === 'final') {
         maxPts += spocitejBonusBody(tip, real);
     } else {
         const tb = tip.bonus || {};
         if (tb.topScorer) maxPts += 8;
         if (tb.topGoalkeeper) maxPts += 8;
-        if (tb.totalGoals != null && tb.totalGoals !== '') maxPts += 15;
+        // totalGoals: realistický strop podle už padlých gólů (góly jen přibývají)
+        if (tb.totalGoals != null && tb.totalGoals !== '') {
+            const realGoly = real.bonus?.totalGoals;
+            const tipG = parseInt(tb.totalGoals);
+            if (realGoly == null || realGoly === '') {
+                maxPts += 15; // ještě nevíme nic – plný optimismus
+            } else {
+                const rg = parseInt(realGoly);
+                if (rg <= tipG)          maxPts += 15;  // skutečnost pod tipem → může trefit přesně
+                else if (rg <= tipG + 5) maxPts += 8;   // už přeletěla, ale drží se v ±5
+                else if (rg <= tipG + 10) maxPts += 3;  // v ±10
+                // rg > tipG + 10 → navždy nedosažitelné, nepřičítám nic
+            }
+        }
         if (tb.zeroZeroResults != null && tb.zeroZeroResults !== '') maxPts += 8;
     }
-
     return maxPts;
 }
     
