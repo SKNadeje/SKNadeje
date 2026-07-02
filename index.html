@@ -2295,26 +2295,32 @@ function profilZpet() {
     // 🎯 Spočítá rozsah pozic pro hráče (best / worst case)
 function vypocetSance(rowId) {
     const real = window.currentResults || {};
-    
+
     const stats = profilData.map(p => ({
         rowId: p.rowId,
         current: p.points,
-        max: vypocetMaxMozneBody(p.tip, real)
+        max: vypocetMaxMozneBody(p.tip, real),
+        tip: p.tip
     }));
-    
+
     const me = stats.find(s => String(s.rowId) === String(rowId));
     if (!me) return null;
-    
-    const guaranteedAhead = stats.filter(o => 
+
+    // Nejlepší pozice: kdo má UŽ TEĎ víc, než je můj strop (ty nedoženu)
+    const guaranteedAhead = stats.filter(o =>
         String(o.rowId) !== String(rowId) && o.current > me.max
     ).length;
     const bestPosition = guaranteedAhead + 1;
-    
-    const couldPass = stats.filter(o => 
-        String(o.rowId) !== String(rowId) && o.max > me.current
-    ).length;
+
+    // Nejhorší pozice: párové srovnání se sdíleným osudem u společných PO tipů
+    const couldPass = stats.filter(o => {
+        if (String(o.rowId) === String(rowId)) return false;
+        const naskok = souperuvVylucnyZisk(o.tip, me.tip, real);
+        // soupeř mě přeskočí, když jeho aktuální body + jeho výlučný možný zisk > moje aktuální
+        return (o.current + naskok) > me.current;
+    }).length;
     const worstPosition = couldPass + 1;
-    
+
     return {
         current: me.current,
         max: me.max,
@@ -2324,6 +2330,85 @@ function vypocetSance(rowId) {
         totalPlayers: profilData.length
     };
 }
+
+    // Kolik může soupeř získat ve zbývajících PO kolech z tipů, které přihlášený hráč NEMÁ.
+// Společné tipy se ignorují (sdílený osud – vyruší se na obou stranách).
+function souperuvVylucnyZisk(souperTip, mujTip, real) {
+    if (!souperTip) return 0;
+
+    const low = (x) => String(x || '').trim().toLowerCase();
+    const fs = real.faze_status || {};
+
+    // stejné signály jako pavouk: kdo je mrtvý a kdo už postoupil
+    const vyrazeniSet = new Set((real.vyrazeni || []).map(low));
+    const postupujici = new Set(
+        (window.__playoffCache || [])
+            .filter(z => z.faze === '1/16 finále')
+            .flatMap(z => [z.tym1, z.tym2])
+            .filter(t => t && t !== 'TBD')
+            .map(low)
+    );
+    const apiHotovo = postupujici.size >= 32;
+    const jeMrtvy = (team) => {
+        const t = low(team);
+        if (vyrazeniSet.has(t)) return true;
+        if (apiHotovo && !postupujici.has(t)) return true;
+        return false;
+    };
+
+    let zisk = 0;
+
+    const faze = [
+        { key: 's32', body: 2 },
+        { key: 's16', body: 3 },
+        { key: 's8',  body: 4 },
+        { key: 's4',  body: 5 },
+    ];
+    faze.forEach(({ key, body }) => {
+        const status = fs[key] || 'none';
+        if (status === 'final') return; // kolo uzavřené – žádný další zisk
+        const realList = (real[key] || []).map(low);
+        const mojeTipy = new Set((mujTip?.[key] || []).map(low));
+        (souperTip[key] || []).forEach(t => {
+            const tl = low(t);
+            if (!tl) return;
+            if (realList.includes(tl)) return; // už zamčené, není to "další zisk"
+            if (mojeTipy.has(tl)) return;      // společný tip – sdílený osud, ignoruj
+            if (jeMrtvy(t)) return;            // mrtvý – nemůže přinést body
+            zisk += body;
+        });
+    });
+
+    // Bronz
+    if ((fs.bronze || 'none') !== 'final') {
+        const st = low(souperTip.bronze), mt = low(mujTip?.bronze);
+        if (st && st !== mt && !(real.bronze && low(real.bronze) === st) && !jeMrtvy(souperTip.bronze)) {
+            zisk += 8;
+        }
+    }
+
+    // Vítěz
+    if ((fs.winner || 'none') !== 'final' && (fs.final || 'none') !== 'final') {
+        const st = low(souperTip.winner), mt = low(mujTip?.winner);
+        if (st && st !== mt && !(real.winner && low(real.winner) === st) && !jeMrtvy(souperTip.winner)) {
+            zisk += 12;
+        }
+    }
+
+    // Bonusy – porovnání po jednotlivých položkách, společné hodnoty se vyruší
+    if ((fs.bonus || 'none') !== 'final') {
+        const sb = souperTip.bonus || {}, mb = mujTip?.bonus || {};
+        if (sb.topScorer && low(sb.topScorer) !== low(mb.topScorer)) zisk += 8;
+        if (sb.topGoalkeeper && low(sb.topGoalkeeper) !== low(mb.topGoalkeeper)) zisk += 8;
+        if (sb.totalGoals != null && sb.totalGoals !== '' &&
+            String(sb.totalGoals) !== String(mb.totalGoals)) zisk += 15;
+        if (sb.zeroZeroResults != null && sb.zeroZeroResults !== '' &&
+            String(sb.zeroZeroResults) !== String(mb.zeroZeroResults)) zisk += 8;
+    }
+
+    return zisk;
+}
+    
 function vypocetMaxMozneBody(tip, real) {
     if (!tip || !real) return 0;
 
