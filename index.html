@@ -7953,10 +7953,13 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // 🔒 FAZE STATUS - odznáčky za výsledky padají jen u finálních fází
     const fs = r.faze_status || {};
-    const skupinyFinal = fs.skupiny === 'final';
-    const winnerFinal = fs.final === 'final' || fs.winner === 'final';
-    const bronzeFinal = fs.bronze === 'final' || winnerFinal;
-    const bonusFinal = fs.bonus === 'final';
+const grpStatus = fs.groups || {};
+const skupinyLetters = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+// všech 12 skupin musí být final
+const skupinyFinal = skupinyLetters.every(l => grpStatus[l] === 'final');
+const winnerFinal = fs.final === 'final' || fs.winner === 'final';
+const bronzeFinal = fs.bronze === 'final' || winnerFinal;
+const bonusFinal = fs.bonus === 'final';
 
   // === ZÁKLAD ===
     // Kompletní tip = vítěz + všechny 4 bonus tipy
