@@ -2504,7 +2504,17 @@ function vypocetMaxMozneBody(tip, real) {
                 // rg > tipG + 10 → navždy nedosažitelné, nepřičítám nic
             }
         }
-        if (tb.zeroZeroResults != null && tb.zeroZeroResults !== '') maxPts += 8;
+        // zeroZeroResults: strop podle už odehraných 0:0 (jen přibývají, boduje se přesná shoda)
+if (tb.zeroZeroResults != null && tb.zeroZeroResults !== '') {
+    const realNul = real.bonus?.zeroZeroResults;
+    const tipN = parseInt(tb.zeroZeroResults);
+    if (realNul == null || realNul === '') {
+        maxPts += 8; // ještě nevíme – plný optimismus
+    } else if (parseInt(realNul) <= tipN) {
+        maxPts += 8; // skutečnost pod/na tipu → ještě může dorůst přesně na tip
+    }
+    // realNul > tipN → přeletěno, přesně už netrefí, nepřičítám nic
+}
     }
     return maxPts;
 }
