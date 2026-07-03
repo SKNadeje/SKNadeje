@@ -5532,19 +5532,18 @@ function zkontrolujNoveOdznaky() {
         return;
     }
     
-    const novy = aktualni.filter(a => !videny.includes(a));
+   const novy = aktualni.filter(a => !videny.includes(a));
     if (novy.length === 0) return;
-    
-    // Najdi detaily prvního nového odznáčku
+
     if (typeof ziskejOdznaky !== 'function') return;
     const odznaky = ziskejOdznaky(me);
-    const noviOdznak = odznaky.find(o => o.label === novy[0]);
-    
-    if (noviOdznak) {
-        setTimeout(() => zobrazUnlockAnimace(noviOdznak), 1500);
-    }
-    
-    // Aktualizuj seen list
+
+    // Ukaž všechny nové postupně (5,5 s rozestup – modal má auto-close)
+    novy.forEach((label, i) => {
+        const o = odznaky.find(x => x.label === label);
+        if (o) setTimeout(() => zobrazUnlockAnimace(o), 1500 + i * 5500);
+    });
+
     localStorage.setItem(klic, JSON.stringify(aktualni));
 }
     
