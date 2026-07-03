@@ -8033,7 +8033,7 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(nactiChatStats, 600);
 });
     
- function ziskejOdznaky(p) {
+function ziskejOdznaky(p) {
     const odznaky = [];
     const tip = p.tip || {};
     const total = profilData.length;
@@ -8051,13 +8051,13 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // 🔒 FAZE STATUS - odznáčky za výsledky padají jen u finálních fází
     const fs = r.faze_status || {};
-const grpStatus = fs.groups || {};
-const skupinyLetters = ['A','B','C','D','E','F','G','H','I','J','K','L'];
-// všech 12 skupin musí být final
-const skupinyFinal = skupinyLetters.every(l => grpStatus[l] === 'final');
-const winnerFinal = fs.final === 'final' || fs.winner === 'final';
-const bronzeFinal = fs.bronze === 'final' || winnerFinal;
-const bonusFinal = fs.bonus === 'final';
+    const grpStatus = fs.groups || {};
+    const skupinyLetters = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+    // všech 12 skupin musí být final
+    const skupinyFinal = skupinyLetters.every(l => grpStatus[l] === 'final');
+    const winnerFinal = fs.final === 'final' || fs.winner === 'final';
+    const bronzeFinal = fs.bronze === 'final' || winnerFinal;
+    const bonusFinal = fs.bonus === 'final';
 
   // === ZÁKLAD ===
     // Kompletní tip = vítěz + všechny 4 bonus tipy
@@ -8087,11 +8087,11 @@ const bonusFinal = fs.bonus === 'final';
     odznaky.push({ icon: '🐑', label: 'S davem', aktivni: !!(tip.winner && tip.winner === oblibeny && sortHlasy[0]?.[1] > 1), popis: 'Vsadil/a na nejoblíbenějšího favorita podle hráčů.' });
 
    // === ČESKÝ FAN ===
-const tipGroupA = (tip.groups && tip.groups[0]) || [];
-const ceskoPostupZeSkupiny = String(tipGroupA[0] || '').trim() === 'Česko' || String(tipGroupA[1] || '').trim() === 'Česko';
-const ceskoV8 = (tip.s16 || []).some(t => String(t).trim() === 'Česko');
-odznaky.push({ icon: '🇨🇿', label: 'Vlastenec', aktivni: ceskoPostupZeSkupiny, popis: 'Věří českému týmu – tipoval Česko do top 2 ze skupiny.' });
-odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/a Česko do 1/8 finále – odvážná předpověď!' });
+    const tipGroupA = (tip.groups && tip.groups[0]) || [];
+    const ceskoPostupZeSkupiny = String(tipGroupA[0] || '').trim() === 'Česko' || String(tipGroupA[1] || '').trim() === 'Česko';
+    const ceskoV8 = (tip.s16 || []).some(t => String(t).trim() === 'Česko');
+    odznaky.push({ icon: '🇨🇿', label: 'Vlastenec', aktivni: ceskoPostupZeSkupiny, popis: 'Věří českému týmu – tipoval Česko do top 2 ze skupiny.' });
+    odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/a Česko do 1/8 finále – odvážná předpověď!' });
 
     // === TREFY V TURNAJI ===
     const trefilVitez = r.winner && tip.winner && String(r.winner).trim() === String(tip.winner).trim();
@@ -8127,11 +8127,16 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
     odznaky.push({ icon: '🏚️', label: 'Pán sklepa', aktivni: false, popis: 'Při prvním MVP skončil/a poslední. Vítej ve sklepě.' });
     odznaky.push({ icon: '🪜', label: 'Permanentní rezident sklepa', aktivni: false, popis: 'Podruhé poslední při MVP. Nájem na neurčito.' });
     odznaky.push({ icon: '🍷', label: 'Sommelier zatuchliny', aktivni: false, popis: 'Třikrát+ poslední při MVP. Z dna sudu vybírá nejlepší ročníky bezbodí.' });
+
+    // === RUČNĚ UDĚLOVANÉ ===
+    odznaky.push({ icon: '😭', label: 'Uplakánek', aktivni: false, popis: 'Uděleno kolegy z údržby.' });
+
     // === CHAT AKTIVITA ===
     const chatStats = (typeof chatStatsCache !== 'undefined') ? (chatStatsCache[p.rowId] || { messages: 0, reactions: 0 }) : { messages: 0, reactions: 0 };
     odznaky.push({ icon: '💬', label: 'Klábosil', aktivni: chatStats.messages >= 10, popis: `Napsal/a ${chatStats.messages} zpráv v chatu.` });
     odznaky.push({ icon: '🎙️', label: 'Showman', aktivni: chatStats.messages >= 50, popis: `Napsal/a ${chatStats.messages} zpráv – chat baví!` });
     odznaky.push({ icon: '❤️', label: 'Oblíbenec', aktivni: chatStats.reactions >= 5, popis: `Dostal/a ${chatStats.reactions} reakcí na zprávy.` });
+
 // === BONUS TIPY (odznáčky jen při FINÁLNÍM stavu) ===
    const tipBonus = tip.bonus || {};
     const realBonus = r.bonus || {};
@@ -8206,9 +8211,6 @@ odznaky.push({ icon: '🤡', label: 'Naivka', aktivni: ceskoV8, popis: 'Tipoval/
     const maDulezity = odznaky.some(o => o.aktivni && dulezite.includes(o.label));
     odznaky.push({ icon: '🦥', label: 'Pohodář', aktivni: !maDulezity, popis: 'V klidu sleduje turnaj a nestresuje se pořadím.' });
 
-     // === RUČNĚ UDĚLOVANÉ ===
-odznaky.push({ icon: '😭', label: 'Uplakánek', aktivni: false, popis: 'Uděleno kolegy z údržby.' });
-     
     return odznaky;
 }
 
