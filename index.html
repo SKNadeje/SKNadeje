@@ -8645,7 +8645,7 @@ const statusZapasu = (vitezTip, realAdmin, fazeKlic) => {
                 <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(leftR32, r.s32, '1/16', 's32')}</div>
                 <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(leftR16, r.s16, '1/8', 's16')}</div>
                 <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(leftQF, r.s8, 'ČTVRTFINÁLE', 's8')}</div>
-                <div style="flex:0 0 105px; min-width:0; overflow:hidden;">${bracketCol(leftSemi, null, 'SEMIFINÁLE', 's4')}</div>
+                <div style="flex:0 0 105px; min-width:0; overflow:hidden;">${bracketCol(leftSemi, r.s4, 'SEMIFINÁLE', 's4')}</div>
                 
                <!-- ═══ CENTER: POHÁR + FINÁLE + BRONZ ═══ -->
                 <div style="flex:0 0 140px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:0 3px; position:relative;">   
@@ -8686,7 +8686,7 @@ const statusZapasu = (vitezTip, realAdmin, fazeKlic) => {
                 </div>
                 
               <!-- ═══ PRAVÁ STRANA (SEMI → 1/16) ═══ -->
-                <div style="flex:0 0 105px; min-width:0; overflow:hidden;">${bracketCol(rightSemi, null, 'SEMIFINÁLE', 's4')}</div>
+                <div style="flex:0 0 105px; min-width:0; overflow:hidden;">${bracketCol(rightSemi, r.s4, 'SEMIFINÁLE', 's4')}</div>
                 <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(rightQF, r.s8, 'ČTVRTFINÁLE', 's8')}</div>
                 <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(rightR16, r.s16, '1/8', 's16')}</div>
                 <div style="flex:0 0 92px; min-width:0; overflow:hidden;">${bracketCol(rightR32, r.s32, '1/16', 's32')}</div>
@@ -10151,7 +10151,7 @@ async function vlozitTestData() {
                     <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(leftR32, r.s32, '1/16')}</div>
                     <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(leftR16, r.s16, '1/8')}</div>
                     <div style="flex:0 0 110px; min-width:0; overflow:hidden;">${bracketCol(leftQF, r.s8, 'ČTVRTFINÁLE')}</div>
-                    <div style="flex:0 0 115px; min-width:0; overflow:hidden;">${bracketCol(leftSemi, null, 'SEMIFINÁLE')}</div>
+                    <div style="flex:0 0 115px; min-width:0; overflow:hidden;">${bracketCol(leftSemi, r.s4 'SEMIFINÁLE')}</div>
                     
                     <div style="flex:0 0 130px; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:0 5px;">
                         <div style="text-align:center; position:relative;">
@@ -10171,7 +10171,7 @@ async function vlozitTestData() {
                         ${tip.bronze ? `<div style="width:100%; text-align:center; padding:5px; background:rgba(180,100,40,0.14); border:1px solid rgba(180,100,40,0.45); border-radius:6px; font-size:10px; color:#d97b3a; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px;">3. ${flag(tip.bronze, 12)}<span>${tip.bronze}</span></div>` : ''}
                     </div>
                     
-                    <div style="flex:0 0 115px; min-width:0; overflow:hidden;">${bracketCol(rightSemi, null, 'SEMIFINÁLE')}</div>
+                    <div style="flex:0 0 115px; min-width:0; overflow:hidden;">${bracketCol(rightSemi, r.s4 'SEMIFINÁLE')}</div>
                     <div style="flex:0 0 110px; min-width:0; overflow:hidden;">${bracketCol(rightQF, r.s8, 'ČTVRTFINÁLE')}</div>
                     <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(rightR16, r.s16, '1/8')}</div>
                     <div style="flex:0 0 100px; min-width:0; overflow:hidden;">${bracketCol(rightR32, r.s32, '1/16')}</div>
