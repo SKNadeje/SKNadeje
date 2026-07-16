@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sázková kancelář Naděje</title>
+<link rel="icon" href="logo-nadeje.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+    margin: 0;
+    background: radial-gradient(ellipse at top, #0d1022 0%, #05070f 70%);
+    font-family: Inter, sans-serif;
+    color: #f0e6c8;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px 16px;
+}
+.karta {
+    max-width: 470px; width: 100%;
+    text-align: center;
+    animation: vstup .7s ease both;
+}
+@keyframes vstup { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .karta, .logo { animation: none !important; } }
+
+/* ===== LOGO ===== */
+.logo {
+    width: 130px; height: 130px; margin: 0 auto 20px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(160deg, rgba(240,230,200,.14), rgba(212,175,55,.05));
+    border: 1px solid rgba(212,175,55,.4);
+    box-shadow: 0 0 40px rgba(212,175,55,.15);
+    padding: 16px;
+    animation: dych 4s ease-in-out infinite;
+}
+@keyframes dych {
+    0%, 100% { box-shadow: 0 0 40px rgba(212,175,55,.15); }
+    50% { box-shadow: 0 0 60px rgba(212,175,55,.3); }
+}
+.logo img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 3px 8px rgba(0,0,0,.5)); }
+.logo .fallback { font-size: 3.2rem; }
+
+/* ===== NÁZEV ===== */
+.zalozeno { font-size: 10px; letter-spacing: 4px; color: rgba(212,175,55,.55); text-transform: uppercase; font-weight: 700; }
+h1 {
+    font-size: 1.8rem; font-weight: 900; letter-spacing: 2px;
+    margin: 10px 0 2px; text-transform: uppercase; line-height: 1.2;
+    background: linear-gradient(135deg, #f0e6c8, #d4af37 40%, #f0e6c8 70%, #b8901e);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: #d4af37;
+}
+.motto { font-size: .72rem; color: #5a6480; font-style: italic; margin-bottom: 22px; }
+.line { width: 110px; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); margin: 0 auto 24px; }
+
+/* ===== HLÁŠKA ===== */
+.hlaska {
+    min-height: 66px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .88rem; line-height: 1.6; color: #cbd5e1;
+    padding: 0 8px; margin-bottom: 26px;
+    transition: opacity .4s;
+}
+.hlaska.mizi { opacity: 0; }
+.hlaska b { color: #d4af37; font-weight: 800; }
+
+/* ===== VSTUP ===== */
+.vstup {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, #d4af37, #9a7b1e);
+    color: #05070f; text-decoration: none;
+    font-size: .85rem; font-weight: 900; letter-spacing: 2px;
+    padding: 15px 38px; border-radius: 12px; text-transform: uppercase;
+    box-shadow: 0 5px 20px rgba(212,175,55,.3);
+    transition: transform .2s, box-shadow .2s;
+}
+.vstup:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(212,175,55,.45); }
+.vstup:active { transform: translateY(0); }
+
+/* ===== DROBNÝ TISK ===== */
+.tisk {
+    margin-top: 30px;
+    font-size: .58rem; line-height: 1.8; color: #3d4560;
+}
+.tisk b { color: #5a6480; }
+
+@media (max-width: 420px) {
+    h1 { font-size: 1.4rem; }
+    .logo { width: 104px; height: 104px; }
+}
+</style>
+</head>
+<body>
+<div class="karta">
+    <div class="logo">
+        <img src="logo-nadeje.png" alt="Logo SK Naděje"
+             onerror="this.outerHTML='<span class=&quot;fallback&quot;>🎲</span>'">
+    </div>
+
+    <div class="zalozeno">Est. 2026 · licence od maminky</div>
+    <h1>Sázková kancelář<br>Naděje</h1>
+    <div class="motto">„Jediná kancelář, kde prohráváte mezi kamarády."</div>
+    <div class="line"></div>
+
+    <div class="hlaska" id="hlaska"></div>
+
+    <a class="vstup" href="hub.html">Vstoupit 🎫</a>
+
+    <div class="tisk">
+        <b>Poučení o rizicích:</b> Tipování může vést k závislosti na tabulkách,
+        hádkám o ofsajdu a přehnané sebedůvěře.<br>
+        Kurzy nestanovujeme – stejně by je nikdo nerespektoval.
+        Výhry vyplácíme v hotovosti, nadávky přijímáme v chatu.
+    </div>
+</div>
+
+<script>
+/* ============================================================
+   VTIPNÉ HLÁŠKY – klidně přidávej vlastní. Točí se po 6 s
+   a při každém načtení začne náhodnou.
+   ============================================================ */
+const HLASKY = [
+    'Vítej v jediné sázkovce, kde ti <b>bookmaker fandí</b>.',
+    'Dnešní kurz na tvou výhru: <b>nevyčíslitelný</b>. Ale držíme palce.',
+    'U nás neplatí „sázej s rozumem". U nás platí <b>„sázej se srdcem a pak to obhaj v chatu"</b>.',
+    'Statistika praví: 100 % našich tipařů věří, že <b>letos to vyjde</b>.',
+    '<b>Garance férovosti:</b> všichni prohráváme stejně.',
+    'Peníze ti nevrátíme, ale <b>vzpomínky zůstanou</b>.',
+    'Naši analytici doporučují: <b>tipuj opačně než Kominek</b>.',
+    'Jsme jediná kancelář, kde se výhra <b>propije společně s poraženými</b>.',
+    'Žádné skryté poplatky. Jen <b>skrytá zklamání</b>.',
+    'Tvůj tip je u nás v bezpečí. <b>Tvoje hrdost ne.</b>'
+];
+
+const el = document.getElementById('hlaska');
+let idx = Math.floor(Math.random() * HLASKY.length);
+
+function ukaz() {
+    el.innerHTML = HLASKY[idx];
+    el.classList.remove('mizi');
+}
+ukaz();
+
+setInterval(() => {
+    el.classList.add('mizi');
+    setTimeout(() => {
+        idx = (idx + 1) % HLASKY.length;
+        ukaz();
+    }, 400);
+}, 6000);
+</script>
+</body>
+</html>
