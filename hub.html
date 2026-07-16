@@ -1,94 +1,245 @@
 <!DOCTYPE html>
-<html lang="cs"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SK Naděje – Tipovačky</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+<link rel="icon" href="logo-wc2026.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-body{margin:0;background:radial-gradient(ellipse at top,#0d1022 0%,#05070f 70%);font-family:Inter,sans-serif;color:#f0e6c8;min-height:100vh;padding:40px 16px;box-sizing:border-box;}
-.hub{max-width:680px;margin:0 auto;}
-.presents{text-align:center;font-size:10px;letter-spacing:4px;color:rgba(212,175,55,.55);text-transform:uppercase;font-weight:700;}
-h1{text-align:center;font-size:2rem;font-weight:900;letter-spacing:5px;margin:8px 0 4px;background:linear-gradient(135deg,#f0e6c8,#d4af37 40%,#f0e6c8 70%,#b8901e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-transform:uppercase;}
-.sub{text-align:center;font-size:.75rem;color:#5a6480;margin-bottom:12px;}
-.line{width:90px;height:1px;background:linear-gradient(90deg,transparent,#d4af37,transparent);margin:0 auto 24px;}
-.user{display:flex;justify-content:center;margin-bottom:28px;}
-.user .pill{display:flex;align-items:center;gap:8px;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.25);border-radius:999px;padding:7px 16px;font-size:.75rem;}
-.user .av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#7a6420,#4a3c12);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800;color:#f0e6c8;}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.tile{background:rgba(15,20,35,.75);border:1px solid rgba(212,175,55,.15);border-radius:16px;padding:18px;position:relative;transition:all .25s;cursor:pointer;}
-.tile:hover{transform:translateY(-3px);border-color:rgba(212,175,55,.45);box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 20px rgba(212,175,55,.08);}
-.tile.active{grid-column:1/-1;border:1px solid rgba(212,175,55,.55);box-shadow:0 0 28px rgba(212,175,55,.14);display:flex;align-items:center;gap:16px;}
-.badge{position:absolute;top:12px;right:12px;font-size:.55rem;font-weight:800;letter-spacing:1.5px;padding:3px 10px;border-radius:999px;text-transform:uppercase;}
-.b-live{background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;}
-.b-soon{background:rgba(56,189,248,.15);color:#38bdf8;border:1px solid rgba(56,189,248,.3);}
-.b-vote{background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.3);}
-.ico{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:12px;flex-shrink:0;}
-.tile.active .ico{width:56px;height:56px;font-size:1.8rem;margin-bottom:0;}
-.i-gold{background:rgba(212,175,55,.14);border:1px solid rgba(212,175,55,.35);}
-.i-blue{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);}
-.i-green{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);}
-.i-purple{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);}
-.tname{font-size:.95rem;font-weight:800;color:#f0e6c8;}
-.tmeta{font-size:.68rem;color:#8a93ad;margin-top:3px;}
-.tnote{font-size:.65rem;color:#5a6480;margin-top:10px;}
-.thook{font-size:.7rem;color:#d4af37;margin-top:5px;font-weight:700;}
-.enter{background:linear-gradient(135deg,#d4af37,#9a7b1e);color:#05070f;font-size:.75rem;font-weight:900;letter-spacing:1px;padding:11px 22px;border-radius:10px;white-space:nowrap;box-shadow:0 4px 14px rgba(212,175,55,.3);}
-.hall{background:transparent;border:1px dashed rgba(212,175,55,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:150px;}
-.hall:hover{border-style:solid;}
-.foot{margin-top:28px;padding-top:16px;border-top:1px solid rgba(212,175,55,.12);display:flex;justify-content:space-between;font-size:.62rem;color:rgba(212,175,55,.35);letter-spacing:2px;text-transform:uppercase;}
-@media(max-width:560px){.grid{grid-template-columns:1fr;}.tile.active{flex-wrap:wrap;}}
-</style></head><body>
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    background: radial-gradient(ellipse at top, #0d1022 0%, #05070f 70%);
+    font-family: Inter, sans-serif;
+    color: #f0e6c8;
+    min-height: 100vh;
+    padding: 44px 16px 32px;
+}
+.hub { max-width: 700px; margin: 0 auto; }
+
+/* ===== HLAVIČKA ===== */
+.presents { text-align: center; font-size: 10px; letter-spacing: 4px; color: rgba(212,175,55,.55); text-transform: uppercase; font-weight: 700; }
+h1 {
+    text-align: center; font-size: 2.1rem; font-weight: 900; letter-spacing: 6px;
+    margin: 8px 0 4px; text-transform: uppercase;
+    background: linear-gradient(135deg, #f0e6c8, #d4af37 40%, #f0e6c8 70%, #b8901e);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: #d4af37;
+}
+.sub { text-align: center; font-size: .78rem; color: #5a6480; margin-bottom: 14px; }
+.line { width: 100px; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); margin: 0 auto 30px; }
+
+/* ===== GRID DLAŽDIC ===== */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+.tile {
+    background: rgba(15,20,35,.75);
+    border: 1px solid rgba(212,175,55,.15);
+    border-radius: 16px;
+    padding: 20px 18px;
+    position: relative;
+    transition: transform .22s, border-color .22s, box-shadow .22s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    overflow: hidden;
+}
+a.tile:hover { transform: translateY(-3px); border-color: rgba(212,175,55,.5); box-shadow: 0 12px 32px rgba(0,0,0,.5), 0 0 22px rgba(212,175,55,.08); }
+.tile.wide {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 16px;
+    border-color: rgba(212,175,55,.55);
+    box-shadow: 0 0 30px rgba(212,175,55,.13);
+}
+.tile.disabled { cursor: default; opacity: .92; }
+
+/* Badge stavu */
+.badge {
+    position: absolute; top: 13px; right: 13px;
+    font-size: .55rem; font-weight: 800; letter-spacing: 1.5px;
+    padding: 4px 11px; border-radius: 999px; text-transform: uppercase;
+}
+.b-live { background: linear-gradient(135deg, #22c55e, #15803d); color: #fff; box-shadow: 0 0 12px rgba(34,197,94,.4); }
+.b-live::before { content: '● '; }
+.b-soon { background: rgba(56,189,248,.13); color: #38bdf8; border: 1px solid rgba(56,189,248,.3); }
+.b-vote { background: rgba(167,139,250,.13); color: #a78bfa; border: 1px solid rgba(167,139,250,.3); }
+.b-done { background: rgba(212,175,55,.13); color: #d4af37; border: 1px solid rgba(212,175,55,.35); }
+
+/* Logo / ikona turnaje */
+.logo {
+    width: 50px; height: 50px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; margin-bottom: 13px; flex-shrink: 0;
+    background: rgba(212,175,55,.1); border: 1px solid rgba(212,175,55,.28);
+}
+.tile.wide .logo { width: 60px; height: 60px; font-size: 1.9rem; margin-bottom: 0; }
+.logo img { width: 80%; height: 80%; object-fit: contain; }
+
+.tname { font-size: .95rem; font-weight: 800; color: #f0e6c8; line-height: 1.25; }
+.tile.wide .tname { font-size: 1.15rem; }
+.tmeta { font-size: .68rem; color: #8a93ad; margin-top: 4px; line-height: 1.5; }
+.tnote { font-size: .66rem; color: #5a6480; margin-top: 11px; }
+.thook { font-size: .72rem; color: #d4af37; margin-top: 6px; font-weight: 700; }
+
+.enter {
+    background: linear-gradient(135deg, #d4af37, #9a7b1e);
+    color: #05070f; font-size: .74rem; font-weight: 900; letter-spacing: 1px;
+    padding: 12px 22px; border-radius: 10px; white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(212,175,55,.3);
+    text-transform: uppercase;
+}
+
+/* Síň slávy */
+.tile.hall {
+    background: transparent;
+    border: 1px dashed rgba(212,175,55,.3);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; min-height: 160px;
+}
+a.tile.hall:hover { border-style: solid; }
+
+/* ===== PATIČKA ===== */
+.foot {
+    margin-top: 30px; padding-top: 18px;
+    border-top: 1px solid rgba(212,175,55,.12);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: .62rem; color: rgba(212,175,55,.35);
+    letter-spacing: 2px; text-transform: uppercase;
+}
+.foot a { color: #5a6480; text-decoration: none; font-size: .68rem; letter-spacing: normal; text-transform: none; }
+.foot a:hover { color: #d4af37; }
+
+/* Vstupní animace */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.tile { animation: fadeUp .5s ease both; }
+.tile:nth-child(1) { animation-delay: .05s; }
+.tile:nth-child(2) { animation-delay: .12s; }
+.tile:nth-child(3) { animation-delay: .19s; }
+.tile:nth-child(4) { animation-delay: .26s; }
+.tile:nth-child(5) { animation-delay: .33s; }
+@media (prefers-reduced-motion: reduce) { .tile { animation: none; } a.tile:hover { transform: none; } }
+
+@media (max-width: 560px) {
+    body { padding-top: 32px; }
+    h1 { font-size: 1.6rem; letter-spacing: 4px; }
+    .grid { grid-template-columns: 1fr; }
+    .tile.wide { flex-wrap: wrap; }
+    .tile.wide .enter { width: 100%; text-align: center; }
+}
+</style>
+</head>
+<body>
 <div class="hub">
-  <div class="presents">SK Naděje presents</div>
-  <h1>Tipovačky</h1>
-  <div class="sub">Vyber turnaj a vstup do hry</div>
-  <div class="line"></div>
-  <div class="user"><div class="pill"><div class="av">TR</div><span>Trnda</span><span style="color:#5a6480">· přihlášen</span></div></div>
+    <div class="presents">SK Naděje presents</div>
+    <h1>Tipovačky</h1>
+    <div class="sub">Vyber turnaj a vstup do hry</div>
+    <div class="line"></div>
 
-  <div class="grid">
-    <div class="tile active">
-      <span class="badge b-live">● Probíhá</span>
-<div class="ico i-gold">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/1/1a/2026_FIFA_World_Cup_logo.svg" 
-         alt="Logo MS 2026" style="width:70%; height:70%; object-fit:contain;">
+    <div class="grid" id="grid"></div>
+
+    <div class="foot">
+        <span>SK Naděje · tipovačky od 2026</span>
+        <span><a href="mailto:">Kontakt na správce</a></span>
+    </div>
 </div>
-      <div style="flex:1;min-width:0;">
-        <div class="tname" style="font-size:1.1rem;">MS ve fotbale 2026</div>
-        <div class="tmeta">USA · Mexiko · Kanada &nbsp;·&nbsp; 25 hráčů &nbsp;·&nbsp; bank 5 000 Kč</div>
-        <div class="thook">Jsi 1. se 187 body</div>
-      </div>
-      <div class="enter">VSTOUPIT ⚽</div>
-    </div>
 
-    <div class="tile">
-      <span class="badge b-soon">Brzy</span>
-      <div class="ico i-blue">🏒</div>
-      <div class="tname">MS v hokeji 2027</div>
-      <div class="tmeta">Německo · květen 2027</div>
-      <div class="tnote">Registrace se otevře v dubnu</div>
-    </div>
+<script>
+/* ============================================================
+   KONFIGURACE TURNAJŮ – jediné místo, které edituješ.
+   stav: 'live' | 'soon' | 'vote' | 'archiv'
+   logo: název souboru vedle hub.html (když chybí, ukáže se emoji)
+   url:  kam dlaždice vede (null = neklikací)
+   ============================================================ */
+const TURNAJE = [
+    {
+        nazev: 'MS ve fotbale 2026',
+        meta: 'USA · Mexiko · Kanada · 25 hráčů · bank 5 000 Kč',
+        hook: '',                       // po skončení např. '🏆 Vítěz: Trnda'
+        stav: 'live',                   // po skončení přepni na 'archiv'
+        logo: 'logo-wc2026.png',
+        emoji: '🏆',
+        url: 'index.html',              // po přejmenování 'wc2026.html'
+        hlavni: true                    // full-width dlaždice
+    },
+    {
+        nazev: 'MS v hokeji 2027',
+        meta: 'Německo · květen 2027',
+        note: 'Registrace se otevře na jaře 2027',
+        stav: 'soon',
+        logo: 'logo-hokej2027.png',
+        emoji: '🏒',
+        url: null
+    },
+    {
+        nazev: 'Euro 2028',
+        meta: 'Británie · Irsko · léto 2028',
+        note: 'Kvalifikace ještě běží',
+        stav: 'soon',
+        logo: 'logo-euro2028.png',
+        emoji: '⚽',
+        url: null
+    },
+    {
+        nazev: 'Liga mistrů',
+        meta: 'Playoff · jaro 2027',
+        note: 'Hlasuj v chatu, jestli ji přidáme',
+        stav: 'vote',
+        logo: 'logo-cl.png',
+        emoji: '🛡️',
+        url: null
+    }
+];
 
-    <div class="tile">
-      <span class="badge b-soon">Brzy</span>
-      <div class="ico i-green">⚽</div>
-      <div class="tname">Euro 2028</div>
-      <div class="tmeta">Británie · Irsko · léto 2028</div>
-      <div class="tnote">Kvalifikace ještě běží</div>
-    </div>
+const BADGE = {
+    live:   { cls: 'b-live', text: 'Probíhá' },
+    soon:   { cls: 'b-soon', text: 'Brzy' },
+    vote:   { cls: 'b-vote', text: 'Hlasování' },
+    archiv: { cls: 'b-done', text: 'Ukončeno' }
+};
 
-    <div class="tile">
-      <span class="badge b-vote">Hlasování</span>
-      <div class="ico i-purple">🛡️</div>
-      <div class="tname">Champions League</div>
-      <div class="tmeta">Playoff · jaro 2027</div>
-      <div class="tnote">Hlasuj, jestli ji přidáme</div>
-    </div>
+function logoHtml(t) {
+    const fallback = `this.parentNode.textContent='${t.emoji || '🏆'}'`;
+    return t.logo
+        ? `<div class="logo"><img src="${t.logo}" alt="" onerror="${fallback}"></div>`
+        : `<div class="logo">${t.emoji || '🏆'}</div>`;
+}
 
+function tileHtml(t) {
+    const b = BADGE[t.stav] || BADGE.soon;
+    const tag = t.url ? 'a' : 'div';
+    const href = t.url ? ` href="${t.url}"` : '';
+    const cls = `tile${t.hlavni ? ' wide' : ''}${t.url ? '' : ' disabled'}`;
+
+    if (t.hlavni) {
+        return `<${tag}${href} class="${cls}">
+            <span class="badge ${b.cls}">${b.text}</span>
+            ${logoHtml(t)}
+            <div style="flex:1; min-width:0;">
+                <div class="tname">${t.nazev}</div>
+                <div class="tmeta">${t.meta || ''}</div>
+                ${t.hook ? `<div class="thook">${t.hook}</div>` : ''}
+            </div>
+            ${t.url ? `<div class="enter">Vstoupit</div>` : ''}
+        </${tag}>`;
+    }
+    return `<${tag}${href} class="${cls}">
+        <span class="badge ${b.cls}">${b.text}</span>
+        ${logoHtml(t)}
+        <div class="tname">${t.nazev}</div>
+        <div class="tmeta">${t.meta || ''}</div>
+        ${t.hook ? `<div class="thook">${t.hook}</div>` : ''}
+        ${t.note ? `<div class="tnote">${t.note}</div>` : ''}
+    </${tag}>`;
+}
+
+const grid = document.getElementById('grid');
+grid.innerHTML = TURNAJE.map(tileHtml).join('') + `
     <div class="tile hall">
-      <div style="font-size:1.5rem;opacity:.7;margin-bottom:8px;">📜</div>
-      <div class="tname" style="color:#d4af37;font-size:.8rem;">Síň slávy</div>
-      <div class="tnote">Archiv dohraných turnajů,<br>kroniky a vítězové</div>
-    </div>
-  </div>
-
-  <div class="foot"><span>SK Naděje · tipovačky od 2026</span><span>💬 Chat &nbsp; 👤 Profil</span></div>
-</div>
-</body></html>
+        <div style="font-size:1.6rem; opacity:.7; margin-bottom:9px;">📜</div>
+        <div class="tname" style="color:#d4af37; font-size:.82rem;">Síň slávy</div>
+        <div class="tnote">Archiv dohraných turnajů,<br>kroniky a vítězové</div>
+    </div>`;
+</script>
+</body>
+</html>
