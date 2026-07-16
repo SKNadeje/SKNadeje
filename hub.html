@@ -247,11 +247,11 @@ function tileHtml(t) {
 
 const grid = document.getElementById('grid');
 grid.innerHTML = TURNAJE.map(tileHtml).join('') + `
-    <div class="tile hall">
+    <a href="sin-slavy.html" class="tile hall">
         <div style="font-size:1.6rem; opacity:.7; margin-bottom:9px;">📜</div>
         <div class="tname" style="color:#d4af37; font-size:.82rem;">Síň slávy</div>
         <div class="tnote">Archiv dohraných turnajů,<br>kroniky a vítězové</div>
-    </div>`;
+    </a>`;
 </script>
 </body>
 </html>
