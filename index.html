@@ -9758,18 +9758,19 @@ async function resetVysledky() {
 }
     
 async function kliknutiVstoupit() {
-    // Zkontroluj jestli je vyplněno finále
     const { data: real } = await supabaseClient
         .from('admin_vysledky')
-        .select('winner, bronze')
+        .select('winner, bronze, faze_status')
         .eq('id', 1)
         .maybeSingle();
 
-    if (real?.winner && real.winner.trim() !== '') {
-        // Turnaj skončil – ukážeme stupně vítězů
+    const fs = real?.faze_status || {};
+    const winnerFinal = fs.winner === 'final' || fs.final === 'final';
+    const bonusFinal = fs.bonus === 'final';
+
+    if (real?.winner && real.winner.trim() !== '' && winnerFinal && bonusFinal) {
         await zobrazitPodivm();
     } else {
-        // Turnaj ještě běží
         zavritLoadingScreen();
     }
 }
@@ -9785,7 +9786,8 @@ async function zobrazitPodivm() {
         groups: real.groups || [],
         s32: real.s32 || [], s16: real.s16 || [],
         s8: real.s8 || [], s4: real.s4 || [],
-        winner: real.winner || '', bronze: real.bronze || ''
+        winner: real.winner || '', bronze: real.bronze || '',
+        bonus: real.bonus || {}
     };
 
     const vysledky = tipy.map(row => {
@@ -9805,6 +9807,8 @@ async function zobrazitPodivm() {
         });
         if (r.winner && tip.winner && String(r.winner).trim()===String(tip.winner).trim()) pts += 12;
         if (r.bronze && tip.bronze && String(r.bronze).trim()===String(tip.bronze).trim()) pts += 8;
+        // 🎁 Bonus body (stejně jako žebříček)
+        pts += spocitejBonusBody(tip, r);
         return { name: row.name || 'Anonym', points: pts, paid: row.paid };
     }).sort((a,b) => b.points - a.points);
 
