@@ -27,13 +27,13 @@ body {
 
 /* ===== LOGO ===== */
 .logo {
-    width: 190px; height: 190px; margin: 0 auto 24px;
+    width: 130px; height: 130px; margin: 0 auto 20px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     background: linear-gradient(160deg, rgba(240,230,200,.14), rgba(212,175,55,.05));
     border: 1px solid rgba(212,175,55,.4);
     box-shadow: 0 0 40px rgba(212,175,55,.15);
-    padding: 18px;
+    padding: 16px;
     animation: dych 4s ease-in-out infinite;
 }
 @keyframes dych {
@@ -78,6 +78,16 @@ h1 {
 }
 .vstup:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(212,175,55,.45); }
 .vstup:active { transform: translateY(0); }
+.vstup { border: none; cursor: pointer; font-family: Inter, sans-serif; }
+.vstup-ghost { background: transparent; color: #d4af37; border: 1px solid rgba(212,175,55,.4); box-shadow: none; }
+.vstup-ghost:hover { background: rgba(212,175,55,.08); }
+.w-input {
+    width: 100%; box-sizing: border-box; margin-top: 9px;
+    background: rgba(15,20,35,.8); border: 1px solid rgba(212,175,55,.25);
+    border-radius: 10px; padding: 12px 14px; color: #f0e6c8;
+    font-size: .82rem; font-family: Inter, sans-serif; outline: none;
+}
+.w-input:focus { border-color: rgba(212,175,55,.6); }
 
 /* ===== DROBNÝ TISK ===== */
 .tisk {
@@ -88,7 +98,7 @@ h1 {
 
 @media (max-width: 420px) {
     h1 { font-size: 1.4rem; }
-    .logo { width: 150px; height: 150px; }
+    .logo { width: 104px; height: 104px; }
 }
 </style>
 </head>
@@ -99,14 +109,32 @@ h1 {
              onerror="this.outerHTML='<span class=&quot;fallback&quot;>🎲</span>'">
     </div>
 
-    <div class="zalozeno">Est. 2019 · licence od maminky</div>
+    <div class="zalozeno">Est. 2026 · licence od maminky</div>
     <h1>Sázková kancelář<br>Naděje</h1>
     <div class="motto">„Jediná kancelář, kde prohráváte mezi kamarády."</div>
     <div class="line"></div>
 
     <div class="hlaska" id="hlaska"></div>
 
-    <a class="vstup" href="hub.html">Vstoupit 🎫</a>
+    <!-- AUTH: nepřihlášený vidí formulář, přihlášený tlačítko VSTOUPIT -->
+    <div id="auth-box" style="display:none; max-width:300px; margin:0 auto;">
+        <input type="email" id="w-email" placeholder="E-mail" class="w-input">
+        <input type="password" id="w-heslo" placeholder="Heslo" class="w-input">
+        <input type="text" id="w-jmeno" placeholder="Herní jméno (jen při registraci)" class="w-input" style="display:none;">
+        <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="vstup" style="flex:1; padding:13px 8px; font-size:.75rem;" onclick="wLogin()">Přihlásit</button>
+            <button class="vstup vstup-ghost" style="flex:1; padding:13px 8px; font-size:.75rem;" onclick="wRegistrace()">Registrace</button>
+        </div>
+        <div id="w-msg" style="font-size:.7rem; color:#d97b3a; margin-top:10px; min-height:16px;"></div>
+    </div>
+
+    <div id="logged-box" style="display:none;">
+        <div style="font-size:.78rem; color:#8a93ad; margin-bottom:14px;">
+            Přihlášen jako <b style="color:#d4af37;" id="w-user">…</b>
+            <span onclick="wLogout()" style="cursor:pointer; margin-left:8px; text-decoration:underline; color:#5a6480;">odhlásit</span>
+        </div>
+        <a class="vstup" href="hub.html">Vstoupit 🎫</a>
+    </div>
 
     <div class="tisk">
         <b>Poučení o rizicích:</b> Tipování může vést k závislosti na tabulkách,
@@ -150,6 +178,90 @@ setInterval(() => {
         ukaz();
     }, 400);
 }, 6000);
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============================================================
+   SDÍLENÉ PŘIHLÁŠENÍ – platí napříč všemi dlaždicemi
+   (stejný Supabase projekt jako turnajové appky)
+   ============================================================ */
+const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
+const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+const wMsg = (t, ok) => {
+    const m = document.getElementById('w-msg');
+    m.textContent = t;
+    m.style.color = ok ? '#22c55e' : '#d97b3a';
+};
+
+async function wZjistiJmeno(userId) {
+    // 1) centrální registr
+    const { data: h } = await sb.from('hraci').select('jmeno').eq('user_id', userId).maybeSingle();
+    if (h?.jmeno) return h.jmeno;
+    // 2) fallback: jméno z fotbalové tipovačky → rovnou zapiš do registru
+    const { data: t } = await sb.from('tipy').select('name').eq('user_id', userId).maybeSingle();
+    if (t?.name) {
+        await sb.from('hraci').insert({ user_id: userId, jmeno: t.name }).select().maybeSingle();
+        return t.name;
+    }
+    return null;
+}
+
+async function wRefresh() {
+    const { data: { session } } = await sb.auth.getSession();
+    const authBox = document.getElementById('auth-box');
+    const loggedBox = document.getElementById('logged-box');
+    if (session) {
+        const jmeno = await wZjistiJmeno(session.user.id);
+        document.getElementById('w-user').textContent = jmeno || session.user.email;
+        authBox.style.display = 'none';
+        loggedBox.style.display = 'block';
+    } else {
+        authBox.style.display = 'block';
+        loggedBox.style.display = 'none';
+    }
+}
+
+async function wLogin() {
+    const email = document.getElementById('w-email').value.trim();
+    const heslo = document.getElementById('w-heslo').value;
+    if (!email || !heslo) return wMsg('Vyplň e-mail a heslo.');
+    const { error } = await sb.auth.signInWithPassword({ email, password: heslo });
+    if (error) return wMsg('Špatný e-mail nebo heslo.');
+    wRefresh();
+}
+
+async function wRegistrace() {
+    const jmenoEl = document.getElementById('w-jmeno');
+    if (jmenoEl.style.display === 'none') {
+        jmenoEl.style.display = 'block';
+        wMsg('Doplň herní jméno a klikni znovu na Registrace.', true);
+        return;
+    }
+    const email = document.getElementById('w-email').value.trim();
+    const heslo = document.getElementById('w-heslo').value;
+    const jmeno = jmenoEl.value.trim();
+    if (!email || heslo.length < 6) return wMsg('Zadej e-mail a heslo (min. 6 znaků).');
+    if (jmeno.length < 2) return wMsg('Zadej herní jméno (min. 2 znaky).');
+
+    const { data, error } = await sb.auth.signUp({ email, password: heslo });
+    if (error) return wMsg('Registrace selhala: ' + error.message);
+
+    if (data?.user) {
+        const { error: e2 } = await sb.from('hraci').insert({ user_id: data.user.id, jmeno });
+        if (e2 && e2.code === '23505') return wMsg('Toto jméno už někdo má – zvol jiné a klikni Registrace.');
+    }
+    wMsg('Účet vytvořen! ✔', true);
+    wRefresh();
+}
+
+async function wLogout() {
+    await sb.auth.signOut();
+    wRefresh();
+}
+
+document.addEventListener('DOMContentLoaded', wRefresh);
 </script>
 </body>
 </html>
