@@ -720,7 +720,7 @@ async function nactiPlayoffZapasy() {
         }
         
         // Pošli Edge Function aby si stáhla aktualizace (nebo dostala cache z DB)
-        await supabaseClient.functions.invoke('turnaj-zapasy').catch(() => {});
+        if (!ARCHIV) await supabaseClient.functions.invoke('turnaj-zapasy').catch(() => {});
         
         // Načti z DB
         const { data } = await supabaseClient
@@ -4526,6 +4526,28 @@ input:focus {
 </style>
 </head>
 <body>
+<!-- 📜 ARCHIV MÓD – po skončení turnaje přepni ARCHIV na true a doplň vítěze -->
+<script>
+const ARCHIV = false;
+const ARCHIV_VITEZ = '???'; // po turnaji doplň jméno vítěze tipovačky
+document.addEventListener('DOMContentLoaded', () => {
+    if (!ARCHIV) return;
+    const lista = document.getElementById('archiv-lista');
+    if (lista) {
+        lista.style.display = 'block';
+        const v = document.getElementById('archiv-vitez');
+        if (v) v.textContent = ARCHIV_VITEZ;
+    }
+    ['bleskove-sekce-hub', 'chat-input-row'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+});
+</script>
+<div id="archiv-lista" style="display:none; background:linear-gradient(90deg, rgba(212,175,55,.15), rgba(212,175,55,.05)); border-bottom:1px solid rgba(212,175,55,.35); padding:9px 14px; text-align:center; font-size:.72rem; color:#d4af37; font-weight:700; position:relative; z-index:500;">
+    📜 Archivovaný turnaj · MS ve fotbale 2026 · 🏆 Vítěz tipovačky: <span id="archiv-vitez">…</span>
+    &nbsp;·&nbsp; <a href="hub.html" style="color:#f0e6c8;">← Zpět na výběr turnajů</a>
+</div>
 <!-- 🎉 NEW ACHIEVEMENT UNLOCK -->
 <div id="unlock-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.96); backdrop-filter:blur(20px); z-index:1000000; justify-content:center; align-items:center;">
     <div style="text-align:center; max-width:90%;">
@@ -5238,6 +5260,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
 // 🎊 Subscribe na nové odznáčky (realtime)
 function subscribeBleskoveOdznacky() {
+    if (ARCHIV) return;
     const channel = supabaseClient.channel('odznacky-channel');
     
     channel.on('broadcast', { event: 'novy-odznacek' }, async (payload) => {
@@ -5407,7 +5430,7 @@ async function nactiTurnajStats(force = false) {
         
         // Pokud nic, nebo data starší než 1h, nebo force → vytáhni nové
         const ageMs = stats ? Date.now() - new Date(stats.aktualizovano).getTime() : Infinity;
-        if (!stats || ageMs > 60 * 60 * 1000 || force) {
+        if (!ARCHIV && (!stats || ageMs > 60 * 60 * 1000 || force)) {
             const { data, error } = await supabaseClient.functions.invoke('turnaj-stats', {
                 body: { force }
             });
@@ -5469,8 +5492,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => nactiTurnajStats(false), 800);
 });
 
-// Auto-refresh každých 15 min
-setInterval(() => {
+// Auto-refresh každých 15 min (v archivu vypnuto)
+if (!ARCHIV) setInterval(() => {
     if (!document.hidden) nactiTurnajStats(false);
 }, 15 * 60 * 1000);
     
@@ -5583,6 +5606,7 @@ async function ukazMVPReveal(jmeno, prirustek) {
 }
     
 async function zeptejSeVesce(userId, jmeno) {
+    if (ARCHIV) { showToast('📜 Archiv – věštec už odešel do důchodu. 🔮', 'info', 3500); return; }
     const modal = document.getElementById('vestec-modal');
     const hracEl = document.getElementById('vestec-hrac');
     const textEl = document.getElementById('vestec-text');
@@ -5658,7 +5682,8 @@ async function nactiAIKomentar(force = false) {
             }
         }
         
-        // Admin: volá Edge Function (může generovat nový)
+        // Admin: volá Edge Function (může generovat nový) – v archivu vypnuto
+        if (ARCHIV) return;
         const { data, error } = await supabaseClient.functions.invoke('ai-komentator', {
             body: { force, personality }
         });
@@ -7538,6 +7563,7 @@ return `
 }
 // 🤖 Zpracuj @bot zmínku – zavolá Edge Function a vlož odpověď do chatu
 async function zpracujBotMention(text, askerName, userId) {
+    if (ARCHIV) return;
     const otazka = text.replace(/@bot\b/gi, '').trim();
     if (otazka.length === 0) {
         showToast('Napiš @bot a otázku, např. "@bot kdo vyhraje?"', 'info', 4000);
@@ -7704,6 +7730,7 @@ function vlozitEmoji(emoji) {
 
 // Real-time subscription
 function nastavRealtimeChat() {
+    if (ARCHIV) return;
     if (chatSubscription) return;
 
     chatSubscription = supabaseClient
@@ -12656,8 +12683,8 @@ window.addEventListener('DOMContentLoaded', checkUserSession);
 
    window.onload = init;
 
-    // 🏆 Auto-refresh match banneru každou minutu (live countdown)
-    if (!window.__matchBannerInterval) {
+    // 🏆 Auto-refresh match banneru každou minutu (live countdown, v archivu vypnuto)
+    if (!ARCHIV && !window.__matchBannerInterval) {
         window.__matchBannerInterval = setInterval(() => {
             if (typeof renderMatchBanner === 'function') renderMatchBanner();
         }, 60000);
@@ -12745,7 +12772,7 @@ document.addEventListener('DOMContentLoaded', () => {
    <!-- Vstup -->
 <div style="position:relative;">
     <div id="mention-dropdown" style="display:none; position:absolute; bottom:100%; left:10px; right:10px; max-height:200px; overflow-y:auto; background:#0f1423; border:1px solid rgba(212,175,55,0.3); border-radius:10px; z-index:10; margin-bottom:6px; box-shadow:0 -8px 20px rgba(0,0,0,0.5);"></div>
-    <div style="padding:10px; border-top:1px solid rgba(212,175,55,0.15); background:rgba(5,8,20,0.4); display:flex; gap:6px; align-items:center;">
+    <div id="chat-input-row" style="padding:10px; border-top:1px solid rgba(212,175,55,0.15); background:rgba(5,8,20,0.4); display:flex; gap:6px; align-items:center;">
         <button onclick="toggleEmojiPicker()" style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.25); color:#d4af37; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:1rem;">😊</button>
         <input type="text" id="chat-input" placeholder="Napiš zprávu... (@ = zmínka)" maxlength="200" oninput="checkMentionTrigger()" onkeydown="handleChatKey(event)" style="flex:1; padding:9px 12px; background:rgba(0,0,0,0.4); color:#f0e6c8; border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.85rem; outline:none;">
         <button onclick="odeslatChatZpravu()" id="chat-send-btn" style="background:linear-gradient(135deg,#d4af37,#9a7b1e); color:#05070f; border:none; padding:9px 14px; border-radius:8px; cursor:pointer; font-weight:800;"><i class="fas fa-paper-plane"></i></button>
