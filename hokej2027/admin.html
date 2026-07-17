@@ -125,8 +125,13 @@
     </style>
 <style>
 :root { --neon: #00f2ff; }
-.auth-input { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.06); border:1px solid rgba(0,242,255,0.25); border-radius:10px; padding:11px 13px; color:#fff; margin-top:8px; font-size:0.9em; outline:none; }
-.auth-input:focus { border-color: var(--neon); }
+.auth-input { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.06); border:1px solid rgba(0,242,255,0.25); border-radius:10px; padding:11px 13px; color:#fff; margin-top:8px; font-size:0.9em; outline:none; color-scheme: dark; }
+.auth-input:-webkit-autofill { -webkit-text-fill-color:#fff; -webkit-box-shadow:0 0 0 40px #16213a inset; }
+select.auth-input { background-color:#16213a; }
+select.auth-input, select.auth-input option { color:#fff; }
+input[type="datetime-local"].auth-input { color:#fff; }
+input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { filter: invert(1); opacity:.7; }
+    .auth-input:focus { border-color: var(--neon); }
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:99; }
 select.auth-input option { background:#0f172a; }
 </style>
