@@ -1,1 +1,490 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADMIN – MS v hokeji 2027</title>
+    <style>
+        :root { 
+            --blue: #3182ce; 
+            --green: #38a169; 
+            --red: #e53e3e; 
+            --bg: #f0f4f8; 
+            --text: #2d3748;
+            --card-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); padding: 20px; color: var(--text); margin: 0; 
+            line-height: 1.6;
+        }
 
+        .container { max-width: 900px; margin: 0 auto; }
+        .btn-back { display: inline-block; padding: 12px 24px; background: white; color: #4a5568; text-decoration: none; border-radius: 12px; font-weight: bold; border: 1px solid #cbd5e0; margin-bottom: 25px; transition: 0.3s; }
+        .btn-back:hover { background: #edf2f7; transform: translateX(-3px); }
+
+        .card { background: white; padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: var(--card-shadow); border: 1px solid #e2e8f0; }
+        h2 { margin: 0 0 20px 0; border-bottom: 2px solid #edf2f7; padding-bottom: 12px; font-size: 1.5em; }
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 0.85em; color: #718096; text-transform: uppercase; }
+        input, textarea { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #cbd5e0; border-radius: 10px; box-sizing: border-box; font-size: 1em; font-family: inherit; }
+
+        .btn { padding: 15px; border: none; border-radius: 12px; color: white; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; margin-top: 10px; transition: 0.3s; text-align: center; }
+        .btn-blue { background: var(--blue); }
+        .btn-green { background: var(--green); }
+        .btn-red { background: var(--red); }
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        #statusMsg { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--green); color: white; padding: 15px 30px; border-radius: 50px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 9999; }
+        .match-item { background: #f8fafc; border: 1px solid #e2e8f0; padding: 25px; border-radius: 18px; margin-top: 25px; }
+        .bets-container { margin-top: 20px; border-top: 2px dashed #edf2f7; padding-top: 15px; }
+        .bet-admin-row { background: white; padding: 12px 18px; border-radius: 12px; margin-top: 10px; border: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; }
+        
+        .small-btn { padding: 8px 14px; border-radius: 8px; font-size: 0.75em; border: none; color: white; cursor: pointer; font-weight: bold; margin-left: 6px; }
+        .check-ok { color: var(--green); font-weight: bold; margin-left: 10px; font-size: 0.8em; }
+        .check-fail { color: var(--red); font-weight: bold; margin-left: 10px; font-size: 0.8em; }
+        .win-amount { color: #f1c40f; background: #000; padding: 2px 8px; border-radius: 6px; font-size: 0.85em; margin-left: 10px; }
+
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 550px; background: white; border-radius: 25px; box-shadow: 0 0 80px rgba(0,0,0,0.6); display: none; z-index: 3000; padding: 35px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; z-index: 2999; }
+        .tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; background: #f1f5f9; padding: 10px; border-radius: 12px; }
+        .tag { background: white; padding: 6px 12px; border-radius: 15px; font-size: 0.85em; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px; }
+        .tag b { cursor: pointer; color: var(--red); }
+        textarea { height: 80px; resize: vertical; }
+        
+        .bets-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .bets-table th {
+            background: #3182ce;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .bets-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .bets-table tr:hover {
+            background: #f8fafc;
+        }
+        
+        .bets-result-ok { color: var(--green); font-weight: bold; }
+        .bets-result-fail { color: var(--red); }
+
+        /* --- SROLOVÁNÍ --- */
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            margin: 0 0 0 0;
+        }
+
+        .collapsible-header h2 { margin: 0; border: none; padding: 0; }
+
+        .collapse-arrow {
+            font-size: 1.2em;
+            transition: transform 0.3s;
+            opacity: 0.5;
+        }
+
+        .collapse-arrow.open { transform: rotate(180deg); }
+
+        .collapsible-body {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.4s ease, padding 0.3s;
+        }
+
+        .collapsible-body.open { max-height: 9999px; padding-top: 20px; }
+
+        /* --- SPRÁVA UŽIVATELŮ --- */
+        .user-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+
+        .user-name { font-weight: bold; font-size: 0.95em; }
+    </style>
+<style>
+:root { --neon: #00f2ff; }
+.auth-input { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.06); border:1px solid rgba(0,242,255,0.25); border-radius:10px; padding:11px 13px; color:#fff; margin-top:8px; font-size:0.9em; outline:none; }
+.auth-input:focus { border-color: var(--neon); }
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:99; }
+select.auth-input option { background:#0f172a; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1 style="color:var(--neon);">⚙️ ADMIN – MS V HOKEJI 2027</h1>
+    <div id="statusMsg" style="display:none; padding:12px; border-radius:10px; font-weight:900; margin:10px 0;"></div>
+
+    <!-- PŘIDÁNÍ ZÁPASU -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secAdd')">➕ PŘIDAT ZÁPAS <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secAdd">
+            <input type="text" id="d" class="auth-input" list="staty" placeholder="Domácí">
+            <input type="text" id="h" class="auth-input" list="staty" placeholder="Hosté">
+            <datalist id="staty"></datalist>
+            <select id="sk" class="auth-input">
+                <option value="A">Skupina A (Mannheim)</option>
+                <option value="B">Skupina B (Düsseldorf)</option>
+                <option value="QF">Čtvrtfinále</option>
+                <option value="SF">Semifinále</option>
+                <option value="BRONZ">O 3. místo</option>
+                <option value="FINALE">Finále</option>
+            </select>
+            <input type="datetime-local" id="dl" class="auth-input">
+            <button class="btn" onclick="addM()">PUBLIKOVAT ZÁPAS</button>
+        </div>
+    </div>
+
+    <!-- AKTIVNÍ ZÁPASY -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secActive')">🏒 AKTIVNÍ ZÁPASY <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secActive"><div id="activeMatches"></div></div>
+    </div>
+
+    <!-- HISTORIE -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secHist')">📜 VYHODNOCENÉ <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secHist" style="display:none;"><div id="historyMatches"></div></div>
+    </div>
+
+    <!-- DLOUHODOBÉ TIPY -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secDl')">⭐ DLOUHODOBÉ TIPY <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secDl" style="display:none;">
+            <div id="dlList"></div>
+            <hr style="opacity:0.15; margin:20px 0;">
+            <h3 style="color:#f1c40f;">Finální výsledky turnaje</h3>
+            <input type="text" id="fin-vitezA" class="auth-input" placeholder="Vítěz skupiny A">
+            <input type="text" id="fin-vitezB" class="auth-input" placeholder="Vítěz skupiny B">
+            <input type="text" id="fin-vitezTurnaje" class="auth-input" placeholder="Vítěz turnaje">
+            <input type="text" id="fin-vitezKB" class="auth-input" placeholder="Vítěz kanadského bodování (příjmení)">
+            <input type="text" id="fin-g" class="auth-input" placeholder="All-Star brankář">
+            <input type="text" id="fin-d1" class="auth-input" placeholder="All-Star obránce 1">
+            <input type="text" id="fin-d2" class="auth-input" placeholder="All-Star obránce 2">
+            <input type="text" id="fin-u1" class="auth-input" placeholder="All-Star útočník 1">
+            <input type="text" id="fin-u2" class="auth-input" placeholder="All-Star útočník 2">
+            <input type="text" id="fin-u3" class="auth-input" placeholder="All-Star útočník 3">
+            <button class="btn" style="background:#f1c40f; color:#0f172a;" onclick="vyhodnotDlouhodobe()">ULOŽIT A PŘEPOČÍTAT BODY DLOUHODOBEK</button>
+        </div>
+    </div>
+</div>
+
+<!-- EVAL MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
+<div class="modal" id="evalModal">
+    <h3 style="color:var(--neon);">Vyhodnocení zápasu</h3>
+    <div style="display:flex; gap:10px; justify-content:center; align-items:center;">
+        <input type="number" id="finalD" class="auth-input" style="width:70px; text-align:center;">
+        <b style="font-size:1.5em;">:</b>
+        <input type="number" id="finalH" class="auth-input" style="width:70px; text-align:center;">
+    </div>
+    <div style="font-size:0.75em; opacity:0.6; margin:5px 0 12px;">Výsledek po 60 minutách (bez prodloužení/nájezdů)</div>
+    <div class="tag-container" id="finalStrelci"></div>
+    <input type="text" id="manualStrelec" class="auth-input" placeholder="Přidat střelce ručně" onkeydown="if(event.key==='Enter')manualAddStrelec()">
+    <button class="btn" id="confirmEvalBtn">✅ POTVRDIT A ROZDĚLIT</button>
+</div>
+
+<a href="index.html" class="btn-back">← ZPĚT NA SÁZKY</a>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="stats.js"></script>
+<script>
+const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
+const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const ADMIN_ID = "92a1e51b-e03c-48d7-99df-76c2f60a455f";
+const VKLAD_DO_BANKU = 20;
+let currentStrelci = [];
+
+// ---------- INIT + AUTH ----------
+async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session || session.user.id !== ADMIN_ID) {
+        document.body.innerHTML = '<div style="padding:60px 20px; text-align:center; color:#ff4444; font-weight:900;">⛔ Přístup jen pro admina.<br><br><a href="index.html" style="color:var(--neon);">← Zpět</a></div>';
+        return;
+    }
+    document.getElementById('staty').innerHTML = vsechnyStaty.map(s => `<option value="${s.n}">`).join('');
+    await loadMatches();
+    await loadDlouhodobe();
+}
+
+function toggleSection(id) {
+    const el = document.getElementById(id);
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function msg(text, ok = true) {
+    const m = document.getElementById('statusMsg');
+    m.innerText = text;
+    m.style.background = ok ? '#27ae60' : '#c0392b';
+    m.style.display = 'block';
+    setTimeout(() => m.style.display = 'none', 4000);
+}
+
+function closeAllModals() {
+    document.getElementById('modalOverlay').style.display = 'none';
+    document.getElementById('evalModal').style.display = 'none';
+}
+
+// ---------- ZÁPASY ----------
+async function addM() {
+    const d = document.getElementById('d').value.trim();
+    const h = document.getElementById('h').value.trim();
+    const dl = document.getElementById('dl').value;
+    const skupina = document.getElementById('sk').value;
+    if (!d || !h || !dl) return alert('Vyplň údaje!');
+    const kd = vsechnyStaty.find(s => s.n === d)?.c || 'un';
+    const kh = vsechnyStaty.find(s => s.n === h)?.c || 'un';
+    const { error } = await sb.from('hokej27_zapasy').insert({
+        domaci: d, hoste: h, kod_d: kd, kod_h: kh, skupina, deadline: new Date(dl).toISOString()
+    });
+    if (error) return msg('Chyba: ' + error.message, false);
+    msg('ZÁPAS PUBLIKOVÁN! ✅');
+    document.getElementById('d').value = ''; document.getElementById('h').value = '';
+    loadMatches();
+}
+
+async function deleteM(id) {
+    if (!confirm('Smazat zápas včetně sázek?')) return;
+    await sb.from('hokej27_zapasy').delete().eq('id', id);
+    loadMatches();
+}
+
+async function loadMatches() {
+    const [{ data: zapasy }, { data: sazky }, { data: stav }] = await Promise.all([
+        sb.from('hokej27_zapasy').select('*').order('deadline'),
+        sb.from('hokej27_sazky').select('*'),
+        sb.from('hokej27_stav').select('*').eq('id', 1).maybeSingle()
+    ]);
+    const aC = document.getElementById('activeMatches');
+    const hC = document.getElementById('historyMatches');
+    aC.innerHTML = ''; hC.innerHTML = '';
+    const prevedeny = Number(stav?.data?.prevedeny_bank ?? stav?.prevedeny_bank ?? 0);
+
+    (zapasy || []).forEach(m => {
+        const ms = (sazky || []).filter(s => s.zapas_id === m.id);
+        const div = document.createElement('div');
+        div.className = 'user-row';
+        div.style.cssText = 'display:block; padding:14px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left;';
+        const betRows = ms.map(s => `<div style="font-size:0.85em; opacity:0.8; padding:2px 0;">• ${s.jmeno}: ${s.skore}${s.strelec ? ' + ' + s.strelec : ''}${s.skryt ? ' 🙈' : ''}${m.status === 'vyhodnoceno' ? ` → +${s.nb} NB${s.vyhra_kc > 0 ? ` 💰${s.vyhra_kc}` : ''}` : ''}</div>`).join('');
+        div.innerHTML = `
+            <b>${m.skupina ? '[' + m.skupina + '] ' : ''}${m.domaci} vs ${m.hoste}</b>
+            <span style="opacity:0.5; font-size:0.8em;"> · ${new Date(m.deadline).toLocaleString('cs-CZ')}</span>
+            ${m.status === 'vyhodnoceno' ? ` <span style="color:#27ae60; font-weight:900;">${m.vysledek_d}:${m.vysledek_h}</span>` : ''}
+            <div style="margin:6px 0;">Sázek: ${ms.length} (bank ${ms.length * VKLAD_DO_BANKU} Kč${m.status !== 'vyhodnoceno' && prevedeny > 0 ? ' + převod ' + prevedeny : ''})</div>
+            ${betRows}
+            <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                ${m.status !== 'vyhodnoceno' ? `
+                    <textarea id="raw-${m.id}" class="auth-input" placeholder="Vlož textový report zápasu (skóre + střelci)" style="width:100%; min-height:60px;"></textarea>
+                    <button class="small-btn" onclick="evalM(${m.id})">🏁 VYHODNOTIT</button>` : ''}
+                <button class="small-btn" style="background:#c0392b;" onclick="deleteM(${m.id})">🗑️</button>
+            </div>`;
+        (m.status === 'vyhodnoceno' ? hC : aC).appendChild(div);
+    });
+}
+
+// ---------- VYHODNOCENÍ ----------
+async function evalM(mid) {
+    const raw = document.getElementById(`raw-${mid}`).value;
+    if (!raw) return alert('Vlož text reportu!');
+    const { data: m } = await sb.from('hokej27_zapasy').select('*').eq('id', mid).maybeSingle();
+    currentStrelci = (m?.strelci || []).slice();
+
+    // ořízni prodloužení/nájezdy – bereme stav po 60 minutách
+    let clean = raw.split(/PRODLOUŽENÍ|PENALTY|NÁJEZDY|OVERTIME/i)[0];
+    const sc = clean.match(/(\d+)\s*[:|-]\s*(\d+)/g);
+    let d = 0, h = 0;
+    if (sc) { const l = sc[sc.length - 1].replace(/\s/g, '').replace('-', ':').split(':'); d = parseInt(l[0]); h = parseInt(l[1]); }
+
+    const zak = ['třetina', 'poločas', 'konec', 'přestávka', 'vyloučení', 'minuta', 'trest', 'střídání', 'rozhodčí', 'asistence', 'vlastní'];
+    clean.split('\n').forEach(line => {
+        const t = line.trim();
+        if (t.match(/^[\d+]+['.]/)) {
+            let n = t.replace(/^[\d+]+['.]\s*/, '').split('(')[0].split(',')[0].replace(/[0-9]/g, '').replace(/[:|-]/g, '').trim();
+            if (n.length > 3 && !zak.some(z => n.toLowerCase().includes(z)) && !currentStrelci.includes(n)) currentStrelci.push(n);
+        }
+    });
+
+    document.getElementById('finalD').value = d;
+    document.getElementById('finalH').value = h;
+    renderTags();
+    document.getElementById('modalOverlay').style.display = 'block';
+    document.getElementById('evalModal').style.display = 'block';
+    document.getElementById('confirmEvalBtn').onclick = () => finishEval(mid);
+}
+
+function renderTags() {
+    const c = document.getElementById('finalStrelci');
+    c.innerHTML = '';
+    currentStrelci.forEach((s, i) => {
+        const t = document.createElement('span');
+        t.className = 'tag';
+        t.innerHTML = `${s} <b style="cursor:pointer;" onclick="currentStrelci.splice(${i},1); renderTags();">×</b>`;
+        c.appendChild(t);
+    });
+}
+
+function manualAddStrelec() {
+    const el = document.getElementById('manualStrelec');
+    const v = el.value.trim();
+    if (v && !currentStrelci.includes(v)) { currentStrelci.push(v); renderTags(); }
+    el.value = '';
+}
+
+async function finishEval(mid) {
+    const finalD = parseInt(document.getElementById('finalD').value);
+    const finalH = parseInt(document.getElementById('finalH').value);
+    if (isNaN(finalD) || isNaN(finalH)) return alert('Doplň skóre.');
+    const fst = currentStrelci.map(s => s.toLowerCase().trim());
+
+    const [{ data: sazky }, { data: stav }] = await Promise.all([
+        sb.from('hokej27_sazky').select('*').eq('zapas_id', mid),
+        sb.from('hokej27_stav').select('*').eq('id', 1).maybeSingle()
+    ]);
+    const prevedeny = Number(stav?.prevedeny_bank || 0);
+    const bank = (sazky || []).length * VKLAD_DO_BANKU + prevedeny;
+
+    // vyhodnocení sázek
+    const vyhodnocene = (sazky || []).map(s => {
+        const p = s.skore.split(':');
+        const sD = +p[0], sH = +p[1];
+        const hitSkore = sD === finalD && sH === finalH;
+        const pStr = (s.strelec || '').toLowerCase().trim();
+        const hitStrelec = pStr.length > 0 && fst.some(r => r.includes(pStr) || pStr.includes(r));
+        const hitTrend = (finalD > finalH && sD > sH) || (finalD < finalH && sD < sH) || (finalD === finalH && sD === sH);
+        const nb = (hitSkore ? 5 : 0) + (hitStrelec ? 3 : 0) + (hitTrend ? 1 : 0);
+        return { ...s, hitSkore, hitStrelec, hitTrend, nb };
+    });
+
+    // výherci banku: přesné skóre + střelec; když nikdo, bank se převádí dál
+    const vyherci = vyhodnocene.filter(s => s.hitSkore && s.hitStrelec);
+    const share = vyherci.length > 0 ? Math.floor(bank / vyherci.length) : 0;
+
+    for (const s of vyhodnocene) {
+        await sb.from('hokej27_sazky').update({
+            hit_skore: s.hitSkore, hit_strelec: s.hitStrelec, hit_trend: s.hitTrend,
+            nb: s.nb,
+            vyhra_kc: (s.hitSkore && s.hitStrelec) ? share : 0
+        }).eq('id', s.id);
+    }
+
+    await sb.from('hokej27_zapasy').update({
+        status: 'vyhodnoceno', vysledek_d: finalD, vysledek_h: finalH,
+        strelci: currentStrelci, bank_zapasu: vyherci.length > 0 ? bank : 0
+    }).eq('id', mid);
+
+    await sb.from('hokej27_stav').update({
+        prevedeny_bank: vyherci.length > 0 ? 0 : bank,
+        aktualizovano: new Date().toISOString()
+    }).eq('id', 1);
+
+    msg(vyherci.length > 0
+        ? `VYHODNOCENO! Bank ${bank} Kč → ${vyherci.map(v => v.jmeno).join(', ')} (à ${share} Kč) 🏆`
+        : `VYHODNOCENO! Nikdo netrefil skóre+střelce → bank ${bank} Kč se převádí dál. 💰`);
+    closeAllModals();
+    loadMatches();
+}
+
+// ---------- DLOUHODOBÉ ----------
+async function loadDlouhodobe() {
+    const [{ data: dl }, { data: stav }] = await Promise.all([
+        sb.from('hokej27_dlouhodobe').select('*').order('body', { ascending: false }),
+        sb.from('hokej27_stav').select('*').eq('id', 1).maybeSingle()
+    ]);
+    const cont = document.getElementById('dlList');
+    cont.innerHTML = (dl || []).map(r => {
+        const t = r.tip || {};
+        return `<div class="user-row" style="display:block; text-align:left; padding:10px; border-bottom:1px solid rgba(255,255,255,0.08);">
+            <b>${r.jmeno}</b> · ${r.body} b.
+            <button class="small-btn" style="background:${r.zaplaceno ? '#27ae60' : '#c0392b'}; margin-left:8px;" onclick="togglePaid('${r.user_id}', ${r.zaplaceno})">${r.zaplaceno ? '✅ zaplaceno' : '❌ nezaplaceno'}</button>
+            <div style="font-size:0.8em; opacity:0.7; margin-top:4px;">
+                A: ${t.vitezA || '–'} · B: ${t.vitezB || '–'} · 🏆 ${t.vitezTurnaje || '–'} · KB: ${t.vitezKB || '–'}<br>
+                All-Star: ${[t.allstar?.g, t.allstar?.d1, t.allstar?.d2, t.allstar?.u1, t.allstar?.u2, t.allstar?.u3].filter(Boolean).join(', ') || '–'}
+            </div>
+        </div>`;
+    }).join('') || '<div style="opacity:0.5;">Zatím žádné dlouhodobé tipy.</div>';
+
+    // předvyplň finální výsledky
+    const v = stav?.dlouhodobe_vysledky || {};
+    if (v.vitezA) document.getElementById('fin-vitezA').value = v.vitezA;
+    if (v.vitezB) document.getElementById('fin-vitezB').value = v.vitezB;
+    if (v.vitezTurnaje) document.getElementById('fin-vitezTurnaje').value = v.vitezTurnaje;
+    if (v.vitezKB) document.getElementById('fin-vitezKB').value = v.vitezKB;
+    ['g','d1','d2','u1','u2','u3'].forEach(k => { if (v.allstar?.[k]) document.getElementById('fin-' + k).value = v.allstar[k]; });
+}
+
+async function togglePaid(userId, cur) {
+    await sb.from('hokej27_dlouhodobe').update({ zaplaceno: !cur }).eq('user_id', userId);
+    loadDlouhodobe();
+}
+
+async function vyhodnotDlouhodobe() {
+    const vysledky = {
+        vitezA: document.getElementById('fin-vitezA').value.trim(),
+        vitezB: document.getElementById('fin-vitezB').value.trim(),
+        vitezTurnaje: document.getElementById('fin-vitezTurnaje').value.trim(),
+        vitezKB: document.getElementById('fin-vitezKB').value.trim(),
+        allstar: {
+            g: document.getElementById('fin-g').value.trim(),
+            d1: document.getElementById('fin-d1').value.trim(),
+            d2: document.getElementById('fin-d2').value.trim(),
+            u1: document.getElementById('fin-u1').value.trim(),
+            u2: document.getElementById('fin-u2').value.trim(),
+            u3: document.getElementById('fin-u3').value.trim()
+        }
+    };
+    await sb.from('hokej27_stav').update({ dlouhodobe_vysledky: vysledky }).eq('id', 1);
+
+    const eq = (a, b) => a && b && a.toLowerCase().trim() === b.toLowerCase().trim();
+    // hráči (příjmení) – tolerantní shoda jako u střelců
+    const eqHrac = (a, b) => {
+        if (!a || !b) return false;
+        const x = a.toLowerCase().trim(), y = b.toLowerCase().trim();
+        return x.includes(y) || y.includes(x);
+    };
+    const realAS = Object.values(vysledky.allstar).filter(Boolean);
+
+    const { data: dl } = await sb.from('hokej27_dlouhodobe').select('*');
+    for (const r of (dl || [])) {
+        const t = r.tip || {};
+        let body = 0;
+        if (eq(t.vitezA, vysledky.vitezA)) body += 3;
+        if (eq(t.vitezB, vysledky.vitezB)) body += 3;
+        if (eq(t.vitezTurnaje, vysledky.vitezTurnaje)) body += 10;
+        if (eqHrac(t.vitezKB, vysledky.vitezKB)) body += 8;
+        // All-Star: každý tipnutý hráč, který je v reálné šestce (bez ohledu na pozici)
+        const tipAS = Object.values(t.allstar || {}).filter(Boolean);
+        tipAS.forEach(hrac => {
+            if (realAS.some(rh => eqHrac(hrac, rh))) body += 4;
+        });
+        await sb.from('hokej27_dlouhodobe').update({ body }).eq('user_id', r.user_id);
+    }
+    msg('DLOUHODOBÉ TIPY PŘEPOČÍTÁNY! ⭐');
+    loadDlouhodobe();
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
