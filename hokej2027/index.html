@@ -925,8 +925,23 @@ function renderZapasy(now) {
             <div class="bar-labels"><span>${m.domaci.substring(0,3).toUpperCase()} ${Math.round(p1)}%</span><span>REMÍZA ${Math.round(p0)}%</span><span>${m.hoste.substring(0,3).toUpperCase()} ${Math.round(p2)}%</span></div>
             <div id="detail-${m.id}" class="details" onclick="event.stopPropagation()">
                 ${isEvaluated && (m.strelci||[]).length ? `<div style="font-size:0.8em; opacity:0.6; margin-bottom:15px; text-align:center;">Střelci zápasu: ${(m.strelci||[]).join(', ')}</div>` : ''}
-                ${(!isClosed && !isEvaluated) ? (mojeSazka ? `
+               ${(!isClosed && !isEvaluated) ? (mojeSazka ? `
                     <div style="text-align:center; color:#27ae60; font-weight:900; margin-bottom:15px;">✅ Tvůj tip: ${mojeSazka.skore} + ${mojeSazka.strelec || 'bez střelce'}</div>
+                    <label class="input-label" style="text-align:center;">Uprav tip (do začátku zápasu)</label>
+                    <div class="score-row">
+                        <div class="score-input-container"><input type="number" id="scD-${m.id}" class="score-input" value="${mojeSazka.skore.split(':')[0]}" min="0"></div>
+                        <span style="font-size:2.5em; font-weight:900; color:var(--neon); margin-top:-5px;">:</span>
+                        <div class="score-input-container"><input type="number" id="scH-${m.id}" class="score-input" value="${mojeSazka.skore.split(':')[1]}" min="0"></div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Střelec gólu</label>
+                        <input type="text" id="striker-${m.id}" class="input-field" value="${mojeSazka.strelec || ''}" placeholder="Příjmení střelce">
+                    </div>
+                    <div class="hide-tip-row" onclick="document.getElementById('hide-${m.id}').click()">
+                        <input type="checkbox" id="hide-${m.id}" ${mojeSazka.skryt ? 'checked' : ''} style="width:22px; height:22px; cursor:pointer;">
+                        <span style="font-size:0.95em; font-weight:600; opacity:0.9">Skrýt můj tip před ostatními</span>
+                    </div>
+                    <button class="btn-add-ticket" onclick="actionUpdateBet(${m.id})">💾 ULOŽIT ZMĚNU TIPU</button>
                 ` : `
                     <label class="input-label" style="text-align:center;">Přesný výsledek (po 60 min.)</label>
                     <div class="score-row">
@@ -982,6 +997,21 @@ function updateTimers(){
         const s = Math.floor(diff % 60000 / 1000);
         el.innerText = d > 0 ? `${d}d ${h}h ${mi}m` : `${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     });
+}
+
+async function actionUpdateBet(id) {
+    const sD = document.getElementById(`scD-${id}`).value;
+    const sH = document.getElementById(`scH-${id}`).value;
+    const strelec = document.getElementById(`striker-${id}`).value.trim();
+    const skryt = document.getElementById(`hide-${id}`).checked;
+    if (sD === '' || sH === '' || !strelec) return alert('Vyplň skóre i střelce!');
+    const skore = `${parseInt(sD)}:${parseInt(sH)}`;
+    const { error } = await sb.from('hokej27_sazky')
+        .update({ skore, strelec, skryt })
+        .eq('zapas_id', id).eq('user_id', currentUserId);
+    if (error) return alert('Změna se nepovedla (zápas už možná začal): ' + error.message);
+    alert('Tip upraven! ✅');
+    loadAll();
 }
 
 function uiToggleMatch(id) {
