@@ -1090,7 +1090,7 @@ function actionAddToTicket(id, nazev) {
     const d = document.getElementById(`scD-${id}`).value;
     const h = document.getElementById(`scH-${id}`).value;
     const strelec = document.getElementById(`striker-${id}`).value.trim();
-    const skryt = document.getElementById(`hide-${id}`).checked;
+    const skryt = true; // tipy jsou automaticky skryté do začátku zápasu
    if (d === '' || h === '') return alert('Vyplň přesný výsledek!');
     const skore = `${+d}:${+h}`;
     const ostatni = sazkyCache.filter(s => s.zapas_id === id && s.user_id !== currentUserId);
