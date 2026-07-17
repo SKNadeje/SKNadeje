@@ -1,1 +1,307 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NADĚJE · CL Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root { --fial: #a78bfa; --dark: #14101f; --card-bg: rgba(255,255,255,.05); --gold: #d4af37; --green: #27ae60; --red: #c0392b; }
+* { box-sizing: border-box; }
+body { background: var(--dark); color: #fff; font-family: 'Segoe UI', Roboto, Arial, sans-serif; margin: 0; padding: 15px; min-height: 100vh; }
+.wrap { max-width: 640px; margin: 0 auto; }
+.zpet { display: inline-block; color: rgba(255,255,255,.45); text-decoration: none; font-size: .72em; margin: 4px 0 10px; }
+h1 { font-size: 1.2em; font-weight: 900; color: var(--fial); letter-spacing: 2px; text-transform: uppercase; }
+h2 { font-size: .85em; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; margin: 0 0 12px; }
+.karta { background: var(--card-bg); border: 1px solid rgba(167,139,250,.25); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+.pole { width: 100%; background: rgba(10,6,20,.6); color: #fff; border: 1px solid rgba(167,139,250,.3); border-radius: 10px; padding: 11px; font-size: .9em; font-family: inherit; outline: none; margin-bottom: 10px; }
+textarea.pole { min-height: 90px; resize: vertical; }
+.btn { background: linear-gradient(135deg, #a78bfa, #6d4fc4); color: #0e0a18; border: none; border-radius: 11px; padding: 12px 18px; font-weight: 900; font-size: .78em; letter-spacing: 1px; cursor: pointer; text-transform: uppercase; font-family: inherit; }
+.btn-gold { background: linear-gradient(135deg, #d4af37, #9a7b1e); }
+.btn-red { background: var(--red); color: #fff; }
+.btn-mini { padding: 6px 12px; font-size: .68em; border-radius: 8px; }
+.zapas-row { border-bottom: 1px solid rgba(255,255,255,.08); padding: 11px 0; font-size: .85em; }
+.msg { display: none; position: fixed; top: 14px; left: 50%; transform: translateX(-50%); background: var(--green); color: #fff; font-weight: 900; padding: 12px 22px; border-radius: 100px; z-index: 2000; font-size: .8em; }
+.dl-radek { border-bottom: 1px solid rgba(255,255,255,.08); padding: 10px 0; font-size: .8em; }
+.nezmocnen { text-align: center; padding: 60px 20px; opacity: .6; }
+.flexrow { display: flex; gap: 10px; }
+.flexrow .pole { flex: 1; }
+label.lbl { display: block; font-size: .62em; letter-spacing: 1.5px; text-transform: uppercase; opacity: .55; font-weight: 800; margin-bottom: 5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <a class="zpet" href="index.html">← Zpět na tipy</a>
+    <h1>⚙️ CL Admin</h1>
+    <div id="obsah" class="nezmocnen">Ověřuji oprávnění…</div>
+</div>
+<div class="msg" id="msg"></div>
 
+<script>
+const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
+const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const ADMIN_ID = "92a1e51b-e03c-48d7-99df-76c2f60a455f";
+const BODY = { presne: 5, trend: 1, top8: 3, vitezZC: 8, propadlik: 2, qf: 2, sf: 4, finale: 6, vitezCL: 10 };
+
+let stav = {};
+
+function msg(t, err) {
+    const el = document.getElementById('msg');
+    el.textContent = t;
+    el.style.background = err ? 'var(--red)' : 'var(--green)';
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 3500);
+}
+
+async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session || session.user.id !== ADMIN_ID) {
+        document.getElementById('obsah').innerHTML = 'Přístup jen pro admina.<br><br><a href="../welcome.html" style="color:var(--fial);">→ Přihlásit</a>';
+        return;
+    }
+    document.getElementById('obsah').className = '';
+    document.getElementById('obsah').innerHTML = `
+        <div class="karta">
+            <h2>➕ Vypsat zápas k tipování</h2>
+            <div class="flexrow">
+                <input class="pole" id="n-domaci" placeholder="Domácí (např. Real Madrid)">
+                <input class="pole" id="n-hoste" placeholder="Hosté">
+            </div>
+            <div class="flexrow">
+                <select class="pole" id="n-faze">
+                    <option value="ZC">Základní část</option>
+                    <option value="PO">Play-off (únor)</option>
+                    <option value="OSM">Osmifinále</option>
+                    <option value="QF">Čtvrtfinále</option>
+                    <option value="SF">Semifinále</option>
+                    <option value="FINALE">Finále</option>
+                </select>
+                <input class="pole" id="n-deadline" type="datetime-local">
+            </div>
+            <button class="btn" onclick="pridejZapas()">VYPSAT ZÁPAS</button>
+        </div>
+
+        <div class="karta">
+            <h2>🎯 Aktivní a vyhodnocené zápasy</h2>
+            <div id="seznamZapasu">Načítám…</div>
+        </div>
+
+        <div class="karta">
+            <h2>🏟️ Účastníci ligové fáze (36 týmů)</h2>
+            <label class="lbl">Jeden tým na řádek – po srpnovém losu</label>
+            <textarea class="pole" id="t-tymy" placeholder="Real Madrid&#10;Manchester City&#10;Bayern Mnichov&#10;…"></textarea>
+            <label class="lbl">Uzávěrka dlouhodobky 1 (před 1. kolem)</label>
+            <input class="pole" id="t-dl1" type="datetime-local">
+            <button class="btn" onclick="ulozTymy()">ULOŽIT TÝMY + UZÁVĚRKU</button>
+        </div>
+
+        <div class="karta">
+            <h2>🥊 Osmifinalisté (16) – otevře dlouhodobku 2</h2>
+            <label class="lbl">Jeden tým na řádek – po únorovém play-off</label>
+            <textarea class="pole" id="t-osm"></textarea>
+            <label class="lbl">Uzávěrka dlouhodobky 2 (před osmifinále)</label>
+            <input class="pole" id="t-dl2" type="datetime-local">
+            <button class="btn" onclick="ulozOsm()">ULOŽIT OSMIFINALISTY + UZÁVĚRKU</button>
+        </div>
+
+        <div class="karta">
+            <h2>🏁 Vyhodnocení dlouhodobky 1 (po základní části)</h2>
+            <label class="lbl">Skutečné top 8 (řádek = tým)</label>
+            <textarea class="pole" id="v-top8"></textarea>
+            <label class="lbl">Vítěz ZČ</label>
+            <input class="pole" id="v-vitezZC">
+            <label class="lbl">Skuteční propadlíci – místa 25–36 (řádek = tým)</label>
+            <textarea class="pole" id="v-prop"></textarea>
+            <button class="btn btn-gold" onclick="vyhodnotDl1()">SPOČÍTAT BODY DLOUHODOBKY 1</button>
+        </div>
+
+        <div class="karta">
+            <h2>🏆 Vyhodnocení dlouhodobky 2 (po finále)</h2>
+            <label class="lbl">Skuteční čtvrtfinalisté (8, řádek = tým)</label>
+            <textarea class="pole" id="v-qf"></textarea>
+            <label class="lbl">Semifinalisté (4)</label>
+            <textarea class="pole" id="v-sf"></textarea>
+            <label class="lbl">Finalisté (2)</label>
+            <textarea class="pole" id="v-fin"></textarea>
+            <label class="lbl">Vítěz CL</label>
+            <input class="pole" id="v-vitez">
+            <button class="btn btn-gold" onclick="vyhodnotDl2()">SPOČÍTAT BODY DLOUHODOBKY 2</button>
+        </div>
+
+        <div class="karta">
+            <h2>💰 Startovné (200 Kč)</h2>
+            <div id="seznamDl">Načítám…</div>
+        </div>`;
+    await nactiStav();
+    await nactiZapasy();
+    await nactiDlouhodobe();
+}
+
+async function nactiStav() {
+    const { data } = await sb.from('cl_stav').select('*').eq('id', 1).maybeSingle();
+    stav = data || {};
+    if ((stav.tymy || []).length) document.getElementById('t-tymy').value = stav.tymy.join('\n');
+    if ((stav.osmifinaliste || []).length) document.getElementById('t-osm').value = stav.osmifinaliste.join('\n');
+    const toLocal = (iso) => iso ? new Date(new Date(iso).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
+    document.getElementById('t-dl1').value = toLocal(stav.deadline_tip1);
+    document.getElementById('t-dl2').value = toLocal(stav.deadline_tip2);
+}
+
+/* ---------- ZÁPASY ---------- */
+async function pridejZapas() {
+    const domaci = document.getElementById('n-domaci').value.trim();
+    const hoste = document.getElementById('n-hoste').value.trim();
+    const faze = document.getElementById('n-faze').value;
+    const dl = document.getElementById('n-deadline').value;
+    if (!domaci || !hoste || !dl) return msg('Vyplň soupeře i deadline.', true);
+    const { error } = await sb.from('cl_zapasy').insert({ domaci, hoste, faze, deadline: new Date(dl).toISOString() });
+    if (error) return msg('Chyba: ' + error.message, true);
+    document.getElementById('n-domaci').value = '';
+    document.getElementById('n-hoste').value = '';
+    msg('ZÁPAS VYPSÁN ✅');
+    nactiZapasy();
+}
+
+async function nactiZapasy() {
+    const [{ data: zapasy }, { data: tipy }] = await Promise.all([
+        sb.from('cl_zapasy').select('*').order('deadline', { ascending: false }),
+        sb.from('cl_tipy_zapasy').select('*')
+    ]);
+    const tMap = {};
+    (tipy || []).forEach(t => (tMap[t.zapas_id] = tMap[t.zapas_id] || []).push(t));
+    document.getElementById('seznamZapasu').innerHTML = (zapasy || []).map(z => {
+        const tt = tMap[z.id] || [];
+        const hotovo = z.status === 'vyhodnoceno';
+        return `<div class="zapas-row">
+            <b>${z.domaci} vs ${z.hoste}</b> · ${z.faze} · tipů: ${tt.length}
+            ${hotovo
+                ? ` · <span style="color:var(--green); font-weight:900;">✔ ${z.vysledek_d}:${z.vysledek_h}</span>`
+                : ` <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+                        <input class="pole" style="width:52px; margin:0; text-align:center;" id="vd-${z.id}" placeholder="0" inputmode="numeric">
+                        <b>:</b>
+                        <input class="pole" style="width:52px; margin:0; text-align:center;" id="vh-${z.id}" placeholder="0" inputmode="numeric">
+                        <button class="btn btn-mini btn-gold" onclick="vyhodnotZapas(${z.id})">VYHODNOTIT</button>
+                        <button class="btn btn-mini btn-red" onclick="smazZapas(${z.id})">🗑</button>
+                    </div>`}
+            <div style="font-size:.85em; opacity:.65; margin-top:5px;">${tt.map(t => `• ${t.jmeno}: ${t.skore}${hotovo ? ` (+${t.body})` : ''}`).join('<br>')}</div>
+        </div>`;
+    }).join('') || '<div style="opacity:.5;">Žádné zápasy.</div>';
+}
+
+async function vyhodnotZapas(id) {
+    const d = parseInt(document.getElementById('vd-' + id).value);
+    const h = parseInt(document.getElementById('vh-' + id).value);
+    if (isNaN(d) || isNaN(h)) return msg('Doplň skóre.', true);
+    const { data: tipy } = await sb.from('cl_tipy_zapasy').select('*').eq('zapas_id', id);
+    for (const t of (tipy || [])) {
+        const [td, th] = t.skore.split(':').map(Number);
+        const presne = td === d && th === h;
+        const trend = (d > h && td > th) || (d < h && td < th) || (d === h && td === th);
+        const b = presne ? BODY.presne : (trend ? BODY.trend : 0);
+        await sb.from('cl_tipy_zapasy').update({ body: b }).eq('id', t.id);
+    }
+    await sb.from('cl_zapasy').update({ status: 'vyhodnoceno', vysledek_d: d, vysledek_h: h }).eq('id', id);
+    msg('VYHODNOCENO ✅ (' + (tipy || []).length + ' tipů)');
+    nactiZapasy();
+}
+
+async function smazZapas(id) {
+    if (!confirm('Smazat zápas včetně tipů?')) return;
+    await sb.from('cl_zapasy').delete().eq('id', id);
+    nactiZapasy();
+}
+
+/* ---------- STAV / TÝMY ---------- */
+const radky = (id) => document.getElementById(id).value.split('\n').map(x => x.trim()).filter(Boolean);
+
+async function ulozTymy() {
+    const tymy = radky('t-tymy');
+    if (tymy.length !== 36) return msg(`Čekám 36 týmů, máš ${tymy.length}.`, true);
+    const dl = document.getElementById('t-dl1').value;
+    const { error } = await sb.from('cl_stav').update({
+        tymy, deadline_tip1: dl ? new Date(dl).toISOString() : null,
+        aktualizovano: new Date().toISOString()
+    }).eq('id', 1);
+    if (error) return msg('Chyba: ' + error.message, true);
+    msg('TÝMY ULOŽENY ✅');
+}
+
+async function ulozOsm() {
+    const osm = radky('t-osm');
+    if (osm.length !== 16) return msg(`Čekám 16 týmů, máš ${osm.length}.`, true);
+    const dl = document.getElementById('t-dl2').value;
+    const { error } = await sb.from('cl_stav').update({
+        osmifinaliste: osm, deadline_tip2: dl ? new Date(dl).toISOString() : null,
+        aktualizovano: new Date().toISOString()
+    }).eq('id', 1);
+    if (error) return msg('Chyba: ' + error.message, true);
+    msg('OSMIFINALISTÉ ULOŽENI ✅ – dlouhodobka 2 je otevřená');
+}
+
+/* ---------- DLOUHODOBKY VYHODNOCENÍ ---------- */
+const low = (x) => String(x || '').trim().toLowerCase();
+const maTym = (list, tym) => (list || []).some(x => low(x) === low(tym));
+
+async function vyhodnotDl1() {
+    const top8 = radky('v-top8'), prop = radky('v-prop');
+    const vitezZC = document.getElementById('v-vitezZC').value.trim();
+    if (top8.length !== 8 || prop.length !== 12 || !vitezZC) return msg('Čekám 8 + vítěze + 12.', true);
+    const { data: dl } = await sb.from('cl_dlouhodobe').select('*');
+    for (const r of (dl || [])) {
+        const t = r.tip1 || {};
+        let b = 0;
+        (t.top8 || []).forEach(x => { if (maTym(top8, x)) b += BODY.top8; });
+        if (low(t.vitezZC) === low(vitezZC)) b += BODY.vitezZC;
+        (t.propadlici || []).forEach(x => { if (maTym(prop, x)) b += BODY.propadlik; });
+        await sb.from('cl_dlouhodobe').update({ body1: b }).eq('user_id', r.user_id);
+    }
+    await sb.from('cl_stav').update({
+        vysledky: { ...(stav.vysledky || {}), top8, vitezZC, propadlici: prop },
+        aktualizovano: new Date().toISOString()
+    }).eq('id', 1);
+    msg('DLOUHODOBKA 1 SPOČÍTÁNA ✅');
+}
+
+async function vyhodnotDl2() {
+    const qf = radky('v-qf'), sf = radky('v-sf'), fin = radky('v-fin');
+    const vitez = document.getElementById('v-vitez').value.trim();
+    if (qf.length !== 8 || sf.length !== 4 || fin.length !== 2 || !vitez) return msg('Čekám 8 / 4 / 2 / vítěze.', true);
+    const { data: dl } = await sb.from('cl_dlouhodobe').select('*');
+    for (const r of (dl || [])) {
+        const t = r.tip2 || {};
+        let b = 0;
+        (t.qf || []).forEach(x => { if (maTym(qf, x)) b += BODY.qf; });
+        (t.sf || []).forEach(x => { if (maTym(sf, x)) b += BODY.sf; });
+        (t.finale || []).forEach(x => { if (maTym(fin, x)) b += BODY.finale; });
+        if (low(t.vitez) === low(vitez)) b += BODY.vitezCL;
+        await sb.from('cl_dlouhodobe').update({ body2: b }).eq('user_id', r.user_id);
+    }
+    await sb.from('cl_stav').update({
+        vysledky: { ...(stav.vysledky || {}), qf, sf, finale: fin, vitez },
+        sezona_ukoncena: true,
+        aktualizovano: new Date().toISOString()
+    }).eq('id', 1);
+    msg('DLOUHODOBKA 2 SPOČÍTÁNA ✅ – sezóna uzavřena');
+}
+
+/* ---------- STARTOVNÉ ---------- */
+async function nactiDlouhodobe() {
+    const { data: dl } = await sb.from('cl_dlouhodobe').select('*').order('jmeno');
+    document.getElementById('seznamDl').innerHTML = (dl || []).map(r => `
+        <div class="dl-radek">
+            <b>${r.jmeno}</b> · body: ${(r.body1 || 0) + (r.body2 || 0)}
+            <button class="btn btn-mini" style="background:${r.zaplaceno ? 'var(--green)' : 'var(--red)'}; color:#fff; margin-left:10px;"
+                onclick="togglePaid('${r.user_id}', ${r.zaplaceno})">${r.zaplaceno ? '✅ zaplaceno' : '❌ nezaplaceno'}</button>
+        </div>`).join('') || '<div style="opacity:.5;">Zatím nikdo nepodal dlouhodobý tip.</div>';
+}
+
+async function togglePaid(uid, curr) {
+    await sb.from('cl_dlouhodobe').update({ zaplaceno: !curr }).eq('user_id', uid);
+    nactiDlouhodobe();
+}
+
+init();
+</script>
+</body>
+</html>
