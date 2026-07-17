@@ -410,7 +410,44 @@
             border: 3px solid var(--dark);
         }
 
-        /* --- MODÁL TIKETU --- */
+       /* MINI SLIP – vysouvací tiket vpravo dole */
+        #miniSlip {
+            position: fixed; bottom: 18px; right: 18px; z-index: 950;
+            width: 290px; max-width: calc(100vw - 36px);
+            background: linear-gradient(160deg, #12203a, #0b1526);
+            border: 1px solid rgba(0,242,255,.45);
+            border-radius: 18px;
+            box-shadow: 0 12px 40px rgba(0,0,0,.6), 0 0 25px rgba(0,242,255,.12);
+            padding: 14px 14px 12px;
+            text-align: left;
+            transform: translateY(20px); opacity: 0; pointer-events: none;
+            transition: transform .3s ease, opacity .3s ease;
+        }
+        #miniSlip.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        #miniSlip .slip-head {
+            display: flex; justify-content: space-between; align-items: center;
+            font-weight: 900; color: var(--neon); font-size: .85em;
+            letter-spacing: 1px; margin-bottom: 10px;
+        }
+        #miniSlip .slip-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.07); font-size: .78em;
+        }
+        #miniSlip .slip-item:last-of-type { border-bottom: none; }
+        #miniSlip .slip-del { cursor: pointer; opacity: .5; margin-left: 8px; }
+        #miniSlip .slip-del:hover { opacity: 1; color: #ff4444; }
+        #miniSlip .slip-foot {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,242,255,.2);
+        }
+        #miniSlip .slip-total { font-weight: 900; color: var(--neon); font-size: 1.05em; }
+        #miniSlip .slip-send {
+            background: linear-gradient(135deg, #00f2ff, #0090aa); color: #05121a;
+            border: none; border-radius: 10px; padding: 10px 18px;
+            font-weight: 900; font-size: .75em; letter-spacing: 1px; cursor: pointer;
+            font-family: inherit; text-transform: uppercase;
+            box-shadow: 0 4px 14px rgba(0,242,255,.35);
+        }
         #cartModal {
             position: fixed;
             bottom: 30px;
@@ -674,8 +711,13 @@
 
     <div id="matchList"></div>
 
-    <div id="fabCart" class="fab-cart" onclick="uiOpenCart()">
-        🎟️ <div id="fabBadge" class="fab-badge">0</div>
+  <div id="miniSlip">
+        <div class="slip-head"><span>🎟️ TIKET</span><span id="slipCount" style="opacity:.6; font-size:.85em;"></span></div>
+        <div id="slipItems"></div>
+        <div class="slip-foot">
+            <span class="slip-total" id="slipTotal">0 Kč</span>
+            <button class="slip-send" onclick="actionSendTicket()">ODESLAT</button>
+        </div>
     </div>
 
     <!-- KOŠÍK / TIKET -->
@@ -1041,10 +1083,17 @@ function actionAddToTicket(id, nazev) {
 
 function uiUpdateFab() {
     const n = Object.keys(localCart).length;
-    document.getElementById('fabBadge').innerText = n;
-    document.getElementById('fabCart').style.display = n > 0 ? 'flex' : 'none';
+    const slip = document.getElementById('miniSlip');
+    if (n === 0) { slip.classList.remove('show'); return; }
+    document.getElementById('slipCount').textContent = n + '×';
+    document.getElementById('slipItems').innerHTML = Object.entries(localCart).map(([id, c]) => `
+        <div class="slip-item">
+            <div><b>${c.nazev}</b><br><span style="opacity:.6;">${c.skore}${c.strelec ? ' + ' + c.strelec : ''}</span></div>
+            <span class="slip-del" onclick="delete localCart[${id}]; uiUpdateFab();">🗑</span>
+        </div>`).join('');
+    document.getElementById('slipTotal').textContent = (n * VKLAD_ZAPAS) + ' Kč';
+    slip.classList.add('show');
 }
-
 function uiOpenCart() {
     const cont = document.getElementById('cartItemsContainer');
     cont.innerHTML = '';
