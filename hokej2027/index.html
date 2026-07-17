@@ -937,10 +937,6 @@ function renderZapasy(now) {
                         <label class="input-label">Střelec gólu</label>
                         <input type="text" id="striker-${m.id}" class="input-field" value="${mojeSazka.strelec || ''}" placeholder="Příjmení střelce">
                     </div>
-                    <div class="hide-tip-row" onclick="document.getElementById('hide-${m.id}').click()">
-                        <input type="checkbox" id="hide-${m.id}" ${mojeSazka.skryt ? 'checked' : ''} style="width:22px; height:22px; cursor:pointer;">
-                        <span style="font-size:0.95em; font-weight:600; opacity:0.9">Skrýt můj tip před ostatními</span>
-                    </div>
                     <button class="btn-add-ticket" onclick="actionUpdateBet(${m.id})">💾 ULOŽIT ZMĚNU TIPU</button>
                 ` : `
                     <label class="input-label" style="text-align:center;">Přesný výsledek (po 60 min.)</label>
@@ -953,10 +949,7 @@ function renderZapasy(now) {
                         <label class="input-label">Střelec gólu</label>
                         <input type="text" id="striker-${m.id}" class="input-field" placeholder="Příjmení střelce">
                     </div>
-                    <div class="hide-tip-row" onclick="document.getElementById('hide-${m.id}').click()">
-                        <input type="checkbox" id="hide-${m.id}" style="width:22px; height:22px; cursor:pointer;">
-                        <span style="font-size:0.95em; font-weight:600; opacity:0.9">Skrýt můj tip před ostatními</span>
-                    </div>
+                    <div style="text-align:center; font-size:0.8em; opacity:0.6; margin:12px 0;">🙈 Tipy jsou před ostatními skryté až do začátku zápasu.</div>
                     <button class="btn-add-ticket" onclick="actionAddToTicket(${m.id}, '${m.domaci} vs ${m.hoste}')">PŘIDAT NA TIKET (${VKLAD_ZAPAS} Kč)</button>
                 `) : (!isEvaluated ? `<div style="text-align:center; color:var(--neon); font-weight:900; letter-spacing:1px; margin-bottom:20px;">SÁZKY UZAVŘENY</div>` : '')}
                 <div id="bets-list-${m.id}" style="margin-top:30px;"></div>
@@ -1003,9 +996,16 @@ async function actionUpdateBet(id) {
     const sD = document.getElementById(`scD-${id}`).value;
     const sH = document.getElementById(`scH-${id}`).value;
     const strelec = document.getElementById(`striker-${id}`).value.trim();
-    const skryt = document.getElementById(`hide-${id}`).checked;
-    if (sD === '' || sH === '' || !strelec) return alert('Vyplň skóre i střelce!');
+    const skryt = true; // tipy jsou automaticky skryté do začátku zápasu
+   if (sD === '' || sH === '' || !strelec) return alert('Vyplň skóre i střelce!');
     const skore = `${parseInt(sD)}:${parseInt(sH)}`;
+    const ostatni = sazkyCache.filter(s => s.zapas_id === id && s.user_id !== currentUserId);
+    const dupSkore = ostatni.some(s => s.skore === skore);
+    const dupStrelec = strelec && ostatni.some(s => (s.strelec || '').toLowerCase().trim() === strelec.toLowerCase());
+    if (dupSkore || dupStrelec) {
+        const co = [dupSkore ? 'tento výsledek' : null, dupStrelec ? 'tohoto střelce' : null].filter(Boolean).join(' i ');
+        if (!confirm(`⚠️ Pozor: ${co} už někdo tipuje. Při výhře byste se o bank dělili. Opravdu pokračovat?`)) return;
+    }
     const { error } = await sb.from('hokej27_sazky')
         .update({ skore, strelec, skryt })
         .eq('zapas_id', id).eq('user_id', currentUserId);
@@ -1025,8 +1025,16 @@ function actionAddToTicket(id, nazev) {
     const h = document.getElementById(`scH-${id}`).value;
     const strelec = document.getElementById(`striker-${id}`).value.trim();
     const skryt = document.getElementById(`hide-${id}`).checked;
-    if (d === '' || h === '') return alert('Vyplň přesný výsledek!');
-    localCart[id] = { nazev, skore: `${+d}:${+h}`, strelec, skryt };
+   if (d === '' || h === '') return alert('Vyplň přesný výsledek!');
+    const skore = `${+d}:${+h}`;
+    const ostatni = sazkyCache.filter(s => s.zapas_id === id && s.user_id !== currentUserId);
+    const dupSkore = ostatni.some(s => s.skore === skore);
+    const dupStrelec = strelec && ostatni.some(s => (s.strelec || '').toLowerCase().trim() === strelec.toLowerCase());
+    if (dupSkore || dupStrelec) {
+        const co = [dupSkore ? 'tento výsledek' : null, dupStrelec ? 'tohoto střelce' : null].filter(Boolean).join(' i ');
+        if (!confirm(`⚠️ Pozor: ${co} už někdo tipuje. Při výhře byste se o bank dělili. Opravdu pokračovat?`)) return;
+    }
+    localCart[id] = { nazev, skore, strelec, skryt };
     uiUpdateFab();
     uiToggleMatch(id);
 }
