@@ -164,6 +164,21 @@ select.pole option { background: #10131f; color: #eef2ff; }
 .prazdno { opacity: .4; font-size: .85em; padding: 26px 10px; }
 .sekce { display: none; }
 .sekce.on { display: block; }
+
+/* PAVOUK – interaktivní bracket v modálu dlouhodobky 2 */
+.br-round { margin-bottom: 18px; }
+.br-round h3 { color: var(--gold); font-size: .78em; letter-spacing: 1.5px; text-transform: uppercase; margin: 0 0 9px; }
+.br-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.br-pair { border: 1px solid rgba(46,107,255,.22); border-radius: 10px; overflow: hidden; }
+.br-team { padding: 9px 11px; font-size: .8em; font-weight: 700; cursor: pointer; border-bottom: 1px solid rgba(46,107,255,.12); transition: background .15s; color: #eef2ff; }
+.br-team:last-child { border-bottom: none; }
+.br-team:hover:not(.tbd) { background: rgba(46,107,255,.1); }
+.br-team.sel { background: rgba(212,175,55,.16); color: var(--gold); }
+.br-team.tbd { opacity: .3; cursor: not-allowed; font-style: italic; }
+.br-vitez { text-align: center; padding: 18px; border: 1px solid rgba(212,175,55,.45); border-radius: 12px; background: rgba(212,175,55,.08); }
+.br-vitez .lbl { font-size: .65em; letter-spacing: 2px; text-transform: uppercase; color: rgba(212,175,55,.7); margin-bottom: 6px; }
+.br-vitez .jm { font-weight: 900; font-size: 1.2em; color: var(--gold); }
+.br-reset { display: block; margin: 4px auto 0; background: none; border: none; color: rgba(238,242,255,.4); font-size: .68em; text-decoration: underline; cursor: pointer; font-family: inherit; }
 @media (max-width: 440px) { .score-input { width: 58px; height: 58px; } }
 </style>
 </head>
@@ -243,6 +258,9 @@ let mojeId = null, mojeJmeno = null;
 let zapasy = [], tipyMap = {}, stav = {}, dlouhodobe = [], mujDl = null;
 let dlFaze = 1, vyber = { top8: [], propadlici: [], qf: [], sf: [], finale: [] };
 let filtrZapasu = 'aktivni';
+// Pavouk pro "Cesta k titulu": qf = 8 předpokládaných vítězů osmifinále (vstup do QF),
+// sf = 4 vítězové QF (vstup do SF), finale = 2 finalisté, vitez = vítěz CL.
+let bracketPick = { qf: Array(8).fill(null), sf: Array(4).fill(null), finale: Array(2).fill(null), vitez: null };
 
 function prepniFiltrZapasu(f) {
     filtrZapasu = f;
@@ -387,7 +405,7 @@ function renderDlKarty() {
     const po1 = d1 && Date.now() > d1.getTime();
     const po2 = d2 && Date.now() > d2.getTime();
     const tymyOk = (stav.tymy || []).length >= 36;
-    const osmOk = (stav.osmifinaliste || []).length >= 16;
+    const osmOk = (stav.bracket_r16 || []).length >= 8;
 
     const s1 = document.getElementById('dl1-stav');
     const k1 = document.getElementById('dl1-karta');
@@ -450,6 +468,63 @@ const blokFin = () => `<h3>Finalisté <span class="pocitadlo" id="poc-finale">${
     <h3 style="margin-top:16px;">🏆 Vítěz CL</h3>
     <select class="pole" id="dl-vitezCL"><option value="">– vyber –</option>${vyber.finale.map(t => `<option>${t}</option>`).join('')}</select>`;
 
+/* ============================================================
+   PAVOUK "CESTA K TITULU" – klikací postup, propisuje se nahoru
+   ============================================================ */
+function qfPary() { const q = bracketPick.qf; const out = []; for (let i = 0; i < 4; i++) out.push([q[i * 2] || null, q[i * 2 + 1] || null]); return out; }
+function sfPary() { const s = bracketPick.sf; const out = []; for (let i = 0; i < 2; i++) out.push([s[i * 2] || null, s[i * 2 + 1] || null]); return out; }
+function finalePar() { return [bracketPick.finale[0] || null, bracketPick.finale[1] || null]; }
+
+function bracketTeam(kolo, idx, strana) {
+    if (kolo === 'r16') { const p = (stav.bracket_r16 || [])[idx] || []; return p[strana] || null; }
+    if (kolo === 'qf') return qfPary()[idx]?.[strana] || null;
+    if (kolo === 'sf') return sfPary()[idx]?.[strana] || null;
+    if (kolo === 'final') return finalePar()[strana] || null;
+}
+
+function bracketPick_(kolo, idx, strana) {
+    const tym = bracketTeam(kolo, idx, strana);
+    if (!tym) return; // TBD – ještě nelze vybrat
+    if (kolo === 'r16') { bracketPick.qf[idx] = tym; bracketPick.sf = Array(4).fill(null); bracketPick.finale = Array(2).fill(null); bracketPick.vitez = null; }
+    else if (kolo === 'qf') { bracketPick.sf[idx] = tym; bracketPick.finale = Array(2).fill(null); bracketPick.vitez = null; }
+    else if (kolo === 'sf') { bracketPick.finale[idx] = tym; bracketPick.vitez = null; }
+    else if (kolo === 'final') { bracketPick.vitez = tym; }
+    renderBracket();
+}
+
+function bracketResetVse() {
+    bracketPick = { qf: Array(8).fill(null), sf: Array(4).fill(null), finale: Array(2).fill(null), vitez: null };
+    renderBracket();
+}
+
+function bracketRadek(kolo, pary, vybrane) {
+    return `<div class="br-grid">` + pary.map((p, i) => `
+        <div class="br-pair">
+            <div class="br-team ${vybrane[i] === p[0] ? 'sel' : ''} ${!p[0] ? 'tbd' : ''}" onclick="bracketPick_('${kolo}', ${i}, 0)">${p[0] || '— čeká na výsledek —'}</div>
+            <div class="br-team ${vybrane[i] === p[1] ? 'sel' : ''} ${!p[1] ? 'tbd' : ''}" onclick="bracketPick_('${kolo}', ${i}, 1)">${p[1] || '— čeká na výsledek —'}</div>
+        </div>`).join('') + `</div>`;
+}
+
+function renderBracket() {
+    const ob = document.getElementById('dl-obsah');
+    if (!ob) return;
+    const r16 = stav.bracket_r16 || [];
+    ob.innerHTML = `
+        <h2 style="color:var(--gold); margin-top:0;">🏆 Cesta k titulu</h2>
+        <p style="font-size:.72em; opacity:.6; margin-top:-8px;">Klikni na vítěze každého páru – tvůj tip se propíše do dalšího kola. Klidně si to celé projdi až k vítězi.</p>
+
+        <div class="br-round"><h3>Osmifinále → kdo postoupí do čtvrtfinále</h3>${bracketRadek('r16', r16, bracketPick.qf)}</div>
+        <div class="br-round"><h3>Čtvrtfinále → kdo postoupí do semifinále</h3>${bracketRadek('qf', qfPary(), bracketPick.sf)}</div>
+        <div class="br-round"><h3>Semifinále → finalisté</h3>${bracketRadek('sf', sfPary(), bracketPick.finale)}</div>
+        <div class="br-round"><h3>Finále</h3>${bracketRadek('final', [finalePar()], [bracketPick.vitez])}</div>
+
+        <div class="br-vitez">
+            <div class="lbl">🏆 Tvůj vítěz Ligy mistrů</div>
+            <div class="jm">${bracketPick.vitez || '— zatím nevybráno —'}</div>
+        </div>
+        <button class="br-reset" onclick="bracketResetVse()">↺ začít pavouka znovu od osmifinále</button>`;
+}
+
 function otevriDl(faze) {
     if (!mojeId) return alert('Nejdřív se přihlas na hlavní stránce.');
     dlFaze = faze;
@@ -468,19 +543,18 @@ function otevriDl(faze) {
                 <select class="pole" id="dl-vitezZC"><option value="">– vyber –</option>${stav.tymy.map(x => `<option${t.vitezZC === x ? ' selected' : ''}>${x}</option>`).join('')}</select></div>
             <div class="dl-sekce"><h3>📉 Propadlíci (bez play-off, místa 25–36) <span class="pocitadlo" id="poc-propadlici">${vyber.propadlici.length} / 12</span></h3>${chipy('ch-prop', stav.tymy, 'propadlici', 12)}</div>`;
     } else {
-        if ((stav.osmifinaliste || []).length < 16) return;
+        if ((stav.bracket_r16 || []).length < 8) return;
         const d2 = stav.deadline_tip2 ? new Date(stav.deadline_tip2) : null;
         if (d2 && Date.now() > d2.getTime()) return;
+        // Rekonstrukce pavouka z uloženého tipu (pokud existuje a sedí na aktuální páry)
         const t = mujDl?.tip2 || {};
-        vyber.qf = [...(t.qf || [])];
-        vyber.sf = [...(t.sf || [])];
-        vyber.finale = [...(t.finale || [])];
-        ob.innerHTML = `
-            <h2 style="color:var(--gold); margin-top:0;">🏆 Cesta k titulu</h2>
-            <div class="dl-sekce"><h3>Čtvrtfinalisté <span class="pocitadlo" id="poc-qf">${vyber.qf.length} / 8</span></h3>${chipy('ch-qf', stav.osmifinaliste, 'qf', 8)}</div>
-            <div class="dl-sekce" id="blok-sf">${blokSF()}</div>
-            <div class="dl-sekce" id="blok-fin">${blokFin()}</div>`;
-        if (t.vitez) setTimeout(() => { const s = document.getElementById('dl-vitezCL'); if (s) s.value = t.vitez; }, 0);
+        const r16 = stav.bracket_r16 || [];
+        bracketPick = { qf: Array(8).fill(null), sf: Array(4).fill(null), finale: Array(2).fill(null), vitez: null };
+        (t.qf || []).forEach((tym, i) => { if (r16[i]?.includes(tym)) bracketPick.qf[i] = tym; });
+        (t.sf || []).forEach((tym, j) => { const par = qfPary()[j] || []; if (par.includes(tym)) bracketPick.sf[j] = tym; });
+        (t.finale || []).forEach((tym, k) => { const par = sfPary()[k] || []; if (par.includes(tym)) bracketPick.finale[k] = tym; });
+        if (t.vitez && finalePar().includes(t.vitez)) bracketPick.vitez = t.vitez;
+        renderBracket();
     }
     document.getElementById('dl-msg').textContent = '';
     document.getElementById('dlModal').style.display = 'block';
@@ -498,12 +572,11 @@ async function ulozDl() {
         }
         payload = { tip1: { top8: vyber.top8, vitezZC, propadlici: vyber.propadlici } };
     } else {
-        const vitez = document.getElementById('dl-vitezCL')?.value;
-        if (vyber.qf.length !== 8 || vyber.sf.length !== 4 || vyber.finale.length !== 2 || !vitez) {
-            msg.textContent = 'Vyber 8 čtvrtfinalistů, 4 semifinalisty, 2 finalisty a vítěze.';
+        if (bracketPick.qf.includes(null) || bracketPick.sf.includes(null) || bracketPick.finale.includes(null) || !bracketPick.vitez) {
+            msg.textContent = 'Projdi celý pavouk až po vítěze – nikde nesmí zůstat nevybráno.';
             msg.style.color = '#e74c3c'; return;
         }
-        payload = { tip2: { qf: vyber.qf, sf: vyber.sf, finale: vyber.finale, vitez } };
+        payload = { tip2: { qf: bracketPick.qf, sf: bracketPick.sf, finale: bracketPick.finale, vitez: bracketPick.vitez } };
     }
     const { error } = await sb.from('cl_dlouhodobe')
         .upsert({ user_id: mojeId, jmeno: mojeJmeno, ...payload }, { onConflict: 'user_id' });
