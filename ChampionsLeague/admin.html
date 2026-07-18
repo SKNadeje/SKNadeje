@@ -136,7 +136,7 @@ async function init() {
 
         <div class="karta" style="border-color:rgba(239,68,68,.35);">
             <h2 style="color:#ff8a7a;">🧪 Testovací data</h2>
-            <p style="font-size:.72em; opacity:.6; margin-top:-6px;">Vloží ukázkové týmy, zápasy a tipy – včetně tvého účtu a pár dalších registrovaných hráčů (bere reálné existující účty z appky, ne smyšlené – DB to jinak nepustí kvůli vazbě na přihlášení).</p>
+            <p style="font-size:.72em; opacity:.6; margin-top:-6px;">Vloží ukázkové týmy, zápasy a tipy – tvůj reálný tip + 5 čistě fiktivních postav (žádné skutečné účty, jen testovací záznamy v DB).</p>
             <button class="btn" onclick="vlozTestData()">➕ VLOŽIT TESTOVACÍ DATA</button>
             <button class="btn btn-red" style="margin-top:8px;" onclick="smazTestData()">🗑 SMAZAT VŠECHNA CL DATA (RESET)</button>
         </div>`;
@@ -159,8 +159,10 @@ const TEST_TYMY = [
     "Galatasaray","Crvena zvezda"
 ];
 
+const FIKTIVNI_JMENA = ['Fantom Fanda', 'Bety Bystrá', 'Karel Kanonýr', 'Nikola Nadějná', 'Ropák Robin'];
+
 async function vlozTestData() {
-    if (!confirm('Vložit testovací data (36 týmů + 4 zápasy + tipy od tebe a pár dalších registrovaných hráčů)?')) return;
+    if (!confirm('Vložit testovací data (36 týmů + 4 zápasy + tvůj tip + 5 čistě fiktivních tipérů)?')) return;
     try {
         // 1) Týmy + deadline dlouhodobky 1
         const dl1 = new Date(Date.now() + 7 * 86400000).toISOString();
@@ -179,24 +181,21 @@ async function vlozTestData() {
             status: 'vyhodnoceno', vysledek_d: 0, vysledek_h: 0
         }).select().single();
 
-        // 3) Tvůj vlastní testovací tip
+        // 3) Tvůj vlastní (reálný) tip
         const { data: { session } } = await sb.auth.getSession();
         const vsichniTiperi = [];
         if (session) {
             const { data: h } = await sb.from('hraci').select('jmeno').eq('user_id', session.user.id).maybeSingle();
-            vsichniTiperi.push({ user_id: session.user.id, jmeno: h?.jmeno || session.user.email.split('@')[0] });
+            vsichniTiperi.push({ user_id: session.user.id, jmeno: (h?.jmeno || session.user.email.split('@')[0]) + ' (ty)' });
         }
 
-        // 4) "Fiktivní" tipéři = skuteční registrovaní hráči (z hraci), aby nešlo o FK cizí ID
-        const { data: ostatni } = await sb.from('hraci').select('user_id, jmeno').neq('user_id', session?.user?.id || '').limit(4);
-        (ostatni || []).forEach(o => vsichniTiperi.push(o));
-
-        if (vsichniTiperi.length <= 1) {
-            msg('⚠️ Zápasy vloženy, ale v tabulce "hraci" nejsou žádní další registrovaní hráči – testuje se jen s tvým účtem. Ať se test appka "zalidní", ať se aspoň pár kamarádů přihlásí přes welcome.html, pak spusť vložení znovu.', true);
-        }
+        // 4) Čistě fiktivní tipéři – náhodné ID, žádný reálný účet (FK vazba je zrušená)
+        FIKTIVNI_JMENA.forEach(jmeno => {
+            vsichniTiperi.push({ user_id: crypto.randomUUID(), jmeno: `🎭 ${jmeno}` });
+        });
 
         // Varianty tipů na zápasy – různé skóre, ať je co srovnávat na žebříčku/barometru
-        const varianty = ['1:4', '2:2', '1:1', '3:1', '0:2'];
+        const varianty = ['1:4', '2:2', '1:1', '3:1', '0:2', '2:0'];
         const zapasyProTip = [novy1, novy2, novy3].filter(Boolean);
         const tipyNaVlozeni = [];
         vsichniTiperi.forEach((t, i) => {
@@ -206,7 +205,10 @@ async function vlozTestData() {
             // všichni mají tip i na vyhodnocený zápas – někdo trefí 0:0, někdo ne
             if (novy4) tipyNaVlozeni.push({ zapas_id: novy4.id, user_id: t.user_id, jmeno: t.jmeno, skore: i % 2 === 0 ? '0:0' : '1:0', body: i % 2 === 0 ? 5 : 0 });
         });
-        if (tipyNaVlozeni.length) await sb.from('cl_tipy_zapasy').insert(tipyNaVlozeni);
+        if (tipyNaVlozeni.length) {
+            const { error: e1 } = await sb.from('cl_tipy_zapasy').insert(tipyNaVlozeni);
+            if (e1) throw new Error('tipy: ' + e1.message);
+        }
 
         // Dlouhodobé tipy – variace výběru z TEST_TYMY, ať je vidět rozdílné pokrytí top 8 / propadlíků
         const dlTipyNaVlozeni = vsichniTiperi.map((t, i) => ({
@@ -218,9 +220,12 @@ async function vlozTestData() {
             },
             zaplaceno: i % 2 === 0
         }));
-        if (dlTipyNaVlozeni.length) await sb.from('cl_dlouhodobe').upsert(dlTipyNaVlozeni, { onConflict: 'user_id' });
+        if (dlTipyNaVlozeni.length) {
+            const { error: e2 } = await sb.from('cl_dlouhodobe').insert(dlTipyNaVlozeni);
+            if (e2) throw new Error('dlouhodobé: ' + e2.message);
+        }
 
-        msg(`✅ Testovací data vložena (${vsichniTiperi.length} tipér${vsichniTiperi.length === 1 ? '' : 'ů'})!`);
+        msg(`✅ Testovací data vložena (ty + ${FIKTIVNI_JMENA.length} fiktivních tipérů)!`);
         await nactiStav(); await nactiZapasy();
     } catch (e) {
         msg('Chyba: ' + e.message, true);
