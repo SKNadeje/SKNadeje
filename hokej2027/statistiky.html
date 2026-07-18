@@ -3,119 +3,156 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Statistiky – MS v hokeji 2027</title>
+<title>Žebříčky · MS v hokeji 2027</title>
+<link rel="icon" href="logo-hokej.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="zebricky.js"></script>
 <style>
-:root { --neon: #00f2ff; --dark: #0f172a; --points: #ff00ff; --gold: #f1c40f; }
-body { background: var(--dark); color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px 14px 40px; text-align: center; }
-h1 { color: var(--neon); letter-spacing: 2px; }
-.grid { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-.stat-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(0,242,255,0.2); border-radius: 18px; padding: 20px; }
-.stat-card h2 { margin: 0 0 15px; font-size: 1.05em; letter-spacing: 1px; }
-.points-card { border: 2px solid var(--points); }
-.gold-card { border: 2px solid var(--gold); }
-.row { display: flex; justify-content: space-between; align-items: center; padding: 9px 6px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.92em; }
-.row:last-child { border-bottom: none; }
-.rank { width: 34px; text-align: left; font-weight: 900; opacity: 0.6; }
-.rank-1 { color: var(--gold); opacity: 1; }
-.rank-2 { color: #cbd5e1; opacity: 1; }
-.rank-3 { color: #d97b3a; opacity: 1; }
-.jm { flex: 1; text-align: left; font-weight: 700; }
-.val { font-weight: 900; color: var(--neon); }
-.fond-big { font-size: 2.2em; font-weight: 900; color: var(--gold); }
-.fond-split { display: flex; justify-content: center; gap: 18px; margin-top: 8px; font-size: 0.85em; opacity: 0.85; }
-.btn-back { display: inline-block; margin-top: 25px; color: var(--neon); text-decoration: none; font-weight: 900; letter-spacing: 1px; }
-.pozn { font-size: 0.7em; opacity: 0.5; margin-top: 8px; }
+:root { --neon:#00f2ff; --gold:#d4af37; --dark:#0f172a; --pink:#ff00ea; }
+* { box-sizing:border-box; }
+body {
+    background: radial-gradient(ellipse at top, #142036 0%, var(--dark) 65%);
+    color:#fff; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin:0; padding:15px; min-height:100vh; -webkit-tap-highlight-color:transparent;
+}
+.wrap { max-width:600px; margin:0 auto; }
+.back { display:inline-block; color:rgba(255,255,255,.45); text-decoration:none; font-size:.75em; margin-bottom:12px; }
+h1 { text-align:center; font-size:1.15em; letter-spacing:3px; color:var(--neon); text-transform:uppercase; margin:6px 0 20px; }
+
+.blok {
+    background:rgba(255,255,255,.04); border:1px solid rgba(0,242,255,.25);
+    border-radius:22px; padding:22px 16px; margin-bottom:22px;
+}
+.blok h2 {
+    text-align:center; font-size:.95em; letter-spacing:3px; text-transform:uppercase;
+    color:var(--neon); margin:0 0 18px; text-shadow:0 0 14px rgba(0,242,255,.5);
+}
+.blok.fond { border-color:rgba(212,175,55,.5); }
+.blok.fond h2 { color:var(--gold); text-shadow:0 0 14px rgba(212,175,55,.4); }
+.blok.index { border-color:var(--pink); box-shadow:0 0 18px rgba(255,0,234,.12); }
+.blok.index h2 { color:var(--pink); text-shadow:0 0 14px rgba(255,0,234,.5); }
+
+.fond-castka { text-align:center; font-size:2.4em; font-weight:900; margin:4px 0 2px; }
+.fond-pozn { text-align:center; font-size:.7em; opacity:.5; margin-bottom:12px; }
+.fond-medaile { display:flex; justify-content:center; gap:22px; font-size:.85em; font-weight:800; flex-wrap:wrap; }
+
+.radek {
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px; border-radius:16px; margin-bottom:6px;
+    border-bottom:1px solid rgba(255,255,255,.04);
+}
+.radek .poradi { min-width:52px; font-weight:900; font-size:1.05em; }
+.radek .telo { flex:1; min-width:0; }
+.radek .jmeno { font-weight:800; font-size:1em; text-decoration:underline; text-decoration-color:rgba(0,242,255,.35); text-underline-offset:3px; cursor:pointer; }
+.radek .jmeno:hover { color:var(--neon); }
+.radek .sub { font-size:.68em; color:#57c9d5; margin-top:4px; letter-spacing:.5px; font-family:monospace; }
+.radek .hodnota { font-weight:900; font-size:1.15em; white-space:nowrap; }
+.radek .hodnota small { font-size:.55em; opacity:.5; font-weight:700; margin-left:2px; }
+.radek.r1 { background:linear-gradient(90deg, rgba(212,175,55,.22), rgba(212,175,55,.05)); box-shadow:0 0 14px rgba(212,175,55,.12); }
+.radek.r1 .poradi { color:#ffd75e; }
+.radek.r2 { background:linear-gradient(90deg, rgba(148,163,184,.2), rgba(148,163,184,.04)); }
+.radek.r3 { background:linear-gradient(90deg, rgba(180,100,40,.2), rgba(180,100,40,.04)); }
+.radek.r3 .poradi { color:#e8965a; }
+.mini { display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,.08); border-radius:6px; padding:1px 7px; margin-right:6px; font-family:'Segoe UI',sans-serif; }
+.prazdno { text-align:center; opacity:.45; padding:18px 0; font-size:.85em; }
 </style>
 </head>
 <body>
-<a href="index.html" style="display:inline-block; color:rgba(255,255,255,.45); text-decoration:none; font-size:.72em; margin:4px 0 10px;">← Zpět na tiket</a>
-<h1>📊 STATISTIKY MS 2027</h1>
+<div class="wrap">
+    <a class="back" href="index.html">← Zpět na tiket</a>
+    <h1>📊 Žebříčky a statistiky</h1>
 
-<div class="grid">
-    <div class="stat-card gold-card">
-        <h2 style="color:var(--gold);">💎 FOND NADĚJE</h2>
-        <div class="fond-big"><span id="fond">0</span> Kč</div>
-        <div class="fond-split">
-            <span>🥇 <b id="f1">0</b> Kč</span>
-            <span>🥈 <b id="f2">0</b> Kč</span>
-            <span>🥉 <b id="f3">0</b> Kč</span>
-        </div>
-        <div class="pozn">Na konci turnaje si fond dělí top 3 Indexu Naděje (50/30/20)</div>
+    <div class="blok fond">
+        <h2>💎 Fond Naděje</h2>
+        <div class="fond-castka" id="fondCastka">–</div>
+        <div class="fond-pozn">(Kumulováno 5 Kč z každé podané sázky)</div>
+        <div class="fond-medaile" id="fondMedaile"></div>
     </div>
 
-    <div class="stat-card points-card">
-        <h2 style="color:var(--points);">⭐ INDEX NADĚJE (NB)</h2>
-        <div id="lb-index">Načítám…</div>
-        <div class="pozn">Přesné skóre +5 · střelec +3 · trend +1</div>
+    <div class="blok index">
+        <h2>⭐ Index Naděje (celkem)</h2>
+        <div id="lbIndex"></div>
     </div>
 
-    <div class="stat-card gold-card">
-        <h2 style="color:var(--gold);">⭐ DLOUHODOBÉ TIPY</h2>
-        <div id="lb-dlouhodobe">Načítám…</div>
-        <div class="pozn">Vítěz skupiny 3 · šampion 10 · kanadské bodování 8 · All-Star hráč 4</div>
+    <div class="blok">
+        <h2>💰 Bankovní lupiči</h2>
+        <div id="lbVyhry"></div>
     </div>
 
-    <div class="stat-card"><h2>💰 BANKOVNÍ LUPIČI</h2><div id="lb-money"></div></div>
-    <div class="stat-card"><h2>🥅 MISTŘI VÝSLEDKŮ</h2><div id="lb-skore"></div></div>
-    <div class="stat-card"><h2>🎯 KRÁLOVÉ STŘELCŮ</h2><div id="lb-strelci"></div></div>
-    <div class="stat-card"><h2>🧠 EXPERTI (TRENDY)</h2><div id="lb-trend"></div></div>
+    <div class="blok">
+        <h2>🥅 Mistři výsledků</h2>
+        <div id="lbSkore"></div>
+    </div>
+
+    <div class="blok">
+        <h2>🎯 Králové střelců</h2>
+        <div id="lbStrelci"></div>
+    </div>
+
+    <div class="blok">
+        <h2>🧠 Experti (trendy)</h2>
+        <div id="lbTrendy"></div>
+    </div>
 </div>
 
-<a href="index.html" class="btn-back">← ZPĚT NA SÁZKY</a>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
 const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
 const sb = supabase.createClient(SB_URL, SB_KEY);
-const VKLAD_DO_FONDU = 5;
+
+function radek(h, hodnotaHtml, subHtml, korunka) {
+    const cls = h._rankNum === 1 ? 'r1' : h._rankNum === 2 ? 'r2' : h._rankNum === 3 ? 'r3' : '';
+    return `<div class="radek ${cls}">
+        <span class="poradi">${h._rank}</span>
+        <div class="telo">
+            <span class="jmeno" onclick="location.href='profil.html?id=${h.user_id}'">${h.jmeno}${korunka && h._rankNum === 1 ? ' 👑' : ''}</span>
+            <div class="sub">${subHtml}</div>
+        </div>
+        <span class="hodnota">${hodnotaHtml}</span>
+    </div>`;
+}
+
+function vykresli(elId, list, klic, fmt, sub, korunka = true) {
+    const el = document.getElementById(elId);
+    const serazeni = seradSRankem(list.filter(h => h.tipuVyhodnocenych > 0 || h.tipu > 0), klic);
+    el.innerHTML = serazeni.length
+        ? serazeni.map(h => radek(h, fmt(h), sub(h), korunka)).join('')
+        : '<div class="prazdno">Zatím žádná data.</div>';
+}
 
 async function load() {
-    const [{ data: sazky }, { data: dl }] = await Promise.all([
-        sb.from('hokej27_sazky').select('*'),
-        sb.from('hokej27_dlouhodobe').select('*')
+    const [zR, sR] = await Promise.all([
+        sb.from('hokej27_zapasy').select('*'),
+        sb.from('hokej27_sazky').select('*')
     ]);
+    const stats = spocitejStatistiky(zR.data || [], sR.data || []);
 
-    // Fond
-    const fond = (sazky || []).length * VKLAD_DO_FONDU;
-    document.getElementById('fond').innerText = fond;
-    document.getElementById('f1').innerText = Math.floor(fond * 0.5);
-    document.getElementById('f2').innerText = Math.floor(fond * 0.3);
-    document.getElementById('f3').innerText = Math.floor(fond * 0.2);
+    // Fond + medaile 50/30/20
+    document.getElementById('fondCastka').textContent = stats.fond + ' Kč';
+    document.getElementById('fondMedaile').innerHTML =
+        `<span>🥇 ${Math.round(stats.fond * 0.5)} Kč</span>
+         <span>🥈 ${Math.round(stats.fond * 0.3)} Kč</span>
+         <span>🥉 ${Math.round(stats.fond * 0.2)} Kč</span>`;
 
-    // Agregace per hráč
-    const agg = {};
-    (sazky || []).forEach(s => {
-        const a = agg[s.jmeno] = agg[s.jmeno] || { nb: 0, kc: 0, skore: 0, strelci: 0, trend: 0, tipu: 0 };
-        a.tipu++;
-        a.nb += s.nb || 0;
-        a.kc += Number(s.vyhra_kc || 0);
-        if (s.hit_skore) a.skore++;
-        if (s.hit_strelec) a.strelci++;
-        if (s.hit_trend) a.trend++;
-    });
+    vykresli('lbIndex', stats.hraci, 'nb',
+        h => `${h.nb} <small>NB</small>`,
+        h => `<span class="mini">🥅 ${h.skore}</span><span class="mini">🎯 ${h.strelci}</span> Účast: ${h.ucast}%`);
 
-    const render = (elId, key, unit) => {
-        const items = Object.entries(agg)
-            .map(([jm, a]) => ({ jm, v: a[key], tipu: a.tipu }))
-            .filter(i => i.v > 0)
-            .sort((a, b) => b.v - a.v || (b.v / b.tipu) - (a.v / a.tipu));
-        document.getElementById(elId).innerHTML = items.length
-            ? items.map((i, idx) => `<div class="row"><span class="rank rank-${idx+1}">${idx+1}.</span><span class="jm">${i.jm}</span><span class="val">${i.v}${unit}</span></div>`).join('')
-            : '<div style="opacity:0.4; font-size:0.85em;">Zatím prázdné</div>';
-    };
+    vykresli('lbVyhry', stats.hraci, 'vyhry',
+        h => `${h.vyhry} <small>Kč</small>`,
+        h => `Získáno z ${h.tipuVyhodnocenych} tipů`);
 
-    render('lb-index', 'nb', ' NB');
-    render('lb-money', 'kc', ' Kč');
-    render('lb-skore', 'skore', '×');
-    render('lb-strelci', 'strelci', '×');
-    render('lb-trend', 'trend', '×');
+    vykresli('lbSkore', stats.hraci, 'skore',
+        h => `${h.skore} <small>x</small>`,
+        h => `Úspěšnost: ${h.uspSkore}%  Účast: ${h.ucast}%`);
 
-    // Dlouhodobé
-    const dlItems = (dl || []).sort((a, b) => b.body - a.body);
-    document.getElementById('lb-dlouhodobe').innerHTML = dlItems.length
-        ? dlItems.map((r, idx) => `<div class="row"><span class="rank rank-${idx+1}">${idx+1}.</span><span class="jm">${r.jmeno}${r.zaplaceno ? '' : ' <span style="opacity:0.4; font-size:0.8em;">(nezaplaceno)</span>'}</span><span class="val">${r.body} b.</span></div>`).join('')
-        : '<div style="opacity:0.4; font-size:0.85em;">Zatím nikdo nevyplnil</div>';
+    vykresli('lbStrelci', stats.hraci, 'strelci',
+        h => `${h.strelci} <small>x</small>`,
+        h => `Úspěšnost: ${h.uspStrelci}%  Účast: ${h.ucast}%`);
+
+    vykresli('lbTrendy', stats.hraci, 'trendy',
+        h => `${h.trendy} <small>pts</small>`,
+        h => `Úspěšnost: ${h.uspTrendy}%  Účast: ${h.ucast}%`);
 }
 load();
 </script>
