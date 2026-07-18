@@ -116,7 +116,10 @@ select.pole, input.pole {
     width: 100%; background: rgba(10,6,20,.6); color: #fff;
     border: 1px solid rgba(167,139,250,.3); border-radius: 11px;
     padding: 12px; font-size: .9em; font-family: inherit; outline: none;
+    color-scheme: dark;
 }
+select.pole { background-color: #150c28; }
+select.pole option { background: #150c28; color: #fff; }
 .prazdno { opacity: .45; font-size: .85em; padding: 26px 10px; }
 .sekce { display: none; }
 .sekce.on { display: block; }
@@ -132,6 +135,7 @@ select.pole, input.pole {
     <div class="nav">
         <button class="tady" id="nav-tipy" onclick="prepni('tipy')">Tipy</button>
         <button id="nav-zebricek" onclick="prepni('zebricek')">Žebříček</button>
+        <a id="nav-admin" href="admin.html" style="display:none; text-decoration:none;"><button style="background:rgba(212,175,55,.15); border:1px solid rgba(212,175,55,.5); color:#d4af37;">⚙️ Admin</button></a>
     </div>
 
     <div class="auth-lista" id="auth-lista" style="display:none;">
@@ -203,6 +207,7 @@ async function initAuth() {
     mojeJmeno = h?.jmeno || session.user.email.split('@')[0];
     document.getElementById('ui-jmeno').textContent = mojeJmeno;
     document.getElementById('auth-lista').style.display = 'flex';
+    if (mojeId === ADMIN_ID) document.getElementById('nav-admin').style.display = 'inline-block';
 }
 async function odhlasit() { await sb.auth.signOut(); location.reload(); }
 
