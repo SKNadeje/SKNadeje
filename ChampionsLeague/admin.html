@@ -220,11 +220,11 @@ async function vlozTestData() {
             },
             zaplaceno: i % 2 === 0
         }));
-        if (dlTipyNaVlozeni.length) {
-            const { error: e2 } = await sb.from('cl_dlouhodobe').insert(dlTipyNaVlozeni);
+       if (dlTipyNaVlozeni.length) {
+            const { error: e2 } = await sb.from('cl_dlouhodobe').upsert(dlTipyNaVlozeni, { onConflict: 'user_id' });
             if (e2) throw new Error('dlouhodobé: ' + e2.message);
         }
-
+        
         msg(`✅ Testovací data vložena (ty + ${FIKTIVNI_JMENA.length} fiktivních tipérů)!`);
         await nactiStav(); await nactiZapasy();
     } catch (e) {
