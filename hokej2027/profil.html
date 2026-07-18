@@ -1,1 +1,227 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profil hráče · MS v hokeji 2027</title>
+<link rel="icon" href="logo-hokej.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="zebricky.js"></script>
+<style>
+:root { --neon:#00f2ff; --gold:#d4af37; --dark:#0f172a; --pink:#ff00ea; }
+* { box-sizing:border-box; }
+body {
+    background: radial-gradient(ellipse at top, #142036 0%, var(--dark) 65%);
+    color:#fff; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin:0; padding:15px; min-height:100vh; -webkit-tap-highlight-color:transparent;
+}
+.wrap { max-width:600px; margin:0 auto; }
+.top { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.back {
+    display:inline-block; color:rgba(255,255,255,.6); text-decoration:none; font-size:.8em;
+    border:1px solid rgba(255,255,255,.2); border-radius:100px; padding:9px 20px;
+}
+.top img { width:86px; border-radius:12px; box-shadow:0 0 18px rgba(0,242,255,.3); }
 
+/* HERO */
+.hero {
+    position:relative; overflow:hidden;
+    background:linear-gradient(135deg, rgba(0,242,255,.08), rgba(15,23,42,.4));
+    border:1px solid rgba(0,242,255,.35); border-radius:26px;
+    padding:28px 22px; margin-bottom:20px;
+}
+.hero .cislo {
+    position:absolute; top:10px; right:18px;
+    font-size:5em; font-weight:900; opacity:.12; line-height:1;
+}
+.hero .jmeno {
+    font-size:2.2em; font-weight:900; color:var(--neon); letter-spacing:2px;
+    text-transform:uppercase; text-shadow:0 0 22px rgba(0,242,255,.55); word-break:break-word;
+}
+.hero .titul { color:var(--gold); font-weight:800; letter-spacing:3px; font-size:.8em; text-transform:uppercase; margin-top:8px; }
+.hero .hlaska { font-style:italic; opacity:.55; font-size:.95em; margin:18px 0 22px; }
+.hero .staty { display:flex; gap:10px; }
+.hero .stat {
+    flex:1; background:rgba(5,10,25,.55); border:1px solid rgba(255,255,255,.1);
+    border-radius:16px; padding:14px 6px; text-align:center;
+}
+.hero .stat .v { font-size:1.5em; font-weight:900; }
+.hero .stat .l { font-size:.55em; letter-spacing:1.5px; text-transform:uppercase; opacity:.5; margin-top:4px; }
+.hero .stat:nth-child(1) .v { color:var(--pink); }
+.hero .stat:nth-child(2) .v { color:var(--gold); }
+.hero .stat:nth-child(3) .v { color:var(--neon); }
+
+.blok {
+    background:rgba(255,255,255,.04); border:1px solid rgba(0,242,255,.2);
+    border-radius:22px; padding:20px 18px; margin-bottom:18px;
+}
+.blok h2 { font-size:.78em; letter-spacing:3px; text-transform:uppercase; opacity:.65; margin:0 0 16px; }
+
+/* FORMA */
+.forma { display:flex; gap:9px; }
+.forma .f {
+    flex:1; aspect-ratio:1; max-width:76px; border-radius:14px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    font-size:1.4em; border:1px solid;
+}
+.forma .f small { font-size:.42em; opacity:.7; font-weight:700; }
+.forma .ok { background:rgba(39,174,96,.12); border-color:rgba(39,174,96,.5); }
+.forma .fail { background:rgba(231,76,60,.08); border-color:rgba(231,76,60,.4); }
+
+/* ÚSPĚŠNOST */
+.usp { margin-bottom:14px; }
+.usp .lbl { display:flex; justify-content:space-between; font-size:.95em; font-weight:700; margin-bottom:7px; }
+.usp .lbl b { color:var(--neon); font-family:monospace; }
+.usp .bar { height:9px; border-radius:100px; background:rgba(255,255,255,.07); overflow:hidden; }
+.usp .fill { height:100%; border-radius:100px; }
+
+/* POZICE */
+.pozice { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.pozice .p {
+    background:rgba(5,10,25,.5); border:1px solid rgba(255,255,255,.1);
+    border-radius:16px; padding:14px; display:flex; gap:12px; align-items:center;
+}
+.pozice .rank { font-size:1.7em; font-weight:900; opacity:.85; }
+.pozice .rank.top { color:var(--gold); }
+.pozice .info .n { font-size:.6em; letter-spacing:1.5px; text-transform:uppercase; opacity:.5; line-height:1.4; }
+.pozice .info .h { font-weight:900; font-size:.95em; margin-top:3px; }
+
+/* HISTORIE */
+.hist {
+    display:flex; align-items:center; gap:12px;
+    padding:12px 4px; border-bottom:1px solid rgba(255,255,255,.06);
+}
+.hist .ikona { font-size:1.4em; }
+.hist .telo { flex:1; min-width:0; }
+.hist .z { font-size:.72em; opacity:.5; }
+.hist .t { font-weight:800; font-size:.95em; margin:2px 0; }
+.hist .s { font-size:.72em; opacity:.7; }
+.hist .s .trefil { color:#57a8ff; font-weight:800; }
+.hist .nb { font-weight:900; color:var(--pink); white-space:nowrap; font-size:.95em; }
+.hist .nb small { display:block; color:var(--gold); font-weight:800; text-align:right; }
+.prazdno { text-align:center; opacity:.45; padding:16px 0; font-size:.85em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="top">
+        <a class="back" href="statistiky.html">← Žebříčky</a>
+        <img src="logo-hokej.png" alt="" onerror="this.style.display='none'">
+    </div>
+
+    <div class="hero">
+        <div class="cislo" id="hCislo"></div>
+        <div class="jmeno" id="hJmeno">…</div>
+        <div class="titul" id="hTitul"></div>
+        <div class="hlaska" id="hHlaska"></div>
+        <div class="staty">
+            <div class="stat"><div class="v" id="hNB">–</div><div class="l">NB bodů</div></div>
+            <div class="stat"><div class="v" id="hVyhry">–</div><div class="l">Výhry</div></div>
+            <div class="stat"><div class="v" id="hUcast">–</div><div class="l">Účast</div></div>
+        </div>
+    </div>
+
+    <div class="blok">
+        <h2>⚡ Forma (posledních 5)</h2>
+        <div class="forma" id="forma"></div>
+    </div>
+
+    <div class="blok">
+        <h2>📊 Úspěšnost</h2>
+        <div id="uspesnost"></div>
+    </div>
+
+    <div class="blok">
+        <h2>🏅 Pozice v žebříčcích</h2>
+        <div class="pozice" id="pozice"></div>
+    </div>
+
+    <div class="blok">
+        <h2>📋 Historie tipů (<span id="histPocet">0</span>)</h2>
+        <div id="historie"></div>
+    </div>
+</div>
+
+<script>
+const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
+const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+async function load() {
+    const params = new URLSearchParams(location.search);
+    let uid = params.get('id');
+    if (!uid) {
+        const { data: { session } } = await sb.auth.getSession();
+        uid = session?.user?.id;
+    }
+    if (!uid) { document.getElementById('hJmeno').textContent = 'Hráč nenalezen'; return; }
+
+    const [zR, sR] = await Promise.all([
+        sb.from('hokej27_zapasy').select('*'),
+        sb.from('hokej27_sazky').select('*')
+    ]);
+    const stats = spocitejStatistiky(zR.data || [], sR.data || []);
+    const h = stats.hraci.find(x => x.user_id === uid);
+    if (!h) { document.getElementById('hJmeno').textContent = 'Hráč zatím nesázel'; return; }
+
+    const { titul, hlaska, pozice } = urciTitul(stats, uid);
+
+    // HERO
+    document.getElementById('hJmeno').textContent = h.jmeno;
+    document.getElementById('hTitul').textContent = titul;
+    document.getElementById('hHlaska').textContent = `„${hlaska}"`;
+    document.getElementById('hCislo').textContent = h.tipu;
+    document.getElementById('hNB').textContent = h.nb;
+    document.getElementById('hVyhry').textContent = h.vyhry + ' Kč';
+    document.getElementById('hUcast').textContent = h.ucast + '%';
+
+    // FORMA – posledních 5 vyhodnocených
+    const forma = h.historie.slice(0, 5);
+    document.getElementById('forma').innerHTML = forma.length
+        ? forma.map(x => `<div class="f ${x.nb > 0 ? 'ok' : 'fail'}">${x.nb > 0 ? '✅' : '❌'}<small>${x.vysledek}</small></div>`).join('')
+        : '<div class="prazdno" style="flex:1;">Zatím žádné vyhodnocené tipy.</div>';
+
+    // ÚSPĚŠNOST
+    const bar = (nazev, ikona, pocet, pct, barva) => `
+        <div class="usp">
+            <div class="lbl"><span>${ikona} ${nazev}</span><b>${pocet}x&nbsp;&nbsp;${pct}%</b></div>
+            <div class="bar"><div class="fill" style="width:${pct}%; background:${barva};"></div></div>
+        </div>`;
+    document.getElementById('uspesnost').innerHTML =
+        bar('Přesná skóre', '🥅', h.skore, h.uspSkore, 'linear-gradient(90deg,#00f2ff,#0090aa)') +
+        bar('Střelci', '🎯', h.strelci, h.uspStrelci, 'linear-gradient(90deg,#ffd75e,#d4af37)') +
+        bar('Trendy', '📈', h.trendy, h.uspTrendy, 'linear-gradient(90deg,#ff00ea,#a0009a)');
+
+    // POZICE
+    const pKarta = (rank, nazev, hodnota) => {
+        if (!rank) return '';
+        return `<div class="p">
+            <span class="rank ${rank.rankNum <= 3 ? 'top' : ''}">${rank.rank}</span>
+            <div class="info"><div class="n">${nazev}</div><div class="h">${hodnota}</div></div>
+        </div>`;
+    };
+    document.getElementById('pozice').innerHTML =
+        pKarta(pozice.index, 'Index<br>Naděje', h.nb + ' NB') +
+        pKarta(pozice.vyhry, 'Bankovní<br>lupiči', h.vyhry + ' Kč') +
+        pKarta(pozice.skore, 'Mistři<br>výsledků', h.skore + 'x skóre') +
+        pKarta(pozice.trendy, 'Experti<br>trendů', h.trendy + ' pts');
+
+    // HISTORIE
+    document.getElementById('histPocet').textContent = h.historie.length;
+    document.getElementById('historie').innerHTML = h.historie.length
+        ? h.historie.map(x => `
+            <div class="hist">
+                <span class="ikona">${x.hit_skore ? '🏆' : (x.nb > 0 ? '✅' : '❌')}</span>
+                <div class="telo">
+                    <div class="z">${x.zapas}</div>
+                    <div class="t">Tip: ${x.tip} | Výsledek: ${x.vysledek}</div>
+                    ${x.strelec ? `<div class="s">🎯 ${x.strelec}${x.hit_strelec ? ' <span class="trefil">(TREFIL!)</span>' : ''}</div>` : ''}
+                </div>
+                <div class="nb">${x.nb > 0 ? '+' : ''}${x.nb} NB${x.vyhra > 0 ? `<small>💰 ${x.vyhra} Kč</small>` : ''}</div>
+            </div>`).join('')
+        : '<div class="prazdno">Zatím žádné vyhodnocené tipy.</div>';
+}
+load();
+</script>
+</body>
+</html>
