@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profil hráče · Champions League</title>
+<link rel="icon" href="../logo-nadeje.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root { --fial:#2e6bff; --magenta:#ff2ecc; --gold:#d4af37; --dark:#05081c; }
+* { box-sizing:border-box; }
+body {
+    background: radial-gradient(ellipse at top, #0a1240 0%, var(--dark) 70%);
+    color:#eef2ff; font-family:Inter, sans-serif;
+    margin:0; padding:20px 15px 40px; min-height:100vh; -webkit-tap-highlight-color:transparent;
+}
+.wrap { max-width:560px; margin:0 auto; }
+.back { display:inline-block; color:rgba(240,230,200,.4); text-decoration:none; font-size:.75em; margin-bottom:14px; border:1px solid rgba(212,175,55,.25); border-radius:100px; padding:8px 18px; }
+.back:hover { color:var(--gold); border-color:var(--gold); }
+
+.hero {
+    position:relative; overflow:hidden;
+    background:linear-gradient(135deg, rgba(46,107,255,.1), rgba(255,46,204,.05), rgba(15,20,32,.5));
+    border:1px solid rgba(46,107,255,.4); border-radius:26px;
+    padding:28px 22px; margin-bottom:20px;
+}
+.hero::before, .hero::after {
+    content:''; position:absolute; inset:6px; border:1px solid rgba(46,107,255,.22); border-radius:20px; pointer-events:none;
+}
+.hero .jmeno {
+    font-size:2em; font-weight:900; letter-spacing:1.5px; text-transform:uppercase; word-break:break-word;
+    background:linear-gradient(135deg, #eef2ff, var(--fial) 40%, var(--magenta) 65%, #eef2ff 85%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:var(--gold);
+}
+.hero .titul { color:var(--fial); font-weight:800; letter-spacing:3px; font-size:.78em; text-transform:uppercase; margin-top:8px; }
+.hero .hlaska { font-style:italic; opacity:.55; font-size:.92em; margin:16px 0 20px; }
+.hero .staty { display:flex; gap:10px; }
+.hero .stat { flex:1; background:rgba(5,8,15,.55); border:1px solid rgba(212,175,55,.2); border-radius:16px; padding:14px 6px; text-align:center; }
+.hero .stat .v { font-size:1.5em; font-weight:900; color:var(--gold); }
+.hero .stat .l { font-size:.55em; letter-spacing:1.5px; text-transform:uppercase; opacity:.5; margin-top:4px; }
+
+.blok { background:rgba(15,20,32,.6); border:1px solid rgba(212,175,55,.18); border-radius:22px; padding:20px 18px; margin-bottom:18px; }
+.blok h2 { font-size:.78em; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin:0 0 16px; }
+
+/* ODZNÁČKY – grid ve stylu WC */
+.odznaky { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.odz { background:rgba(5,8,15,.4); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:12px; text-align:center; opacity:.35; }
+.odz.on { opacity:1; background:rgba(212,175,55,.1); border-color:rgba(212,175,55,.5); box-shadow:0 0 12px rgba(212,175,55,.12); }
+.odz .ic { font-size:1.6em; }
+.odz .l { font-size:.66em; font-weight:800; margin-top:5px; }
+.odz.on .l { color:var(--gold); }
+.odz .p { font-size:.56em; opacity:.6; margin-top:3px; line-height:1.4; }
+
+/* DLOUHODOBKA PŘEHLED */
+.dl-prehled { display:flex; flex-direction:column; gap:8px; }
+.dl-radek { display:flex; justify-content:space-between; align-items:center; background:rgba(5,8,15,.4); border-radius:12px; padding:10px 14px; font-size:.82em; }
+.dl-radek b { color:var(--gold); }
+
+/* HISTORIE */
+.hist { display:flex; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid rgba(212,175,55,.08); }
+.hist .ikona { font-size:1.3em; }
+.hist .telo { flex:1; min-width:0; }
+.hist .t { font-weight:800; font-size:.92em; }
+.hist .s { font-size:.72em; opacity:.55; margin-top:2px; }
+.hist .b { font-weight:900; color:var(--gold); white-space:nowrap; }
+.prazdno { text-align:center; opacity:.4; padding:16px 0; font-size:.85em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <a class="back" href="index.html">← Zpět na Champions League</a>
+
+    <div class="hero">
+        <div class="jmeno" id="hJmeno">…</div>
+        <div class="titul" id="hTitul"></div>
+        <div class="hlaska" id="hHlaska"></div>
+        <div class="staty">
+            <div class="stat"><div class="v" id="hCelkem">–</div><div class="l">Celkem bodů</div></div>
+            <div class="stat"><div class="v" id="hZapasy">–</div><div class="l">Body ze zápasů</div></div>
+            <div class="stat"><div class="v" id="hDlouhodobe">–</div><div class="l">Body dlouhodobky</div></div>
+        </div>
+    </div>
+
+    <div class="blok">
+        <h2>🏅 Odznáčky</h2>
+        <div class="odznaky" id="odznaky"></div>
+    </div>
+
+    <div class="blok">
+        <h2>📋 Dlouhodobé tipy</h2>
+        <div class="dl-prehled" id="dlPrehled"></div>
+    </div>
+
+    <div class="blok">
+        <h2>⚽ Historie zápasových tipů (<span id="histPocet">0</span>)</h2>
+        <div id="historie"></div>
+    </div>
+</div>
+
+<script>
+const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
+const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+function hashCode(str) {
+    let h = 0;
+    for (let i = 0; i < String(str).length; i++) h = ((h << 5) - h + String(str).charCodeAt(i)) | 0;
+    return h;
+}
+
+async function load() {
+    const params = new URLSearchParams(location.search);
+    let uid = params.get('id');
+    if (!uid) {
+        const { data: { session } } = await sb.auth.getSession();
+        uid = session?.user?.id;
+    }
+    if (!uid) { document.getElementById('hJmeno').textContent = 'Hráč nenalezen'; return; }
+
+    const [zR, tR, dR] = await Promise.all([
+        sb.from('cl_zapasy').select('*'),
+        sb.from('cl_tipy_zapasy').select('*'),
+        sb.from('cl_dlouhodobe').select('*')
+    ]);
+    const zapasy = zR.data || [], tipy = tR.data || [], dlouhodobe = dR.data || [];
+    const zapasMap = {}; zapasy.forEach(z => zapasMap[z.id] = z);
+
+    const mojeTipy = tipy.filter(t => t.user_id === uid).sort((a, b) =>
+        new Date(zapasMap[b.zapas_id]?.deadline || 0) - new Date(zapasMap[a.zapas_id]?.deadline || 0));
+    const mujDl = dlouhodobe.find(d => d.user_id === uid);
+    if (!mojeTipy.length && !mujDl) { document.getElementById('hJmeno').textContent = 'Hráč zatím netipoval'; return; }
+
+    const jmeno = mojeTipy[0]?.jmeno || mujDl?.jmeno || '?';
+    const bodyZap = mojeTipy.reduce((s, t) => s + (t.body || 0), 0);
+    const bodyDl = (mujDl?.body1 || 0) + (mujDl?.body2 || 0);
+    const celkem = bodyZap + bodyDl;
+    const presnych = mojeTipy.filter(t => zapasMap[t.zapas_id]?.status === 'vyhodnoceno' &&
+        `${zapasMap[t.zapas_id].vysledek_d}:${zapasMap[t.zapas_id].vysledek_h}` === t.skore).length;
+    const vyhodnocenychZapasu = zapasy.filter(z => z.status === 'vyhodnoceno').length;
+    const ucast = vyhodnocenychZapasu ? Math.round(mojeTipy.filter(t => zapasMap[t.zapas_id]?.status === 'vyhodnoceno').length / vyhodnocenychZapasu * 100) : 0;
+
+    // celkový žebříček pro pozici hráče
+    const body = {};
+    tipy.forEach(t => { body[t.user_id] = body[t.user_id] || 0; body[t.user_id] += t.body || 0; });
+    dlouhodobe.forEach(d => { body[d.user_id] = body[d.user_id] || 0; body[d.user_id] += (d.body1 || 0) + (d.body2 || 0); });
+    const razeni = Object.entries(body).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+    const pozice = razeni.indexOf(uid) + 1;
+
+    const tip1Kompletni = mujDl?.tip1 && (mujDl.tip1.top8 || []).length === 8 && (mujDl.tip1.propadlici || []).length === 12 && mujDl.tip1.vitezZC;
+    const tip2Kompletni = mujDl?.tip2 && (mujDl.tip2.finale || []).length === 2 && mujDl.tip2.vitez;
+
+    // HERO
+    document.getElementById('hJmeno').textContent = jmeno;
+    document.getElementById('hCelkem').textContent = celkem;
+    document.getElementById('hZapasy').textContent = bodyZap;
+    document.getElementById('hDlouhodobe').textContent = bodyDl;
+
+    const titulyKandidati = [
+        { podm: pozice === 1 && celkem > 0, titul: 'VLÁDCE LIGY', hlasky: ['Pohár ještě nezvedl, ale žebříček mu leží u nohou.', 'Zatím vede – tabulka ho poslouchá.'] },
+        { podm: presnych >= 3, titul: 'VĚŠTEC VÝSLEDKŮ', hlasky: ['Přesné skóre mu leze do hlavy samo.', 'Vidí zápas dřív, než se odehraje.'] },
+        { podm: tip1Kompletni && tip2Kompletni, titul: 'KOMPLETISTA', hlasky: ['Od základní části po finále – nic mu neuniklo.', 'Vyplnil úplně všechno. Vzorný fanoušek.'] },
+        { podm: ucast >= 80 && mojeTipy.length >= 3, titul: 'VĚRNÝ FANOUŠEK', hlasky: ['Netipnul zápas? To se u něj nestává.', 'Účast blízko 100 %. Klobouk dolů.'] },
+    ].filter(k => k.podm);
+    const titul = titulyKandidati[0] || { titul: 'NADĚJNÝ TIPÉR', hlasky: ['Jeho velká chvíle teprve přijde.', 'Zatím sbírá zkušenosti.'] };
+    document.getElementById('hTitul').textContent = titul.titul;
+    document.getElementById('hHlaska').textContent = `„${titul.hlasky[Math.abs(hashCode(uid)) % titul.hlasky.length]}"`;
+
+    // ODZNÁČKY
+    const odz = [
+        { on: mojeTipy.length > 0, ic: '⚽', l: 'První tip', p: 'Vsadil aspoň na jeden zápas.' },
+        { on: presnych >= 1, ic: '🎯', l: 'Přesňák', p: `Trefil přesný výsledek (${presnych}×).` },
+        { on: presnych >= 3, ic: '🔮', l: 'Věštec', p: 'Trefil 3+ přesných výsledků.' },
+        { on: ucast >= 80 && mojeTipy.length >= 3, ic: '📅', l: 'Věrný fanoušek', p: 'Účast 80 %+ na vypsaných zápasech.' },
+        { on: !!tip1Kompletni, ic: '📋', l: 'Základní část hotova', p: 'Vyplnil kompletní dlouhodobku 1.' },
+        { on: !!tip2Kompletni, ic: '🏆', l: 'Cesta k titulu', p: 'Vyplnil kompletní dlouhodobku 2.' },
+        { on: !!mujDl?.zaplaceno, ic: '💰', l: 'Zaplaceno', p: 'Uhradil startovné 200 Kč.' },
+        { on: pozice === 1 && celkem > 0, ic: '👑', l: 'Vládce ligy', p: 'Vede celkový žebříček.' },
+        { on: pozice >= 2 && pozice <= 3 && celkem > 0, ic: '🥈', l: 'Na bedně', p: 'Drží 2.–3. místo v žebříčku.' },
+    ];
+    document.getElementById('odznaky').innerHTML = odz.map(o => `
+        <div class="odz ${o.on ? 'on' : ''}">
+            <div class="ic">${o.ic}</div>
+            <div class="l">${o.l}</div>
+            <div class="p">${o.p}</div>
+        </div>`).join('');
+
+    // DLOUHODOBKA PŘEHLED
+    const dlHtml = [];
+    if (mujDl?.tip1) {
+        const t = mujDl.tip1;
+        dlHtml.push(`<div class="dl-radek"><span>📋 Top 8 / propadlíci / vítěz ZČ</span><b>${(t.top8 || []).length}/8 · ${(t.propadlici || []).length}/12${t.vitezZC ? ' · ✓ vítěz' : ''}</b></div>`);
+        dlHtml.push(`<div class="dl-radek"><span>Body za dlouhodobku 1</span><b>${mujDl.body1 || 0}</b></div>`);
+    }
+    if (mujDl?.tip2) {
+        const t = mujDl.tip2;
+        dlHtml.push(`<div class="dl-radek"><span>🏆 QF/SF/finalisté/vítěz</span><b>${(t.qf || []).length}/8 · ${(t.sf || []).length}/4 · ${(t.finale || []).length}/2${t.vitez ? ' · ✓' : ''}</b></div>`);
+        dlHtml.push(`<div class="dl-radek"><span>Body za dlouhodobku 2</span><b>${mujDl.body2 || 0}</b></div>`);
+    }
+    document.getElementById('dlPrehled').innerHTML = dlHtml.length ? dlHtml.join('') : '<div class="prazdno">Zatím nevyplnil žádnou dlouhodobku.</div>';
+
+    // HISTORIE
+    document.getElementById('histPocet').textContent = mojeTipy.length;
+    document.getElementById('historie').innerHTML = mojeTipy.length
+        ? mojeTipy.map(t => {
+            const z = zapasMap[t.zapas_id];
+            const hotovo = z?.status === 'vyhodnoceno';
+            const trefil = hotovo && `${z.vysledek_d}:${z.vysledek_h}` === t.skore;
+            return `<div class="hist">
+                <span class="ikona">${!hotovo ? '⏳' : (trefil ? '✅' : '❌')}</span>
+                <div class="telo">
+                    <div class="t">${z ? `${z.domaci} vs ${z.hoste}` : 'Neznámý zápas'}</div>
+                    <div class="s">Tip: ${t.skore}${hotovo ? ` | Výsledek: ${z.vysledek_d}:${z.vysledek_h}` : ' | čeká na výsledek'}</div>
+                </div>
+                <div class="b">${hotovo ? `+${t.body || 0} b.` : '–'}</div>
+            </div>`;
+        }).join('')
+        : '<div class="prazdno">Zatím žádné tipy na zápasy.</div>';
+}
+load();
+</script>
+</body>
+</html>
