@@ -126,18 +126,16 @@
 <style>
 :root { --neon: #00f2ff; }
 .auth-input { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.06); border:1px solid rgba(0,242,255,0.25); border-radius:10px; padding:11px 13px; color:#fff; margin-top:8px; font-size:0.9em; outline:none; color-scheme: dark; }
+.auth-input:focus { border-color: var(--neon); }
 .auth-input:-webkit-autofill { -webkit-text-fill-color:#fff; -webkit-box-shadow:0 0 0 40px #16213a inset; }
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:99; }
 select.auth-input { background-color:#16213a; }
-select.auth-input, select.auth-input option { color:#fff; }
+select.auth-input, select.auth-input option { color:#fff; background:#16213a; }
 input[type="datetime-local"].auth-input { color:#fff; }
 input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { filter: invert(1); opacity:.7; }
-    .auth-input:focus { border-color: var(--neon); }
-.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:99; }
-select.auth-input option { background:#0f172a; }
 </style>
 </head>
 <body>
-<a href="index.html" style="display:inline-block; color:rgba(255,255,255,.45); text-decoration:none; font-size:.72em; margin:4px 0 10px;">← Zpět na tiket</a>
 <div class="container">
     <h1 style="color:var(--neon);">⚙️ ADMIN – MS V HOKEJI 2027</h1>
     <div id="statusMsg" style="display:none; padding:12px; border-radius:10px; font-weight:900; margin:10px 0;"></div>
@@ -145,7 +143,7 @@ select.auth-input option { background:#0f172a; }
     <!-- PŘIDÁNÍ ZÁPASU -->
     <div class="card">
         <div class="collapsible-header" onclick="toggleSection('secAdd')">➕ PŘIDAT ZÁPAS <span class="collapse-arrow">▼</span></div>
-        <div class="collapsible-body open" id="secAdd" style="max-height:600px;">
+        <div class="collapsible-body" id="secAdd">
             <input type="text" id="d" class="auth-input" list="staty" placeholder="Domácí">
             <input type="text" id="h" class="auth-input" list="staty" placeholder="Hosté">
             <datalist id="staty"></datalist>
@@ -158,7 +156,7 @@ select.auth-input option { background:#0f172a; }
                 <option value="FINALE">Finále</option>
             </select>
             <input type="datetime-local" id="dl" class="auth-input">
-            <button class="btn btn-green" onclick="addM()">PUBLIKOVAT ZÁPAS</button>
+            <button class="btn" onclick="addM()">PUBLIKOVAT ZÁPAS</button>
         </div>
     </div>
 
@@ -171,13 +169,13 @@ select.auth-input option { background:#0f172a; }
     <!-- HISTORIE -->
     <div class="card">
         <div class="collapsible-header" onclick="toggleSection('secHist')">📜 VYHODNOCENÉ <span class="collapse-arrow">▼</span></div>
-        <div class="collapsible-body" id="secHist"><div id="historyMatches"></div></div>
+        <div class="collapsible-body" id="secHist" style="display:none;"><div id="historyMatches"></div></div>
     </div>
 
     <!-- DLOUHODOBÉ TIPY -->
     <div class="card">
         <div class="collapsible-header" onclick="toggleSection('secDl')">⭐ DLOUHODOBÉ TIPY <span class="collapse-arrow">▼</span></div>
-        <div class="collapsible-body" id="secDl">
+        <div class="collapsible-body" id="secDl" style="display:none;">
             <div id="dlList"></div>
             <hr style="opacity:0.15; margin:20px 0;">
             <h3 style="color:#f1c40f;">Finální výsledky turnaje</h3>
@@ -237,9 +235,7 @@ async function init() {
 
 function toggleSection(id) {
     const el = document.getElementById(id);
-    const otevreno = el.classList.toggle('open');
-    el.style.display = '';
-    el.style.maxHeight = otevreno ? el.scrollHeight + 400 + 'px' : '0';
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 function msg(text, ok = true) {
