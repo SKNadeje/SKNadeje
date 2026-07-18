@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Champions League · Naděje</title>
+<link rel="icon" href="../logo-nadeje.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+    --fial: #a78bfa;
+    --fial-glow: rgba(167,139,250,.35);
+    --gold: #d4af37;
+    --dark: #14101f;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+    margin: 0;
+    background: radial-gradient(ellipse at top, #241b3a 0%, var(--dark) 65%);
+    font-family: Inter, sans-serif;
+    color: #f0e6c8;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* jemné hvězdné pozadí připomínající noční stadion */
+.stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.stars span {
+    position: absolute; width: 2px; height: 2px; background: rgba(167,139,250,.6);
+    border-radius: 50%; animation: tw 3.5s ease-in-out infinite;
+}
+@keyframes tw { 0%, 100% { opacity: .15; } 50% { opacity: .9; } }
+@media (prefers-reduced-motion: reduce) { .stars span { animation: none; opacity: .4; } }
+
+.back {
+    position: fixed; top: 18px; left: 18px; z-index: 5;
+    color: rgba(255,255,255,.4); text-decoration: none; font-size: .72rem;
+}
+.back:hover { color: var(--fial); }
+
+.karta {
+    max-width: 480px; width: 100%;
+    text-align: center;
+    position: relative; z-index: 2;
+    animation: vstup .7s ease both;
+}
+@keyframes vstup { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .karta, .logo, .star-badge { animation: none !important; } }
+
+/* ===== ODZNAK/EMBLÉM ===== */
+.logo {
+    width: 168px; height: 168px; margin: 0 auto 18px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 35% 30%, rgba(167,139,250,.22), rgba(20,16,31,.4) 70%);
+    border: 1px solid rgba(167,139,250,.5);
+    box-shadow: 0 0 50px var(--fial-glow);
+    padding: 10px;
+    position: relative;
+    animation: dych 4s ease-in-out infinite;
+}
+@keyframes dych {
+    0%, 100% { box-shadow: 0 0 40px var(--fial-glow); }
+    50% { box-shadow: 0 0 65px rgba(167,139,250,.5); }
+}
+.logo .star-ring {
+    position: absolute; inset: -6px; border-radius: 50%;
+    border: 1px dashed rgba(212,175,55,.35);
+    animation: spin 40s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.logo-inner {
+    width: 100%; height: 100%; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 4.6rem;
+}
+
+.zalozeno { font-size: 10px; letter-spacing: 4px; color: rgba(212,175,55,.6); text-transform: uppercase; font-weight: 700; }
+h1 {
+    font-size: 1.9rem; font-weight: 900; letter-spacing: 1.5px;
+    margin: 10px 0 2px; text-transform: uppercase; line-height: 1.2;
+    background: linear-gradient(135deg, #f0e6c8, var(--fial) 45%, #f0e6c8 70%, var(--gold));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: var(--fial);
+}
+.motto { font-size: .74rem; color: #8a80a8; font-style: italic; margin-bottom: 20px; }
+.line { width: 110px; height: 1px; background: linear-gradient(90deg, transparent, var(--fial), transparent); margin: 0 auto 22px; }
+
+/* ===== INFO PÁSEK ===== */
+.info-pasek {
+    display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 22px;
+}
+.info-pasek span {
+    font-size: .66rem; font-weight: 800; letter-spacing: .5px;
+    background: rgba(167,139,250,.1); border: 1px solid rgba(167,139,250,.3);
+    color: var(--fial); padding: 5px 12px; border-radius: 100px;
+}
+
+/* ===== HLÁŠKA ===== */
+.hlaska {
+    min-height: 60px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .86rem; line-height: 1.6; color: #cbd5e1;
+    padding: 0 6px; margin-bottom: 26px;
+    transition: opacity .4s;
+}
+.hlaska.mizi { opacity: 0; }
+.hlaska b { color: var(--gold); font-weight: 800; }
+
+/* ===== VSTUP ===== */
+.vstup {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, var(--fial), #6f4fd6);
+    color: #0e0a1c; text-decoration: none;
+    font-size: .85rem; font-weight: 900; letter-spacing: 2px;
+    padding: 15px 38px; border-radius: 12px; text-transform: uppercase;
+    box-shadow: 0 5px 22px var(--fial-glow);
+    transition: transform .2s, box-shadow .2s;
+}
+.vstup:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(167,139,250,.5); }
+.vstup:active { transform: translateY(0); }
+
+.tisk { margin-top: 26px; font-size: .58rem; line-height: 1.8; color: #4a3f66; }
+.tisk b { color: #6b5f8a; }
+
+@media (max-width: 420px) {
+    h1 { font-size: 1.45rem; }
+    .logo { width: 130px; height: 130px; }
+    .logo-inner { font-size: 3.4rem; }
+}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<a class="back" href="../hub.html">← Zpět na výběr turnajů</a>
+
+<div class="karta">
+    <div class="logo">
+        <div class="star-ring"></div>
+        <div class="logo-inner" id="logoInner">
+            <img src="logo-cl.png" alt="Champions League" style="width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 3px 10px rgba(0,0,0,.5));"
+                 onerror="this.parentNode.innerHTML='⭐'">
+        </div>
+    </div>
+
+    <div class="zalozeno">Sázková kancelář Naděje uvádí</div>
+    <h1>Champions League<br>Tipovačka</h1>
+    <div class="motto">„Osm hvězd nahoře, dvanáct propadáků dole. Kam patříš ty?"</div>
+    <div class="line"></div>
+
+    <div class="info-pasek">
+        <span>🏆 CELÁ SEZÓNA 2026/27</span>
+        <span>💰 STARTOVNÉ 200 KČ</span>
+        <span>⭐ 36 TÝMŮ</span>
+    </div>
+
+    <div class="hlaska" id="hlaska"></div>
+
+    <a class="vstup" href="index.html">Vstoupit ⭐</a>
+
+    <div class="tisk">
+        <b>Upozornění klubu:</b> Tipování top 8 nezaručuje, že váš klub bude v top 8.<br>
+        Kancelář nenese odpovědnost za nervy zničené v prodloužení play-off.
+    </div>
+</div>
+
+<script>
+/* ============================================================
+   HVĚZDNÉ POZADÍ – náhodné tečky, čistě dekorace
+   ============================================================ */
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 40; i++) {
+    const s = document.createElement('span');
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.animationDelay = (Math.random() * 3.5) + 's';
+    starsEl.appendChild(s);
+}
+
+/* ============================================================
+   VTIPNÉ HLÁŠKY
+   ============================================================ */
+const HLASKY = [
+    'Tvůj tip na top 8 je stejně jistý jako <b>los play-off pásma</b>.',
+    '<b>36 týmů, jeden pohár</b> – a ty si musíš vybrat jen jednoho vítěze. Soucítíme.',
+    'Propadlíci potřebují tvou lásku taky. <b>Tipni je s hrdostí.</b>',
+    'Kanadské bodování je věda. <b>My tipujeme podle jména.</b>',
+    'Vítěz základní části bude stejně vyřazený v osmifinále. <b>Tradice.</b>',
+    'Naši analytici sledují formu klubů. <b>Ty sleduj, kdo hraje v televizi.</b>',
+    'Dlouhodobý tip = dlouhodobé zklamání. <b>Ale s klasou.</b>',
+    'Pavouk se poskládá sám. <b>Tvoje nervy ne.</b>'
+];
+
+const el = document.getElementById('hlaska');
+let idx = Math.floor(Math.random() * HLASKY.length);
+function ukaz() { el.innerHTML = HLASKY[idx]; el.classList.remove('mizi'); }
+ukaz();
+setInterval(() => {
+    el.classList.add('mizi');
+    setTimeout(() => { idx = (idx + 1) % HLASKY.length; ukaz(); }, 400);
+}, 6000);
+</script>
+</body>
+</html>
