@@ -1026,17 +1026,29 @@ function renderZapasy(now) {
         const bList = card.querySelector(`#bets-list-${m.id}`);
         sazkyZapasu.forEach(s => {
             const reveal = isClosed || isEvaluated;
-            let icon = '⏳', extra = '';
+           let obsah = '';
             if (isEvaluated) {
-                icon = s.hit_skore ? '🏆' : (s.hit_trend ? '✅' : '❌');
-                extra = ` <span style="opacity:0.6; font-size:0.85em;">+${s.nb} NB${s.vyhra_kc > 0 ? ` · 💰 ${s.vyhra_kc} Kč` : ''}</span>`;
+                const badge = (ok, txt) => `<span style="display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:8px; font-size:0.8em; font-weight:800; ${ok
+                    ? 'background:rgba(39,174,96,.16); border:1px solid rgba(39,174,96,.55); color:#7bffb0;'
+                    : 'background:rgba(231,76,60,.08); border:1px solid rgba(231,76,60,.3); color:#ff9c93; opacity:.8;'}">${txt} ${ok ? '✓' : '✗'}</span>`;
+                obsah = `<span style="display:inline-flex; flex-wrap:wrap; gap:5px; align-items:center; justify-content:flex-end;">
+                    ${badge(s.hit_skore, `🥅 ${s.skore}`)}
+                    ${s.strelec ? badge(s.hit_strelec, `🎯 ${s.strelec}`) : ''}
+                    ${badge(s.hit_trend, '📈')}
+                    <b style="color:#ff00ea; margin-left:4px;">+${s.nb} NB</b>
+                    ${s.vyhra_kc > 0 ? `<b style="color:#ffd75e;">💰 ${s.vyhra_kc} Kč</b>` : ''}
+                </span>`;
+            } else {
+                obsah = (!reveal && s.skryt && s.user_id !== currentUserId)
+                    ? '🙈 skrytý tip'
+                    : `${s.skore}${s.strelec ? ' + ' + s.strelec : ''}`;
             }
-            const tipText = (!reveal && s.skryt && s.user_id !== currentUserId)
-                ? '🙈 skrytý tip'
-                : `${s.skore}${s.strelec ? ' + ' + s.strelec : ''}`;
             const row = document.createElement('div');
             row.style.cssText = 'display:flex; justify-content:space-between; padding:8px 4px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.9em;';
-            row.innerHTML = `<span style="font-weight:700; cursor:pointer; text-decoration:underline; text-decoration-color:rgba(0,242,255,.35);" onclick="location.href='profil.html?id=${s.user_id}'">${icon} ${s.jmeno}</span><span>${tipText}${extra}</span>`;
+           row.style.flexWrap = 'wrap';
+            row.style.gap = '6px';
+            row.style.alignItems = 'center';
+            row.innerHTML = `<span style="font-weight:800; cursor:pointer; text-decoration:underline; text-decoration-color:rgba(0,242,255,.35);" onclick="location.href='profil.html?id=${s.user_id}'">${isEvaluated && s.vyhra_kc > 0 ? '🏆 ' : ''}${s.jmeno}</span><span style="text-align:right; flex:1;">${obsah}</span>`;
             bList.appendChild(row);
         });
     });
