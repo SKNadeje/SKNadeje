@@ -1036,7 +1036,7 @@ function renderZapasy(now) {
                 : `${s.skore}${s.strelec ? ' + ' + s.strelec : ''}`;
             const row = document.createElement('div');
             row.style.cssText = 'display:flex; justify-content:space-between; padding:8px 4px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.9em;';
-            row.innerHTML = `<span style="font-weight:700;">${icon} ${s.jmeno}</span><span>${tipText}${extra}</span>`;
+            row.innerHTML = `<span style="font-weight:700; cursor:pointer; text-decoration:underline; text-decoration-color:rgba(0,242,255,.35);" onclick="location.href='profil.html?id=${s.user_id}'">${icon} ${s.jmeno}</span><span>${tipText}${extra}</span>`;
             bList.appendChild(row);
         });
     });
