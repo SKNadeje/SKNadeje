@@ -132,10 +132,115 @@ async function init() {
         <div class="karta">
             <h2>💰 Startovné (200 Kč)</h2>
             <div id="seznamDl">Načítám…</div>
+        </div>
+
+        <div class="karta" style="border-color:rgba(239,68,68,.35);">
+            <h2 style="color:#ff8a7a;">🧪 Testovací data</h2>
+            <p style="font-size:.72em; opacity:.6; margin-top:-6px;">Vloží ukázkové týmy, zápasy a tipy – včetně tvého účtu a pár dalších registrovaných hráčů (bere reálné existující účty z appky, ne smyšlené – DB to jinak nepustí kvůli vazbě na přihlášení).</p>
+            <button class="btn" onclick="vlozTestData()">➕ VLOŽIT TESTOVACÍ DATA</button>
+            <button class="btn btn-red" style="margin-top:8px;" onclick="smazTestData()">🗑 SMAZAT VŠECHNA CL DATA (RESET)</button>
         </div>`;
     await nactiStav();
     await nactiZapasy();
     await nactiDlouhodobe();
+}
+
+/* ---------- TESTOVACÍ DATA ---------- */
+const TEST_TYMY = [
+    "Real Madrid","Barcelona","Atlético Madrid","Athletic Bilbao",
+    "Manchester City","Liverpool","Arsenal","Chelsea","Aston Villa","Newcastle",
+    "Bayern Mnichov","Leverkusen","Dortmund","RB Lipsko","Stuttgart",
+    "Inter Milán","AC Milán","Juventus","Atalanta","Boloňa",
+    "PSG","Monako","Brest","Lille",
+    "Sporting CP","Benfica","Porto",
+    "Feyenoord","PSV Eindhoven","Ajax",
+    "Celtic","Club Bruggy",
+    "Slavia Praha","Sparta Praha",
+    "Galatasaray","Crvena zvezda"
+];
+
+async function vlozTestData() {
+    if (!confirm('Vložit testovací data (36 týmů + 4 zápasy + tipy od tebe a pár dalších registrovaných hráčů)?')) return;
+    try {
+        // 1) Týmy + deadline dlouhodobky 1
+        const dl1 = new Date(Date.now() + 7 * 86400000).toISOString();
+        await sb.from('cl_stav').upsert({ id: 1, tymy: TEST_TYMY, deadline_tip1: dl1 });
+
+        // 2) Testovací zápasy (různé stavy: otevřený, brzy uzavřený, uzavřený bez výsledku, vyhodnocený)
+        const zitra = new Date(Date.now() + 3 * 86400000).toISOString();
+        const zaTydny = new Date(Date.now() + 5 * 86400000).toISOString();
+        const vcera = new Date(Date.now() - 86400000).toISOString();
+
+        const { data: novy1 } = await sb.from('cl_zapasy').insert({ domaci: 'Slavia Praha', hoste: 'Real Madrid', faze: 'ZC', deadline: zitra }).select().single();
+        const { data: novy2 } = await sb.from('cl_zapasy').insert({ domaci: 'Manchester City', hoste: 'Bayern Mnichov', faze: 'ZC', deadline: zaTydny }).select().single();
+        const { data: novy3 } = await sb.from('cl_zapasy').insert({ domaci: 'Inter Milán', hoste: 'Arsenal', faze: 'ZC', deadline: vcera }).select().single();
+        const { data: novy4 } = await sb.from('cl_zapasy').insert({
+            domaci: 'Sparta Praha', hoste: 'Barcelona', faze: 'ZC', deadline: vcera,
+            status: 'vyhodnoceno', vysledek_d: 0, vysledek_h: 0
+        }).select().single();
+
+        // 3) Tvůj vlastní testovací tip
+        const { data: { session } } = await sb.auth.getSession();
+        const vsichniTiperi = [];
+        if (session) {
+            const { data: h } = await sb.from('hraci').select('jmeno').eq('user_id', session.user.id).maybeSingle();
+            vsichniTiperi.push({ user_id: session.user.id, jmeno: h?.jmeno || session.user.email.split('@')[0] });
+        }
+
+        // 4) "Fiktivní" tipéři = skuteční registrovaní hráči (z hraci), aby nešlo o FK cizí ID
+        const { data: ostatni } = await sb.from('hraci').select('user_id, jmeno').neq('user_id', session?.user?.id || '').limit(4);
+        (ostatni || []).forEach(o => vsichniTiperi.push(o));
+
+        if (vsichniTiperi.length <= 1) {
+            msg('⚠️ Zápasy vloženy, ale v tabulce "hraci" nejsou žádní další registrovaní hráči – testuje se jen s tvým účtem. Ať se test appka "zalidní", ať se aspoň pár kamarádů přihlásí přes welcome.html, pak spusť vložení znovu.', true);
+        }
+
+        // Varianty tipů na zápasy – různé skóre, ať je co srovnávat na žebříčku/barometru
+        const varianty = ['1:4', '2:2', '1:1', '3:1', '0:2'];
+        const zapasyProTip = [novy1, novy2, novy3].filter(Boolean);
+        const tipyNaVlozeni = [];
+        vsichniTiperi.forEach((t, i) => {
+            zapasyProTip.forEach((z, zi) => {
+                tipyNaVlozeni.push({ zapas_id: z.id, user_id: t.user_id, jmeno: t.jmeno, skore: varianty[(i + zi) % varianty.length] });
+            });
+            // všichni mají tip i na vyhodnocený zápas – někdo trefí 0:0, někdo ne
+            if (novy4) tipyNaVlozeni.push({ zapas_id: novy4.id, user_id: t.user_id, jmeno: t.jmeno, skore: i % 2 === 0 ? '0:0' : '1:0', body: i % 2 === 0 ? 5 : 0 });
+        });
+        if (tipyNaVlozeni.length) await sb.from('cl_tipy_zapasy').insert(tipyNaVlozeni);
+
+        // Dlouhodobé tipy – variace výběru z TEST_TYMY, ať je vidět rozdílné pokrytí top 8 / propadlíků
+        const dlTipyNaVlozeni = vsichniTiperi.map((t, i) => ({
+            user_id: t.user_id, jmeno: t.jmeno,
+            tip1: {
+                top8: TEST_TYMY.slice(i, i + 8),
+                vitezZC: TEST_TYMY[i],
+                propadlici: TEST_TYMY.slice(-12 - i, TEST_TYMY.length - i)
+            },
+            zaplaceno: i % 2 === 0
+        }));
+        if (dlTipyNaVlozeni.length) await sb.from('cl_dlouhodobe').upsert(dlTipyNaVlozeni, { onConflict: 'user_id' });
+
+        msg(`✅ Testovací data vložena (${vsichniTiperi.length} tipér${vsichniTiperi.length === 1 ? '' : 'ů'})!`);
+        await nactiStav(); await nactiZapasy();
+    } catch (e) {
+        msg('Chyba: ' + e.message, true);
+    }
+}
+
+async function smazTestData() {
+    if (!confirm('POZOR: Smaže úplně všechna CL data (zápasy, tipy, dlouhodobky, seznam týmů). Nevratné. Pokračovat?')) return;
+    if (!confirm('Fakt jistě? Tohle smaže i ostrá data, pokud už nějaká jsou.')) return;
+    try {
+        await sb.from('cl_zapasy').delete().neq('id', 0);          // kaskádou smaže i cl_tipy_zapasy
+        await sb.from('cl_dlouhodobe').delete().neq('user_id', '00000000-0000-0000-0000-000000000000');
+        await sb.from('cl_stav').update({
+            tymy: [], osmifinaliste: [], deadline_tip1: null, deadline_tip2: null, vysledky: {}
+        }).eq('id', 1);
+        msg('🗑 Vše smazáno.');
+        location.reload();
+    } catch (e) {
+        msg('Chyba: ' + e.message, true);
+    }
 }
 
 async function nactiStav() {
