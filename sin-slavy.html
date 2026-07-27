@@ -16,14 +16,9 @@ body {
     min-height: 100vh;
     padding: 44px 16px 32px;
 }
-.wrap { max-width: 700px; margin: 0 auto; }
+.wrap { max-width: 720px; margin: 0 auto; }
 
-/* ===== HLAVIČKA ===== */
-.back {
-    display: inline-flex; align-items: center; gap: 6px;
-    color: #8a93ad; text-decoration: none; font-size: .72rem;
-    margin-bottom: 22px; transition: color .2s;
-}
+.back { display: inline-flex; align-items: center; gap: 6px; color: #8a93ad; text-decoration: none; font-size: .72rem; margin-bottom: 22px; transition: color .2s; }
 .back:hover { color: #d4af37; }
 .presents { text-align: center; font-size: 10px; letter-spacing: 4px; color: rgba(212,175,55,.55); text-transform: uppercase; font-weight: 700; }
 h1 {
@@ -33,108 +28,99 @@ h1 {
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent; color: #d4af37;
 }
-.sub { text-align: center; font-size: .76rem; color: #5a6480; margin-bottom: 14px; }
-.line { width: 100px; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); margin: 0 auto 34px; }
+.sub { text-align: center; font-size: .76rem; color: #5a6480; margin-bottom: 20px; }
 
-/* ===== KARTA TURNAJE ===== */
-.turnaj {
-    background: rgba(15,20,35,.75);
-    border: 1px solid rgba(212,175,55,.25);
-    border-radius: 18px;
-    padding: 24px 22px 20px;
-    margin-bottom: 18px;
-    animation: fadeUp .5s ease both;
+/* ===== TABY ===== */
+.taby { display: flex; gap: 8px; justify-content: center; margin-bottom: 30px; }
+.tab {
+    color: rgba(240,230,200,.6); background: transparent; font-family: inherit;
+    font-size: .7em; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    padding: 10px 22px; border: 1px solid rgba(212,175,55,.25); border-radius: 100px;
+    cursor: pointer; transition: all .2s;
 }
-.turnaj:nth-child(2) { animation-delay: .1s; }
-.turnaj:nth-child(3) { animation-delay: .2s; }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .turnaj { animation: none; } }
+.tab.on { color: #d4af37; border-color: #d4af37; background: rgba(212,175,55,.08); box-shadow: 0 0 14px rgba(212,175,55,.15); }
+.panel { display: none; }
+.panel.on { display: block; animation: fadeUp .4s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
+/* ===== SUMÁŘ ===== */
+.sum-hrac {
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(15,20,35,.6); border: 1px solid rgba(212,175,55,.15);
+    border-radius: 12px; padding: 11px 15px; margin-bottom: 7px;
+}
+.sum-hrac .jm { flex: 1; font-weight: 800; font-size: .92em; }
+.sum-hrac .odznaky { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.sum-badge {
+    font-size: .68em; font-weight: 800; padding: 4px 10px; border-radius: 100px;
+    background: rgba(148,163,184,.12); border: 1px solid rgba(148,163,184,.3); color: #cbd5e1;
+    white-space: nowrap;
+}
+.sum-badge.zlato { background: rgba(212,175,55,.16); border-color: #d4af37; color: #d4af37; }
+.sum-badge.stribro { background: rgba(203,213,225,.14); border-color: #cbd5e1; color: #e2e8f0; }
+.sum-badge.bronz { background: rgba(180,100,40,.14); border-color: #d97b3a; color: #d97b3a; }
+
+/* ===== ARCHIV KARTA TURNAJE ===== */
+.turnaj {
+    background: rgba(15,20,35,.75); border: 1px solid rgba(212,175,55,.25);
+    border-radius: 18px; padding: 24px 22px 20px; margin-bottom: 24px;
+}
 .thead { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
 .tlogo {
-    width: 74px; height: 74px; border-radius: 14px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; font-size: 2rem;
+    width: 68px; height: 68px; border-radius: 14px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 1.9rem;
     background: linear-gradient(160deg, rgba(240,230,200,.14), rgba(212,175,55,.06));
     border: 1px solid rgba(212,175,55,.3); padding: 7px;
 }
 .tlogo img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
-.tname { font-size: 1.15rem; font-weight: 800; color: #f0e6c8; }
-.tmeta { font-size: .7rem; color: #8a93ad; margin-top: 4px; line-height: 1.5; }
-.rok {
-    margin-left: auto; align-self: flex-start;
-    font-size: .62rem; font-weight: 800; letter-spacing: 1.5px;
-    background: rgba(212,175,55,.13); color: #d4af37;
-    border: 1px solid rgba(212,175,55,.35);
-    padding: 4px 12px; border-radius: 999px;
-}
+.tname { font-size: 1.1rem; font-weight: 800; color: #f0e6c8; }
+.tmeta { font-size: .7rem; color: #8a93ad; margin-top: 4px; }
+.rok { margin-left: auto; align-self: flex-start; font-size: .6rem; font-weight: 800; letter-spacing: 1.5px; background: rgba(212,175,55,.13); color: #d4af37; border: 1px solid rgba(212,175,55,.35); padding: 4px 12px; border-radius: 999px; }
 
-/* ===== PÓDIUM ===== */
-.podium { display: flex; align-items: flex-end; justify-content: center; gap: 10px; margin: 6px 0 20px; }
-.pcol { display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 160px; }
+/* PÓDIUM (auto z top 3) */
+.podium { display: flex; align-items: flex-end; justify-content: center; gap: 10px; margin: 6px 0 18px; }
+.pcol { display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 150px; }
 .pname { font-size: .78rem; font-weight: 800; text-align: center; word-break: break-word; margin-bottom: 3px; }
 .ppts { font-size: .62rem; color: #8a93ad; margin-bottom: 8px; }
-.pblok {
-    width: 100%; border-radius: 10px 10px 0 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-weight: 900; gap: 2px; padding: 8px 4px;
-}
-.pblok .medaile { font-size: 1.3rem; }
-.pblok .cislo { font-size: 1rem; }
-.p1 .pblok { height: 88px; background: linear-gradient(180deg, rgba(212,175,55,.28), rgba(212,175,55,.08)); border: 1px solid rgba(212,175,55,.45); border-bottom: none; color: #d4af37; }
-.p1 .pname { color: #d4af37; font-size: .88rem; }
-.p2 .pblok { height: 62px; background: rgba(148,163,184,.12); border: 1px solid rgba(148,163,184,.3); border-bottom: none; color: #cbd5e1; }
+.pblok { width: 100%; border-radius: 10px 10px 0 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; gap: 2px; padding: 8px 4px; }
+.pblok .medaile { font-size: 1.25rem; }
+.p1 .pblok { height: 80px; background: linear-gradient(180deg, rgba(212,175,55,.28), rgba(212,175,55,.08)); border: 1px solid rgba(212,175,55,.45); border-bottom: none; color: #d4af37; }
+.p1 .pname { color: #d4af37; font-size: .85rem; }
+.p2 .pblok { height: 58px; background: rgba(148,163,184,.12); border: 1px solid rgba(148,163,184,.3); border-bottom: none; color: #cbd5e1; }
 .p2 .pname { color: #cbd5e1; }
-.p3 .pblok { height: 44px; background: rgba(180,100,40,.12); border: 1px solid rgba(180,100,40,.35); border-bottom: none; color: #d97b3a; }
+.p3 .pblok { height: 42px; background: rgba(180,100,40,.12); border: 1px solid rgba(180,100,40,.35); border-bottom: none; color: #d97b3a; }
 .p3 .pname { color: #d97b3a; }
-.podstavec { height: 1px; background: linear-gradient(90deg, transparent, rgba(212,175,55,.4), transparent); margin-bottom: 18px; }
 
-/* ===== STATISTIKY ===== */
-.stats { display: flex; justify-content: center; gap: 26px; flex-wrap: wrap; margin-bottom: 20px; }
+/* ZBYTEK ŽEBŘÍČKU */
+.rozdelovac { display: flex; align-items: center; gap: 10px; margin: 6px 4px 10px; }
+.rozdelovac .cara { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(212,175,55,.25), transparent); }
+.rozdelovac .lbl { font-size: 9px; color: rgba(212,175,55,.45); letter-spacing: 2px; text-transform: uppercase; font-weight: 700; white-space: nowrap; }
+.zb-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 9px; margin-bottom: 4px; font-size: .85em; }
+.zb-row:nth-child(odd) { background: rgba(255,255,255,.02); }
+.zb-row .poradi { width: 26px; font-weight: 800; color: rgba(240,230,200,.4); flex-shrink: 0; text-align: center; }
+.zb-row .jm { flex: 1; font-weight: 700; }
+.zb-row .b { font-weight: 800; color: #4db8ff; }
+
+.stats { display: flex; justify-content: center; gap: 26px; flex-wrap: wrap; margin: 18px 0 20px; }
 .stat { text-align: center; }
 .stat .v { font-size: 1.05rem; font-weight: 900; color: #f0e6c8; }
 .stat .l { font-size: .58rem; letter-spacing: 1.5px; color: #5a6480; text-transform: uppercase; margin-top: 2px; }
 
-/* ===== AKCE ===== */
 .akce { display: flex; gap: 10px; flex-wrap: wrap; }
-.btn {
-    flex: 1; min-width: 140px;
-    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-    padding: 11px 16px; border-radius: 10px;
-    font-size: .72rem; font-weight: 800; letter-spacing: .5px;
-    text-decoration: none; transition: all .2s; text-transform: uppercase;
-}
-.btn-gold {
-    background: linear-gradient(135deg, #d4af37, #9a7b1e); color: #05070f;
-    box-shadow: 0 4px 14px rgba(212,175,55,.25);
-}
+.btn { flex: 1; min-width: 140px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 11px 16px; border-radius: 10px; font-size: .72rem; font-weight: 800; letter-spacing: .5px; text-decoration: none; transition: all .2s; text-transform: uppercase; }
+.btn-gold { background: linear-gradient(135deg, #d4af37, #9a7b1e); color: #05070f; box-shadow: 0 4px 14px rgba(212,175,55,.25); }
 .btn-gold:hover { box-shadow: 0 6px 20px rgba(212,175,55,.4); transform: translateY(-1px); }
-.btn-ghost {
-    background: transparent; color: #d4af37;
-    border: 1px solid rgba(212,175,55,.35);
-}
+.btn-ghost { background: transparent; color: #d4af37; border: 1px solid rgba(212,175,55,.35); }
 .btn-ghost:hover { background: rgba(212,175,55,.08); border-color: rgba(212,175,55,.6); }
 
-/* ===== PRÁZDNÝ STAV ===== */
-.empty {
-    text-align: center; padding: 50px 20px;
-    border: 1px dashed rgba(212,175,55,.25); border-radius: 18px;
-    color: #5a6480; font-size: .8rem; line-height: 1.7;
-}
+.empty { text-align: center; padding: 50px 20px; border: 1px dashed rgba(212,175,55,.25); border-radius: 18px; color: #5a6480; font-size: .8rem; line-height: 1.7; }
 .empty .big { font-size: 2.2rem; margin-bottom: 10px; opacity: .6; }
-
-.foot {
-    margin-top: 30px; padding-top: 18px;
-    border-top: 1px solid rgba(212,175,55,.12);
-    text-align: center;
-    font-size: .62rem; color: rgba(212,175,55,.35);
-    letter-spacing: 2px; text-transform: uppercase;
-}
+.foot { margin-top: 30px; padding-top: 18px; border-top: 1px solid rgba(212,175,55,.12); text-align: center; font-size: .62rem; color: rgba(212,175,55,.35); letter-spacing: 2px; text-transform: uppercase; }
 
 @media (max-width: 560px) {
     body { padding-top: 30px; }
     h1 { font-size: 1.5rem; letter-spacing: 4px; }
     .thead { flex-wrap: wrap; }
-    .stats { gap: 18px; }
     .btn { min-width: 100%; }
 }
 </style>
@@ -146,9 +132,14 @@ h1 {
     <div class="presents">SK Naděje presents</div>
     <h1>📜 Síň slávy</h1>
     <div class="sub">Dohrané turnaje, šampioni a kroniky</div>
-    <div class="line"></div>
 
-    <div id="obsah"></div>
+    <div class="taby">
+        <button class="tab on" id="tab-sumar" onclick="prepniTab('sumar')">📋 Sumář</button>
+        <button class="tab" id="tab-archiv" onclick="prepniTab('archiv')">🗄️ Archiv turnajů</button>
+    </div>
+
+    <div class="panel on" id="panel-sumar"></div>
+    <div class="panel" id="panel-archiv"></div>
 
     <div class="foot">SK Naděje · tipovačky od 2026</div>
 </div>
@@ -156,92 +147,151 @@ h1 {
 <script>
 /* ============================================================
    ARCHIV TURNAJŮ – po dohrání turnaje sem přidej záznam.
-   podium: [1., 2., 3. místo] – jméno + body (+ výhra v Kč)
-   Pole nech prázdné [], dokud turnaj běží – ukáže se
-   "zatím žádný dohraný turnaj".
+   zebricek: KOMPLETNÍ finální pořadí [{jmeno, body}], seřazené
+   sestupně podle bodů. Pódium (top 3) a Sumář se odvodí automaticky.
    ============================================================ */
 const ARCHIV = [
-    /* Odkomentuj a doplň po skončení MS 2026:
     {
         nazev: 'MS ve fotbale 2026',
         meta: 'USA · Mexiko · Kanada · 11. 6. – 19. 7. 2026',
         rok: '2026',
         logo: 'logo-wc2026.png',
         emoji: '🏆',
-        podium: [
-            { jmeno: 'Trnda',   body: 187, vyhra: 3000 },
-            { jmeno: 'Kominek', body: 175, vyhra: 1500 },
-            { jmeno: 'Grof',    body: 168, vyhra: 500 }
-        ],
         stats: [
             { v: '25', l: 'hráčů' },
-            { v: '5 000 Kč', l: 'bank' },
-            { v: '104', l: 'zápasů' },
-            { v: '223', l: 'gólů' }
+            { v: '5 000 Kč', l: 'bank' }
+            // Doplň klidně další, např. { v:'104', l:'zápasů' }, { v:'223', l:'gólů' }
         ],
         aplikace: 'wc2026.html',
-        kronika: 'kronika-wc2026.pdf'
-    },
-    */
+        kronika: 'kronika-wc2026.pdf',
+        zebricek: [
+            { jmeno: 'Jan Rathouský', body: 250 },
+            { jmeno: 'Peca', body: 225 },
+            { jmeno: 'Deny', body: 221 },
+            { jmeno: 'Grof', body: 220 },
+            { jmeno: 'Tácek', body: 211 },
+            { jmeno: 'Trnda', body: 202 },
+            { jmeno: 'DtzDK', body: 198 },
+            { jmeno: 'King of football', body: 198 },
+            { jmeno: 'Adam H.', body: 196 },
+            { jmeno: 'Stehla', body: 194 },
+            { jmeno: 'Vojtěch', body: 193 },
+            { jmeno: 'Kachla', body: 190 },
+            { jmeno: 'Tomáš Brauner', body: 190 },
+            { jmeno: 'Lázik', body: 188 },
+            { jmeno: 'Kominek', body: 182 },
+            { jmeno: 'Bimboš', body: 182 },
+            { jmeno: 'Lukas', body: 180 },
+            { jmeno: 'FC Kopyta', body: 179 },
+            { jmeno: 'Jaromir', body: 177 },
+            { jmeno: 'Serba', body: 177 },
+            { jmeno: 'Radovan', body: 165 },
+            { jmeno: 'Mocl', body: 165 },
+            { jmeno: 'churs', body: 147 },
+            { jmeno: 'Wondris', body: 136 },
+            { jmeno: 'r1c1', body: 124 }
+        ]
+    }
 ];
 
-function podiumHtml(p) {
-    if (!p || p.length === 0) return '';
-    const col = (idx, cls, medaile, cislo) => {
-        const h = p[idx];
-        if (!h) return `<div class="pcol ${cls}"></div>`;
-        return `<div class="pcol ${cls}">
-            <div class="pname">${h.jmeno}</div>
-            <div class="ppts">${h.body} b.${h.vyhra ? ' · ' + h.vyhra.toLocaleString('cs-CZ') + ' Kč' : ''}</div>
-            <div class="pblok"><span class="medaile">${medaile}</span><span class="cislo">${cislo}</span></div>
-        </div>`;
-    };
-    // pořadí sloupců: 2. – 1. – 3. (klasické pódium)
-    return `<div class="podium">
-        ${col(1, 'p2', '🥈', '2')}
-        ${col(0, 'p1', '🏆', '1')}
-        ${col(2, 'p3', '🥉', '3')}
-    </div>
-    <div class="podstavec"></div>`;
+/* Sdílené pořadí (stejné číslo pro remízu, stejně jako appka) */
+function seradSRankem(list) {
+    const s = [...list].sort((a, b) => b.body - a.body);
+    let i = 0;
+    while (i < s.length) {
+        let j = i;
+        while (j + 1 < s.length && s[j + 1].body === s[i].body) j++;
+        for (let k = i; k <= j; k++) { s[k]._rank = `${i + 1}.`; s[k]._rankNum = i + 1; }
+        i = j + 1;
+    }
+    return s;
 }
 
+function prepniTab(kam) {
+    document.getElementById('tab-sumar').classList.toggle('on', kam === 'sumar');
+    document.getElementById('tab-archiv').classList.toggle('on', kam === 'archiv');
+    document.getElementById('panel-sumar').classList.toggle('on', kam === 'sumar');
+    document.getElementById('panel-archiv').classList.toggle('on', kam === 'archiv');
+}
+
+/* ===== SUMÁŘ ===== */
+function renderSumar() {
+    const el = document.getElementById('panel-sumar');
+    if (!ARCHIV.length) {
+        el.innerHTML = `<div class="empty"><div class="big">🏟️</div>Síň slávy zatím čeká na prvního šampiona.</div>`;
+        return;
+    }
+    // Sesbírej pro každého hráče napříč všemi turnaji jeho umístění
+    const hraci = {};
+    ARCHIV.forEach(t => {
+        const razeni = seradSRankem(t.zebricek);
+        razeni.forEach(r => {
+            (hraci[r.jmeno] = hraci[r.jmeno] || []).push({ turnaj: t.nazev, rok: t.rok, rank: r._rank, rankNum: r._rankNum, body: r.body });
+        });
+    });
+    const jmena = Object.keys(hraci).sort((a, b) => {
+        const nejlepsiA = Math.min(...hraci[a].map(x => x.rankNum));
+        const nejlepsiB = Math.min(...hraci[b].map(x => x.rankNum));
+        return nejlepsiA - nejlepsiB;
+    });
+    el.innerHTML = jmena.map(jm => {
+        const badge = hraci[jm].map(u => {
+            const cls = u.rankNum === 1 ? 'zlato' : u.rankNum === 2 ? 'stribro' : u.rankNum === 3 ? 'bronz' : '';
+            const medaile = u.rankNum === 1 ? '🥇' : u.rankNum === 2 ? '🥈' : u.rankNum === 3 ? '🥉' : '';
+            return `<span class="sum-badge ${cls}">${medaile} ${u.rank} · ${u.rok} · ${u.body} b.</span>`;
+        }).join('');
+        return `<div class="sum-hrac"><span class="jm">${jm}</span><span class="odznaky">${badge}</span></div>`;
+    }).join('');
+}
+
+/* ===== ARCHIV ===== */
 function statsHtml(stats) {
-    if (!stats || stats.length === 0) return '';
-    return `<div class="stats">${stats.map(s =>
-        `<div class="stat"><div class="v">${s.v}</div><div class="l">${s.l}</div></div>`
-    ).join('')}</div>`;
+    if (!stats || !stats.length) return '';
+    return `<div class="stats">${stats.map(s => `<div class="stat"><div class="v">${s.v}</div><div class="l">${s.l}</div></div>`).join('')}</div>`;
+}
+
+function podiumHtml(top3) {
+    const col = (r, cls, medaile, cislo) => {
+        if (!r) return `<div class="pcol ${cls}"></div>`;
+        return `<div class="pcol ${cls}">
+            <div class="pname">${r.jmeno}</div>
+            <div class="ppts">${r.body} b.</div>
+            <div class="pblok"><span class="medaile">${medaile}</span><span>${cislo}</span></div>
+        </div>`;
+    };
+    return `<div class="podium">${col(top3[1], 'p2', '🥈', '2')}${col(top3[0], 'p1', '🏆', '1')}${col(top3[2], 'p3', '🥉', '3')}</div>`;
 }
 
 function turnajHtml(t) {
+    const razeni = seradSRankem(t.zebricek);
+    const top3 = razeni.slice(0, 3);
+    const zbytek = razeni.slice(3);
     const logo = t.logo
         ? `<div class="tlogo"><img src="${t.logo}" alt="" onerror="this.parentNode.textContent='${t.emoji || '🏆'}'"></div>`
         : `<div class="tlogo">${t.emoji || '🏆'}</div>`;
     const btny = [];
-    if (t.aplikace) btny.push(`<a class="btn btn-gold" href="${t.aplikace}">⚽ Otevřít archiv</a>`);
-    if (t.kronika)  btny.push(`<a class="btn btn-ghost" href="${t.kronika}" download>📖 Stáhnout kroniku</a>`);
+    if (t.aplikace) btny.push(`<a class="btn btn-gold" href="${t.aplikace}">⚽ Otevřít archiv appky</a>`);
+    if (t.kronika) btny.push(`<a class="btn btn-ghost" href="${t.kronika}" download>📖 Stáhnout kroniku</a>`);
+
     return `<div class="turnaj">
-        <div class="thead">
-            ${logo}
-            <div>
-                <div class="tname">${t.nazev}</div>
-                <div class="tmeta">${t.meta || ''}</div>
-            </div>
-            <span class="rok">${t.rok || ''}</span>
-        </div>
-        ${podiumHtml(t.podium)}
+        <div class="thead">${logo}<div><div class="tname">${t.nazev}</div><div class="tmeta">${t.meta || ''}</div></div><span class="rok">${t.rok || ''}</span></div>
+        ${podiumHtml(top3)}
+        <div class="rozdelovac"><div class="cara"></div><div class="lbl">Kompletní žebříček</div><div class="cara"></div></div>
+        ${zbytek.map(r => `<div class="zb-row"><span class="poradi">${r._rank}</span><span class="jm">${r.jmeno}</span><span class="b">${r.body} b.</span></div>`).join('')}
         ${statsHtml(t.stats)}
         ${btny.length ? `<div class="akce">${btny.join('')}</div>` : ''}
     </div>`;
 }
 
-const obsah = document.getElementById('obsah');
-obsah.innerHTML = ARCHIV.length
-    ? ARCHIV.map(turnajHtml).join('')
-    : `<div class="empty">
-        <div class="big">🏟️</div>
-        Síň slávy zatím čeká na prvního šampiona.<br>
-        Historie se píše právě teď – na MS ve fotbale 2026.
-    </div>`;
+function renderArchiv() {
+    const el = document.getElementById('panel-archiv');
+    el.innerHTML = ARCHIV.length
+        ? ARCHIV.map(turnajHtml).join('')
+        : `<div class="empty"><div class="big">🏟️</div>Zatím žádný dohraný turnaj.</div>`;
+}
+
+renderSumar();
+renderArchiv();
 </script>
 </body>
 </html>
