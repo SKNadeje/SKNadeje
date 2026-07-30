@@ -8,18 +8,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
-    --fial: #a78bfa;
-    --fial-glow: rgba(167,139,250,.35);
+    --fial: #2e6bff;
+    --magenta: #ff2ecc;
+    --fial-glow: rgba(46,107,255,.35);
     --gold: #d4af37;
-    --dark: #14101f;
+    --dark: #05081c;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body {
     margin: 0;
-    background: radial-gradient(ellipse at top, #241b3a 0%, var(--dark) 65%);
+    background:
+        radial-gradient(ellipse 900px 500px at 15% 0%, rgba(255,46,204,.14), transparent 55%),
+        radial-gradient(ellipse 900px 600px at 85% 15%, rgba(46,107,255,.22), transparent 55%),
+        radial-gradient(ellipse at top, #0a1240 0%, var(--dark) 70%);
     font-family: Inter, sans-serif;
-    color: #f0e6c8;
+    color: #eef2ff;
     display: flex; align-items: center; justify-content: center;
     padding: 24px 16px;
     position: relative;
@@ -29,7 +33,7 @@ body {
 /* jemné hvězdné pozadí připomínající noční stadion */
 .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
 .stars span {
-    position: absolute; width: 2px; height: 2px; background: rgba(167,139,250,.6);
+    position: absolute; width: 2px; height: 2px; background: rgba(46,107,255,.7);
     border-radius: 50%; animation: tw 3.5s ease-in-out infinite;
 }
 @keyframes tw { 0%, 100% { opacity: .15; } 50% { opacity: .9; } }
@@ -55,8 +59,8 @@ body {
     width: 168px; height: 168px; margin: 0 auto 18px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    background: radial-gradient(circle at 35% 30%, rgba(167,139,250,.22), rgba(20,16,31,.4) 70%);
-    border: 1px solid rgba(167,139,250,.5);
+    background: radial-gradient(circle at 35% 30%, rgba(46,107,255,.25), rgba(255,46,204,.08) 55%, rgba(5,8,28,.5) 75%);
+    border: 1px solid rgba(46,107,255,.5);
     box-shadow: 0 0 50px var(--fial-glow);
     padding: 10px;
     position: relative;
@@ -64,7 +68,7 @@ body {
 }
 @keyframes dych {
     0%, 100% { box-shadow: 0 0 40px var(--fial-glow); }
-    50% { box-shadow: 0 0 65px rgba(167,139,250,.5); }
+    50% { box-shadow: 0 0 65px rgba(46,107,255,.5); }
 }
 .logo .star-ring {
     position: absolute; inset: -6px; border-radius: 50%;
@@ -82,11 +86,11 @@ body {
 h1 {
     font-size: 1.9rem; font-weight: 900; letter-spacing: 1.5px;
     margin: 10px 0 2px; text-transform: uppercase; line-height: 1.2;
-    background: linear-gradient(135deg, #f0e6c8, var(--fial) 45%, #f0e6c8 70%, var(--gold));
+    background: linear-gradient(135deg, #eef2ff, var(--fial) 40%, var(--magenta) 65%, #eef2ff 85%);
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent; color: var(--fial);
 }
-.motto { font-size: .74rem; color: #8a80a8; font-style: italic; margin-bottom: 20px; }
+.motto { font-size: .74rem; color: #8a93ad; font-style: italic; margin-bottom: 20px; }
 .line { width: 110px; height: 1px; background: linear-gradient(90deg, transparent, var(--fial), transparent); margin: 0 auto 22px; }
 
 /* ===== INFO PÁSEK ===== */
@@ -96,7 +100,7 @@ h1 {
 }
 .info-pasek span {
     font-size: .66rem; font-weight: 800; letter-spacing: .5px;
-    background: rgba(167,139,250,.1); border: 1px solid rgba(167,139,250,.3);
+    background: rgba(46,107,255,.1); border: 1px solid rgba(46,107,255,.35);
     color: var(--fial); padding: 5px 12px; border-radius: 100px;
 }
 
@@ -121,7 +125,7 @@ h1 {
     box-shadow: 0 5px 22px var(--fial-glow);
     transition: transform .2s, box-shadow .2s;
 }
-.vstup:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(167,139,250,.5); }
+.vstup:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(46,107,255,.5); }
 .vstup:active { transform: translateY(0); }
 
 .tisk { margin-top: 26px; font-size: .58rem; line-height: 1.8; color: #4a3f66; }
@@ -142,8 +146,8 @@ h1 {
     <div class="logo">
         <div class="star-ring"></div>
         <div class="logo-inner" id="logoInner">
-            <img src="logo-cl.png" alt="Champions League" style="width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 3px 10px rgba(0,0,0,.5));"
-                onerror="this.parentNode.innerHTML='CL-logo1.png';">
+            <img src="CL-logo1.png" alt="Champions League" style="width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 3px 10px rgba(0,0,0,.5));"
+                onerror="this.parentNode.innerHTML='⭐';">
         </div>
     </div>
 
