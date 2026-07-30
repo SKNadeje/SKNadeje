@@ -124,7 +124,8 @@
         .user-name { font-weight: bold; font-size: 0.95em; }
     </style>
 <style>
-:root { --neon: #00f2ff; }
+:root { --neon: #00f2ff; color-scheme: dark; }
+html, body { color-scheme: dark; }
 .auth-input { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.06); border:1px solid rgba(0,242,255,0.25); border-radius:10px; padding:11px 13px; color:#fff; margin-top:8px; font-size:0.9em; outline:none; color-scheme: dark; }
 .auth-input:focus { border-color: var(--neon); }
 .auth-input:-webkit-autofill { -webkit-text-fill-color:#fff; -webkit-box-shadow:0 0 0 40px #16213a inset; }
@@ -273,22 +274,31 @@ async function addM() {
 
 // 🔔 Pošle push všem, kdo mají v hubu zapnuté notifikace pro hokej
 async function posliNotifikaciZapas(domaci, hoste, deadline) {
+    console.log('🔔 [1/3] Spouštím odeslání notifikace...', { domaci, hoste, deadline });
     try {
         const kdy = new Date(deadline).toLocaleString('cs-CZ', {
             day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'
         });
-        const { data, error } = await sb.functions.invoke('posli-notifikaci', {
-            body: {
+        // Voláme edge funkci přímo (spolehlivější než SDK invoke)
+        const res = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/posli-notifikaci', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + SB_KEY
+            },
+            body: JSON.stringify({
                 soutez: 'hokej',
                 titulek: '🏒 Nový zápas k tipování!',
                 zprava: domaci + ' vs ' + hoste + ' — uzávěrka ' + kdy,
                 url: 'https://sknadeje.cz/hokej2027/index.html'
-            }
+            })
         });
-        if (error) console.warn('Notifikace se nepodarilo odeslat:', error);
-        else console.log('🔔 Notifikace odeslána:', data);
+        console.log('🔔 [2/3] Odpověď serveru, status:', res.status);
+        const data = await res.json();
+        console.log('🔔 [3/3] Výsledek:', data);
+        if (data.ok) msg('Notifikace odeslána 🔔');
     } catch (e) {
-        console.warn('Notifikace selhala (zápas je ale publikovaný):', e);
+        console.error('❌ Notifikace selhala (zápas je ale publikovaný):', e);
     }
 }
 
