@@ -1,7 +1,7 @@
 {
-    "name": "WC2026 Tipovačka SK Naděje",
-    "short_name": "WC2026",
-    "description": "Tipovačka MS ve fotbale 2026 - SK Naděje",
+    "name": "SK Naděje",
+    "short_name": "SK Naděje",
+    "description": "Tipovačka - SK Naděje",
     "start_url": "./",
     "display": "standalone",
     "orientation": "portrait",
@@ -11,13 +11,13 @@
     "scope": "./",
     "icons": [
         {
-            "src": "logo-wc2026.png",
+            "src": "logo-nadeje.png",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "any"
         },
         {
-            "src": "logo-wc2026.png",
+            "src": "logo-nadeje.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any"
