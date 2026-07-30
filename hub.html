@@ -6,6 +6,9 @@
 <title>SK Naděje – Tipovačky</title>
 <link rel="icon" href="logo-wc2026.png">
 <link rel="manifest" href="manifest.json">
+<!-- 🔔 OneSignal Push Notifications -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; }
@@ -153,9 +156,41 @@ a.tile.hall:hover { border-style: solid; }
             font-size: .78rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;
             cursor: pointer; box-shadow: 0 4px 16px rgba(212,175,55,.3);
             display: inline-flex; align-items: center; gap: 8px; font-family: inherit;
+            margin: 0 6px 8px;
         ">📲 Stáhnout appku</button>
         <div id="instalace-ios" style="display:none; font-size:.7rem; color:#8a93ad; margin-top:10px; max-width:320px; margin-left:auto; margin-right:auto; line-height:1.6;">
             Na iPhonu/iPadu: klepni na ikonu <b>Sdílet</b> ⬆️ dole v Safari a zvol <b>„Přidat na plochu"</b>.
+        </div>
+    </div>
+
+    <div id="notif-wrap" style="text-align:center; margin-bottom:22px;">
+        <button id="btn-notifikace" onclick="otevriNotifModal()" style="
+            background: rgba(212,175,55,.1); color: #d4af37;
+            border: 1px solid rgba(212,175,55,.3); border-radius: 10px; padding: 12px 26px;
+            font-size: .78rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-family: inherit;
+            margin: 0 6px;
+        ">🔔 Nastavit notifikace</button>
+    </div>
+
+    <div id="notifModal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(5,7,15,.94); align-items:center; justify-content:center; padding:20px;">
+        <div style="max-width:400px; width:100%; background:#0f1420; border:1px solid rgba(212,175,55,.35); border-radius:20px; padding:26px 22px; text-align:left;">
+            <div style="font-size:1.05rem; font-weight:900; color:#d4af37; margin-bottom:4px;">🔔 Notifikace</div>
+            <div style="font-size:.72rem; color:#8a93ad; margin-bottom:18px;">Vyber soutěže, ze kterých chceš dostávat oznámení (nové zápasy, výhry, výsledky).</div>
+
+            <div id="notif-checklist" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;"></div>
+
+            <button onclick="ulozNotifPreference()" style="
+                width:100%; background:linear-gradient(135deg,#d4af37,#9a7b1e); color:#05070f;
+                border:none; border-radius:10px; padding:13px; font-size:.78rem; font-weight:900;
+                letter-spacing:1px; text-transform:uppercase; cursor:pointer; font-family:inherit;
+            ">Uložit nastavení</button>
+            <button onclick="zavriNotifModal()" style="
+                width:100%; background:transparent; color:#8a93ad; border:1px solid rgba(255,255,255,.15);
+                border-radius:10px; padding:11px; font-size:.72rem; font-weight:700; margin-top:8px;
+                cursor:pointer; font-family:inherit; text-transform:uppercase; letter-spacing:.5px;
+            ">Zrušit</button>
+            <div id="notif-msg" style="font-size:.68rem; color:#8a93ad; margin-top:12px; text-align:center; min-height:1em;"></div>
         </div>
     </div>
 
@@ -308,6 +343,132 @@ if (jeIOS() && !jeUzNainstalovana()) {
 window.addEventListener('appinstalled', () => {
     document.getElementById('instalace-wrap').style.display = 'none';
 });
+
+/* ============================================================
+   NOTIFIKACE (OneSignal v16) – výběr soutěží přes tagy
+   ============================================================ */
+const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
+const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
+const sbHub = supabase.createClient(SB_URL, SB_KEY);
+
+// Klíč tagu -> popisek v modálu. Klíč se pak používá při filtrování
+// příjemců v OneSignal dashboardu (Audience -> Filter -> Tag -> klíč = "true").
+const SOUTEZE = [
+    { klic: 'fotbal', label: '⚽ MS ve fotbale 2026', pozn: '(archiv)' },
+    { klic: 'hokej', label: '🏒 MS v hokeji 2027', pozn: '' },
+    { klic: 'cl', label: '⭐ Champions League', pozn: '' }
+];
+
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+OneSignalDeferred.push(async function (OneSignal) {
+    await OneSignal.init({
+        appId: "e4db4056-c4db-422c-b7f4-8943a720d548",
+        allowLocalhostAsSecureOrigin: true,
+    });
+    try {
+        const optedIn = await OneSignal.User.PushSubscription.optedIn;
+        if (optedIn) {
+            const tags = await OneSignal.User.getTags();
+            const pocet = SOUTEZE.filter(s => tags && tags[s.klic] === 'true').length;
+            aktualizujTlacitkoNotif(pocet);
+        }
+    } catch (e) { /* v pořádku, appka zůstane na výchozím stavu tlačítka */ }
+});
+
+function onOneSignalHub(cb) {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(cb);
+}
+
+async function otevriNotifModal() {
+    const list = document.getElementById('notif-checklist');
+    list.innerHTML = SOUTEZE.map(s => `
+        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:.85rem; color:#f0e6c8;">
+            <input type="checkbox" id="notif-chk-${s.klic}" style="width:20px; height:20px; accent-color:#d4af37; cursor:pointer;">
+            ${s.label} <span style="opacity:.5; font-size:.85em;">${s.pozn}</span>
+        </label>`).join('');
+    document.getElementById('notif-msg').textContent = '';
+
+    // Předvyplň podle aktuálních tagů, pokud už je uživatel přihlášený k push
+    onOneSignalHub(async (OneSignal) => {
+        try {
+            const optedIn = await OneSignal.User.PushSubscription.optedIn;
+            if (optedIn) {
+                const tags = await OneSignal.User.getTags();
+                SOUTEZE.forEach(s => {
+                    const cb = document.getElementById(`notif-chk-${s.klic}`);
+                    if (cb && tags && tags[s.klic] === 'true') cb.checked = true;
+                });
+            }
+        } catch (e) { /* v pořádku, prostě nic nepředvyplníme */ }
+    });
+
+    document.getElementById('notifModal').style.display = 'flex';
+}
+
+function zavriNotifModal() {
+    document.getElementById('notifModal').style.display = 'none';
+}
+
+async function ulozNotifPreference() {
+    const msg = document.getElementById('notif-msg');
+    const vybrane = SOUTEZE.filter(s => document.getElementById(`notif-chk-${s.klic}`)?.checked);
+
+    onOneSignalHub(async (OneSignal) => {
+        try {
+            if (Notification.permission === 'denied') {
+                msg.textContent = 'Notifikace jsou v prohlížeči zablokované – povol je ručně v nastavení webu.';
+                return;
+            }
+            const jePripojen = await OneSignal.User.PushSubscription.optedIn;
+            if (!jePripojen) {
+                const result = await Notification.requestPermission();
+                if (result !== 'granted') {
+                    msg.textContent = 'Notifikace nebyly povoleny.';
+                    return;
+                }
+                await OneSignal.User.PushSubscription.optIn();
+                await new Promise(r => setTimeout(r, 600));
+            }
+
+            // Propoj se Supabase účtem, ať jde v budoucnu cílit i podle jména
+            try {
+                const { data: { session } } = await sbHub.auth.getSession();
+                if (session?.user) await OneSignal.login(session.user.id);
+            } catch (e) { console.warn('OneSignal login error:', e); }
+
+            // Zapiš/smaž tagy podle zaškrtnutí
+            for (const s of SOUTEZE) {
+                const chce = vybrane.some(v => v.klic === s.klic);
+                if (chce) await OneSignal.User.addTag(s.klic, 'true');
+                else await OneSignal.User.removeTag(s.klic);
+            }
+
+            msg.textContent = vybrane.length
+                ? `✅ Uloženo – dostaneš oznámení z: ${vybrane.map(s => s.label).join(', ')}`
+                : '🔕 Uloženo – notifikace ze všech soutěží jsou vypnuté.';
+            aktualizujTlacitkoNotif(vybrane.length);
+            setTimeout(zavriNotifModal, 2200);
+        } catch (e) {
+            msg.textContent = 'Chyba: ' + e.message;
+        }
+    });
+}
+
+function aktualizujTlacitkoNotif(pocet) {
+    const btn = document.getElementById('btn-notifikace');
+    if (pocet > 0) {
+        btn.innerHTML = `🔔 Notifikace (${pocet})`;
+        btn.style.background = 'rgba(34,197,94,.12)';
+        btn.style.borderColor = 'rgba(34,197,94,.35)';
+        btn.style.color = '#22c55e';
+    } else {
+        btn.innerHTML = '🔔 Nastavit notifikace';
+        btn.style.background = 'rgba(212,175,55,.1)';
+        btn.style.borderColor = 'rgba(212,175,55,.3)';
+        btn.style.color = '#d4af37';
+    }
+}
 </script>
 </body>
 </html>
