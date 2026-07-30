@@ -76,6 +76,13 @@ h1 {
 .dl-karta .t { font-weight: 900; color: var(--gold); font-size: .9em; letter-spacing: .8px; }
 .dl-karta .s { font-size: .72em; opacity: .55; margin-top: 5px; line-height: 1.5; }
 .dl-karta .stav-tip { margin-top: 8px; font-size: .72em; font-weight: 800; }
+.dl-odpocet {
+    margin-top: 9px; display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(46,107,255,.1); border: 1px solid rgba(46,107,255,.3);
+    color: var(--fial); font-size: .68em; font-weight: 800;
+    padding: 5px 12px; border-radius: 100px; letter-spacing: .5px;
+}
+.dl-odpocet.blizko { background: rgba(231,76,60,.12); border-color: rgba(231,76,60,.4); color: #ff8a7a; }
 
 /* ZÁPASY */
 .match-card {
@@ -414,13 +421,41 @@ function renderDlKarty() {
     const k1 = document.getElementById('dl1-karta');
     if (!tymyOk) { s1.innerHTML = '<span style="opacity:.6;">Čeká na vylosování účastníků.</span>'; k1.classList.add('zamceno'); }
     else if (po1) { s1.innerHTML = t1 ? '<span style="color:#2ecc71;">✔ Tip uložen · uzavřeno</span>' : '<span style="color:#e74c3c;">Uzávěrka proběhla.</span>'; k1.classList.add('zamceno'); }
-    else { s1.innerHTML = t1 ? '<span style="color:#2ecc71;">✔ Uloženo – do uzávěrky můžeš upravit</span>' : '<span style="color:var(--fial);">→ Klikni a tipni</span>'; k1.classList.remove('zamceno'); }
+    else {
+        s1.innerHTML = (t1 ? '<span style="color:#2ecc71;">✔ Uloženo – do uzávěrky můžeš upravit</span>' : '<span style="color:var(--fial);">→ Klikni a tipni</span>')
+            + odpocetHtml(d1);
+        k1.classList.remove('zamceno');
+    }
 
     const s2 = document.getElementById('dl2-stav');
     const k2 = document.getElementById('dl2-karta');
     if (!osmOk) { s2.innerHTML = '<span style="opacity:.6;">Otevře se, až bude znám pavouk osmifinále.</span>'; k2.classList.add('zamceno'); }
     else if (po2) { s2.innerHTML = t2 ? '<span style="color:#2ecc71;">✔ Tip uložen · uzavřeno</span>' : '<span style="color:#e74c3c;">Uzávěrka proběhla.</span>'; k2.classList.add('zamceno'); }
-    else { s2.innerHTML = t2 ? '<span style="color:#2ecc71;">✔ Uloženo – do uzávěrky můžeš upravit</span>' : '<span style="color:var(--fial);">→ Klikni a tipni cestu k titulu</span>'; k2.classList.remove('zamceno'); }
+    else {
+        s2.innerHTML = (t2 ? '<span style="color:#2ecc71;">✔ Uloženo – do uzávěrky můžeš upravit</span>' : '<span style="color:var(--fial);">→ Klikni a tipni cestu k titulu</span>')
+            + odpocetHtml(d2);
+        k2.classList.remove('zamceno');
+    }
+
+    // Odpočet se přepočítává každou vteřinu
+    if (!window.__dlTimer) window.__dlTimer = setInterval(renderDlKarty, 1000);
+}
+
+// Vrátí HTML odznak s odpočtem do uzávěrky
+function odpocetHtml(deadline) {
+    if (!deadline) return '';
+    const zbyva = deadline.getTime() - Date.now();
+    if (zbyva <= 0) return '';
+    const dny = Math.floor(zbyva / 86400000);
+    const hod = Math.floor(zbyva % 86400000 / 3600000);
+    const min = Math.floor(zbyva % 3600000 / 60000);
+    const sek = Math.floor(zbyva % 60000 / 1000);
+    let text;
+    if (dny > 0) text = `${dny} ${dny === 1 ? 'den' : (dny < 5 ? 'dny' : 'dní')} ${hod} h`;
+    else if (hod > 0) text = `${hod}:${String(min).padStart(2,'0')}:${String(sek).padStart(2,'0')}`;
+    else text = `${min}:${String(sek).padStart(2,'0')}`;
+    const blizko = zbyva < 24 * 3600000 ? ' blizko' : '';
+    return `<div class="dl-odpocet${blizko}">⏳ Do uzávěrky: ${text}</div>`;
 }
 
 function chipy(kontejner, tymy, klic, max) {
