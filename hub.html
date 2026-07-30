@@ -437,12 +437,27 @@ async function ulozNotifPreference() {
                 if (session?.user) await OneSignal.login(session.user.id);
             } catch (e) { console.warn('OneSignal login error:', e); }
 
-            // Zapiš/smaž tagy podle zaškrtnutí
+            // Zapiš/smaž tagy podle zaškrtnutí (pro ruční rozesílání z dashboardu)
             for (const s of SOUTEZE) {
                 const chce = vybrane.some(v => v.klic === s.klic);
                 if (chce) await OneSignal.User.addTag(s.klic, 'true');
                 else await OneSignal.User.removeTag(s.klic);
             }
+
+            // Ulož preference i do databáze – odtud je čte server u automatických
+            // připomínek (na OneSignal tagy edge funkce nevidí)
+            try {
+                const { data: { session } } = await sbHub.auth.getSession();
+                if (session?.user) {
+                    const radky = SOUTEZE.map(s => ({
+                        user_id: session.user.id,
+                        soutez: s.klic,
+                        zapnuto: vybrane.some(v => v.klic === s.klic),
+                        aktualizovano: new Date().toISOString()
+                    }));
+                    await sbHub.from('notif_preference').upsert(radky, { onConflict: 'user_id,soutez' });
+                }
+            } catch (e) { console.warn('Preference se nepodařilo uložit do DB:', e); }
 
             msg.textContent = vybrane.length
                 ? `✅ Uloženo – dostaneš oznámení z: ${vybrane.map(s => s.label).join(', ')}`
