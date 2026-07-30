@@ -143,7 +143,7 @@ input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { fil
     <!-- PŘIDÁNÍ ZÁPASU -->
     <div class="card">
         <div class="collapsible-header" onclick="toggleSection('secAdd')">➕ PŘIDAT ZÁPAS <span class="collapse-arrow">▼</span></div>
-        <div class="collapsible-body" id="secAdd">
+        <div class="collapsible-body open" id="secAdd">
             <input type="text" id="d" class="auth-input" list="staty" placeholder="Domácí">
             <input type="text" id="h" class="auth-input" list="staty" placeholder="Hosté">
             <datalist id="staty"></datalist>
@@ -169,13 +169,13 @@ input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { fil
     <!-- HISTORIE -->
     <div class="card">
         <div class="collapsible-header" onclick="toggleSection('secHist')">📜 VYHODNOCENÉ <span class="collapse-arrow">▼</span></div>
-        <div class="collapsible-body" id="secHist" style="display:none;"><div id="historyMatches"></div></div>
+        <div class="collapsible-body" id="secHist"><div id="historyMatches"></div></div>
     </div>
 
     <!-- DLOUHODOBÉ TIPY -->
     <div class="card">
         <div class="collapsible-header" onclick="toggleSection('secDl')">⭐ DLOUHODOBÉ TIPY <span class="collapse-arrow">▼</span></div>
-        <div class="collapsible-body" id="secDl" style="display:none;">
+        <div class="collapsible-body" id="secDl">
             <div id="dlList"></div>
             <hr style="opacity:0.15; margin:20px 0;">
             <h3 style="color:#f1c40f;">Finální výsledky turnaje</h3>
@@ -235,7 +235,8 @@ async function init() {
 
 function toggleSection(id) {
     const el = document.getElementById(id);
-    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    el.style.display = '';           // zruš případný starý inline display
+    el.classList.toggle('open');
 }
 
 function msg(text, ok = true) {
