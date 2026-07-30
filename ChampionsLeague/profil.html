@@ -57,6 +57,36 @@ body {
 .dl-radek { display:flex; justify-content:space-between; align-items:center; background:rgba(5,8,15,.4); border-radius:12px; padding:10px 14px; font-size:.82em; }
 .dl-radek b { color:var(--gold); }
 
+/* FORMA */
+.forma { display:flex; gap:9px; }
+.forma .f {
+    flex:1; aspect-ratio:1; max-width:76px; border-radius:14px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    font-size:1.4em; border:1px solid;
+}
+.forma .f small { font-size:.42em; opacity:.7; font-weight:700; }
+.forma .ok { background:rgba(39,174,96,.12); border-color:rgba(39,174,96,.5); }
+.forma .fail { background:rgba(231,76,60,.08); border-color:rgba(231,76,60,.4); }
+
+/* ÚSPĚŠNOST */
+.usp { margin-bottom:14px; }
+.usp .lbl { display:flex; justify-content:space-between; font-size:.95em; font-weight:700; margin-bottom:7px; }
+.usp .lbl b { color:var(--fial); font-family:monospace; }
+.usp .bar { height:9px; border-radius:100px; background:rgba(255,255,255,.07); overflow:hidden; }
+.usp .fill { height:100%; border-radius:100px; }
+
+/* POZICE */
+.pozice { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.pozice .p {
+    background:rgba(5,10,25,.5); border:1px solid rgba(255,255,255,.1);
+    border-radius:16px; padding:14px; display:flex; gap:12px; align-items:center;
+}
+.pozice .rank { font-size:1.7em; font-weight:900; opacity:.85; }
+.pozice .rank.top { color:var(--gold); }
+.pozice .info .n { font-size:.6em; letter-spacing:1.5px; text-transform:uppercase; opacity:.5; line-height:1.4; }
+.pozice .info .h { font-weight:900; font-size:.95em; margin-top:3px; }
+
+
 /* HISTORIE */
 .hist { display:flex; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid rgba(212,175,55,.08); }
 .hist .ikona { font-size:1.3em; }
@@ -80,6 +110,21 @@ body {
             <div class="stat"><div class="v" id="hZapasy">–</div><div class="l">Body ze zápasů</div></div>
             <div class="stat"><div class="v" id="hDlouhodobe">–</div><div class="l">Body dlouhodobky</div></div>
         </div>
+    </div>
+
+    <div class="blok">
+        <h2>⚡ Forma (posledních 5 zápasů)</h2>
+        <div class="forma" id="forma"></div>
+    </div>
+
+    <div class="blok">
+        <h2>📊 Úspěšnost</h2>
+        <div id="uspesnost"></div>
+    </div>
+
+    <div class="blok">
+        <h2>🏅 Pozice v žebříčku</h2>
+        <div class="pozice" id="pozice"></div>
     </div>
 
     <div class="blok">
@@ -117,6 +162,10 @@ async function load() {
         uid = session?.user?.id;
     }
     if (!uid) { document.getElementById('hJmeno').textContent = 'Hráč nenalezen'; return; }
+
+    // Kdo je právě přihlášený (kvůli skrývání cizích tipů)
+    const { data: { session: mojeSession } } = await sb.auth.getSession();
+    const mojeAktualniId = mojeSession?.user?.id;
 
     const [zR, tR, dR] = await Promise.all([
         sb.from('cl_zapasy').select('*'),
@@ -178,6 +227,51 @@ async function load() {
         { on: pozice === 1 && celkem > 0, ic: '👑', l: 'Vládce ligy', p: 'Vede celkový žebříček.' },
         { on: pozice >= 2 && pozice <= 3 && celkem > 0, ic: '🥈', l: 'Na bedně', p: 'Drží 2.–3. místo v žebříčku.' },
     ];
+    // ===== FORMA (posledních 5 vyhodnocených) =====
+    const vyhodnocene = mojeTipy.filter(t => zapasMap[t.zapas_id]?.status === 'vyhodnoceno').slice(0, 5);
+    document.getElementById('forma').innerHTML = vyhodnocene.length
+        ? vyhodnocene.map(t => {
+            const z = zapasMap[t.zapas_id];
+            const trefil = `${z.vysledek_d}:${z.vysledek_h}` === t.skore;
+            return `<div class="f ${t.body > 0 ? 'ok' : 'fail'}">${trefil ? '🎯' : (t.body > 0 ? '✅' : '❌')}<small>${z.vysledek_d}:${z.vysledek_h}</small></div>`;
+        }).join('')
+        : '<div class="prazdno" style="flex:1;">Zatím žádné vyhodnocené tipy.</div>';
+
+    // ===== ÚSPĚŠNOST =====
+    const pocetVyhodnocenych = mojeTipy.filter(t => zapasMap[t.zapas_id]?.status === 'vyhodnoceno').length;
+    const trendy = mojeTipy.filter(t => {
+        const z = zapasMap[t.zapas_id];
+        if (z?.status !== 'vyhodnoceno') return false;
+        const [td, th] = t.skore.split(':').map(Number);
+        const smerTip = td > th ? 1 : (td === th ? 0 : 2);
+        const smerReal = z.vysledek_d > z.vysledek_h ? 1 : (z.vysledek_d === z.vysledek_h ? 0 : 2);
+        return smerTip === smerReal;
+    }).length;
+    const pct = (x) => pocetVyhodnocenych ? Math.round(x / pocetVyhodnocenych * 100) : 0;
+    const bar = (nazev, ikona, pocet, procenta, barva) => `
+        <div class="usp">
+            <div class="lbl"><span>${ikona} ${nazev}</span><b>${pocet}×&nbsp;&nbsp;${procenta}%</b></div>
+            <div class="bar"><div class="fill" style="width:${procenta}%; background:${barva};"></div></div>
+        </div>`;
+    document.getElementById('uspesnost').innerHTML =
+        bar('Přesné výsledky', '🎯', presnych, pct(presnych), 'linear-gradient(90deg,#2e6bff,#1a4bb8)') +
+        bar('Správné trendy', '📈', trendy, pct(trendy), 'linear-gradient(90deg,#ff2ecc,#a0009a)') +
+        bar('Účast na zápasech', '📅', pocetVyhodnocenych, ucast, 'linear-gradient(90deg,#d4af37,#9a7b1e)');
+
+    // ===== POZICE V ŽEBŘÍČKU =====
+    const pKarta = (rank, nazev, hodnota) => `
+        <div class="p">
+            <span class="rank ${rank <= 3 ? 'top' : ''}">${rank}.</span>
+            <div class="info"><div class="n">${nazev}</div><div class="h">${hodnota}</div></div>
+        </div>`;
+    const razeniZap = Object.entries(
+        tipy.reduce((a, t) => { a[t.user_id] = (a[t.user_id] || 0) + (t.body || 0); return a; }, {})
+    ).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+    const pozZap = razeniZap.indexOf(uid) + 1;
+    document.getElementById('pozice').innerHTML =
+        pKarta(pozice, 'Celkově', celkem + ' b.') +
+        (pozZap > 0 ? pKarta(pozZap, 'Zápasové<br>tipy', bodyZap + ' b.') : '');
+
     document.getElementById('odznaky').innerHTML = odz.map(o => `
         <div class="odz ${o.on ? 'on' : ''}">
             <div class="ic">${o.ic}</div>
@@ -206,11 +300,17 @@ async function load() {
             const z = zapasMap[t.zapas_id];
             const hotovo = z?.status === 'vyhodnoceno';
             const trefil = hotovo && `${z.vysledek_d}:${z.vysledek_h}` === t.skore;
+            // Tip cizího hráče je skrytý, dokud zápas nezačne (aby se neopisovalo)
+            const jeMuj = uid === mojeAktualniId;
+            const zacal = z && Date.now() > new Date(z.deadline).getTime();
+            const skryt = !jeMuj && !zacal && !hotovo;
             return `<div class="hist">
-                <span class="ikona">${!hotovo ? '⏳' : (trefil ? '✅' : '❌')}</span>
+                <span class="ikona">${skryt ? '🙈' : (!hotovo ? '⏳' : (trefil ? '✅' : '❌'))}</span>
                 <div class="telo">
                     <div class="t">${z ? `${z.domaci} vs ${z.hoste}` : 'Neznámý zápas'}</div>
-                    <div class="s">Tip: ${t.skore}${hotovo ? ` | Výsledek: ${z.vysledek_d}:${z.vysledek_h}` : ' | čeká na výsledek'}</div>
+                    <div class="s">${skryt
+                        ? 'Tip skrytý do uzávěrky 🔒'
+                        : `Tip: ${t.skore}${hotovo ? ` | Výsledek: ${z.vysledek_d}:${z.vysledek_h}` : ' | čeká na výsledek'}`}</div>
                 </div>
                 <div class="b">${hotovo ? `+${t.body || 0} b.` : '–'}</div>
             </div>`;
