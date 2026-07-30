@@ -52,7 +52,9 @@ const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
 const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const ADMIN_ID = "92a1e51b-e03c-48d7-99df-76c2f60a455f";
-const BODY = { presne: 5, trend: 1, top8: 3, vitezZC: 8, propadlik: 2, qf: 2, sf: 4, finale: 6, vitezCL: 10 };
+const BODY = { presne: 5, trend: 1, top8: 3, vitezZC: 8, propadlik: 1, qf: 2, sf: 5, finale: 8, vitezCL: 20,
+               strelec: 10, goly: [15, 8, 3], cech: 5 };
+const CECH_MOZNOSTI = ['Nepostoupí z ligové fáze', 'Vypadne v play-off (únor)', 'Vypadne v osmifinále', 'Čtvrtfinále a dál', 'Žádný český tým v CL'];
 
 let stav = {};
 
@@ -125,6 +127,12 @@ async function init() {
             <label class="lbl">Skuteční propadlíci – místa 25–36</label>
             <div class="pocitadlo" id="poc-vprop">0 / 12</div>
             <div class="chipy" id="v-prop"></div>
+            <label class="lbl">🎯 Skutečný nejlepší střelec</label>
+            <input class="pole" id="v-strelec" placeholder="Příjmení hráče">
+            <label class="lbl">⚽ Skutečný počet gólů v soutěži</label>
+            <input class="pole" id="v-goly" type="number" min="0" placeholder="např. 384">
+            <label class="lbl">🇨🇿 Jak daleko došel český zástupce</label>
+            <select class="pole" id="v-cech"><option value="">– vyber –</option></select>
             <button class="btn btn-gold" onclick="vyhodnotDl1()">SPOČÍTAT BODY DLOUHODOBKY 1</button>
         </div>
 
@@ -211,6 +219,10 @@ function initVysl1() {
     vysl1 = { top8: [...(v.top8 || [])], propadlici: [...(v.propadlici || [])] };
     const sel = document.getElementById('v-vitezZC');
     if (sel) sel.innerHTML = '<option value="">– vyber –</option>' + (stav.tymy || []).map(t => `<option${t === v.vitezZC ? ' selected' : ''}>${t}</option>`).join('');
+    const selC = document.getElementById('v-cech');
+    if (selC) selC.innerHTML = '<option value="">– vyber –</option>' + CECH_MOZNOSTI.map(m => `<option${m === v.cech ? ' selected' : ''}>${m}</option>`).join('');
+    const eS = document.getElementById('v-strelec'); if (eS) eS.value = v.strelec || '';
+    const eG = document.getElementById('v-goly'); if (eG) eG.value = v.goly ?? '';
     renderVysl1();
 }
 function renderVysl1() {
@@ -416,10 +428,21 @@ async function vyhodnotDl1() {
         (t.top8 || []).forEach(x => { if (maTym(top8, x)) b += BODY.top8; });
         if (low(t.vitezZC) === low(vitezZC)) b += BODY.vitezZC;
         (t.propadlici || []).forEach(x => { if (maTym(prop, x)) b += BODY.propadlik; });
+        // 🎯 Nejlepší střelec
+        if (realStrelec && low(t.strelec) === low(realStrelec)) b += BODY.strelec;
+        // ⚽ Počet gólů (pásma)
+        if (realGoly !== null && t.goly != null) {
+            const rozdil = Math.abs(parseInt(t.goly) - realGoly);
+            if (rozdil === 0) b += BODY.goly[0];
+            else if (rozdil <= 5) b += BODY.goly[1];
+            else if (rozdil <= 10) b += BODY.goly[2];
+        }
+        // 🇨🇿 Český zástupce
+        if (realCech && t.cech === realCech) b += BODY.cech;
         await sb.from('cl_dlouhodobe').update({ body1: b }).eq('user_id', r.user_id);
     }
     await sb.from('cl_stav').update({
-        vysledky: { ...(stav.vysledky || {}), top8, vitezZC, propadlici: prop },
+        vysledky: { ...(stav.vysledky || {}), top8, vitezZC, propadlici: prop, strelec: realStrelec, goly: realGoly, cech: realCech },
         aktualizovano: new Date().toISOString()
     }).eq('id', 1);
     msg('DLOUHODOBKA 1 SPOČÍTÁNA ✅');
