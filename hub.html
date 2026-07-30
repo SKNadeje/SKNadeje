@@ -30,9 +30,6 @@ h1 {
 .sub { text-align: center; font-size: .78rem; color: #5a6480; margin-bottom: 14px; }
 .line { width: 100px; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); margin: 0 auto 30px; }
 
-.tile:not(.wide) .trow { padding-top: 6px; }
-.tile:not(.wide) .tname { padding-right: 70px; }
-    
 /* ===== GRID DLAŽDIC ===== */
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
 .tile {
@@ -70,19 +67,14 @@ a.tile:hover { transform: translateY(-3px); border-color: rgba(212,175,55,.5); b
 
 /* Logo / ikona turnaje */
 .logo {
-    width: 84px; height: 84px; border-radius: 14px;
+    width: 50px; height: 50px; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 2.2rem; flex-shrink: 0;
-    background: linear-gradient(160deg, rgba(240,230,200,.14), rgba(212,175,55,.06));
-    border: 1px solid rgba(212,175,55,.3);
-    padding: 8px;
+    font-size: 1.6rem; margin-bottom: 13px; flex-shrink: 0;
+    background: rgba(212,175,55,.1); border: 1px solid rgba(212,175,55,.28);
 }
-.tile.wide .logo { width: 100px; height: 100px; font-size: 2.6rem; border-radius: 16px; }
-.logo img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+.tile.wide .logo { width: 60px; height: 60px; font-size: 1.9rem; margin-bottom: 0; }
+.logo img { width: 80%; height: 80%; object-fit: contain; }
 
-/* malé dlaždice: logo vlevo, text vedle */
-.trow { display: flex; align-items: center; gap: 14px; }
-.trow .tbody { flex: 1; min-width: 0; }
 .tname { font-size: .95rem; font-weight: 800; color: #f0e6c8; line-height: 1.25; }
 .tile.wide .tname { font-size: 1.15rem; }
 .tmeta { font-size: .68rem; color: #8a93ad; margin-top: 4px; line-height: 1.5; }
@@ -139,7 +131,6 @@ a.tile.hall:hover { border-style: solid; }
 </head>
 <body>
 <div class="hub">
-    <a href="welcome.html" style="display:inline-flex; align-items:center; gap:6px; color:#8a93ad; text-decoration:none; font-size:.72rem; margin-bottom:18px; transition:color .2s;" onmouseover="this.style.color='#d4af37'" onmouseout="this.style.color='#8a93ad'">← Zpět na úvod</a>
     <div class="presents">SK Naděje presents</div>
     <h1>Tipovačky</h1>
     <div class="sub">Vyber turnaj a vstup do hry</div>
@@ -164,21 +155,21 @@ const TURNAJE = [
     {
         nazev: 'MS ve fotbale 2026',
         meta: 'USA · Mexiko · Kanada · 25 hráčů · bank 5 000 Kč',
-       hook: '🏆 Vítěz: Jan Rathouský',
-        stav: 'archiv',
+        hook: '',                       // po skončení např. '🏆 Vítěz: Trnda'
+        stav: 'live',                   // po skončení přepni na 'archiv'
         logo: 'logo-wc2026.png',
         emoji: '🏆',
-        url: 'wc2026.html',              // po přejmenování 'wc2026.html'
+        url: 'index.html',              // po přejmenování 'wc2026.html'
         hlavni: true                    // full-width dlaždice
     },
-   {
+    {
         nazev: 'MS v hokeji 2027',
-        meta: 'Düsseldorf · Mannheim · 14.–30. 5. 2027',
-        note: 'Sázková kancelář otevřena – vsaď si dlouhodobý tip',
+        meta: 'Německo · květen 2027',
+        note: 'Registrace se otevře na jaře 2027',
         stav: 'soon',
         logo: 'logo-hokej2027.png',
         emoji: '🏒',
-        url: 'hokej2027/index.html'
+        url: null
     },
     {
         nazev: 'Euro 2028',
@@ -190,13 +181,13 @@ const TURNAJE = [
         url: null
     },
     {
-     nazev: 'Liga mistrů',
-        meta: 'Celá sezóna 2026/27 · od září',
-        note: 'Dlouhodobá tipovačka – tabulka, zápasy i pavouk',
-        stav: 'soon',
+        nazev: 'Liga mistrů',
+        meta: 'Playoff · jaro 2027',
+        note: 'Hlasuj v chatu, jestli ji přidáme',
+        stav: 'vote',
         logo: 'logo-cl.png',
         emoji: '🛡️',
-        url: 'ChampionsLeague/welcome.html'
+        url: null
     }
 ];
 
@@ -232,27 +223,23 @@ function tileHtml(t) {
             ${t.url ? `<div class="enter">Vstoupit</div>` : ''}
         </${tag}>`;
     }
-   return `<${tag}${href} class="${cls}">
+    return `<${tag}${href} class="${cls}">
         <span class="badge ${b.cls}">${b.text}</span>
-        <div class="trow">
-            ${logoHtml(t)}
-            <div class="tbody">
-                <div class="tname">${t.nazev}</div>
-                <div class="tmeta">${t.meta || ''}</div>
-                ${t.hook ? `<div class="thook">${t.hook}</div>` : ''}
-                ${t.note ? `<div class="tnote">${t.note}</div>` : ''}
-            </div>
-        </div>
+        ${logoHtml(t)}
+        <div class="tname">${t.nazev}</div>
+        <div class="tmeta">${t.meta || ''}</div>
+        ${t.hook ? `<div class="thook">${t.hook}</div>` : ''}
+        ${t.note ? `<div class="tnote">${t.note}</div>` : ''}
     </${tag}>`;
 }
 
 const grid = document.getElementById('grid');
 grid.innerHTML = TURNAJE.map(tileHtml).join('') + `
-    <a href="sin-slavy.html" class="tile hall">
+    <div class="tile hall">
         <div style="font-size:1.6rem; opacity:.7; margin-bottom:9px;">📜</div>
         <div class="tname" style="color:#d4af37; font-size:.82rem;">Síň slávy</div>
         <div class="tnote">Archiv dohraných turnajů,<br>kroniky a vítězové</div>
-    </a>`;
+    </div>`;
 </script>
 </body>
 </html>
