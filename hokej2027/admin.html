@@ -263,7 +263,7 @@ async function addM() {
     const { error } = await sb.from('hokej27_zapasy').insert({
         domaci: d, hoste: h, kod_d: kd, kod_h: kh, skupina, deadline: new Date(dl).toISOString()
     });
-   if (error) return msg('Chyba: ' + error.message, false);
+    if (error) return msg('Chyba: ' + error.message, false);
     msg('ZÁPAS PUBLIKOVÁN! ✅');
     document.getElementById('d').value = ''; document.getElementById('h').value = '';
     loadMatches();
@@ -280,11 +280,11 @@ async function posliNotifikaciZapas(domaci, hoste, deadline) {
             body: {
                 soutez: 'hokej',
                 titulek: '🏒 Nový zápas k tipování!',
-                zprava: `${domaci} vs ${hoste} — uzávěrka ${kdy}`,
+                zprava: domaci + ' vs ' + hoste + ' — uzávěrka ' + kdy,
                 url: 'https://sknadeje.cz/hokej2027/index.html'
             }
         });
-        if (error) console.warn('Notifikace se nepodařilo odeslat:', error);
+        if (error) console.warn('Notifikace se nepodarilo odeslat:', error);
         else console.log('🔔 Notifikace odeslána:', data);
     } catch (e) {
         console.warn('Notifikace selhala (zápas je ale publikovaný):', e);
