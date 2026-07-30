@@ -368,6 +368,12 @@ OneSignalDeferred.push(async function (OneSignal) {
     try {
         const optedIn = await OneSignal.User.PushSubscription.optedIn;
         if (optedIn) {
+            // Pojistka: obnov propojení s účtem při každém načtení hubu
+            try {
+                const { data: { session } } = await sbHub.auth.getSession();
+                if (session?.user) await OneSignal.login(session.user.id);
+            } catch (e) { console.warn('OneSignal login:', e); }
+
             const tags = await OneSignal.User.getTags();
             const pocet = SOUTEZE.filter(s => tags && tags[s.klic] === 'true').length;
             aktualizujTlacitkoNotif(pocet);
