@@ -343,7 +343,31 @@ async function ulozTymy() {
         aktualizovano: new Date().toISOString()
     }).eq('id', 1);
     if (error) return msg('Chyba: ' + error.message, true);
+    stav.tymy = tymy;
+    naplnTymSelecty(); renderR16Pary(); initVysl1();
     msg('TÝMY ULOŽENY ✅');
+    if (dl && confirm('Poslat hráčům notifikaci, že je dlouhodobý tip otevřený?')) {
+        const kdy = new Date(dl).toLocaleString('cs-CZ', { day:'numeric', month:'numeric', hour:'2-digit', minute:'2-digit' });
+        posliCLNotifikaci('📋 Dlouhodobý tip je otevřený!',
+            'Tipni top 8, vítěze základní části a propadlíky — uzávěrka ' + kdy);
+    }
+}
+
+// Společný odesílač notifikací pro Champions League
+async function posliCLNotifikaci(titulek, zprava) {
+    try {
+        const res = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/posli-notifikaci', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
+            body: JSON.stringify({
+                soutez: 'cl', titulek, zprava,
+                url: 'https://sknadeje.cz/ChampionsLeague/index.html'
+            })
+        });
+        const data = await res.json();
+        console.log('🔔 Notifikace:', data);
+        if (data.ok) msg('Notifikace odeslána 🔔');
+    } catch (e) { console.error('Notifikace selhala:', e); }
 }
 
 async function ulozR16() {
@@ -368,6 +392,13 @@ async function ulozR16() {
     stav.bracket_r16 = pary;
     renderVysl2();
     msg('PÁRY OSMIFINÁLE ULOŽENY ✅');
+    if (confirm('Poslat hráčům notifikaci, že je Cesta k titulu otevřená?')) {
+        const kdyTxt = dl
+            ? ' — uzávěrka ' + new Date(dl).toLocaleString('cs-CZ', { day:'numeric', month:'numeric', hour:'2-digit', minute:'2-digit' })
+            : '';
+        posliCLNotifikaci('🏆 Cesta k titulu je otevřená!',
+            'Pavouk je nalosovaný — proklikej si cestu až k vítězi CL' + kdyTxt);
+    }
 }
 
 /* ---------- DLOUHODOBKY VYHODNOCENÍ ---------- */
