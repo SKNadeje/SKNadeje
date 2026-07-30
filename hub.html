@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SK Naděje – Tipovačky</title>
 <link rel="icon" href="logo-wc2026.png">
+<link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; }
@@ -30,6 +31,9 @@ h1 {
 .sub { text-align: center; font-size: .78rem; color: #5a6480; margin-bottom: 14px; }
 .line { width: 100px; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); margin: 0 auto 30px; }
 
+.tile:not(.wide) .trow { padding-top: 6px; }
+.tile:not(.wide) .tname { padding-right: 70px; }
+    
 /* ===== GRID DLAŽDIC ===== */
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
 .tile {
@@ -67,14 +71,19 @@ a.tile:hover { transform: translateY(-3px); border-color: rgba(212,175,55,.5); b
 
 /* Logo / ikona turnaje */
 .logo {
-    width: 50px; height: 50px; border-radius: 12px;
+    width: 84px; height: 84px; border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.6rem; margin-bottom: 13px; flex-shrink: 0;
-    background: rgba(212,175,55,.1); border: 1px solid rgba(212,175,55,.28);
+    font-size: 2.2rem; flex-shrink: 0;
+    background: linear-gradient(160deg, rgba(240,230,200,.14), rgba(212,175,55,.06));
+    border: 1px solid rgba(212,175,55,.3);
+    padding: 8px;
 }
-.tile.wide .logo { width: 60px; height: 60px; font-size: 1.9rem; margin-bottom: 0; }
-.logo img { width: 80%; height: 80%; object-fit: contain; }
+.tile.wide .logo { width: 100px; height: 100px; font-size: 2.6rem; border-radius: 16px; }
+.logo img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
 
+/* malé dlaždice: logo vlevo, text vedle */
+.trow { display: flex; align-items: center; gap: 14px; }
+.trow .tbody { flex: 1; min-width: 0; }
 .tname { font-size: .95rem; font-weight: 800; color: #f0e6c8; line-height: 1.25; }
 .tile.wide .tname { font-size: 1.15rem; }
 .tmeta { font-size: .68rem; color: #8a93ad; margin-top: 4px; line-height: 1.5; }
@@ -131,10 +140,24 @@ a.tile.hall:hover { border-style: solid; }
 </head>
 <body>
 <div class="hub">
+    <a href="welcome.html" style="display:inline-flex; align-items:center; gap:6px; color:#8a93ad; text-decoration:none; font-size:.72rem; margin-bottom:18px; transition:color .2s;" onmouseover="this.style.color='#d4af37'" onmouseout="this.style.color='#8a93ad'">← Zpět na úvod</a>
     <div class="presents">SK Naděje presents</div>
     <h1>Tipovačky</h1>
     <div class="sub">Vyber turnaj a vstup do hry</div>
     <div class="line"></div>
+
+    <div id="instalace-wrap" style="text-align:center; margin-bottom:22px; display:none;">
+        <button id="btn-instalovat" onclick="instalujAppku()" style="
+            background: linear-gradient(135deg, #d4af37, #9a7b1e); color: #05070f;
+            border: none; border-radius: 10px; padding: 12px 26px;
+            font-size: .78rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;
+            cursor: pointer; box-shadow: 0 4px 16px rgba(212,175,55,.3);
+            display: inline-flex; align-items: center; gap: 8px; font-family: inherit;
+        ">📲 Stáhnout appku</button>
+        <div id="instalace-ios" style="display:none; font-size:.7rem; color:#8a93ad; margin-top:10px; max-width:320px; margin-left:auto; margin-right:auto; line-height:1.6;">
+            Na iPhonu/iPadu: klepni na ikonu <b>Sdílet</b> ⬆️ dole v Safari a zvol <b>„Přidat na plochu"</b>.
+        </div>
+    </div>
 
     <div class="grid" id="grid"></div>
 
@@ -155,21 +178,21 @@ const TURNAJE = [
     {
         nazev: 'MS ve fotbale 2026',
         meta: 'USA · Mexiko · Kanada · 25 hráčů · bank 5 000 Kč',
-        hook: '',                       // po skončení např. '🏆 Vítěz: Trnda'
-        stav: 'live',                   // po skončení přepni na 'archiv'
+       hook: '🏆 Vítěz: Jan Rathouský',
+        stav: 'archiv',
         logo: 'logo-wc2026.png',
         emoji: '🏆',
-        url: 'index.html',              // po přejmenování 'wc2026.html'
+        url: 'wc2026.html',              // po přejmenování 'wc2026.html'
         hlavni: true                    // full-width dlaždice
     },
-    {
+   {
         nazev: 'MS v hokeji 2027',
-        meta: 'Německo · květen 2027',
-        note: 'Registrace se otevře na jaře 2027',
+        meta: 'Düsseldorf · Mannheim · 14.–30. 5. 2027',
+        note: 'Sázková kancelář otevřena – vsaď si dlouhodobý tip',
         stav: 'soon',
         logo: 'logo-hokej2027.png',
         emoji: '🏒',
-        url: null
+        url: 'hokej2027/index.html'
     },
     {
         nazev: 'Euro 2028',
@@ -181,13 +204,13 @@ const TURNAJE = [
         url: null
     },
     {
-        nazev: 'Liga mistrů',
-        meta: 'Playoff · jaro 2027',
-        note: 'Hlasuj v chatu, jestli ji přidáme',
-        stav: 'vote',
+     nazev: 'Liga mistrů',
+        meta: 'Celá sezóna 2026/27 · od září',
+        note: 'Dlouhodobá tipovačka – tabulka, zápasy i pavouk',
+        stav: 'soon',
         logo: 'logo-cl.png',
         emoji: '🛡️',
-        url: null
+        url: 'ChampionsLeague/welcome.html'
     }
 ];
 
@@ -223,23 +246,68 @@ function tileHtml(t) {
             ${t.url ? `<div class="enter">Vstoupit</div>` : ''}
         </${tag}>`;
     }
-    return `<${tag}${href} class="${cls}">
+   return `<${tag}${href} class="${cls}">
         <span class="badge ${b.cls}">${b.text}</span>
-        ${logoHtml(t)}
-        <div class="tname">${t.nazev}</div>
-        <div class="tmeta">${t.meta || ''}</div>
-        ${t.hook ? `<div class="thook">${t.hook}</div>` : ''}
-        ${t.note ? `<div class="tnote">${t.note}</div>` : ''}
+        <div class="trow">
+            ${logoHtml(t)}
+            <div class="tbody">
+                <div class="tname">${t.nazev}</div>
+                <div class="tmeta">${t.meta || ''}</div>
+                ${t.hook ? `<div class="thook">${t.hook}</div>` : ''}
+                ${t.note ? `<div class="tnote">${t.note}</div>` : ''}
+            </div>
+        </div>
     </${tag}>`;
 }
 
 const grid = document.getElementById('grid');
 grid.innerHTML = TURNAJE.map(tileHtml).join('') + `
-    <div class="tile hall">
+    <a href="sin-slavy.html" class="tile hall">
         <div style="font-size:1.6rem; opacity:.7; margin-bottom:9px;">📜</div>
         <div class="tname" style="color:#d4af37; font-size:.82rem;">Síň slávy</div>
         <div class="tnote">Archiv dohraných turnajů,<br>kroniky a vítězové</div>
-    </div>`;
+    </a>`;
+
+/* ============================================================
+   INSTALACE APPKY (PWA) – tlačítko "Stáhnout appku"
+   ============================================================ */
+let deferredInstallPrompt = null;
+
+function jeIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+function jeUzNainstalovana() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    document.getElementById('instalace-wrap').style.display = 'block';
+});
+
+async function instalujAppku() {
+    if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        const { outcome } = await deferredInstallPrompt.userChoice;
+        if (outcome === 'accepted') {
+            document.getElementById('instalace-wrap').style.display = 'none';
+        }
+        deferredInstallPrompt = null;
+    }
+}
+
+// iOS Safari nemá beforeinstallprompt – ukaž rovnou instrukce, pokud appka ještě není nainstalovaná
+if (jeIOS() && !jeUzNainstalovana()) {
+    document.getElementById('instalace-wrap').style.display = 'block';
+    document.getElementById('btn-instalovat').style.display = 'none';
+    document.getElementById('instalace-ios').style.display = 'block';
+}
+
+// Po instalaci (na Android/desktopu) skryj celou nabídku
+window.addEventListener('appinstalled', () => {
+    document.getElementById('instalace-wrap').style.display = 'none';
+});
 </script>
 </body>
 </html>
