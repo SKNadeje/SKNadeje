@@ -54,16 +54,23 @@ body {
 @keyframes vstup { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .karta, .logo, .star-badge { animation: none !important; } }
 
-/* ===== ODZNAK/EMBLÉM ===== */
 .logo {
-    width: min(800px, 92vw); height: min(800px, 92vw);
+    /* Zrušíme height, aby kontejner nedržel zbytečné místo */
+    width: 100%;
     max-width: 800px;
-    margin: 0 auto 0px;
-    /* Vytažení přes šířku karty, aby se logo centrovalo vůči obrazovce */
-    margin-left: 50%; transform: translateX(-50%);
-    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 4px; 
+    margin-left: 50%; 
+    transform: translateX(-50%);
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
     position: relative;
-   /* animation: dych 4s ease-in-out infinite;*/
+}
+
+.logo-inner {
+    /* Tady si určíš přesnou velikost oblasti i s obrázkem */
+    width: min(300px, 80vw);
+    height: min(300px, 80vw);
 }
 /* Rotující světelné paprsky za logem (reflektory) 
 .logo::before {
