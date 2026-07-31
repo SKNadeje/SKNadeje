@@ -62,18 +62,46 @@ function vlozChatHTML() {
             <span onclick="prepniChat()" style="cursor:pointer; opacity:.5; font-size:1.4em; line-height:1;">×</span>
         </div>
         <div id="chat-zpravy" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;"></div>
-        <div id="chat-vstup" style="padding:10px; border-top:1px solid ${b}33; display:flex; gap:7px;">
+        <div id="chat-emoji-paleta" style="display:none; padding:8px 10px; border-top:1px solid ${b}33; flex-wrap:wrap; gap:4px; max-height:120px; overflow-y:auto;"></div>
+        <div id="chat-vstup" style="padding:10px; border-top:1px solid ${b}33; display:flex; gap:7px; align-items:center;">
+            <button onclick="prepniEmoji()" style="
+                background:rgba(255,255,255,.06); border:1px solid ${b}44; color:#fff;
+                border-radius:10px; padding:0 10px; height:38px; cursor:pointer; font-size:1.1em; font-family:inherit;
+            ">😊</button>
             <input id="chat-text" placeholder="Napiš zprávu…" maxlength="300" onkeydown="if(event.key==='Enter')posliChatZpravu()" style="
                 flex:1; background:rgba(255,255,255,.06); color:#fff; border:1px solid ${b}44;
                 border-radius:10px; padding:10px 12px; font-size:.85em; font-family:inherit; outline:none;
             ">
-            <button onclick="posliChatZpravu()" style="
+            <button id="chat-send-btn" onclick="posliChatZpravu()" style="
                 background:linear-gradient(135deg, ${b}, ${b}88); color:#05121a; border:none;
-                border-radius:10px; padding:0 16px; font-weight:900; cursor:pointer; font-family:inherit;
+                border-radius:10px; padding:0 16px; height:38px; font-weight:900; cursor:pointer; font-family:inherit;
             ">➤</button>
         </div>
     </div>`;
     document.body.appendChild(el);
+}
+
+// Paleta nejběžnějších emoji
+const CHAT_EMOJI = ['😀','😂','🤣','😊','😍','😎','🤔','😉','😢','😭','😡','👍','👎','👏','🙌','🔥','⚽','🏆','🎯','💪','🤝','🎉','❤️','💔','😴','🤯','🥳','😱','🙏','💯'];
+
+function prepniEmoji() {
+    const p = document.getElementById('chat-emoji-paleta');
+    if (!p) return;
+    const zobrazit = p.style.display === 'none';
+    if (zobrazit && !p.dataset.napln) {
+        p.innerHTML = CHAT_EMOJI.map(e =>
+            `<span onclick="vlozEmoji('${e}')" style="cursor:pointer; font-size:1.3em; padding:3px 5px; border-radius:6px;">${e}</span>`
+        ).join('');
+        p.dataset.napln = '1';
+    }
+    p.style.display = zobrazit ? 'flex' : 'none';
+}
+
+function vlozEmoji(e) {
+    const input = document.getElementById('chat-text');
+    if (!input) return;
+    input.value += e;
+    input.focus();
 }
 
 function prepniChat() {
@@ -118,19 +146,30 @@ function vykresliZpravy() {
     box.innerHTML = _chat.zpravy.map(z => {
         const moje = z.user_id === _chat.mojeId;
         const cas = new Date(z.created_at).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
-        const smazat = moje ? `<span onclick="smazChatZpravu(${z.id})" style="cursor:pointer; opacity:.35; margin-left:6px;">🗑</span>` : '';
+        const upraveno = z.edited_at ? ` <span style="opacity:.5;">(upraveno)</span>` : '';
+        const akce = moje
+            ? `<span onclick="upravChatZpravu(${z.id})" style="cursor:pointer; opacity:.35; margin-left:6px;">✏️</span><span onclick="smazChatZpravu(${z.id})" style="cursor:pointer; opacity:.35; margin-left:4px;">🗑</span>`
+            : '';
         return `<div style="align-self:${moje ? 'flex-end' : 'flex-start'}; max-width:82%;">
             <div style="font-size:.62em; opacity:.5; margin-bottom:2px; text-align:${moje ? 'right' : 'left'};">
-                ${moje ? 'Ty' : escapeHtml(z.name)} · ${cas}${smazat}
+                ${moje ? 'Ty' : escapeHtml(z.name)} · ${cas}${akce}
             </div>
             <div style="background:${moje ? _chat.barva + '22' : 'rgba(255,255,255,.06)'};
                         border:1px solid ${moje ? _chat.barva + '55' : 'rgba(255,255,255,.1)'};
                         border-radius:12px; padding:8px 12px; font-size:.85em; word-break:break-word;">
-                ${escapeHtml(z.message)}
+                ${formatujText(z.message)}${upraveno}
             </div>
         </div>`;
     }).join('');
     box.scrollTop = box.scrollHeight;
+}
+
+// Escapuje HTML a zvýrazní @zmínky hráčů
+function formatujText(s) {
+    const safe = escapeHtml(s);
+    // @Jméno nebo @Jméno Příjmení (písmena, číslice, tečka, podtržítko; i s jednou mezerou uvnitr)
+    return safe.replace(/@([\p{L}0-9_.]+(?:\s[\p{L}0-9_.]+)?)/gu,
+        `<span style="color:${_chat.barva}; font-weight:700;">@$1</span>`);
 }
 
 function escapeHtml(s) {
@@ -145,6 +184,25 @@ async function posliChatZpravu() {
     if (!text) return;
 
     if (!_chat.mojeId) { alert('Pro psaní do chatu se musíš přihlásit.'); return; }
+
+    // Režim úpravy existující zprávy
+    if (_chat.upravovanaId) {
+        const id = _chat.upravovanaId;
+        try {
+            const { error } = await _chat.klient.from(_chat.tabulka)
+                .update({ message: text, edited_at: new Date().toISOString() })
+                .eq('id', id).eq('user_id', _chat.mojeId);
+            if (error) throw error;
+            const z = _chat.zpravy.find(x => x.id === id);
+            if (z) { z.message = text; z.edited_at = new Date().toISOString(); }
+            zrusUpravu();
+            vykresliZpravy();
+        } catch (e) {
+            alert('Úpravu se nepodařilo uložit: ' + e.message);
+        }
+        return;
+    }
+
     if (Date.now() - _chat.poslednioOdeslani < 3000) { alert('Počkej chvilku, píšeš moc rychle 😅'); return; }
 
     input.value = '';
@@ -160,6 +218,38 @@ async function posliChatZpravu() {
         alert('Zprávu se nepodařilo odeslat: ' + e.message);
         input.value = text;
     }
+}
+
+// Zahájí úpravu vlastní zprávy – načte ji do inputu
+function upravChatZpravu(id) {
+    const z = _chat.zpravy.find(x => x.id === id);
+    if (!z || z.user_id !== _chat.mojeId) return;
+    _chat.upravovanaId = id;
+    const input = document.getElementById('chat-text');
+    input.value = z.message;
+    input.focus();
+    const btn = document.getElementById('chat-send-btn');
+    if (btn) btn.textContent = '✓';
+    let lista = document.getElementById('chat-edit-info');
+    if (!lista) {
+        lista = document.createElement('div');
+        lista.id = 'chat-edit-info';
+        lista.style.cssText = 'font-size:.62em; padding:4px 12px; opacity:.7; display:flex; justify-content:space-between; align-items:center;';
+        const vstup = document.getElementById('chat-vstup');
+        vstup.parentNode.insertBefore(lista, vstup);
+    }
+    lista.innerHTML = `<span>✏️ Upravuješ zprávu</span><span onclick="zrusUpravu()" style="cursor:pointer; text-decoration:underline;">zrušit</span>`;
+}
+
+// Zruší režim úpravy
+function zrusUpravu() {
+    _chat.upravovanaId = null;
+    const input = document.getElementById('chat-text');
+    if (input) input.value = '';
+    const btn = document.getElementById('chat-send-btn');
+    if (btn) btn.textContent = '➤';
+    const lista = document.getElementById('chat-edit-info');
+    if (lista) lista.remove();
 }
 
 async function smazChatZpravu(id) {
