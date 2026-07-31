@@ -285,7 +285,7 @@ const ADMIN_ID = "92a1e51b-e03c-48d7-99df-76c2f60a455f";
 const STARTOVNE = 200;
 const DELENI = [0.6, 0.3, 0.1];
 const BODY = { presne: 5, trend: 1, top8: 3, vitezZC: 8, propadlik: 1, qf: 2, sf: 5, finale: 8, vitezCL: 20,
-               strelec: 10, goly: [15, 8, 3], cech: 5 };
+               cech: 5, slavia_misto: 5, slavia_body: 5, slavia_goly: 5 };
 const CESKE_TYMY = ['Slavia Praha', 'Sparta Praha', 'Viktoria Plzeň', 'Baník Ostrava'];
 const CECH_MOZNOSTI = ['Nepostoupí z ligové fáze', 'Vypadne v play-off (únor)', 'Vypadne v osmifinále', 'Čtvrtfinále a dál', 'Žádný český tým v CL'];
 
@@ -606,15 +606,17 @@ function otevriDl(faze) {
                 <select class="pole" id="dl-vitezZC"><option value="">– vyber –</option>${stav.tymy.map(x => `<option${t.vitezZC === x ? ' selected' : ''}>${x}</option>`).join('')}</select></div>
             <div class="dl-sekce"><h3>📉 Propadlíci (bez play-off, místa 25–36) <span class="pocitadlo" id="poc-propadlici">${vyber.propadlici.length} / 12</span></h3>${chipy('ch-prop', stav.tymy, 'propadlici', 12)}</div>
 
-            <div class="dl-sekce"><h3>🎯 Nejlepší střelec CL (${BODY.strelec} b.)</h3>
-                <input class="pole" id="dl-strelec" placeholder="Příjmení hráče" value="${t.strelec || ''}"></div>
+            <div class="dl-sekce"><h3>🇨🇿 SK Slavia Praha – kam dojde v soutěži (${BODY.cech} b.)</h3>
+                <select class="pole" id="dl-cech"><option value="">– vyber –</option>${CECH_MOZNOSTI.map(m => `<option${t.cech === m ? ' selected' : ''}>${m}</option>`).join('')}</select></div>
 
-            <div class="dl-sekce"><h3>⚽ Celkem gólů v celé soutěži (${BODY.goly[0]}/${BODY.goly[1]}/${BODY.goly[2]} b.)</h3>
-                <div style="font-size:.7em; opacity:.5; margin-bottom:6px;">Přesně = ${BODY.goly[0]} b. · ±5 = ${BODY.goly[1]} b. · ±10 = ${BODY.goly[2]} b.</div>
-                <input class="pole" id="dl-goly" type="number" min="0" placeholder="např. 380" value="${t.goly ?? ''}"></div>
+            <div class="dl-sekce"><h3>🇨🇿 Slavia – umístění v tabulce ligové fáze (${BODY.slavia_misto} b.)</h3>
+                <input class="pole" id="dl-slavia-misto" type="number" min="1" max="36" placeholder="1–36" value="${t.slavia_misto ?? ''}"></div>
 
-            <div class="dl-sekce"><h3>🇨🇿 Jak daleko dojde český zástupce (${BODY.cech} b.)</h3>
-                <select class="pole" id="dl-cech"><option value="">– vyber –</option>${CECH_MOZNOSTI.map(m => `<option${t.cech === m ? ' selected' : ''}>${m}</option>`).join('')}</select></div>`;
+            <div class="dl-sekce"><h3>🇨🇿 Slavia – počet bodů v ligové fázi (${BODY.slavia_body} b.)</h3>
+                <input class="pole" id="dl-slavia-body" type="number" min="0" placeholder="např. 12" value="${t.slavia_body ?? ''}"></div>
+
+            <div class="dl-sekce"><h3>🇨🇿 Slavia – počet vstřelených gólů (${BODY.slavia_goly} b.)</h3>
+                <input class="pole" id="dl-slavia-goly" type="number" min="0" placeholder="např. 14" value="${t.slavia_goly ?? ''}"></div>`;
     } else {
         if ((stav.bracket_r16 || []).length < 8) return;
         const d2 = stav.deadline_tip2 ? new Date(stav.deadline_tip2) : null;
@@ -643,12 +645,22 @@ async function ulozDl() {
             msg.textContent = 'Vyber přesně 8 do top 8, 12 propadlíků a vítěze ZČ.';
             msg.style.color = '#e74c3c'; return;
         }
-        const strelec = document.getElementById('dl-strelec')?.value.trim() || '';
-        const golyRaw = document.getElementById('dl-goly')?.value;
         const cech = document.getElementById('dl-cech')?.value || '';
+        const mistoRaw = document.getElementById('dl-slavia-misto')?.value;
+        const bodyRaw  = document.getElementById('dl-slavia-body')?.value;
+        const golyRaw  = document.getElementById('dl-slavia-goly')?.value;
+        if (!cech || mistoRaw === '' || bodyRaw === '' || golyRaw === '') {
+            msg.textContent = 'Vyplň u Slavie všechny čtyři údaje: kam dojde, umístění, body i góly.';
+            msg.style.color = '#e74c3c'; return;
+        }
+        const slavia_misto = parseInt(mistoRaw);
+        if (slavia_misto < 1 || slavia_misto > 36) {
+            msg.textContent = 'Umístění Slavie musí být mezi 1 a 36.';
+            msg.style.color = '#e74c3c'; return;
+        }
         payload = { tip1: {
-            top8: vyber.top8, vitezZC, propadlici: vyber.propadlici,
-            strelec, goly: golyRaw === '' ? null : parseInt(golyRaw), cech
+            top8: vyber.top8, vitezZC, propadlici: vyber.propadlici, cech,
+            slavia_misto, slavia_body: parseInt(bodyRaw), slavia_goly: parseInt(golyRaw)
         } };
     } else {
         if (bracketPick.qf.includes(null) || bracketPick.sf.includes(null) || bracketPick.finale.includes(null) || !bracketPick.vitez) {
