@@ -351,7 +351,14 @@ const radky = (id) => document.getElementById(id).value.split('\n').map(x => x.t
 
 async function ulozTymy() {
     const tymy = radky('t-tymy');
-    if (tymy.length !== 36) return msg(`Čekám 36 týmů, máš ${tymy.length}.`, true);
+    // Kompletní sada je 36 týmů. Míň (i 0) povolíme, ale upozorníme —
+    // hráčům se pak dlouhodobka 1 neotevře (index kontroluje >= 36), takže nebudou tipovat.
+    if (tymy.length !== 36) {
+        const jak = tymy.length === 0
+            ? 'Ukládáš PRÁZDNÝ seznam týmů — hráči nebudou moct tipovat dlouhodobku 1.'
+            : `Máš jen ${tymy.length} z 36 týmů — dokud jich nebude 36, hráči dlouhodobku 1 tipovat nemůžou.`;
+        if (!confirm(jak + '\n\nOpravdu uložit takto?')) return;
+    }
     const dl = document.getElementById('t-dl1').value;
     const { error } = await sb.from('cl_stav').update({
         tymy, deadline_tip1: dl ? new Date(dl).toISOString() : null,
@@ -388,10 +395,35 @@ async function posliCLNotifikaci(titulek, zprava) {
 async function ulozR16() {
     const pary = [];
     const pouzite = new Set();
+
+    // Zjisti, kolik polí je vyplněných
+    let vyplneno = 0;
+    for (let i = 0; i < 8; i++) {
+        if (document.getElementById(`r16-a-${i}`).value) vyplneno++;
+        if (document.getElementById(`r16-b-${i}`).value) vyplneno++;
+    }
+
+    // Úplně prázdný pavouk = reset dlouhodobky 2 (hráči ji pak nemůžou tipovat)
+    if (vyplneno === 0) {
+        if (!confirm('Ukládáš PRÁZDNÝ pavouk — tím se Cesta k titulu (dlouhodobka 2) zavře a hráči ji nebudou moct tipovat.\n\nTipy a body hráčů zůstanou zachované. Opravdu resetovat?')) return;
+        const dl = document.getElementById('t-dl2').value;
+        const { error } = await sb.from('cl_stav').update({
+            bracket_r16: [], osmifinaliste: [],
+            deadline_tip2: dl ? new Date(dl).toISOString() : null,
+            aktualizovano: new Date().toISOString()
+        }).eq('id', 1);
+        if (error) return msg('Chyba: ' + error.message, true);
+        stav.bracket_r16 = [];
+        stav.osmifinaliste = [];
+        renderVysl2();
+        return msg('PAVOUK VYRESETOVÁN (dlouhodobka 2 zavřená) ✅');
+    }
+
+    // Jinak vyžadujeme kompletní, korektní pavouk (půl pavouka nedává smysl)
     for (let i = 0; i < 8; i++) {
         const a = document.getElementById(`r16-a-${i}`).value;
         const b = document.getElementById(`r16-b-${i}`).value;
-        if (!a || !b) return msg(`Vyplň oba týmy v páru č. ${i + 1}.`, true);
+        if (!a || !b) return msg(`Vyplň oba týmy v páru č. ${i + 1} (nebo nech VŠECHNY prázdné pro reset).`, true);
         if (a === b) return msg(`Pár č. ${i + 1}: tým nemůže hrát sám proti sobě.`, true);
         if (pouzite.has(a) || pouzite.has(b)) return msg(`Tým se v párech opakuje (pár č. ${i + 1}).`, true);
         pouzite.add(a); pouzite.add(b);
