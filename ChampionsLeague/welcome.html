@@ -137,6 +137,63 @@ h1 {
     .logo { width: 130px; height: 130px; }
     .logo-inner { font-size: 3.4rem; }
 }
+
+/* ===== TLAČÍTKO PRAVIDEL ===== */
+.pravidla-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(46,107,255,.08); border: 1px solid rgba(46,107,255,.4);
+    color: #cbd5e1; text-decoration: none; cursor: pointer;
+    font-size: .72rem; font-weight: 800; letter-spacing: 1px;
+    padding: 11px 24px; border-radius: 10px; text-transform: uppercase;
+    margin-top: 14px; font-family: inherit; transition: all .2s;
+}
+.pravidla-btn:hover { border-color: var(--fial); color: #fff; background: rgba(46,107,255,.15); }
+
+/* ===== MODAL PRAVIDEL ===== */
+.pr-overlay {
+    position: fixed; inset: 0; background: rgba(4,6,18,.9);
+    backdrop-filter: blur(8px); z-index: 1000; display: none;
+    justify-content: center; align-items: flex-start; padding: 24px 14px; overflow-y: auto;
+}
+.pr-overlay.open { display: flex; }
+.pr-modal {
+    background: linear-gradient(160deg, #0c1330, #070a1e);
+    border: 1px solid rgba(46,107,255,.4); border-radius: 22px;
+    max-width: 460px; width: 100%; padding: 26px 24px 30px;
+    box-shadow: 0 25px 70px rgba(0,0,0,.7); text-align: left;
+    animation: vstup .35s ease both; margin: auto;
+}
+.pr-modal h2 {
+    text-align: center; font-size: 1.15rem; font-weight: 900; margin: 0 0 4px;
+    color: var(--fial); letter-spacing: 1px;
+}
+.pr-close {
+    float: right; cursor: pointer; opacity: .5; font-size: 1.6rem; line-height: 1;
+    margin: -8px -6px 0 0;
+}
+.pr-close:hover { opacity: 1; }
+.pr-varovani {
+    background: rgba(255,180,0,.1); border: 1px solid rgba(255,180,0,.5);
+    border-radius: 12px; padding: 13px 15px; margin: 18px 0;
+    font-size: .82rem; line-height: 1.55; color: #ffd98a;
+}
+.pr-varovani b { color: #ffb400; }
+.pr-sekce { margin: 18px 0; }
+.pr-sekce h3 {
+    font-size: .72rem; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--gold); margin: 0 0 8px; border-bottom: 1px solid rgba(212,175,55,.25); padding-bottom: 5px;
+}
+.pr-sekce p, .pr-sekce li { font-size: .82rem; line-height: 1.6; color: #cbd5e1; }
+.pr-sekce ul { margin: 6px 0; padding-left: 18px; }
+.pr-sekce li { margin-bottom: 4px; }
+.pr-radek { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; font-size: .82rem; }
+.pr-radek span:first-child { color: #cbd5e1; }
+.pr-radek b { color: #fff; white-space: nowrap; }
+.pr-castka {
+    background: rgba(46,107,255,.08); border: 1px solid rgba(46,107,255,.3);
+    border-radius: 12px; padding: 14px 16px; margin-top: 8px;
+}
+.pr-castka .celkem { font-size: 1.5rem; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 6px; }
 </style>
 </head>
 <body>
@@ -159,19 +216,102 @@ h1 {
 
     <div class="info-pasek">
         <span>🏆 CELÁ SEZÓNA 2026/27</span>
-        <span>💰 STARTOVNÉ 200 KČ</span>
+        <span>💰 STARTOVNÉ 220 KČ</span>
         <span>⭐ 36 TÝMŮ</span>
     </div>
 
     <div class="hlaska" id="hlaska"></div>
 
     <a class="vstup" href="index.html">Vstoupit ⭐</a>
+    <br>
+    <button class="pravidla-btn" onclick="otevriPravidla()">📋 Pravidla a informace</button>
 
     <div class="tisk">
         <b>Upozornění klubu:</b> Tipování top 8 nezaručuje, že váš klub bude v top 8.<br>
         Kancelář nenese odpovědnost za nervy zničené v prodloužení play-off.
     </div>
 </div>
+
+<!-- 📋 MODAL PRAVIDEL -->
+<div class="pr-overlay" id="prOverlay" onclick="if(event.target===this)zavriPravidla()">
+    <div class="pr-modal">
+        <span class="pr-close" onclick="zavriPravidla()">×</span>
+        <h2>📋 Pravidla a informace</h2>
+
+        <div class="pr-varovani">
+            ⚠️ <b>Zatím jen na zkoušku!</b> Tipovačka je v testovacím provozu –
+            <b>zatím neposílejte žádné peníze</b>. Až se vše odladí, dáme vědět, kdy a kam startovné poslat.
+        </div>
+
+        <div class="pr-sekce">
+            <h3>📅 Kdy to začíná</h3>
+            <p>Start ligové fáze: <b>8. 9. 2026</b>. Dlouhodobé tipy (tabulka + pavouk) se otevřou před prvním kolem, jednotlivé zápasy se pak tipují průběžně celou sezónu až do finále.</p>
+        </div>
+
+        <div class="pr-sekce">
+            <h3>💰 Startovné</h3>
+            <div class="pr-castka">
+                <div class="celkem">220 Kč / celá sezóna</div>
+                <div class="pr-radek"><span>Do banku soutěže (výhry)</span><b>200 Kč</b></div>
+                <div class="pr-radek"><span>Na provoz webu a appky</span><b>20 Kč</b></div>
+            </div>
+            <p style="margin-top:10px; font-size:.76rem; opacity:.75;">Platí se jednou za celou sezónu. Bank se na konci rozdělí mezi nejlepší tři hráče celkového pořadí (50 % / 30 % / 20 %).</p>
+        </div>
+
+        <div class="pr-sekce">
+            <h3>🎯 Jak se tipuje</h3>
+            <ul>
+                <li><b>Jednotlivé zápasy</b> – tipuješ přesný výsledek každého zápasu. Každý zápas má svou <b>uzávěrku</b> (většinou před výkopem) – po ní už tip nezměníš. Tipovat můžeš klidně víc zápasů dopředu.</li>
+                <li><b>Dlouhodobka 1 (ligová fáze)</b> – top 8 tabulky, vítěz základní části, propadlíci (místa 25–36) a výsledky SK Slavia Praha. Jedna společná uzávěrka před startem sezóny.</li>
+                <li><b>Dlouhodobka 2 (cesta k titulu)</b> – po nalosování pavouka osmifinále proklikáš cestu až k vítězi CL. Otevře se, jakmile budou známé páry.</li>
+            </ul>
+        </div>
+
+        <div class="pr-sekce">
+            <h3>⚽ Zápasy a uzávěrky</h3>
+            <p>Nové zápasy přibývají průběžně, jak postupuje sezóna. U každého vidíš čas uzávěrky a odpočet. <b>Po uzávěrce se tip zamkne</b> a čeká se na výsledek – po zadání výsledku adminem se ti rovnou připočtou body a projeví se v žebříčku.</p>
+        </div>
+
+        <div class="pr-sekce">
+            <h3>🔔 Notifikace</h3>
+            <p>Ať ti nic neuteče, můžeš si zapnout push notifikace (i na mobil). Chodí ti upozornění na:</p>
+            <ul>
+                <li><b>nový zápas</b> vypsaný k tipování,</li>
+                <li><b>otevření dlouhodobých tipů</b> (ligová fáze, pavouk),</li>
+                <li><b>nové zprávy v chatu</b> soutěže.</li>
+            </ul>
+            <p style="margin-top:8px;">Zapínají se v <b>centru Naděje</b> (tlačítko se zvonečkem 🔔) – zvlášť pro dění v soutěži a zvlášť pro chat, takže si vybereš, co chceš dostávat.</p>
+        </div>
+
+        <div class="pr-sekce">
+            <h3>💬 Chat</h3>
+            <p>V appce najdeš <b>chat pro celou soutěž</b> (bublina 💬 vpravo dole) – můžeš rýpat do soupeřů, sdílet tipy nebo jen glosovat zápasy. Svoje zprávy můžeš upravit i smazat.</p>
+        </div>
+
+        <div class="pr-sekce">
+            <h3>🏅 Bodování</h3>
+            <div class="pr-radek"><span>Přesný výsledek zápasu</span><b>5 b.</b></div>
+            <div class="pr-radek"><span>Správný trend (výhra/remíza/prohra)</span><b>1 b.</b></div>
+            <div class="pr-radek"><span>Tým v top 8 tabulky</span><b>3 b. / tým</b></div>
+            <div class="pr-radek"><span>Vítěz základní části</span><b>8 b.</b></div>
+            <div class="pr-radek"><span>Propadlík (místo 25–36)</span><b>1 b. / tým</b></div>
+            <div class="pr-radek"><span>Slavia – kam dojde</span><b>5 b.</b></div>
+            <div class="pr-radek"><span>Slavia – umístění v tabulce</span><b>5 b.</b></div>
+            <div class="pr-radek"><span>Slavia – počet bodů</span><b>5 b.</b></div>
+            <div class="pr-radek"><span>Slavia – počet gólů</span><b>5 b.</b></div>
+            <div class="pr-radek"><span>Pavouk – čtvrtfinále / semifinále</span><b>2 / 5 b.</b></div>
+            <div class="pr-radek"><span>Pavouk – finalista</span><b>8 b.</b></div>
+            <div class="pr-radek"><span>Vítěz Champions League</span><b>20 b.</b></div>
+        </div>
+
+        <button class="pravidla-btn" style="width:100%; justify-content:center; margin-top:20px;" onclick="zavriPravidla()">Rozumím, jdeme na to ⭐</button>
+    </div>
+</div>
+
+<script>
+function otevriPravidla() { document.getElementById('prOverlay').classList.add('open'); }
+function zavriPravidla() { document.getElementById('prOverlay').classList.remove('open'); }
+</script>
 
 <script>
 /* ============================================================
