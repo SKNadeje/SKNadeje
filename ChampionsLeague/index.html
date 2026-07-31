@@ -132,7 +132,15 @@ h1 {
     display: flex; align-items: center; gap: 10px;
     padding: 11px 14px; border-radius: 10px; margin-bottom: 6px; text-align: left;
     background: rgba(46,107,255,.05); border: 1px solid rgba(46,107,255,.12);
+    transition: transform .22s, background .22s, border-color .22s, box-shadow .22s;
 }
+.lb-row:hover {
+    transform: translateX(4px);
+    background: rgba(46,107,255,.14);
+    border-color: rgba(46,107,255,.4);
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
+}
+@media (prefers-reduced-motion: reduce) { .lb-row { transition: none; } .lb-row:hover { transform: none; } }
 .lb-row.posledni { background: rgba(239,68,68,.06); border-color: rgba(239,68,68,.15); }
 .lb-row.moje { background: rgba(212,175,55,.1); border-color: rgba(212,175,55,.3); }
 .lb-row .poradi { font-size: 16px; font-weight: 900; width: 24px; text-align: center; color: rgba(238,242,255,.4); flex-shrink: 0; }
@@ -754,6 +762,27 @@ function renderZebricek() {
     }).join('');
 
     document.getElementById('zebricek').innerHTML = podiumHtml + radekHtml;
+    animujBody();
+}
+
+// Efekt: body v žebříčku „naskočí" od nuly (pódium .b i řádky .pts)
+function animujBody() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    document.querySelectorAll('#zebricek .pts, #zebricek .podium .b').forEach(el => {
+        const html = el.innerHTML;
+        const m = html.match(/^(\d+)/);
+        if (!m) return;
+        const cil = parseInt(m[1]);
+        if (cil <= 0) return;
+        const zbytek = html.slice(m[1].length);
+        const kroku = 22;
+        let i = 0;
+        const iv = setInterval(() => {
+            i++;
+            el.innerHTML = Math.round(cil * i / kroku) + zbytek;
+            if (i >= kroku) clearInterval(iv);
+        }, 28);
+    });
 }
 
 /* ============================================================
