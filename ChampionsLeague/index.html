@@ -830,5 +830,12 @@ function zavriPlatbu() {
     document.getElementById('cl-payment-overlay').style.display = 'none';
 }
 </script>
+
+<!-- 💬 CHAT (sdílený modul jako u hokeje) -->
+<script src="../chat.js"></script>
+<script>
+window.SB_KEY = SB_KEY;
+inicializujChat({ klient: sb, tabulka: 'cl_chat', soutez: 'cl', barva: '#2e6bff' });
+</script>
 </body>
 </html>
