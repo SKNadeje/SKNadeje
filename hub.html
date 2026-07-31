@@ -451,10 +451,7 @@ async function ulozNotifPreference() {
             }
 
             // Propoj se Supabase účtem, ať jde v budoucnu cílit i podle jména
-            // (logout() nejdřív zahodí případnou starou/zaseknutou identitu zařízení,
-            //  aby login() nenarážel na 409 Conflict s dřívějším onesignal_id)
             try {
-                await OneSignal.logout();
                 const { data: { session } } = await sbHub.auth.getSession();
                 if (session?.user) await OneSignal.login(session.user.id);
             } catch (e) { console.warn('OneSignal login error:', e); }
