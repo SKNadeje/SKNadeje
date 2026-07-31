@@ -187,6 +187,31 @@ select.pole option { background: #10131f; color: #eef2ff; }
 .br-vitez .jm { font-weight: 900; font-size: 1.2em; color: var(--gold); }
 .br-reset { display: block; margin: 4px auto 0; background: none; border: none; color: rgba(238,242,255,.4); font-size: .68em; text-decoration: underline; cursor: pointer; font-family: inherit; }
 @media (max-width: 440px) { .score-input { width: 58px; height: 58px; } }
+
+/* --- PLATEBNÍ QR MODAL --- */
+#cl-payment-overlay {
+    position: fixed; inset: 0; background: rgba(8,10,18,.94);
+    backdrop-filter: blur(10px); display: none;
+    justify-content: center; align-items: center; z-index: 100000;
+    padding: 20px; overflow-y: auto; box-sizing: border-box;
+}
+.cl-payment-modal {
+    background: linear-gradient(145deg, #0f1423, #080c18);
+    border: 1px solid rgba(212,175,55,.35); border-radius: 24px;
+    padding: 32px; max-width: 400px; width: 100%; max-height: 92vh;
+    overflow-y: auto; text-align: center; box-sizing: border-box;
+    box-shadow: 0 25px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(212,175,55,.05);
+    display: flex; flex-direction: column; align-items: center;
+}
+.cl-payment-modal h2 { color: var(--gold); margin: 0 0 10px; font-size: 1.5rem; font-weight: 900; }
+.cl-payment-modal p { color: #cbd3e6; font-size: .9rem; margin-bottom: 20px; line-height: 1.5; }
+.cl-close-payment-btn {
+    background: linear-gradient(135deg, var(--gold), #9a7b1e);
+    color: #050710; border: none; padding: 14px 25px; border-radius: 12px;
+    font-weight: 800; cursor: pointer; width: 100%; font-family: inherit;
+    font-size: .9rem; letter-spacing: 1px; transition: box-shadow .3s; margin-top: 22px;
+}
+.cl-close-payment-btn:hover { box-shadow: 0 6px 20px rgba(212,175,55,.4); }
 </style>
 </head>
 <body>
@@ -637,6 +662,12 @@ async function ulozDl() {
     if (error) { msg.textContent = 'Chyba: ' + error.message; msg.style.color = '#e74c3c'; return; }
     msg.textContent = '✔ Uloženo!'; msg.style.color = '#2ecc71';
     await nactiVse();
+
+    // Po uložení dlouhodobého tipu zavři editační modal a ukaž QR platbu.
+    // Platbu ukazujeme jen tomu, kdo ještě nezaplatil (zaplaceno se drží na řádku v cl_dlouhodobe).
+    zavriDl();
+    const uzZaplatil = mujDl && mujDl.zaplaceno;
+    if (!uzZaplatil) ukazPlatbu(mojeJmeno);
 }
 
 /* ============================================================
@@ -715,6 +746,72 @@ function renderZebricek() {
     await initAuth();
     await nactiVse();
 })();
+</script>
+
+<!-- 💳 PLATEBNÍ QR MODAL -->
+<div id="cl-payment-overlay">
+    <div class="cl-payment-modal">
+        <div style="font-size:2.5rem; margin-bottom:10px;">🎉</div>
+        <h2>Tip uložen!</h2>
+        <p>Pro zařazení do hry zbývá poslední krok:<br>zaplatit startovné.</p>
+        <div id="cl-qr-container"></div>
+        <button class="cl-close-payment-btn" onclick="zavriPlatbu()">MÁM ZAPLACENO / ZAVŘÍT</button>
+    </div>
+</div>
+
+<script>
+/* ============================================================
+   PLATEBNÍ QR MODAL (Champions League)
+   Uprav zde částku / účet / text zprávy, pokud bude potřeba:
+   ============================================================ */
+const CL_PLATBA = {
+    ucet: '305184832',
+    banka: '0300',
+    castka: '220.00',      // zobrazí se i v instrukcích jako castkaText
+    castkaText: '220 Kč',
+    zpravaPrefix: 'Liga mistrů',   // výsledek: "Liga mistrů Jméno"
+};
+
+function ukazPlatbu(jmenoHrace) {
+    const modal = document.getElementById('cl-payment-overlay');
+    const box = document.getElementById('cl-qr-container');
+    const cleanName = (jmenoHrace || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').substring(0, 15);
+    const zprava = `${CL_PLATBA.zpravaPrefix} ${cleanName}`.trim();
+    const qrUrl = `https://api.paylibo.com/paylibo/generator/czech/image?accountNumber=${CL_PLATBA.ucet}&bankCode=${CL_PLATBA.banka}&amount=${CL_PLATBA.castka}&currency=CZK&message=${encodeURIComponent(zprava)}&size=400`;
+
+    if (box) {
+        box.innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center; width:100%;">
+                <div style="background:white; padding:34px; border-radius:20px; box-shadow:0 15px 45px rgba(0,0,0,.7); margin-bottom:22px;">
+                    <img src="${qrUrl}" alt="QR Platba" style="display:block; width:240px; height:240px; image-rendering:pixelated; border:1px solid #eee;">
+                    <div style="color:#000; font-family:sans-serif; font-weight:900; font-size:13px; margin-top:16px; text-align:center; letter-spacing:4px; opacity:.5;">QR PLATBA</div>
+                </div>
+                <div style="background:rgba(255,255,255,.05); padding:20px; border-radius:12px; width:100%; max-width:340px; border:1px solid rgba(255,255,255,.1); text-align:left; box-sizing:border-box;">
+                    <div style="color:#fbbf24; font-size:.75rem; font-weight:800; text-transform:uppercase; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,.1); padding-bottom:5px;">Platební instrukce</div>
+                    <div style="margin-bottom:10px; display:flex; justify-content:space-between; font-size:1rem;">
+                        <span style="opacity:.7;">Částka:</span>
+                        <b style="color:#22c55e;">${CL_PLATBA.castkaText}</b>
+                    </div>
+                    <div style="margin:-4px 0 12px; font-size:.72rem; opacity:.55; line-height:1.4;">
+                        200 Kč do banku soutěže · 20 Kč na provoz webu
+                    </div>
+                    <div style="margin-bottom:10px; display:flex; flex-direction:column;">
+                        <span style="opacity:.7; font-size:.8rem;">Číslo účtu:</span>
+                        <b style="font-family:monospace; letter-spacing:.5px;">${CL_PLATBA.ucet} / ${CL_PLATBA.banka}</b>
+                    </div>
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="opacity:.7; font-size:.8rem;">Zpráva (Poznámka):</span>
+                        <b style="color:#fff; font-size:1.1rem; border-left:3px solid #fbbf24; padding-left:8px; margin-top:4px;">${zprava}</b>
+                    </div>
+                </div>
+            </div>`;
+    }
+    if (modal) modal.style.display = 'flex';
+}
+
+function zavriPlatbu() {
+    document.getElementById('cl-payment-overlay').style.display = 'none';
+}
 </script>
 </body>
 </html>
