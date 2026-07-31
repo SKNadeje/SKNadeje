@@ -333,7 +333,7 @@ async function vyhodnotZapas(id) {
         const presne = td === d && th === h;
         const trend = (d > h && td > th) || (d < h && td < th) || (d === h && td === th);
         const b = presne ? BODY.presne : (trend ? BODY.trend : 0);
-        await sb.from('cl_tipy_zapasy').update({ body: b }).eq('id', t.id);
+        await sb.from('cl_tipy_zapasy').update({ body: b, hit_skore: presne, hit_trend: trend }).eq('id', t.id);
     }
     await sb.from('cl_zapasy').update({ status: 'vyhodnoceno', vysledek_d: d, vysledek_h: h }).eq('id', id);
     msg('VYHODNOCENO ✅ (' + (tipy || []).length + ' tipů)');
