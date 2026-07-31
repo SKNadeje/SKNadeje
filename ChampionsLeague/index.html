@@ -368,7 +368,7 @@ const LOGA_NORM = {};
 Object.keys(LOGA).forEach(k => { LOGA_NORM[normTym(k)] = LOGA[k]; });
 
 // Vrátí HTML loga týmu – obrázek, nebo placeholder s prvním písmenem
-function logoTymu(nazev, velikost = 32) {
+function logoTymu(nazev, velikost = 36) {
     const src = LOGA[nazev] || LOGA_NORM[normTym(nazev)];
     if (src) {
         return `<img src="${src}" alt="" style="width:${velikost}px; height:${velikost}px; object-fit:contain; vertical-align:middle; flex-shrink:0;"
