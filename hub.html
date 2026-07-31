@@ -60,6 +60,19 @@ a.tile:hover { transform: translateY(-3px); border-color: rgba(212,175,55,.5); b
 }
 .tile.disabled { cursor: default; opacity: .92; }
 
+/* Aktivní soutěž – výrazný zlatý rámeček + jemné zvýraznění */
+.tile.aktivni {
+    border-color: rgba(212,175,55,.85) !important;
+    box-shadow: 0 12px 34px rgba(0,0,0,.5), 0 0 26px rgba(212,175,55,.28);
+    background: linear-gradient(135deg, rgba(212,175,55,.10), rgba(212,175,55,.02));
+}
+a.tile.aktivni:hover { box-shadow: 0 14px 40px rgba(0,0,0,.55), 0 0 32px rgba(212,175,55,.4); }
+.tile.aktivni .tname { color: #f0d987; }
+
+/* Archivovaná soutěž – ztlumená, ustupuje do pozadí */
+.tile.archiv-tile { opacity: .6; filter: grayscale(.35); }
+a.tile.archiv-tile:hover { opacity: .85; filter: grayscale(0); }
+
 /* Badge stavu */
 .badge {
     position: absolute; top: 13px; right: 13px;
@@ -217,8 +230,7 @@ const TURNAJE = [
         stav: 'archiv',
         logo: 'logo-wc2026.png',
         emoji: '🏆',
-        url: 'wc2026.html',              // po přejmenování 'wc2026.html'
-        hlavni: true                    // full-width dlaždice
+        url: 'wc2026.html'               // po přejmenování 'wc2026.html'
     },
    {
         nazev: 'MS v hokeji 2027',
@@ -242,7 +254,10 @@ const TURNAJE = [
      nazev: 'Liga mistrů',
         meta: 'Celá sezóna 2026/27 · od září',
         note: 'Dlouhodobá tipovačka – tabulka, zápasy i pavouk',
-        stav: 'soon',
+        hook: '⚡ Právě začíná – vsaď si dlouhodobý tip',
+        stav: 'live',
+        aktivni: true,
+        hlavni: true,
         logo: 'logo-cl.png',
         emoji: '🛡️',
         url: 'ChampionsLeague/welcome.html'
@@ -250,7 +265,7 @@ const TURNAJE = [
 ];
 
 const BADGE = {
-    live:   { cls: 'b-live', text: 'Probíhá' },
+    live:   { cls: 'b-live', text: '⚡ Aktivní' },
     soon:   { cls: 'b-soon', text: 'Brzy' },
     vote:   { cls: 'b-vote', text: 'Hlasování' },
     archiv: { cls: 'b-done', text: 'Ukončeno' }
@@ -267,7 +282,7 @@ function tileHtml(t) {
     const b = BADGE[t.stav] || BADGE.soon;
     const tag = t.url ? 'a' : 'div';
     const href = t.url ? ` href="${t.url}"` : '';
-    const cls = `tile${t.hlavni ? ' wide' : ''}${t.url ? '' : ' disabled'}`;
+    const cls = `tile${t.hlavni ? ' wide' : ''}${t.url ? '' : ' disabled'}${t.aktivni ? ' aktivni' : ''}${t.stav === 'archiv' ? ' archiv-tile' : ''}`;
 
     if (t.hlavni) {
         return `<${tag}${href} class="${cls}">
@@ -295,8 +310,20 @@ function tileHtml(t) {
     </${tag}>`;
 }
 
+// Pořadí dlaždic: aktivní nahoru, archivované dolů, ostatní uprostřed (stabilně).
+const PORADI = { aktivni: 0, normal: 1, archiv: 2 };
+function vahaTurnaje(t) {
+    if (t.aktivni) return PORADI.aktivni;
+    if (t.stav === 'archiv') return PORADI.archiv;
+    return PORADI.normal;
+}
+const TURNAJE_SORTED = TURNAJE
+    .map((t, i) => ({ t, i }))
+    .sort((a, b) => (vahaTurnaje(a.t) - vahaTurnaje(b.t)) || (a.i - b.i))
+    .map(x => x.t);
+
 const grid = document.getElementById('grid');
-grid.innerHTML = TURNAJE.map(tileHtml).join('') + `
+grid.innerHTML = TURNAJE_SORTED.map(tileHtml).join('') + `
     <a href="sin-slavy.html" class="tile hall">
         <div style="font-size:1.6rem; opacity:.7; margin-bottom:9px;">📜</div>
         <div class="tname" style="color:#d4af37; font-size:.82rem;">Síň slávy</div>
