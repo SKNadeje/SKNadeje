@@ -60,14 +60,20 @@ a.tile:hover { transform: translateY(-3px); border-color: rgba(212,175,55,.5); b
 }
 .tile.disabled { cursor: default; opacity: .92; }
 
-/* Aktivní soutěž – výrazný zlatý rámeček + jemné zvýraznění */
+/* Aktivní soutěž – výrazný zlatý rámeček + jemné zvýraznění + pulzování */
 .tile.aktivni {
     border-color: rgba(212,175,55,.85) !important;
     box-shadow: 0 12px 34px rgba(0,0,0,.5), 0 0 26px rgba(212,175,55,.28);
     background: linear-gradient(135deg, rgba(212,175,55,.10), rgba(212,175,55,.02));
+    animation: aktivniPulse 2.8s ease-in-out infinite;
 }
-a.tile.aktivni:hover { box-shadow: 0 14px 40px rgba(0,0,0,.55), 0 0 32px rgba(212,175,55,.4); }
+@keyframes aktivniPulse {
+    0%, 100% { box-shadow: 0 12px 34px rgba(0,0,0,.5), 0 0 22px rgba(212,175,55,.22); }
+    50% { box-shadow: 0 12px 38px rgba(0,0,0,.5), 0 0 40px rgba(212,175,55,.5); }
+}
+a.tile.aktivni:hover { box-shadow: 0 14px 40px rgba(0,0,0,.55), 0 0 32px rgba(212,175,55,.4); animation: none; }
 .tile.aktivni .tname { color: #f0d987; }
+@media (prefers-reduced-motion: reduce) { .tile.aktivni { animation: none; } }
 
 /* Archivovaná soutěž – ztlumená, ustupuje do pozadí */
 .tile.archiv-tile { opacity: .6; filter: grayscale(.35); }
