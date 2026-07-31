@@ -687,18 +687,22 @@ async function ulozDl() {
    ŽEBŘÍČEK (zápasy + dlouhodobky v jednom)
    ============================================================ */
 function renderZebricek() {
-    const body = {}; // jmeno -> {zap, dl, user_id, zaplaceno}
+    const body = {}; // user_id -> {jm, zap, dl, user_id, zaplaceno}
+    function zajisti(user_id, jmeno) {
+        if (!body[user_id]) body[user_id] = { jm: jmeno, zap: 0, dl: 0, user_id, zaplaceno: false };
+        if (jmeno) body[user_id].jm = jmeno; // nejnovější jméno
+        return body[user_id];
+    }
     Object.values(tipyMap).flat().forEach(t => {
-        body[t.jmeno] = body[t.jmeno] || { zap: 0, dl: 0, user_id: t.user_id };
-        body[t.jmeno].zap += t.body || 0;
+        zajisti(t.user_id, t.jmeno).zap += t.body || 0;
     });
     dlouhodobe.forEach(d => {
-        body[d.jmeno] = body[d.jmeno] || { zap: 0, dl: 0, user_id: d.user_id };
-        body[d.jmeno].dl += (d.body1 || 0) + (d.body2 || 0);
-        body[d.jmeno].zaplaceno = d.zaplaceno;
+        const b = zajisti(d.user_id, d.jmeno);
+        b.dl += (d.body1 || 0) + (d.body2 || 0);
+        b.zaplaceno = d.zaplaceno;
     });
-    const rows = Object.entries(body)
-        .map(([jm, b]) => ({ jm, ...b, celkem: b.zap + b.dl }))
+    const rows = Object.values(body)
+        .map(b => ({ ...b, celkem: b.zap + b.dl }))
         .sort((a, b) => b.celkem - a.celkem);
 
     const paid = dlouhodobe.filter(d => d.zaplaceno).length;
