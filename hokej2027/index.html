@@ -770,13 +770,39 @@
         <div id="cartViewPre">
             <h2 style="text-align:left; color:var(--neon); margin-bottom:25px;">Tvůj tiket</h2>
             <div id="cartItemsContainer"></div>
-            <div style="margin-top:30px; padding-top:25px; border-top:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center;">
+
+            <!-- VOLBA PLATBY -->
+            <div style="margin-top:24px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
+                <div style="font-size:.8em; opacity:.6; text-transform:uppercase; margin-bottom:12px; text-align:left;">Způsob platby</div>
+                <label style="display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; border:1px solid rgba(0,242,255,.3); background:rgba(0,242,255,.05); cursor:pointer; margin-bottom:8px;">
+                    <input type="radio" name="platba" value="qr" checked onchange="uiUpdatePlatba()" style="width:18px; height:18px; accent-color:var(--neon);">
+                    <span style="flex:1; text-align:left;">💳 Zaplatit přes QR kód</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; border:1px solid rgba(241,196,15,.3); background:rgba(241,196,15,.05); cursor:pointer;">
+                    <input type="radio" name="platba" value="penezenka" onchange="uiUpdatePlatba()" style="width:18px; height:18px; accent-color:#f1c40f;">
+                    <span style="flex:1; text-align:left;">👛 Zaplatit z peněženky</span>
+                    <span style="font-size:.85em; opacity:.7;">zůstatek: <b id="uiWalletBalance" style="color:#f1c40f;">– Kč</b></span>
+                </label>
+                <div id="uiWalletWarn" style="display:none; color:#ff6b6b; font-size:.82em; margin-top:8px; text-align:left;"></div>
+            </div>
+
+            <div style="margin-top:22px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center;">
                 <div style="text-align:left">
                     <span style="font-size:0.8em; opacity:0.5; text-transform:uppercase;">Celková sázka</span><br>
                     <span id="uiCartTotal" style="font-size:2.2em; font-weight:900; color:var(--neon)">0 Kč</span>
                 </div>
-                <button class="btn-add-ticket" style="width:auto; padding:15px 40px;" onclick="actionSendTicket()">ODESLAT</button>
+                <button class="btn-add-ticket" id="uiSendBtn" style="width:auto; padding:15px 40px;" onclick="actionSendTicket()">ODESLAT</button>
             </div>
+        </div>
+        <div id="cartViewWallet" style="display:none; text-align:center;">
+            <div style="font-size:3em; margin-bottom:10px;">✅</div>
+            <div style="font-weight:900; color:#27ae60; font-size:1.6em; margin-bottom:15px;">ZAPLACENO Z PENĚŽENKY!</div>
+            <div style="font-size:1.1em; margin-bottom:8px;">Odečteno: <b style="color:#f1c40f;" id="uiWalletPaid">0 Kč</b></div>
+            <div style="font-size:.95em; opacity:.7;">Nový zůstatek: <b style="color:#f1c40f;" id="uiWalletNew">0 Kč</b></div>
+            <p style="font-size:0.85em; opacity:0.5; margin-top:20px; line-height:1.5;">
+                Tvé sázky jsou rovnou aktivní. 🏒
+            </p>
+            <button class="btn-add-ticket" style="margin-top:15px;" onclick="uiCloseCart()">ZAVŘÍT TIKET</button>
         </div>
         <div id="cartViewPost" style="display:none; text-align:center;">
             <div style="font-weight:900; color:var(--neon); font-size:1.6em; margin-bottom:25px;">✅ TIKET BYL PŘIJAT!</div>
@@ -852,6 +878,7 @@ const SKUPINA_A = ['Německo', 'Finsko', 'Švédsko', 'Švýcarsko', 'Lotyšsko'
 const SKUPINA_B = ['Česko', 'Kanada', 'USA', 'Slovensko', 'Dánsko', 'Norsko', 'Kazachstán', 'Maďarsko'];
 
 let currentUser = null;      // jméno
+let mojePenezenka = 0;       // zůstatek peněženky (Kč)
 let currentUserId = null;
 let zapasyCache = [];
 let zapasyRezim = 'aktivni';   // 'aktivni' | 'vyhodnocene' – přepínač zápasů
@@ -872,8 +899,8 @@ async function init() {
     if (currentUserId === ADMIN_ID) document.getElementById('adminLock').style.display = 'flex';
 
     // jméno z centrálního registru (fallback fotbalové tipy)
-    const { data: h } = await sb.from('hraci').select('jmeno').eq('user_id', currentUserId).maybeSingle();
-    if (h?.jmeno) currentUser = h.jmeno;
+    const { data: h } = await sb.from('hraci').select('jmeno, penezenka').eq('user_id', currentUserId).maybeSingle();
+    if (h?.jmeno) { currentUser = h.jmeno; mojePenezenka = Number(h.penezenka || 0); }
     else {
         const { data: t } = await sb.from('tipy').select('name').eq('user_id', currentUserId).maybeSingle();
         if (t?.name) {
@@ -1181,6 +1208,12 @@ function uiOpenCart() {
     document.getElementById('uiCartTotal').innerText = `${Object.keys(localCart).length * VKLAD_ZAPAS} Kč`;
     document.getElementById('cartViewPre').style.display = 'block';
     document.getElementById('cartViewPost').style.display = 'none';
+    const walletView = document.getElementById('cartViewWallet');
+    if (walletView) walletView.style.display = 'none';
+    // Reset volby na QR a aktualizace zůstatku/kontroly
+    const qrRadio = document.querySelector('input[name="platba"][value="qr"]');
+    if (qrRadio) qrRadio.checked = true;
+    uiUpdatePlatba();
     document.getElementById('cartModal').style.display = 'block';
 }
 
@@ -1188,12 +1221,56 @@ function uiCloseCart() {
     document.getElementById('cartModal').style.display = 'none';
 }
 
+// Aktualizuje UI podle zvolené platby + hlídá dostatek v peněžence
+function uiUpdatePlatba() {
+    const pocet = Object.keys(localCart).length;
+    const suma = pocet * VKLAD_ZAPAS;
+    const metoda = document.querySelector('input[name="platba"]:checked')?.value || 'qr';
+    const balEl = document.getElementById('uiWalletBalance');
+    const warnEl = document.getElementById('uiWalletWarn');
+    const sendBtn = document.getElementById('uiSendBtn');
+    if (balEl) balEl.textContent = mojePenezenka + ' Kč';
+
+    if (metoda === 'penezenka' && suma > mojePenezenka) {
+        // Nedostatek – zablokuj odeslání
+        if (warnEl) {
+            warnEl.style.display = 'block';
+            warnEl.textContent = `⚠️ Nedostatek v peněžence. Potřebuješ ${suma} Kč, máš ${mojePenezenka} Kč (chybí ${suma - mojePenezenka} Kč). Vyber méně zápasů nebo zaplať QR kódem.`;
+        }
+        if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = '.4'; sendBtn.style.cursor = 'not-allowed'; }
+    } else {
+        if (warnEl) warnEl.style.display = 'none';
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = '1'; sendBtn.style.cursor = 'pointer'; }
+    }
+}
+
 async function actionSendTicket() {
     const items = Object.entries(localCart);
     if (items.length === 0) return;
+
+    const metoda = document.querySelector('input[name="platba"]:checked')?.value || 'qr';
+    const suma = items.length * VKLAD_ZAPAS;
+
+    // PLATBA Z PENĚŽENKY – kontrola dostatku (bezpečnostní pojistka i na serveru by byla lepší,
+    // ale minimálně zabráníme odeslání při nedostatku a přečteme čerstvý zůstatek)
+    if (metoda === 'penezenka') {
+        // Přečti čerstvý zůstatek z DB (kdyby ho admin mezitím změnil)
+        const { data: h } = await sb.from('hraci').select('penezenka').eq('user_id', currentUserId).maybeSingle();
+        const zustatek = Number(h?.penezenka || 0);
+        mojePenezenka = zustatek;
+        if (suma > zustatek) {
+            uiUpdatePlatba();
+            alert(`Nedostatek v peněžence. Potřebuješ ${suma} Kč, máš ${zustatek} Kč.`);
+            return;
+        }
+    }
+
+    // Vlož sázky – z peněženky rovnou zaplacené, QR nezaplacené
+    const jeZPenezenky = (metoda === 'penezenka');
     const rows = items.map(([id, c]) => ({
         zapas_id: +id, user_id: currentUserId, jmeno: currentUser,
-        skore: c.skore, strelec: c.strelec, skryt: c.skryt
+        skore: c.skore, strelec: c.strelec, skryt: c.skryt,
+        zaplaceno: jeZPenezenky
     }));
     const { error } = await sb.from('hokej27_sazky').insert(rows);
     if (error) {
@@ -1201,13 +1278,29 @@ async function actionSendTicket() {
         else alert('Chyba: ' + error.message);
         return;
     }
-    const suma = items.length * VKLAD_ZAPAS;
-    const msg = `HOKEJ ${currentUser}`;
-    document.getElementById('uiQrImage').src = `https://api.paylibo.com/paylibo/generator/czech/image?accountNumber=295511827&bankCode=0300&amount=${suma}&currency=CZK&message=${encodeURIComponent(msg)}`;
-    document.getElementById('uiPayAmount').innerText = `${suma} Kč`;
-    document.getElementById('uiPayMessage').innerText = msg;
-    document.getElementById('cartViewPre').style.display = 'none';
-    document.getElementById('cartViewPost').style.display = 'block';
+
+    if (jeZPenezenky) {
+        // Odečti z peněženky
+        const novyZustatek = mojePenezenka - suma;
+        const { error: eUpd } = await sb.from('hraci').update({ penezenka: novyZustatek }).eq('user_id', currentUserId);
+        if (eUpd) {
+            // Sázky se vložily, ale odečet selhal – upozorni (admin to dorovná)
+            alert('Sázky uloženy, ale odečet z peněženky selhal: ' + eUpd.message + '\nKontaktuj admina.');
+        }
+        mojePenezenka = novyZustatek;
+        document.getElementById('uiWalletPaid').innerText = suma + ' Kč';
+        document.getElementById('uiWalletNew').innerText = novyZustatek + ' Kč';
+        document.getElementById('cartViewPre').style.display = 'none';
+        document.getElementById('cartViewWallet').style.display = 'block';
+    } else {
+        // QR platba – ukaž QR kód (jako dosud)
+        const msg = `HOKEJ ${currentUser}`;
+        document.getElementById('uiQrImage').src = `https://api.paylibo.com/paylibo/generator/czech/image?accountNumber=295511827&bankCode=0300&amount=${suma}&currency=CZK&message=${encodeURIComponent(msg)}`;
+        document.getElementById('uiPayAmount').innerText = `${suma} Kč`;
+        document.getElementById('uiPayMessage').innerText = msg;
+        document.getElementById('cartViewPre').style.display = 'none';
+        document.getElementById('cartViewPost').style.display = 'block';
+    }
     localCart = {};
     uiUpdateFab();
     loadAll();
