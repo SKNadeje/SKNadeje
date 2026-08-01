@@ -154,6 +154,19 @@
             padding-bottom: 120px;
         }
 
+        /* Přepínací tlačítka aktivní/vyhodnocené */
+        #zapasyFiltr { width: 100%; max-width: 650px; }
+        .zapas-fltr {
+            flex: 1; padding: 12px 10px; border-radius: 12px; cursor: pointer;
+            font-family: inherit; font-size: 0.82em; font-weight: 800; letter-spacing: .5px;
+            background: rgba(0,242,255,.05); border: 1px solid rgba(0,242,255,.25);
+            color: #7fb8c4; transition: all .18s;
+        }
+        .zapas-fltr:hover { border-color: rgba(0,242,255,.5); }
+        .zapas-fltr.on {
+            background: rgba(0,242,255,.15); border-color: var(--neon); color: var(--neon);
+        }
+
         .match-card {
             background: var(--card-bg);
             border-radius: 35px;
@@ -735,6 +748,11 @@
 
     <a href="statistiky.html" class="btn-stats">📊 ŽEBŘÍČKY A STATISTIKY</a>
 
+    <div id="zapasyFiltr" style="display:flex; gap:8px; margin:18px 0 4px;">
+        <button id="fltr-aktivni" class="zapas-fltr on" onclick="prepniZapasy('aktivni')">🟢 Aktivní</button>
+        <button id="fltr-vyhodnocene" class="zapas-fltr" onclick="prepniZapasy('vyhodnocene')">✅ Vyhodnocené</button>
+    </div>
+
     <div id="matchList"></div>
 
   <div id="miniSlip">
@@ -836,6 +854,7 @@ const SKUPINA_B = ['Česko', 'Kanada', 'USA', 'Slovensko', 'Dánsko', 'Norsko', 
 let currentUser = null;      // jméno
 let currentUserId = null;
 let zapasyCache = [];
+let zapasyRezim = 'aktivni';   // 'aktivni' | 'vyhodnocene' – přepínač zápasů
 let sazkyCache = [];
 let stavCache = {};
 let mujDlouhodoby = null;
@@ -947,6 +966,13 @@ function renderDlouhodoby(now) {
     if (zavreno) btn.style.opacity = 0.4;
 }
 
+function prepniZapasy(rezim) {
+    zapasyRezim = rezim;
+    document.getElementById('fltr-aktivni').classList.toggle('on', rezim === 'aktivni');
+    document.getElementById('fltr-vyhodnocene').classList.toggle('on', rezim === 'vyhodnocene');
+    renderZapasy(Date.now());
+}
+
 function renderZapasy(now) {
     const container = document.getElementById('matchList');
     container.innerHTML = '';
@@ -955,7 +981,16 @@ function renderZapasy(now) {
         return;
     }
 
-    zapasyCache.forEach(m => {
+    // Filtr podle přepínače: aktivní (nevyhodnocené) / vyhodnocené
+    const zapasy = zapasyCache.filter(m =>
+        zapasyRezim === 'vyhodnocene' ? m.status === 'vyhodnoceno' : m.status !== 'vyhodnoceno'
+    );
+    if (zapasy.length === 0) {
+        container.innerHTML = `<div style="opacity:0.5; margin-top:30px;">${zapasyRezim === 'vyhodnocene' ? 'Zatím žádné vyhodnocené zápasy.' : 'Žádné aktivní zápasy k tipování.'}</div>`;
+        return;
+    }
+
+    zapasy.forEach(m => {
         activeDeadlines[m.id] = m.deadline;
         const target = new Date(m.deadline).getTime();
         const isClosed = now > target;
