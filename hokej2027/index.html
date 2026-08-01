@@ -916,8 +916,9 @@ async function loadAll() {
 function renderVse() {
     const now = Date.now();
 
-    // Fond = 5 Kč z každé sázky + dlouhodobé vklady jdou zvlášť (pool dlouhodobky)
-    const fond = sazkyCache.length * VKLAD_DO_FONDU;
+    // Fond = 5 Kč z každé sázky + ruční korekce admina (dlouhodobé vklady jdou zvlášť)
+    const fondKorekce = Number(stavCache?.fond_korekce || 0);
+    const fond = sazkyCache.length * VKLAD_DO_FONDU + fondKorekce;
     document.getElementById('uiHopeIndex').innerText = fond;
     document.getElementById('hope-1').innerText = Math.floor(fond * 0.5);
     document.getElementById('hope-2').innerText = Math.floor(fond * 0.3);
