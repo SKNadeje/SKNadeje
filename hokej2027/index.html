@@ -695,7 +695,9 @@
 
     <div id="userBadge" class="user-badge" style="display:none;">
         <span>👤</span>
-        <span id="userBadgeName" class="user-badge-name"></span>
+        <span id="userBadgeName" class="user-badge-name" style="cursor:pointer; text-decoration:underline; text-decoration-color:rgba(0,242,255,.4); text-underline-offset:3px;"
+              onclick="if(currentUserId) location.href='profil.html?id='+currentUserId;"
+              title="Zobrazit můj profil"></span>
         <button class="user-logout" onclick="doLogout()">odhlásit</button>
     </div>
 
@@ -1218,12 +1220,59 @@ async function actionUlozDlouhodoby() {
     const msgEl = document.getElementById('dt-msg');
     if (error) { msgEl.style.color = '#ff4444'; msgEl.innerText = 'Chyba: ' + error.message; return; }
     msgEl.style.color = '#27ae60';
-    msgEl.innerText = '✅ Tip uložen! Nezapomeň poslat 50 Kč (zpráva: DLOUHODOBY ' + currentUser + ').';
+    msgEl.innerText = '✅ Tip uložen!';
     await loadAll();
-    setTimeout(uiCloseDlouhodoby, 2500);
+    uiCloseDlouhodoby();
+    ukazPlatbuHokej(currentUser);
 }
 
 window.addEventListener('DOMContentLoaded', init);
+
+/* ============================================================
+   PLATEBNÍ QR MODAL (hokej – dlouhodobý tip, 50 Kč do Fondu Naděje)
+   ============================================================ */
+const HOKEJ_PLATBA = {
+    ucet: '305184832',
+    banka: '0300',
+    castka: '50.00',
+    castkaText: '50 Kč',
+    zpravaPrefix: 'MS hokej',   // výsledek: "MS hokej Jméno"
+};
+
+function ukazPlatbuHokej(jmenoHrace) {
+    const cleanName = (jmenoHrace || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').substring(0, 15);
+    const zprava = `${HOKEJ_PLATBA.zpravaPrefix} ${cleanName}`.trim();
+    const qrUrl = `https://api.paylibo.com/paylibo/generator/czech/image?accountNumber=${HOKEJ_PLATBA.ucet}&bankCode=${HOKEJ_PLATBA.banka}&amount=${HOKEJ_PLATBA.castka}&currency=CZK&message=${encodeURIComponent(zprava)}&size=400`;
+
+    let overlay = document.getElementById('hokej-payment-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'hokej-payment-overlay';
+        overlay.style.cssText = 'position:fixed; inset:0; background:rgba(5,10,25,.95); z-index:10001; display:flex; justify-content:center; align-items:flex-start; padding:24px 14px; overflow-y:auto;';
+        overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = 'none'; };
+        document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = `
+        <div style="background:linear-gradient(160deg,#0d1a2a,#081018); border:1px solid rgba(0,242,255,.4); border-radius:22px; max-width:400px; width:100%; padding:30px 24px; text-align:center; margin:auto; box-shadow:0 25px 70px rgba(0,0,0,.7);">
+            <div style="font-size:2.5rem; margin-bottom:8px;">🎉</div>
+            <h2 style="color:#00f2ff; margin:0 0 6px; font-size:1.4rem;">Tip uložen!</h2>
+            <p style="color:#cbd5e1; font-size:.88rem; margin-bottom:20px; line-height:1.5;">Pro zařazení do hry zbývá poslední krok:<br>poslat dlouhodobý vklad.</p>
+            <div style="background:white; padding:20px; border-radius:16px; display:inline-block; margin-bottom:20px;">
+                <img src="${qrUrl}" alt="QR Platba" style="display:block; width:220px; height:220px; image-rendering:pixelated;"
+                     onerror="this.replaceWith(Object.assign(document.createElement('div'),{textContent:'QR se nepodařilo načíst',style:'color:#333;font-size:13px;padding:40px;'}));">
+                <div style="color:#000; font-weight:900; font-size:12px; margin-top:12px; letter-spacing:3px; opacity:.5;">QR PLATBA</div>
+            </div>
+            <div style="background:rgba(255,255,255,.05); padding:18px; border-radius:12px; border:1px solid rgba(255,255,255,.1); text-align:left; margin-bottom:8px;">
+                <div style="color:#f1c40f; font-size:.72rem; font-weight:800; text-transform:uppercase; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,.1); padding-bottom:5px;">Platební instrukce</div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:9px; font-size:1rem;"><span style="opacity:.7;">Částka:</span><b style="color:#27ae60;">${HOKEJ_PLATBA.castkaText}</b></div>
+                <div style="font-size:.72rem; opacity:.6; margin:-4px 0 12px;">Celá částka jde do 💎 Fondu Naděje</div>
+                <div style="display:flex; flex-direction:column; margin-bottom:9px;"><span style="opacity:.7; font-size:.78rem;">Číslo účtu:</span><b style="font-family:monospace;">${HOKEJ_PLATBA.ucet} / ${HOKEJ_PLATBA.banka}</b></div>
+                <div style="display:flex; flex-direction:column;"><span style="opacity:.7; font-size:.78rem;">Zpráva:</span><b style="color:#fff; font-size:1.05rem; border-left:3px solid #f1c40f; padding-left:8px; margin-top:4px;">${zprava}</b></div>
+            </div>
+            <button onclick="document.getElementById('hokej-payment-overlay').style.display='none';" style="width:100%; margin-top:14px; background:linear-gradient(135deg,#00f2ff,#0088aa); color:#05121a; border:none; padding:14px; border-radius:12px; font-weight:800; font-size:.9rem; letter-spacing:1px; cursor:pointer; font-family:inherit;">MÁM ZAPLACENO / ZAVŘÍT</button>
+        </div>`;
+    overlay.style.display = 'flex';
+}
 </script>
 <script src="../chat.js"></script>
 <script>
