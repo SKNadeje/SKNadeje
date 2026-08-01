@@ -758,9 +758,21 @@
   <div id="miniSlip">
         <div class="slip-head"><span>🎟️ TIKET</span><span id="slipCount" style="opacity:.6; font-size:.85em;"></span></div>
         <div id="slipItems"></div>
+        <div id="slipPlatba" style="margin:10px 0 4px; border-top:1px solid rgba(255,255,255,.1); padding-top:10px;">
+            <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:9px; border:1px solid rgba(0,242,255,.3); background:rgba(0,242,255,.05); cursor:pointer; margin-bottom:6px; font-size:.85em;">
+                <input type="radio" name="platba" value="qr" checked onchange="uiUpdatePlatba()" style="accent-color:var(--neon);">
+                <span style="flex:1;">💳 QR kód</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:9px; border:1px solid rgba(241,196,15,.3); background:rgba(241,196,15,.05); cursor:pointer; font-size:.85em;">
+                <input type="radio" name="platba" value="penezenka" onchange="uiUpdatePlatba()" style="accent-color:#f1c40f;">
+                <span style="flex:1;">👛 Z peněženky</span>
+                <span style="opacity:.7;"><b id="uiWalletBalance" style="color:#f1c40f;">– Kč</b></span>
+            </label>
+            <div id="uiWalletWarn" style="display:none; color:#ff6b6b; font-size:.76em; margin-top:6px;"></div>
+        </div>
         <div class="slip-foot">
             <span class="slip-total" id="slipTotal">0 Kč</span>
-            <button class="slip-send" onclick="actionSendTicket()">ODESLAT</button>
+            <button class="slip-send" id="uiSendBtn" onclick="actionSendTicket()">ODESLAT</button>
         </div>
     </div>
 
@@ -770,39 +782,13 @@
         <div id="cartViewPre">
             <h2 style="text-align:left; color:var(--neon); margin-bottom:25px;">Tvůj tiket</h2>
             <div id="cartItemsContainer"></div>
-
-            <!-- VOLBA PLATBY -->
-            <div style="margin-top:24px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
-                <div style="font-size:.8em; opacity:.6; text-transform:uppercase; margin-bottom:12px; text-align:left;">Způsob platby</div>
-                <label style="display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; border:1px solid rgba(0,242,255,.3); background:rgba(0,242,255,.05); cursor:pointer; margin-bottom:8px;">
-                    <input type="radio" name="platba" value="qr" checked onchange="uiUpdatePlatba()" style="width:18px; height:18px; accent-color:var(--neon);">
-                    <span style="flex:1; text-align:left;">💳 Zaplatit přes QR kód</span>
-                </label>
-                <label style="display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; border:1px solid rgba(241,196,15,.3); background:rgba(241,196,15,.05); cursor:pointer;">
-                    <input type="radio" name="platba" value="penezenka" onchange="uiUpdatePlatba()" style="width:18px; height:18px; accent-color:#f1c40f;">
-                    <span style="flex:1; text-align:left;">👛 Zaplatit z peněženky</span>
-                    <span style="font-size:.85em; opacity:.7;">zůstatek: <b id="uiWalletBalance" style="color:#f1c40f;">– Kč</b></span>
-                </label>
-                <div id="uiWalletWarn" style="display:none; color:#ff6b6b; font-size:.82em; margin-top:8px; text-align:left;"></div>
-            </div>
-
             <div style="margin-top:22px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center;">
                 <div style="text-align:left">
                     <span style="font-size:0.8em; opacity:0.5; text-transform:uppercase;">Celková sázka</span><br>
                     <span id="uiCartTotal" style="font-size:2.2em; font-weight:900; color:var(--neon)">0 Kč</span>
                 </div>
-                <button class="btn-add-ticket" id="uiSendBtn" style="width:auto; padding:15px 40px;" onclick="actionSendTicket()">ODESLAT</button>
+                <button class="btn-add-ticket" style="width:auto; padding:15px 40px;" onclick="actionSendTicket()">ODESLAT</button>
             </div>
-        </div>
-        <div id="cartViewWallet" style="display:none; text-align:center;">
-            <div style="font-size:3em; margin-bottom:10px;">✅</div>
-            <div style="font-weight:900; color:#27ae60; font-size:1.6em; margin-bottom:15px;">ZAPLACENO Z PENĚŽENKY!</div>
-            <div style="font-size:1.1em; margin-bottom:8px;">Odečteno: <b style="color:#f1c40f;" id="uiWalletPaid">0 Kč</b></div>
-            <div style="font-size:.95em; opacity:.7;">Nový zůstatek: <b style="color:#f1c40f;" id="uiWalletNew">0 Kč</b></div>
-            <p style="font-size:0.85em; opacity:0.5; margin-top:20px; line-height:1.5;">
-                Tvé sázky jsou rovnou aktivní. 🏒
-            </p>
-            <button class="btn-add-ticket" style="margin-top:15px;" onclick="uiCloseCart()">ZAVŘÍT TIKET</button>
         </div>
         <div id="cartViewPost" style="display:none; text-align:center;">
             <div style="font-weight:900; color:var(--neon); font-size:1.6em; margin-bottom:25px;">✅ TIKET BYL PŘIJAT!</div>
@@ -1194,6 +1180,7 @@ function uiUpdateFab() {
         </div>`).join('');
     document.getElementById('slipTotal').textContent = (n * VKLAD_ZAPAS) + ' Kč';
     slip.classList.add('show');
+    uiUpdatePlatba();
 }
 function uiOpenCart() {
     const cont = document.getElementById('cartItemsContainer');
@@ -1208,12 +1195,6 @@ function uiOpenCart() {
     document.getElementById('uiCartTotal').innerText = `${Object.keys(localCart).length * VKLAD_ZAPAS} Kč`;
     document.getElementById('cartViewPre').style.display = 'block';
     document.getElementById('cartViewPost').style.display = 'none';
-    const walletView = document.getElementById('cartViewWallet');
-    if (walletView) walletView.style.display = 'none';
-    // Reset volby na QR a aktualizace zůstatku/kontroly
-    const qrRadio = document.querySelector('input[name="platba"][value="qr"]');
-    if (qrRadio) qrRadio.checked = true;
-    uiUpdatePlatba();
     document.getElementById('cartModal').style.display = 'block';
 }
 
@@ -1284,26 +1265,48 @@ async function actionSendTicket() {
         const novyZustatek = mojePenezenka - suma;
         const { error: eUpd } = await sb.from('hraci').update({ penezenka: novyZustatek }).eq('user_id', currentUserId);
         if (eUpd) {
-            // Sázky se vložily, ale odečet selhal – upozorni (admin to dorovná)
             alert('Sázky uloženy, ale odečet z peněženky selhal: ' + eUpd.message + '\nKontaktuj admina.');
+        } else {
+            alert(`✅ Zaplaceno z peněženky!\n\nOdečteno: ${suma} Kč\nNový zůstatek: ${novyZustatek} Kč\n\nTvé sázky jsou rovnou aktivní. 🏒`);
         }
         mojePenezenka = novyZustatek;
-        document.getElementById('uiWalletPaid').innerText = suma + ' Kč';
-        document.getElementById('uiWalletNew').innerText = novyZustatek + ' Kč';
-        document.getElementById('cartViewPre').style.display = 'none';
-        document.getElementById('cartViewWallet').style.display = 'block';
     } else {
-        // QR platba – ukaž QR kód (jako dosud)
+        // QR platba – ukaž QR okno (stejný modal jako dlouhodobý tip)
         const msg = `HOKEJ ${currentUser}`;
-        document.getElementById('uiQrImage').src = `https://api.paylibo.com/paylibo/generator/czech/image?accountNumber=295511827&bankCode=0300&amount=${suma}&currency=CZK&message=${encodeURIComponent(msg)}`;
-        document.getElementById('uiPayAmount').innerText = `${suma} Kč`;
-        document.getElementById('uiPayMessage').innerText = msg;
-        document.getElementById('cartViewPre').style.display = 'none';
-        document.getElementById('cartViewPost').style.display = 'block';
+        ukazQrHokej(suma, msg);
     }
     localCart = {};
     uiUpdateFab();
     loadAll();
+}
+
+// QR platební okno pro sázky na zápasy
+function ukazQrHokej(suma, msg) {
+    let overlay = document.getElementById('hokej-qr-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'hokej-qr-overlay';
+        overlay.style.cssText = 'position:fixed; inset:0; background:rgba(5,10,25,.95); z-index:10002; display:flex; justify-content:center; align-items:flex-start; padding:24px 14px; overflow-y:auto;';
+        overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = 'none'; };
+        document.body.appendChild(overlay);
+    }
+    const qrUrl = `https://api.paylibo.com/paylibo/generator/czech/image?accountNumber=295511827&bankCode=0300&amount=${suma}&currency=CZK&message=${encodeURIComponent(msg)}`;
+    overlay.innerHTML = `
+        <div style="background:linear-gradient(160deg,#0d1a2a,#081018); border:1px solid rgba(0,242,255,.4); border-radius:22px; max-width:400px; width:100%; padding:30px 24px; text-align:center; margin:auto; box-shadow:0 25px 70px rgba(0,0,0,.7);">
+            <div style="font-weight:900; color:var(--neon); font-size:1.5rem; margin-bottom:8px;">✅ Tiket přijat!</div>
+            <p style="color:#cbd5e1; font-size:.88rem; margin-bottom:18px;">Zaplať částku a sázky ti aktivujeme.</p>
+            <div style="background:white; padding:18px; border-radius:16px; display:inline-block; margin-bottom:18px;">
+                <img src="${qrUrl}" alt="QR" style="display:block; width:220px; height:220px; image-rendering:pixelated;">
+                <div style="color:#000; font-weight:900; font-size:12px; margin-top:10px; letter-spacing:3px; opacity:.5;">QR PLATBA</div>
+            </div>
+            <div style="background:rgba(255,255,255,.05); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,.1); text-align:left;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:.9em;"><span style="opacity:.7;">Účet:</span><b style="font-family:monospace;">295511827 / 0300</b></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:.9em;"><span style="opacity:.7;">Částka:</span><b style="color:#27ae60;">${suma} Kč</b></div>
+                <div style="display:flex; justify-content:space-between; font-size:.9em;"><span style="opacity:.7;">Zpráva:</span><b>${msg}</b></div>
+            </div>
+            <button onclick="document.getElementById('hokej-qr-overlay').style.display='none';" style="width:100%; margin-top:16px; background:linear-gradient(135deg,#00f2ff,#0088aa); color:#05121a; border:none; padding:14px; border-radius:12px; font-weight:800; letter-spacing:1px; cursor:pointer; font-family:inherit;">ZAVŘÍT</button>
+        </div>`;
+    overlay.style.display = 'flex';
 }
 
 // ---------- DLOUHODOBÝ TIP ----------
