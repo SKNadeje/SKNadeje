@@ -15,7 +15,7 @@
     --dark: #05081c;
 }
 * { box-sizing: border-box; }
-html, body { height: 100%; }
+html, body { height: 100%; overflow-x: hidden; max-width: 100%; }
 body {
     margin: 0;
     background:
@@ -56,8 +56,8 @@ body {
 
 /* ===== ODZNAK/EMBLÉM ===== */
 .logo {
-    /* Šířka podle obsahu, aby centrování vůči obrazovce sedělo */
-    width: fit-content;
+    width: 100%;
+    max-width: 800px;
     margin: 0 auto 4px;
     margin-left: 50%;
     transform: translateX(-50%);
