@@ -56,9 +56,8 @@ body {
 
 /* ===== ODZNAK/EMBLÉM ===== */
 .logo {
-    /* Zrušená výška, aby kontejner nedržel zbytečné místo (dle CL vzoru) */
-    width: 100%;
-    max-width: 800px;
+    /* Šířka podle obsahu, aby centrování vůči obrazovce sedělo */
+    width: fit-content;
     margin: 0 auto 4px;
     margin-left: 50%;
     transform: translateX(-50%);
@@ -84,9 +83,9 @@ body {
 }
 @media (prefers-reduced-motion: reduce) { .logo, .logo::before { animation: none; } }
 .logo-inner {
-    /* Přesná velikost oblasti s logem (dle CL vzoru) */
-    width: min(500px, 80vw);
-    height: min(500px, 80vw);
+    /* Přesná velikost oblasti s logem */
+    width: min(420px, 78vw);
+    height: min(420px, 78vw);
     position: relative; z-index: 1;
     display: flex; align-items: center; justify-content: center;
 }
