@@ -184,6 +184,17 @@ input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { fil
         </div>
     </div>
 
+    <!-- PENĚŽENKY HRÁČŮ -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secPenez')">👛 PENĚŽENKY HRÁČŮ <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secPenez">
+            <div style="opacity:.55; font-size:.8em; margin-bottom:12px;">
+                Zadej aktuální zůstatek peněženky hráče (přepíše původní). Z peněženky se pak hráčům odečítají sázky.
+            </div>
+            <div id="penezList"></div>
+        </div>
+    </div>
+
     <!-- AKTIVNÍ ZÁPASY -->
     <div class="card">
         <div class="collapsible-header" onclick="toggleSection('secActive')">🏒 AKTIVNÍ ZÁPASY <span class="collapse-arrow">▼</span></div>
@@ -257,6 +268,7 @@ async function init() {
     document.getElementById('h').innerHTML = '<option value="">– Hosté –</option>' + optHtml;
     await loadMatches();
     await loadDlouhodobe();
+    await loadPenezenky();
 }
 
 function toggleSection(id) {
@@ -370,7 +382,8 @@ async function loadMatches() {
         div.className = 'user-row';
         div.style.cssText = 'display:block; padding:14px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left;';
         const betRows = ms.map(s => `<div style="font-size:0.85em; opacity:0.9; padding:3px 0; display:flex; align-items:center; gap:6px;">
-            <span style="flex:1;">• ${s.jmeno}: ${s.skore}${s.strelec ? ' + ' + s.strelec : ''}${s.skryt ? ' 🙈' : ''}${m.status === 'vyhodnoceno' ? ` → +${s.nb} NB${s.vyhra_kc > 0 ? ` 💰${s.vyhra_kc}` : ''}` : ''}</span>
+            <span onclick="toggleZaplaceno(${s.id}, ${s.zaplaceno ? 'true' : 'false'})" style="cursor:pointer;" title="${s.zaplaceno ? 'Zaplaceno – klikni pro zrušení' : 'Nezaplaceno – klikni pro označení'}">${s.zaplaceno ? '✅' : '⏳'}</span>
+            <span style="flex:1;">${s.jmeno}: ${s.skore}${s.strelec ? ' + ' + s.strelec : ''}${s.skryt ? ' 🙈' : ''}${m.status === 'vyhodnoceno' ? ` → +${s.nb} NB${s.vyhra_kc > 0 ? ` 💰${s.vyhra_kc}` : ''}` : ''}</span>
             <span onclick="editTip(${s.id}, '${(s.skore || '').replace(/'/g, '')}', '${(s.strelec || '').replace(/'/g, '')}', '${(s.jmeno || '').replace(/'/g, '')}')" style="cursor:pointer; opacity:.6;" title="Upravit tip">✏️</span>
             <span onclick="delTip(${s.id}, '${(s.jmeno || '').replace(/'/g, '')}')" style="cursor:pointer; opacity:.6;" title="Smazat tip">🗑️</span>
         </div>`).join('');
@@ -417,6 +430,33 @@ async function resetFond() {
     await loadMatches();
 }
 
+// ---------- PENĚŽENKY HRÁČŮ ----------
+async function loadPenezenky() {
+    const cont = document.getElementById('penezList');
+    if (!cont) return;
+    const { data: hraci, error } = await sb.from('hraci').select('user_id, jmeno, penezenka').order('jmeno');
+    if (error) { cont.innerHTML = `<div style="color:#ff4444;">Chyba: ${error.message}</div>`; return; }
+    if (!hraci || !hraci.length) { cont.innerHTML = '<div style="opacity:.5;">Zatím žádní hráči.</div>'; return; }
+    cont.innerHTML = hraci.map(h => `
+        <div style="display:flex; align-items:center; gap:8px; padding:8px 4px; border-bottom:1px solid rgba(255,255,255,.06);">
+            <span style="flex:1; font-weight:700;">${h.jmeno || '(bez jména)'}</span>
+            <span style="opacity:.6; font-size:.85em;">nyní: <b style="color:#f1c40f;">${Number(h.penezenka || 0)}</b> Kč</span>
+            <input type="number" id="pen-${h.user_id}" class="auth-input" placeholder="nový zůstatek" style="width:130px; padding:6px 8px;">
+            <button class="small-btn" onclick="ulozPenezenku('${h.user_id}', '${(h.jmeno || '').replace(/'/g, '')}')">💾</button>
+        </div>`).join('');
+}
+
+async function ulozPenezenku(userId, jmeno) {
+    const val = document.getElementById(`pen-${userId}`).value;
+    if (val === '' || isNaN(Number(val))) { alert('Zadej částku (číslo).'); return; }
+    const castka = Math.round(Number(val));
+    if (castka < 0) { alert('Zůstatek nemůže být záporný.'); return; }
+    const { error } = await sb.from('hraci').update({ penezenka: castka }).eq('user_id', userId);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    alert(`✅ Peněženka hráče ${jmeno} nastavena na ${castka} Kč.`);
+    await loadPenezenky();
+}
+
 // ---------- EDITACE / MAZÁNÍ TIPŮ HRÁČŮ ----------
 async function editTip(id, skore, strelec, jmeno) {
     const noveSkore = prompt(`Upravit skóre pro ${jmeno} (formát D:H, např. 3:2):`, skore);
@@ -435,6 +475,12 @@ async function editTip(id, skore, strelec, jmeno) {
 async function delTip(id, jmeno) {
     if (!confirm(`Opravdu smazat tip hráče ${jmeno}? Tuto akci nelze vrátit.`)) return;
     const { error } = await sb.from('hokej27_sazky').delete().eq('id', id);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    await loadMatches();
+}
+
+async function toggleZaplaceno(id, aktualni) {
+    const { error } = await sb.from('hokej27_sazky').update({ zaplaceno: !aktualni }).eq('id', id);
     if (error) { alert('Chyba: ' + error.message); return; }
     await loadMatches();
 }
