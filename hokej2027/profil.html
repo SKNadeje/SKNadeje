@@ -121,6 +121,17 @@ body {
         </div>
     </div>
 
+    <!-- 👛 PENĚŽENKA (jen vlastní profil) -->
+    <div class="blok" id="penezenkaBox" style="display:none; border-color:rgba(241,196,15,.5); background:rgba(241,196,15,.05);">
+        <h2 style="color:#f1c40f;">👛 Moje peněženka</h2>
+        <div style="text-align:center; font-size:2.4em; font-weight:900; color:#f1c40f; margin:6px 0;">
+            <span id="penezenkaCastka">0 Kč</span>
+        </div>
+        <div style="text-align:center; font-size:.72em; opacity:.55; line-height:1.5;">
+            Zůstatek pro placení sázek. Dobíjí admin po přijetí platby.<br>Při sázce „z peněženky" se odečte automaticky.
+        </div>
+    </div>
+
     <div class="blok">
         <h2>⚡ Forma (posledních 5)</h2>
         <div class="forma" id="forma"></div>
@@ -150,10 +161,10 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 async function load() {
     const params = new URLSearchParams(location.search);
     let uid = params.get('id');
-    if (!uid) {
-        const { data: { session } } = await sb.auth.getSession();
-        uid = session?.user?.id;
-    }
+    // Zjisti přihlášeného uživatele – peněženku ukážeme jen na VLASTNÍM profilu
+    const { data: { session } } = await sb.auth.getSession();
+    const mojeId = session?.user?.id || null;
+    if (!uid) uid = mojeId;
     if (!uid) { document.getElementById('hJmeno').textContent = 'Hráč nenalezen'; return; }
 
     const [zR, sR] = await Promise.all([
@@ -163,6 +174,17 @@ async function load() {
     const stats = spocitejStatistiky(zR.data || [], sR.data || []);
     const h = stats.hraci.find(x => x.user_id === uid);
     if (!h) { document.getElementById('hJmeno').textContent = 'Hráč zatím nesázel'; return; }
+
+    // 👛 Peněženka – jen když si hráč prohlíží SVŮJ profil
+    if (mojeId && uid === mojeId) {
+        const { data: mujHrac } = await sb.from('hraci').select('penezenka').eq('user_id', uid).maybeSingle();
+        const zustatek = Number(mujHrac?.penezenka || 0);
+        const box = document.getElementById('penezenkaBox');
+        if (box) {
+            document.getElementById('penezenkaCastka').textContent = zustatek + ' Kč';
+            box.style.display = 'block';
+        }
+    }
 
     const { titul, hlaska, pozice } = urciTitul(stats, uid);
 
