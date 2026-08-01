@@ -161,6 +161,29 @@ input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { fil
         </div>
     </div>
 
+    <!-- FOND NADĚJE -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secFond')">💎 FOND NADĚJE <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secFond">
+            <div style="padding:6px 2px;">
+                <div style="margin-bottom:12px; font-size:.9em;">
+                    Aktuální fond: <b id="fondNyni" style="color:#f1c40f;">–</b> Kč
+                    <span style="opacity:.5; font-size:.85em;">(automaticky 5 Kč × počet sázek<span id="fondKorekceInfo"></span>)</span>
+                </div>
+                <label class="auth-label" style="display:block; margin-bottom:6px; font-size:.85em;">Nastavit fond na částku (Kč):</label>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <input type="number" id="fondNova" class="auth-input" placeholder="např. 250" style="flex:1; min-width:120px;">
+                    <button class="small-btn" onclick="ulozFond()">💾 Nastavit fond</button>
+                    <button class="small-btn" style="background:#555;" onclick="resetFond()">↺ Zrušit korekci</button>
+                </div>
+                <div style="opacity:.5; font-size:.78em; margin-top:8px;">
+                    Nastavená částka se „zafixuje" a další sázky se k ní budou dál automaticky přičítat (5 Kč/sázka).
+                </div>
+                <div id="fondMsg" style="margin-top:8px; font-size:.85em;"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- AKTIVNÍ ZÁPASY -->
     <div class="card">
         <div class="collapsible-header" onclick="toggleSection('secActive')">🏒 AKTIVNÍ ZÁPASY <span class="collapse-arrow">▼</span></div>
@@ -326,6 +349,16 @@ async function loadMatches() {
         sb.from('hokej27_sazky').select('*'),
         sb.from('hokej27_stav').select('*').eq('id', 1).maybeSingle()
     ]);
+    // Fond: automaticky 5 Kč × sázky + ruční korekce
+    const korekce = Number(stav?.fond_korekce || 0);
+    const fondAuto = (sazky || []).length * 5;
+    const fond = fondAuto + korekce;
+    const fondNyniEl = document.getElementById('fondNyni');
+    if (fondNyniEl) fondNyniEl.innerText = fond;
+    const korekceInfoEl = document.getElementById('fondKorekceInfo');
+    if (korekceInfoEl) korekceInfoEl.innerText = korekce !== 0 ? ` ${korekce > 0 ? '+' : ''}${korekce} Kč korekce` : '';
+    window._fondData = { pocetSazek: (sazky || []).length, korekce };
+
     const aC = document.getElementById('activeMatches');
     const hC = document.getElementById('historyMatches');
     aC.innerHTML = ''; hC.innerHTML = '';
@@ -336,7 +369,11 @@ async function loadMatches() {
         const div = document.createElement('div');
         div.className = 'user-row';
         div.style.cssText = 'display:block; padding:14px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left;';
-        const betRows = ms.map(s => `<div style="font-size:0.85em; opacity:0.8; padding:2px 0;">• ${s.jmeno}: ${s.skore}${s.strelec ? ' + ' + s.strelec : ''}${s.skryt ? ' 🙈' : ''}${m.status === 'vyhodnoceno' ? ` → +${s.nb} NB${s.vyhra_kc > 0 ? ` 💰${s.vyhra_kc}` : ''}` : ''}</div>`).join('');
+        const betRows = ms.map(s => `<div style="font-size:0.85em; opacity:0.9; padding:3px 0; display:flex; align-items:center; gap:6px;">
+            <span style="flex:1;">• ${s.jmeno}: ${s.skore}${s.strelec ? ' + ' + s.strelec : ''}${s.skryt ? ' 🙈' : ''}${m.status === 'vyhodnoceno' ? ` → +${s.nb} NB${s.vyhra_kc > 0 ? ` 💰${s.vyhra_kc}` : ''}` : ''}</span>
+            <span onclick="editTip(${s.id}, '${(s.skore || '').replace(/'/g, '')}', '${(s.strelec || '').replace(/'/g, '')}', '${(s.jmeno || '').replace(/'/g, '')}')" style="cursor:pointer; opacity:.6;" title="Upravit tip">✏️</span>
+            <span onclick="delTip(${s.id}, '${(s.jmeno || '').replace(/'/g, '')}')" style="cursor:pointer; opacity:.6;" title="Smazat tip">🗑️</span>
+        </div>`).join('');
         div.innerHTML = `
             <b>${m.skupina ? '[' + m.skupina + '] ' : ''}${m.domaci} vs ${m.hoste}</b>
             <span style="opacity:0.5; font-size:0.8em;"> · ${new Date(m.deadline).toLocaleString('cs-CZ')}</span>
@@ -351,6 +388,55 @@ async function loadMatches() {
             </div>`;
         (m.status === 'vyhodnoceno' ? hC : aC).appendChild(div);
     });
+}
+
+// ---------- FOND NADĚJE ----------
+async function ulozFond() {
+    const msg = document.getElementById('fondMsg');
+    const nova = document.getElementById('fondNova').value;
+    if (nova === '' || isNaN(Number(nova))) { msg.style.color = '#ff4444'; msg.innerText = 'Zadej částku.'; return; }
+    const cil = Math.round(Number(nova));
+    const pocet = window._fondData?.pocetSazek || 0;
+    // korekce = kolik chybí/přebývá oproti automatickému výpočtu
+    const korekce = cil - pocet * 5;
+    const { error } = await sb.from('hokej27_stav').update({ fond_korekce: korekce }).eq('id', 1);
+    if (error) { msg.style.color = '#ff4444'; msg.innerText = 'Chyba: ' + error.message; return; }
+    msg.style.color = '#27ae60';
+    msg.innerText = `✅ Fond nastaven na ${cil} Kč (korekce ${korekce > 0 ? '+' : ''}${korekce}). Další sázky se přičítají.`;
+    document.getElementById('fondNova').value = '';
+    await loadMatches();
+}
+
+async function resetFond() {
+    const msg = document.getElementById('fondMsg');
+    if (!confirm('Zrušit ruční korekci? Fond se vrátí na čistý automatický výpočet (5 Kč × sázky).')) return;
+    const { error } = await sb.from('hokej27_stav').update({ fond_korekce: 0 }).eq('id', 1);
+    if (error) { msg.style.color = '#ff4444'; msg.innerText = 'Chyba: ' + error.message; return; }
+    msg.style.color = '#27ae60';
+    msg.innerText = '✅ Korekce zrušena, fond je zpět automatický.';
+    await loadMatches();
+}
+
+// ---------- EDITACE / MAZÁNÍ TIPŮ HRÁČŮ ----------
+async function editTip(id, skore, strelec, jmeno) {
+    const noveSkore = prompt(`Upravit skóre pro ${jmeno} (formát D:H, např. 3:2):`, skore);
+    if (noveSkore === null) return;
+    if (!/^\d+:\d+$/.test(noveSkore.trim())) { alert('Skóre musí být ve formátu D:H (např. 3:2).'); return; }
+    const novyStrelec = prompt(`Upravit střelce pro ${jmeno} (nech prázdné, pokud bez střelce):`, strelec);
+    if (novyStrelec === null) return;
+    const { error } = await sb.from('hokej27_sazky')
+        .update({ skore: noveSkore.trim(), strelec: novyStrelec.trim() || null })
+        .eq('id', id);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    alert(`✅ Tip hráče ${jmeno} upraven.`);
+    await loadMatches();
+}
+
+async function delTip(id, jmeno) {
+    if (!confirm(`Opravdu smazat tip hráče ${jmeno}? Tuto akci nelze vrátit.`)) return;
+    const { error } = await sb.from('hokej27_sazky').delete().eq('id', id);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    await loadMatches();
 }
 
 // ---------- VYHODNOCENÍ ----------
