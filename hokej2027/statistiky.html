@@ -121,11 +121,13 @@ function vykresli(elId, list, klic, fmt, sub, korunka = true) {
 }
 
 async function load() {
-    const [zR, sR] = await Promise.all([
+    const [zR, sR, stR] = await Promise.all([
         sb.from('hokej27_zapasy').select('*'),
-        sb.from('hokej27_sazky').select('*')
+        sb.from('hokej27_sazky').select('*'),
+        sb.from('hokej27_stav').select('fond_korekce').eq('id', 1).maybeSingle()
     ]);
-    const stats = spocitejStatistiky(zR.data || [], sR.data || []);
+    const fondKorekce = Number(stR?.data?.fond_korekce || 0);
+    const stats = spocitejStatistiky(zR.data || [], sR.data || [], fondKorekce);
 
     // Fond + medaile 50/30/20
     document.getElementById('fondCastka').textContent = stats.fond + ' Kč';
