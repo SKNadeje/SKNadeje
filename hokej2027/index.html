@@ -863,6 +863,19 @@ const DEADLINE_DLOUHODOBY = '2027-05-14T15:00:00';  // před prvním buly – up
 const SKUPINA_A = ['Německo', 'Finsko', 'Švédsko', 'Švýcarsko', 'Lotyšsko', 'Rakousko', 'Slovinsko', 'Ukrajina'];
 const SKUPINA_B = ['Česko', 'Kanada', 'USA', 'Slovensko', 'Dánsko', 'Norsko', 'Kazachstán', 'Maďarsko'];
 
+// Převod kódu fáze na čitelný název (skupiny mají prefix "Skupina", play-off jen název)
+const NAZVY_FAZI = {
+    'A': 'Skupina A',
+    'B': 'Skupina B',
+    'QF': 'Čtvrtfinále',
+    'SF': 'Semifinále',
+    'BRONZ': 'O 3. místo',
+    'FINALE': 'Finále'
+};
+function nazevFaze(kod) {
+    return NAZVY_FAZI[kod] || kod;
+}
+
 let currentUser = null;      // jméno
 let mojePenezenka = 0;       // zůstatek peněženky (Kč)
 let currentUserId = null;
@@ -1027,7 +1040,7 @@ function renderZapasy(now) {
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
                 <div style="color:var(--neon); font-size:0.75em; font-weight:900; letter-spacing:1px;">
-                    ${m.skupina ? `SKUPINA ${m.skupina} · ` : ''}${isEvaluated ? '' : `BANK: ${tot * VKLAD_DO_BANKU} Kč`}
+                    ${m.skupina ? `${nazevFaze(m.skupina)} · ` : ''}${isEvaluated ? '' : `BANK: ${tot * VKLAD_DO_BANKU} Kč`}
                 </div>
                 ${isEvaluated
                     ? `<div style="background:#27ae60; color:white; padding:6px 16px; border-radius:100px; font-weight:900; font-size:0.8em">VÝSLEDEK ${m.vysledek_d}:${m.vysledek_h}</div>`
