@@ -56,11 +56,12 @@ body {
 
 /* ===== ODZNAK/EMBLÉM ===== */
 .logo {
-    width: min(800px, 92vw); height: min(800px, 92vw);
+    /* Zrušená výška, aby kontejner nedržel zbytečné místo (dle CL vzoru) */
+    width: 100%;
     max-width: 800px;
-    margin: 0 auto 18px;
-    /* Vytažení přes šířku karty, aby se logo centrovalo vůči obrazovce */
-    margin-left: 50%; transform: translateX(-50%);
+    margin: 0 auto 4px;
+    margin-left: 50%;
+    transform: translateX(-50%);
     display: flex; align-items: center; justify-content: center;
     position: relative;
     animation: dych 4s ease-in-out infinite;
@@ -83,10 +84,11 @@ body {
 }
 @media (prefers-reduced-motion: reduce) { .logo, .logo::before { animation: none; } }
 .logo-inner {
+    /* Přesná velikost oblasti s logem (dle CL vzoru) */
+    width: min(500px, 80vw);
+    height: min(500px, 80vw);
     position: relative; z-index: 1;
-    width: 100%; height: 100%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 4.6rem;
 }
 
 .zalozeno { font-size: 10px; letter-spacing: 4px; color: rgba(212,175,55,.6); text-transform: uppercase; font-weight: 700; }
@@ -150,7 +152,6 @@ h1 {
 
 @media (max-width: 420px) {
     h1 { font-size: 1.45rem; }
-    .logo-inner { font-size: 3.4rem; }
 }
 
 /* ===== TLAČÍTKO PRAVIDEL ===== */
@@ -218,7 +219,7 @@ h1 {
 <div class="karta">
     <div class="logo">
         <div class="logo-inner" id="logoInner">
-            <img src="logo-hokej.png" alt="MS v hokeji 2027" style="width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 3px 12px rgba(0,0,0,.5));"
+            <img src="logo-hokej2027.png" alt="MS v hokeji 2027" style="width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 3px 12px rgba(0,0,0,.5));"
                 onerror="this.parentNode.innerHTML='🏒';">
         </div>
     </div>
