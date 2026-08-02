@@ -412,6 +412,13 @@ async function loadMatches() {
             ${m.status === 'vyhodnoceno' ? ` <span style="color:#27ae60; font-weight:900;">${m.vysledek_d}:${m.vysledek_h}</span>` : ''}
             <div style="margin:6px 0;">Sázek: ${ms.length} (bank ${ms.length * VKLAD_DO_BANKU} Kč${m.status !== 'vyhodnoceno' && prevedeny > 0 ? ' + převod ' + prevedeny : ''})</div>
             ${betRows}
+            ${m.status !== 'vyhodnoceno' ? `
+            <div style="margin-top:8px; font-size:.8em; opacity:.7;">🎲 Outsider (bonus za trend 1→3 NB):</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
+                <button class="small-btn" style="${!m.outsider ? 'background:var(--neon); color:#05121a;' : 'background:#333;'}" onclick="nastavOutsidera(${m.id}, null)">Nikdo</button>
+                <button class="small-btn" style="${m.outsider === m.domaci ? 'background:var(--neon); color:#05121a;' : 'background:#333;'}" onclick="nastavOutsidera(${m.id}, '${m.domaci.replace(/'/g, "\\'")}')">${m.domaci}</button>
+                <button class="small-btn" style="${m.outsider === m.hoste ? 'background:var(--neon); color:#05121a;' : 'background:#333;'}" onclick="nastavOutsidera(${m.id}, '${m.hoste.replace(/'/g, "\\'")}')">${m.hoste}</button>
+            </div>` : (m.outsider ? `<div style="margin-top:6px; font-size:.78em; opacity:.6;">🎲 Outsider byl: ${m.outsider}</div>` : '')}
             <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
                 ${m.status !== 'vyhodnoceno' ? `
                     <button class="small-btn" onclick="evalM(${m.id})">🏁 VYHODNOTIT</button>` : ''}
@@ -419,6 +426,12 @@ async function loadMatches() {
             </div>`;
         (m.status === 'vyhodnoceno' ? hC : aC).appendChild(div);
     });
+}
+
+async function nastavOutsidera(mid, tym) {
+    const { error } = await sb.from('hokej27_zapasy').update({ outsider: tym }).eq('id', mid);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    await loadMatches();
 }
 
 // ---------- FOND NADĚJE ----------
@@ -593,10 +606,14 @@ async function finishEval(mid) {
     const [{ data: sazky }, { data: stav }, { data: m }] = await Promise.all([
         sb.from('hokej27_sazky').select('*').eq('zapas_id', mid),
         sb.from('hokej27_stav').select('*').eq('id', 1).maybeSingle(),
-        sb.from('hokej27_zapasy').select('domaci, hoste').eq('id', mid).maybeSingle()
+        sb.from('hokej27_zapasy').select('domaci, hoste, outsider').eq('id', mid).maybeSingle()
     ]);
     const prevedeny = Number(stav?.prevedeny_bank || 0);
     const bank = (sazky || []).length * VKLAD_DO_BANKU + prevedeny;
+
+    // Kdo je vítěz zápasu (pro outsider bonus)
+    const vitezZapasu = finalD > finalH ? m?.domaci : (finalH > finalD ? m?.hoste : null);
+    const outsiderVyhral = m?.outsider && vitezZapasu && m.outsider === vitezZapasu;
 
     // vyhodnocení sázek
     const vyhodnocene = (sazky || []).map(s => {
@@ -606,8 +623,23 @@ async function finishEval(mid) {
         const pStr = (s.strelec || '').toLowerCase().trim();
         const hitStrelec = pStr.length > 0 && fst.some(r => r.includes(pStr) || pStr.includes(r));
         const hitTrend = (finalD > finalH && sD > sH) || (finalD < finalH && sD < sH) || (finalD === finalH && sD === sH);
-        const nb = (hitSkore ? 5 : 0) + (hitStrelec ? 3 : 0) + (hitTrend ? 1 : 0);
-        return { ...s, hitSkore, hitStrelec, hitTrend, nb };
+
+        // Trend: normálně 1 NB, ale pokud vyhrál outsider a hráč tipoval jeho výhru → 3 NB
+        let trendNB = 0;
+        if (hitTrend) {
+            const hracTipovalOutsidera = outsiderVyhral &&
+                ((finalD > finalH && sD > sH && m.outsider === m?.domaci) ||
+                 (finalH > finalD && sH > sD && m.outsider === m?.hoste));
+            trendNB = hracTipovalOutsidera ? 3 : 1;
+        }
+
+        // Nové bonusy (jen když netrefil přesné skóre – jinak by se to zdvojovalo? NE, uživatel chce sčítat)
+        const hitRozdil = (sD - sH) === (finalD - finalH);       // stejný rozdíl skóre
+        const hitPocet = (sD + sH) === (finalD + finalH);         // stejný počet branek
+
+        const nb = (hitSkore ? 5 : 0) + (hitStrelec ? 3 : 0) + trendNB
+                 + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
+        return { ...s, hitSkore, hitStrelec, hitTrend, hitRozdil, hitPocet, trendNB, nb };
     });
 
     // výherci banku: přesné skóre + střelec; když nikdo, bank se převádí dál
@@ -617,6 +649,7 @@ async function finishEval(mid) {
     for (const s of vyhodnocene) {
         await sb.from('hokej27_sazky').update({
             hit_skore: s.hitSkore, hit_strelec: s.hitStrelec, hit_trend: s.hitTrend,
+            hit_rozdil: s.hitRozdil, hit_pocet: s.hitPocet,
             nb: s.nb,
             vyhra_kc: (s.hitSkore && s.hitStrelec) ? share : 0
         }).eq('id', s.id);
