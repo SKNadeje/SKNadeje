@@ -60,7 +60,8 @@ body {
     max-width: 800px;
     margin: 0 auto 4px;
     margin-left: 50%;
-    transform: translateX(-55%);
+    /* Centrování je -50%. Vyšší číslo = víc doleva (např. -53% posune víc). */
+    transform: translateX(-53%);
     display: flex; align-items: center; justify-content: center;
     position: relative;
     animation: dych 4s ease-in-out infinite;
@@ -301,7 +302,10 @@ h1 {
             <div class="pr-radek"><span>Přesný výsledek zápasu</span><b>5 NB</b></div>
             <div class="pr-radek"><span>Trefený střelec gólu</span><b>3 NB</b></div>
             <div class="pr-radek"><span>Správný trend (výhra/remíza/prohra)</span><b>1 NB</b></div>
-            <p style="margin-top:10px; font-size:.76rem; opacity:.75;">Bodování dlouhodobého tipu (vítězové, All-Star atd.) se vyhodnotí po skončení turnaje.</p>
+            <div class="pr-radek"><span>Trend, když vyhraje outsider 🎲</span><b>3 NB</b></div>
+            <div class="pr-radek"><span>Stejný rozdíl skóre (tip 3:1, výsl. 2:0)</span><b>1 NB</b></div>
+            <div class="pr-radek"><span>Stejný počet branek (tip 3:1, výsl. 2:2)</span><b>1 NB</b></div>
+            <p style="margin-top:10px; font-size:.76rem; opacity:.75;">Body se sčítají – za jeden zápas můžeš získat i 10 NB. „Outsidera" u vybraných zápasů určí admin (nemusí být vždy). Bodování dlouhodobého tipu se vyhodnotí po skončení turnaje.</p>
         </div>
 
         <button class="pravidla-btn" style="width:100%; justify-content:center; margin-top:20px;" onclick="zavriPravidla()">Rozumím, jdeme na to 🏒</button>
