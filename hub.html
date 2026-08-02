@@ -168,6 +168,17 @@ a.tile.hall:hover { border-style: solid; }
     <div class="sub">Vyber turnaj a vstup do hry</div>
     <div class="line"></div>
 
+    <div style="text-align:center; margin-bottom:18px;">
+        <button onclick="pozvatKamarada()" style="
+            background: linear-gradient(135deg, #2e6bff, #6f4fd6); color: #fff;
+            border: none; border-radius: 10px; padding: 12px 26px;
+            font-size: .78rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;
+            cursor: pointer; box-shadow: 0 4px 16px rgba(46,107,255,.35);
+            display: inline-flex; align-items: center; gap: 8px; font-family: inherit;
+        ">🎉 Pozvat kamaráda</button>
+        <div id="pozvat-msg" style="font-size:.72rem; color:#2ecc71; margin-top:8px; display:none;">✅ Odkaz zkopírován!</div>
+    </div>
+
     <div id="instalace-wrap" style="text-align:center; margin-bottom:22px; display:none;">
         <button id="btn-instalovat" onclick="instalujAppku()" style="
             background: linear-gradient(135deg, #d4af37, #9a7b1e); color: #05070f;
@@ -335,6 +346,31 @@ grid.innerHTML = TURNAJE_SORTED.map(tileHtml).join('') + `
         <div class="tname" style="color:#d4af37; font-size:.82rem;">Síň slávy</div>
         <div class="tnote">Archiv dohraných turnajů,<br>kroniky a vítězové</div>
     </a>`;
+
+/* ============================================================
+   POZVAT KAMARÁDA – nativní sdílení + fallback kopírování
+   ============================================================ */
+async function pozvatKamarada() {
+    const url = 'https://www.sknadeje.cz';
+    const text = 'Pojď si zatipovat se mnou u Naděje! 🏆 Fotbal, hokej, Liga mistrů:';
+    // Nativní sdílení (mobil) – otevře systémové menu (WhatsApp, Messenger, SMS…)
+    if (navigator.share) {
+        try {
+            await navigator.share({ title: 'Tipovačky Naděje', text, url });
+            return;
+        } catch (e) {
+            if (e.name === 'AbortError') return; // uživatel zavřel dialog
+        }
+    }
+    // Fallback (PC) – zkopíruj odkaz do schránky
+    try {
+        await navigator.clipboard.writeText(url);
+        const msg = document.getElementById('pozvat-msg');
+        if (msg) { msg.style.display = 'block'; setTimeout(() => { msg.style.display = 'none'; }, 3000); }
+    } catch (e) {
+        prompt('Zkopíruj a pošli tento odkaz kamarádovi:', url);
+    }
+}
 
 /* ============================================================
    INSTALACE APPKY (PWA) – tlačítko "Stáhnout appku"
