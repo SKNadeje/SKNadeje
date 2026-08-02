@@ -624,13 +624,22 @@ async function finishEval(mid) {
         const hitStrelec = pStr.length > 0 && fst.some(r => r.includes(pStr) || pStr.includes(r));
         const hitTrend = (finalD > finalH && sD > sH) || (finalD < finalH && sD < sH) || (finalD === finalH && sD === sH);
 
-        // Trend: normálně 1 NB, ale pokud vyhrál outsider a hráč tipoval jeho výhru → 3 NB
+        // Trend: normálně 1 NB. V outsider zápase: výhra outsidera 3 NB, remíza 2 NB.
         let trendNB = 0;
         if (hitTrend) {
-            const hracTipovalOutsidera = outsiderVyhral &&
-                ((finalD > finalH && sD > sH && m.outsider === m?.domaci) ||
-                 (finalH > finalD && sH > sD && m.outsider === m?.hoste));
-            trendNB = hracTipovalOutsidera ? 3 : 1;
+            if (m?.outsider) {
+                if (outsiderVyhral &&
+                    ((finalD > finalH && sD > sH && m.outsider === m?.domaci) ||
+                     (finalH > finalD && sH > sD && m.outsider === m?.hoste))) {
+                    trendNB = 3;   // trefil výhru outsidera
+                } else if (finalD === finalH && sD === sH) {
+                    trendNB = 2;   // trefil remízu v outsider zápase
+                } else {
+                    trendNB = 1;   // trefil výhru favorita
+                }
+            } else {
+                trendNB = 1;       // zápas bez outsidera
+            }
         }
 
         // Nové bonusy (jen když netrefil přesné skóre – jinak by se to zdvojovalo? NE, uživatel chce sčítat)
