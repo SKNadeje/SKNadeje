@@ -249,6 +249,7 @@ h1 {
     <a class="vstup" href="index.html">Vstoupit ⭐</a>
     <br>
     <button class="pravidla-btn" onclick="otevriPravidla()">📋 Pravidla a informace</button>
+    <button class="pravidla-btn" onclick="otevriProgram()">📅 Program ročníku</button>
 
     <div class="tisk">
         <b>Upozornění klubu:</b> Tipování top 8 nezaručuje, že váš klub bude v top 8.<br>
@@ -338,9 +339,52 @@ h1 {
     </div>
 </div>
 
+<!-- 📅 MODAL PROGRAM ROČNÍKU -->
+<div class="pr-overlay" id="progOverlay" onclick="if(event.target===this)zavriProgram()">
+    <div class="pr-modal">
+        <span class="pr-close" onclick="zavriProgram()">×</span>
+        <h2>📅 Program ročníku 2026/27</h2>
+
+        <div class="pr-sekce">
+            <p style="opacity:.8;">Úterní a středeční večery patří Lize mistrů. Výkop většiny zápasů je ve 21:00, vybraná utkání už od 18:45.</p>
+        </div>
+
+        <div class="pr-sekce">
+            <h3>🏆 Ligová fáze</h3>
+            <div class="pr-radek"><span>1. kolo</span><b>8.–10. 9. 2026</b></div>
+            <div class="pr-radek"><span>2. kolo</span><b>13.–14. 10. 2026</b></div>
+            <div class="pr-radek"><span>3. kolo</span><b>20.–21. 10. 2026</b></div>
+            <div class="pr-radek"><span>4. kolo</span><b>3.–4. 11. 2026</b></div>
+            <div class="pr-radek"><span>5. kolo</span><b>24.–25. 11. 2026</b></div>
+            <div class="pr-radek"><span>6. kolo</span><b>8.–9. 12. 2026</b></div>
+            <div class="pr-radek"><span>7. kolo</span><b>19.–20. 1. 2027</b></div>
+            <div class="pr-radek"><span>8. kolo (všech 18 naráz)</span><b>27. 1. 2027</b></div>
+        </div>
+
+        <div class="pr-sekce">
+            <h3>🔥 Vyřazovací fáze</h3>
+            <div class="pr-radek"><span>Předkolo play-off</span><b>16./17. a 23./24. 2. 2027</b></div>
+            <div class="pr-radek"><span>Osmifinále</span><b>9./10. a 16./17. 3. 2027</b></div>
+            <div class="pr-radek"><span>Čtvrtfinále</span><b>6./7. a 13./14. 4. 2027</b></div>
+            <div class="pr-radek"><span>Semifinále</span><b>27./28. 4. a 4./5. 5. 2027</b></div>
+        </div>
+
+        <div class="pr-sekce">
+            <h3>🏅 Finále</h3>
+            <p style="opacity:.9;"><b style="color:var(--fial);">Sobota 5. června 2027</b><br>Estadio Metropolitano, Madrid 🇪🇸</p>
+        </div>
+
+        <div class="tisk" style="margin-top:10px;">Termíny dle UEFA, mohou se drobně změnit.</div>
+
+        <button class="pravidla-btn" style="width:100%; justify-content:center; margin-top:20px;" onclick="zavriProgram()">Zavřít ⭐</button>
+    </div>
+</div>
+
 <script>
 function otevriPravidla() { document.getElementById('prOverlay').classList.add('open'); }
 function zavriPravidla() { document.getElementById('prOverlay').classList.remove('open'); }
+function otevriProgram() { document.getElementById('progOverlay').classList.add('open'); }
+function zavriProgram() { document.getElementById('progOverlay').classList.remove('open'); }
 </script>
 
 <script>
