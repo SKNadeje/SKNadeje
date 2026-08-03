@@ -375,20 +375,22 @@ async function deleteM(id) {
 }
 
 async function loadMatches() {
-    const [{ data: zapasy }, { data: sazky }, { data: stav }] = await Promise.all([
+    const [{ data: zapasy }, { data: sazky }, { data: stav }, { count: dlZaplacene }] = await Promise.all([
         sb.from('hokej27_zapasy').select('*').order('deadline'),
         sb.from('hokej27_sazky').select('*'),
-        sb.from('hokej27_stav').select('*').eq('id', 1).maybeSingle()
+        sb.from('hokej27_stav').select('*').eq('id', 1).maybeSingle(),
+        sb.from('hokej27_dlouhodobe').select('user_id', { count: 'exact', head: true }).eq('zaplaceno', true)
     ]);
-    // Fond: automaticky 5 Kč × sázky + ruční korekce
+    // Fond: 5 Kč × sázky + 50 Kč × zaplacené dlouhodobky + ruční korekce
     const korekce = Number(stav?.fond_korekce || 0);
-    const fondAuto = (sazky || []).length * 5;
+    const pocetDl = dlZaplacene || 0;
+    const fondAuto = (sazky || []).length * 5 + pocetDl * 50;
     const fond = fondAuto + korekce;
     const fondNyniEl = document.getElementById('fondNyni');
     if (fondNyniEl) fondNyniEl.innerText = fond;
     const korekceInfoEl = document.getElementById('fondKorekceInfo');
     if (korekceInfoEl) korekceInfoEl.innerText = korekce !== 0 ? ` ${korekce > 0 ? '+' : ''}${korekce} Kč korekce` : '';
-    window._fondData = { pocetSazek: (sazky || []).length, korekce };
+    window._fondData = { pocetSazek: (sazky || []).length, pocetDl, korekce };
 
     const aC = document.getElementById('activeMatches');
     const hC = document.getElementById('historyMatches');
@@ -441,8 +443,9 @@ async function ulozFond() {
     if (nova === '' || isNaN(Number(nova))) { msg.style.color = '#ff4444'; msg.innerText = 'Zadej částku.'; return; }
     const cil = Math.round(Number(nova));
     const pocet = window._fondData?.pocetSazek || 0;
-    // korekce = kolik chybí/přebývá oproti automatickému výpočtu
-    const korekce = cil - pocet * 5;
+    const pocetDl = window._fondData?.pocetDl || 0;
+    // korekce = kolik chybí/přebývá oproti automatickému výpočtu (sázky + zaplacené dlouhodobky)
+    const korekce = cil - (pocet * 5 + pocetDl * 50);
     const { error } = await sb.from('hokej27_stav').update({ fond_korekce: korekce }).eq('id', 1);
     if (error) { msg.style.color = '#ff4444'; msg.innerText = 'Chyba: ' + error.message; return; }
     msg.style.color = '#27ae60';
@@ -742,6 +745,7 @@ async function loadDlouhodobe() {
 async function togglePaid(userId, cur) {
     await sb.from('hokej27_dlouhodobe').update({ zaplaceno: !cur }).eq('user_id', userId);
     loadDlouhodobe();
+    loadMatches();   // obnov i fond (zaplacené dlouhodobky se do něj počítají)
 }
 
 async function vyhodnotDlouhodobe() {
