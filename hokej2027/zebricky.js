@@ -3,7 +3,7 @@
 // Vstup: zapasy[], sazky[] (z hokej27_*), Výstup: hráčské statistiky
 // ============================================================
 
-function spocitejStatistiky(zapasy, sazky, fondKorekce = 0) {
+function spocitejStatistiky(zapasy, sazky, fondKorekce = 0, zaplaceneDlouhodobky = 0) {
     const vyhodnocene = zapasy.filter(z => z.status === 'vyhodnoceno');
     const pocetVyhodnocenych = vyhodnocene.length;
     const zapasMap = {};
@@ -51,7 +51,7 @@ function spocitejStatistiky(zapasy, sazky, fondKorekce = 0) {
         h.historie.sort((a, b) => new Date(b.datum) - new Date(a.datum));
     });
 
-    const fond = sazky.length * 5 + Number(fondKorekce || 0);
+    const fond = sazky.length * 5 + Number(zaplaceneDlouhodobky || 0) * 50 + Number(fondKorekce || 0);
     return { hraci: list, fond, pocetVyhodnocenych, celkemSazek: sazky.length };
 }
 
