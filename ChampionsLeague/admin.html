@@ -1,580 +1,821 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NADĚJE · CL Admin</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADMIN – MS v hokeji 2027</title>
+    <style>
+        :root { 
+            --blue: #00f2ff; 
+            --green: #27ae60; 
+            --red: #e74c3c; 
+            --bg: #0f172a; 
+            --text: #ffffff;
+            --card-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: radial-gradient(ellipse at top, #142036 0%, var(--bg) 65%); padding: 20px; color: var(--text); margin: 0; min-height: 100vh; 
+            line-height: 1.6;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+        .btn-back { display: inline-block; padding: 12px 24px; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 12px; font-weight: bold; border: 1px solid rgba(0,242,255,0.25); margin-bottom: 25px; transition: 0.3s; }
+        .btn-back:hover { background: rgba(0,242,255,0.1); transform: translateX(-3px); }
+
+        .card { background: rgba(255,255,255,0.04); padding: 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: var(--card-shadow); border: 1px solid rgba(0,242,255,0.2); }
+        h2 { margin: 0 0 20px 0; border-bottom: 1px solid rgba(0,242,255,0.2); padding-bottom: 12px; font-size: 1.5em; color: #fff; }
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 0.85em; color: rgba(255,255,255,0.5); text-transform: uppercase; }
+        input, textarea, select { width: 100%; padding: 14px; margin: 8px 0; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(0,242,255,0.25); border-radius: 10px; box-sizing: border-box; font-size: 1em; font-family: inherit; }
+
+        .btn { padding: 15px; border: none; border-radius: 12px; color: white; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; margin-top: 10px; transition: 0.3s; text-align: center; }
+        .btn-blue { background: var(--blue); }
+        .btn-green { background: var(--green); }
+        .btn-red { background: var(--red); }
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        #statusMsg { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--green); color: white; padding: 15px 30px; border-radius: 50px; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 9999; }
+        .match-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(0,242,255,0.15); padding: 25px; border-radius: 18px; margin-top: 25px; }
+        .bets-container { margin-top: 20px; border-top: 1px dashed rgba(0,242,255,0.2); padding-top: 15px; }
+        .bet-admin-row { background: rgba(255,255,255,0.04); padding: 12px 18px; border-radius: 12px; margin-top: 10px; border: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
+        
+        .small-btn { padding: 8px 14px; border-radius: 8px; font-size: 0.75em; border: none; color: white; cursor: pointer; font-weight: bold; margin-left: 6px; }
+        .check-ok { color: var(--green); font-weight: bold; margin-left: 10px; font-size: 0.8em; }
+        .check-fail { color: var(--red); font-weight: bold; margin-left: 10px; font-size: 0.8em; }
+        .win-amount { color: #f1c40f; background: #000; padding: 2px 8px; border-radius: 6px; font-size: 0.85em; margin-left: 10px; }
+
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 550px; background: #16213a; border: 1px solid rgba(0,242,255,0.3); border-radius: 25px; box-shadow: 0 0 80px rgba(0,0,0,0.6); display: none; z-index: 3000; padding: 35px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; z-index: 2999; }
+        .tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; background: rgba(0,0,0,0.25); padding: 10px; border-radius: 12px; min-height: 20px; }
+        .tag { background: rgba(0,242,255,0.12); color: #fff; padding: 6px 12px; border-radius: 15px; font-size: 0.85em; border: 1px solid rgba(0,242,255,0.4); display: flex; align-items: center; gap: 8px; }
+        .tag b { cursor: pointer; color: #ff5252; }
+        textarea { height: 80px; resize: vertical; }
+        
+        .bets-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .bets-table th {
+            background: #3182ce;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .bets-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        
+        .bets-table tr:hover {
+            background: rgba(255,255,255,0.04);
+        }
+        
+        .bets-result-ok { color: var(--green); font-weight: bold; }
+        .bets-result-fail { color: var(--red); }
+
+        /* --- SROLOVÁNÍ --- */
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            margin: 0 0 0 0;
+        }
+
+        .collapsible-header h2 { margin: 0; border: none; padding: 0; }
+
+        .collapse-arrow {
+            font-size: 1.2em;
+            transition: transform 0.3s;
+            opacity: 0.5;
+        }
+
+        .collapse-arrow.open { transform: rotate(180deg); }
+
+        .collapsible-body {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.4s ease, padding 0.3s;
+        }
+
+        .collapsible-body.open { max-height: 9999px; padding-top: 20px; }
+
+        /* --- SPRÁVA UŽIVATELŮ --- */
+        .user-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+
+        .user-name { font-weight: bold; font-size: 0.95em; }
+    </style>
 <style>
-:root { --fial: #a78bfa; --dark: #14101f; --card-bg: rgba(255,255,255,.05); --gold: #d4af37; --green: #27ae60; --red: #c0392b;  color-scheme: dark; }
+:root { --neon: #00f2ff; color-scheme: dark; }
 html, body { color-scheme: dark; }
-* { box-sizing: border-box; }
-body { background: var(--dark); color: #fff; font-family: 'Segoe UI', Roboto, Arial, sans-serif; margin: 0; padding: 15px; min-height: 100vh; }
-.wrap { max-width: 640px; margin: 0 auto; }
-.zpet { display: inline-block; color: rgba(255,255,255,.45); text-decoration: none; font-size: .72em; margin: 4px 0 10px; }
-h1 { font-size: 1.2em; font-weight: 900; color: var(--fial); letter-spacing: 2px; text-transform: uppercase; }
-h2 { font-size: .85em; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; margin: 0 0 12px; }
-.karta { background: var(--card-bg); border: 1px solid rgba(167,139,250,.25); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
-.pole { width: 100%; background: rgba(10,6,20,.6); color: #fff; border: 1px solid rgba(167,139,250,.3); border-radius: 10px; padding: 11px; font-size: .9em; font-family: inherit; outline: none; margin-bottom: 10px; }
-textarea.pole { min-height: 90px; resize: vertical; }
-.btn { background: linear-gradient(135deg, #a78bfa, #6d4fc4); color: #0e0a18; border: none; border-radius: 11px; padding: 12px 18px; font-weight: 900; font-size: .78em; letter-spacing: 1px; cursor: pointer; text-transform: uppercase; font-family: inherit; }
-.btn-gold { background: linear-gradient(135deg, #d4af37, #9a7b1e); }
-.btn-red { background: var(--red); color: #fff; }
-.btn-mini { padding: 6px 12px; font-size: .68em; border-radius: 8px; }
-.zapas-row { border-bottom: 1px solid rgba(255,255,255,.08); padding: 11px 0; font-size: .85em; }
-.msg { display: none; position: fixed; top: 14px; left: 50%; transform: translateX(-50%); background: var(--green); color: #fff; font-weight: 900; padding: 12px 22px; border-radius: 100px; z-index: 2000; font-size: .8em; }
-.dl-radek { border-bottom: 1px solid rgba(255,255,255,.08); padding: 10px 0; font-size: .8em; }
-.nezmocnen { text-align: center; padding: 60px 20px; opacity: .6; }
-.flexrow { display: flex; gap: 10px; }
-.flexrow .pole { flex: 1; }
-label.lbl { display: block; font-size: .62em; letter-spacing: 1.5px; text-transform: uppercase; opacity: .55; font-weight: 800; margin-bottom: 5px; }
-.chipy { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
-.chipy .ch { font-size:.74em; font-weight:700; padding:7px 12px; border:1px solid rgba(167,139,250,.3);
-    border-radius:100px; cursor:pointer; user-select:none; transition:all .15s; opacity:.75; color:#fff; }
-.chipy .ch.on { background:rgba(212,175,55,.2); border-color:var(--gold); color:var(--gold); opacity:1; }
-.pocitadlo { font-size:.68em; opacity:.55; margin-bottom:8px; }
-.par-radek { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-.par-radek .pole { margin-bottom:0; }
-.par-radek span { opacity:.4; font-size:.8em; flex-shrink:0; }
-select.pole option { background:#14101f; color:#fff; }
+.auth-input { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.06); border:1px solid rgba(0,242,255,0.25); border-radius:10px; padding:11px 13px; color:#fff; margin-top:8px; font-size:0.9em; outline:none; color-scheme: dark; }
+.auth-input:focus { border-color: var(--neon); }
+.auth-input:-webkit-autofill { -webkit-text-fill-color:#fff; -webkit-box-shadow:0 0 0 40px #16213a inset; }
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:99; }
+select.auth-input { background-color:#16213a; }
+select.auth-input, select.auth-input option { color:#fff; background:#16213a; }
+input[type="datetime-local"].auth-input { color:#fff; }
+input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { filter: invert(1); opacity:.7; }
 </style>
 </head>
 <body>
-<div class="wrap">
-    <a class="zpet" href="index.html">← Zpět na tipy</a>
-    <h1>⚙️ CL Admin</h1>
-    <div id="obsah" class="nezmocnen">Ověřuji oprávnění…</div>
-</div>
-<div class="msg" id="msg"></div>
+<div class="container">
+    <h1 style="color:var(--neon);">⚙️ ADMIN – MS V HOKEJI 2027</h1>
+    <div id="statusMsg" style="display:none; padding:12px; border-radius:10px; font-weight:900; margin:10px 0;"></div>
 
+    <!-- PŘIDÁNÍ ZÁPASU -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secAdd')">➕ PŘIDAT ZÁPAS <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body open" id="secAdd">
+            <select id="d" class="auth-input"><option value="">– Domácí –</option></select>
+            <select id="h" class="auth-input"><option value="">– Hosté –</option></select>
+            <select id="sk" class="auth-input">
+                <option value="A">Skupina A (Mannheim)</option>
+                <option value="B">Skupina B (Düsseldorf)</option>
+                <option value="QF">Čtvrtfinále</option>
+                <option value="SF">Semifinále</option>
+                <option value="BRONZ">O 3. místo</option>
+                <option value="FINALE">Finále</option>
+            </select>
+            <input type="datetime-local" id="dl" class="auth-input" onchange="ukazVybranyCas()">
+            <div id="dl-vypis" style="font-size:.8em; color:var(--neon); margin-top:6px; min-height:1.2em; font-weight:700;"></div>
+            <button class="btn" onclick="addM()">PUBLIKOVAT ZÁPAS</button>
+        </div>
+    </div>
+
+    <!-- FOND NADĚJE -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secFond')">💎 FOND NADĚJE <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secFond">
+            <div style="padding:6px 2px;">
+                <div style="margin-bottom:12px; font-size:.9em;">
+                    Aktuální fond: <b id="fondNyni" style="color:#f1c40f;">–</b> Kč
+                    <span style="opacity:.5; font-size:.85em;">(automaticky 5 Kč × počet sázek<span id="fondKorekceInfo"></span>)</span>
+                </div>
+                <label class="auth-label" style="display:block; margin-bottom:6px; font-size:.85em;">Nastavit fond na částku (Kč):</label>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <input type="number" id="fondNova" class="auth-input" placeholder="např. 250" style="flex:1; min-width:120px;">
+                    <button class="small-btn" onclick="ulozFond()">💾 Nastavit fond</button>
+                    <button class="small-btn" style="background:#555;" onclick="resetFond()">↺ Zrušit korekci</button>
+                </div>
+                <div style="opacity:.5; font-size:.78em; margin-top:8px;">
+                    Nastavená částka se „zafixuje" a další sázky se k ní budou dál automaticky přičítat (5 Kč/sázka).
+                </div>
+                <div id="fondMsg" style="margin-top:8px; font-size:.85em;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PENĚŽENKY HRÁČŮ -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secPenez')">👛 PENĚŽENKY HRÁČŮ <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secPenez">
+            <div style="opacity:.55; font-size:.8em; margin-bottom:12px;">
+                Zadej aktuální zůstatek peněženky hráče (přepíše původní). Z peněženky se pak hráčům odečítají sázky.
+            </div>
+            <div id="penezList"></div>
+        </div>
+    </div>
+
+    <!-- AKTIVNÍ ZÁPASY -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secActive')">🏒 AKTIVNÍ ZÁPASY <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secActive"><div id="activeMatches"></div></div>
+    </div>
+
+    <!-- HISTORIE -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secHist')">📜 VYHODNOCENÉ <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secHist"><div id="historyMatches"></div></div>
+    </div>
+
+    <!-- DLOUHODOBÉ TIPY -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secDl')">⭐ DLOUHODOBÉ TIPY <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secDl">
+            <div id="dlList"></div>
+            <hr style="opacity:0.15; margin:20px 0;">
+            <h3 style="color:#f1c40f;">Finální výsledky turnaje</h3>
+            <input type="text" id="fin-vitezA" class="auth-input" placeholder="Vítěz skupiny A">
+            <input type="text" id="fin-vitezB" class="auth-input" placeholder="Vítěz skupiny B">
+            <input type="text" id="fin-vitezTurnaje" class="auth-input" placeholder="Vítěz turnaje">
+            <input type="text" id="fin-vitezKB" class="auth-input" placeholder="Vítěz kanadského bodování (příjmení)">
+            <input type="text" id="fin-g" class="auth-input" placeholder="All-Star brankář">
+            <input type="text" id="fin-d1" class="auth-input" placeholder="All-Star obránce 1">
+            <input type="text" id="fin-d2" class="auth-input" placeholder="All-Star obránce 2">
+            <input type="text" id="fin-u1" class="auth-input" placeholder="All-Star útočník 1">
+            <input type="text" id="fin-u2" class="auth-input" placeholder="All-Star útočník 2">
+            <input type="text" id="fin-u3" class="auth-input" placeholder="All-Star útočník 3">
+            <button class="btn" style="background:#f1c40f; color:#0f172a;" onclick="vyhodnotDlouhodobe()">ULOŽIT A PŘEPOČÍTAT BODY DLOUHODOBEK</button>
+        </div>
+    </div>
+</div>
+
+<!-- EVAL MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
+<div class="modal" id="evalModal">
+    <h3 style="color:var(--neon);">Vyhodnocení zápasu</h3>
+    <div id="evalTitle" style="text-align:center; font-weight:800; margin-bottom:12px; opacity:.85;"></div>
+    <div style="display:flex; gap:10px; justify-content:center; align-items:center;">
+        <input type="number" id="finalD" class="auth-input" style="width:70px; text-align:center;" placeholder="0">
+        <b style="font-size:1.5em;">:</b>
+        <input type="number" id="finalH" class="auth-input" style="width:70px; text-align:center;" placeholder="0">
+    </div>
+    <div style="font-size:0.75em; opacity:0.6; margin:5px 0 12px;">Výsledek po 60 minutách (bez prodloužení/nájezdů)</div>
+
+    <div style="font-size:.8em; opacity:.7; margin-bottom:6px;">🎯 Střelci gólů:</div>
+    <div class="tag-container" id="finalStrelci" style="margin-bottom:8px;"></div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+        <button class="small-btn" onclick="vyberStrelceEval()">➕ Vybrat ze soupisky</button>
+        <input type="text" id="manualStrelec" class="auth-input" placeholder="…nebo napsat ručně" onkeydown="if(event.key==='Enter')manualAddStrelec()" style="flex:1; min-width:140px;">
+    </div>
+    <button class="btn" id="confirmEvalBtn">✅ POTVRDIT A ROZDĚLIT</button>
+</div>
+
+<!-- Výběr střelce ze soupisky (v adminu) -->
+<div id="evalHracModal" style="display:none; position:fixed; inset:0; background:rgba(5,10,25,0.92); z-index:10010; overflow-y:auto; padding:24px 14px;">
+    <div style="max-width:420px; margin:auto; background:linear-gradient(160deg,#0d1a2a,#081018); border:1px solid rgba(0,242,255,.4); border-radius:18px; padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <span style="font-weight:900; color:var(--neon);">Vyber střelce</span>
+            <span onclick="zavriEvalHrac()" style="cursor:pointer; opacity:.5; font-size:1.6rem;">×</span>
+        </div>
+        <div id="evalHracTymy" style="display:flex; flex-direction:column; gap:6px;"></div>
+        <div id="evalHracSeznam" style="display:none;"></div>
+    </div>
+</div>
+
+<a href="index.html" class="btn-back">← ZPĚT NA SÁZKY</a>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="stats.js"></script>
+<script src="soupisky.js"></script>
 <script>
 const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
 const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const ADMIN_ID = "92a1e51b-e03c-48d7-99df-76c2f60a455f";
-const BODY = { presne: 5, trend: 1, top8: 3, vitezZC: 8, propadlik: 1, qf: 2, sf: 5, finale: 8, vitezCL: 20,
-               cech: 5, slavia_misto: 5, slavia_body: 5, slavia_goly: 5 };
-const CECH_MOZNOSTI = ['Nepostoupí z ligové fáze', 'Vypadne v play-off (únor)', 'Vypadne v osmifinále', 'Čtvrtfinále a dál', 'Žádný český tým v CL'];
+const VKLAD_DO_BANKU = 20;
+let currentStrelci = [];
 
-let stav = {};
-
-function msg(t, err) {
-    const el = document.getElementById('msg');
-    el.textContent = t;
-    el.style.background = err ? 'var(--red)' : 'var(--green)';
-    el.style.display = 'block';
-    setTimeout(() => el.style.display = 'none', 3500);
-}
-
+// ---------- INIT + AUTH ----------
 async function init() {
     const { data: { session } } = await sb.auth.getSession();
     if (!session || session.user.id !== ADMIN_ID) {
-        document.getElementById('obsah').innerHTML = 'Přístup jen pro admina.<br><br><a href="../welcome.html" style="color:var(--fial);">→ Přihlásit</a>';
+        document.body.innerHTML = '<div style="padding:60px 20px; text-align:center; color:#ff4444; font-weight:900;">⛔ Přístup jen pro admina.<br><br><a href="index.html" style="color:var(--neon);">← Zpět</a></div>';
         return;
     }
-    document.getElementById('obsah').className = '';
-    document.getElementById('obsah').innerHTML = `
-        <div class="karta">
-            <h2>➕ Vypsat zápas k tipování</h2>
-            <div class="flexrow">
-                <select class="pole" id="n-domaci"><option value="">– domácí –</option></select>
-                <select class="pole" id="n-hoste"><option value="">– hosté –</option></select>
-            </div>
-            <div class="flexrow">
-                <select class="pole" id="n-faze">
-                    <option value="ZC">Základní část</option>
-                    <option value="PO">Play-off (únor)</option>
-                    <option value="OSM">Osmifinále</option>
-                    <option value="QF">Čtvrtfinále</option>
-                    <option value="SF">Semifinále</option>
-                    <option value="FINALE">Finále</option>
-                </select>
-                <input class="pole" id="n-deadline" type="datetime-local">
-            </div>
-            <button class="btn" onclick="pridejZapas()">VYPSAT ZÁPAS</button>
-        </div>
-
-        <div class="karta">
-            <h2>🎯 Aktivní a vyhodnocené zápasy</h2>
-            <div id="seznamZapasu">Načítám…</div>
-        </div>
-
-        <div class="karta">
-            <h2>🏟️ Účastníci ligové fáze (36 týmů)</h2>
-            <label class="lbl">Jeden tým na řádek – po srpnovém losu</label>
-            <textarea class="pole" id="t-tymy" placeholder="Real Madrid&#10;Manchester City&#10;Bayern Mnichov&#10;…"></textarea>
-            <label class="lbl">Uzávěrka dlouhodobky 1 (před 1. kolem)</label>
-            <input class="pole" id="t-dl1" type="datetime-local">
-            <button class="btn" onclick="ulozTymy()">ULOŽIT TÝMY + UZÁVĚRKU</button>
-        </div>
-
-        <div class="karta">
-            <h2>🥊 Páry osmifinále (pavouk) – otevře dlouhodobku 2</h2>
-            <label class="lbl">8 párů – po únorovém losu</label>
-            <div id="r16-pary"></div>
-            <label class="lbl">Uzávěrka dlouhodobky 2 (před osmifinále)</label>
-            <input class="pole" id="t-dl2" type="datetime-local">
-            <button class="btn" onclick="ulozR16()">ULOŽIT PÁRY + UZÁVĚRKU</button>
-        </div>
-
-        <div class="karta">
-            <h2>🏁 Vyhodnocení dlouhodobky 1 (po základní části)</h2>
-            <label class="lbl">Skutečné top 8 tabulky</label>
-            <div class="pocitadlo" id="poc-vtop8">0 / 8</div>
-            <div class="chipy" id="v-top8"></div>
-            <label class="lbl">Vítěz základní části</label>
-            <select class="pole" id="v-vitezZC"><option value="">– vyber –</option></select>
-            <label class="lbl">Skuteční propadlíci – místa 25–36</label>
-            <div class="pocitadlo" id="poc-vprop">0 / 12</div>
-            <div class="chipy" id="v-prop"></div>
-            <label class="lbl">🇨🇿 SK Slavia Praha – kam došla v soutěži</label>
-            <select class="pole" id="v-cech"><option value="">– vyber –</option></select>
-            <label class="lbl">🇨🇿 Slavia – skutečné umístění v tabulce (1–36)</label>
-            <input class="pole" id="v-slavia-misto" type="number" min="1" max="36" placeholder="např. 8">
-            <label class="lbl">🇨🇿 Slavia – skutečný počet bodů v ligové fázi</label>
-            <input class="pole" id="v-slavia-body" type="number" min="0" placeholder="např. 12">
-            <label class="lbl">🇨🇿 Slavia – skutečný počet vstřelených gólů</label>
-            <input class="pole" id="v-slavia-goly" type="number" min="0" placeholder="např. 14">
-            <button class="btn btn-gold" onclick="vyhodnotDl1()">SPOČÍTAT BODY DLOUHODOBKY 1</button>
-        </div>
-
-        <div class="karta">
-            <h2>🏆 Vyhodnocení dlouhodobky 2 (postupně jak se hraje)</h2>
-            <label class="lbl">Skuteční čtvrtfinalisté – vyber 8 ze 16</label>
-            <div class="pocitadlo" id="poc-vqf">0 / 8</div>
-            <div class="chipy" id="v-qf"></div>
-            <label class="lbl">Semifinalisté – vyber 4 ze zvolených</label>
-            <div class="pocitadlo" id="poc-vsf">0 / 4</div>
-            <div class="chipy" id="v-sf"></div>
-            <label class="lbl">Finalisté – vyber 2 ze zvolených</label>
-            <div class="pocitadlo" id="poc-vfin">0 / 2</div>
-            <div class="chipy" id="v-fin"></div>
-            <label class="lbl">Vítěz CL</label>
-            <select class="pole" id="v-vitez"><option value="">– vyber –</option></select>
-            <button class="btn btn-gold" onclick="vyhodnotDl2()">SPOČÍTAT BODY DLOUHODOBKY 2</button>
-        </div>
-
-        <div class="karta">
-            <h2>💰 Startovné (200 Kč)</h2>
-            <div id="seznamDl">Načítám…</div>
-        </div>`;
-    await nactiStav();
-    await nactiZapasy();
-    await nactiDlouhodobe();
+    const optHtml = vsechnyStaty.map(s => `<option value="${s.n}">${s.n}</option>`).join('');
+    document.getElementById('d').innerHTML = '<option value="">– Domácí –</option>' + optHtml;
+    document.getElementById('h').innerHTML = '<option value="">– Hosté –</option>' + optHtml;
+    await loadMatches();
+    await loadDlouhodobe();
+    await loadPenezenky();
 }
 
-async function nactiStav() {
-    const { data } = await sb.from('cl_stav').select('*').eq('id', 1).maybeSingle();
-    stav = data || {};
-    if ((stav.tymy || []).length) document.getElementById('t-tymy').value = stav.tymy.join('\n');
-    const toLocal = (iso) => iso ? new Date(new Date(iso).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
-    document.getElementById('t-dl1').value = toLocal(stav.deadline_tip1);
-    document.getElementById('t-dl2').value = toLocal(stav.deadline_tip2);
-    naplnTymSelecty();
-    renderR16Pary();
-    initVysl1();
-    initVysl2();
+function toggleSection(id) {
+    const el = document.getElementById(id);
+    el.style.display = '';           // zruš případný starý inline display
+    el.classList.toggle('open');
 }
 
-function naplnTymSelecty() {
-    const tymy = stav.tymy || [];
-    const opt = '<option value="">– vyber –</option>' + tymy.map(t => `<option>${t}</option>`).join('');
-    ['n-domaci', 'n-hoste'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.innerHTML = opt;
+function ukazVybranyCas() {
+    const v = document.getElementById('dl').value;
+    const el = document.getElementById('dl-vypis');
+    if (!v) { el.textContent = ''; return; }
+    el.textContent = '📅 ' + new Date(v).toLocaleString('cs-CZ', {
+        weekday: 'short', day: 'numeric', month: 'numeric',
+        hour: '2-digit', minute: '2-digit'
     });
 }
 
-function renderR16Pary() {
-    const cont = document.getElementById('r16-pary');
-    if (!cont) return;
-    const tymy = stav.tymy || [];
-    const ulozene = stav.bracket_r16 || [];
-    const opt = (sel) => '<option value="">–</option>' + tymy.map(t => `<option${t === sel ? ' selected' : ''}>${t}</option>`).join('');
-    cont.innerHTML = Array.from({ length: 8 }).map((_, i) => `
-        <div class="par-radek">
-            <select class="pole" id="r16-a-${i}">${opt(ulozene[i]?.[0] || '')}</select>
-            <span>vs</span>
-            <select class="pole" id="r16-b-${i}">${opt(ulozene[i]?.[1] || '')}</select>
-        </div>`).join('');
+function msg(text, ok = true) {
+    const m = document.getElementById('statusMsg');
+    m.innerText = text;
+    m.style.background = ok ? '#27ae60' : '#c0392b';
+    m.style.display = 'block';
+    setTimeout(() => m.style.display = 'none', 4000);
 }
 
-/* ---------- CHIPY ---------- */
-function chipHtml(elId, pool, vybrane, onClick) {
-    const el = document.getElementById(elId);
-    if (!el) return;
-    el.innerHTML = pool.map(t => {
-        const on = vybrane.includes(t);
-        const bezpecny = t.replace(/"/g, '&quot;');
-        return `<span class="ch${on ? ' on' : ''}" data-tym="${bezpecny}" onclick="${onClick}(this.dataset.tym)">${t}</span>`;
-    }).join('') || '<span style="opacity:.4; font-size:.85em;">Nejdřív ulož seznam týmů.</span>';
-}
-function toggle(arr, tym, max) {
-    const i = arr.indexOf(tym);
-    if (i >= 0) arr.splice(i, 1);
-    else if (arr.length < max) arr.push(tym);
+function closeAllModals() {
+    document.getElementById('modalOverlay').style.display = 'none';
+    document.getElementById('evalModal').style.display = 'none';
 }
 
-let vysl1 = { top8: [], propadlici: [] };
-function initVysl1() {
-    const v = stav.vysledky || {};
-    vysl1 = { top8: [...(v.top8 || [])], propadlici: [...(v.propadlici || [])] };
-    const sel = document.getElementById('v-vitezZC');
-    if (sel) sel.innerHTML = '<option value="">– vyber –</option>' + (stav.tymy || []).map(t => `<option${t === v.vitezZC ? ' selected' : ''}>${t}</option>`).join('');
-    const selC = document.getElementById('v-cech');
-    if (selC) selC.innerHTML = '<option value="">– vyber –</option>' + CECH_MOZNOSTI.map(m => `<option${m === v.cech ? ' selected' : ''}>${m}</option>`).join('');
-    const eM = document.getElementById('v-slavia-misto'); if (eM) eM.value = v.slavia_misto ?? '';
-    const eB = document.getElementById('v-slavia-body');  if (eB) eB.value = v.slavia_body ?? '';
-    const eG = document.getElementById('v-slavia-goly');  if (eG) eG.value = v.slavia_goly ?? '';
-    renderVysl1();
-}
-function renderVysl1() {
-    const tymy = stav.tymy || [];
-    chipHtml('v-top8', tymy, vysl1.top8, 'toggleVysl1_top8');
-    chipHtml('v-prop', tymy, vysl1.propadlici, 'toggleVysl1_prop');
-    document.getElementById('poc-vtop8').textContent = `${vysl1.top8.length} / 8`;
-    document.getElementById('poc-vprop').textContent = `${vysl1.propadlici.length} / 12`;
-}
-function toggleVysl1_top8(t) { toggle(vysl1.top8, t, 8); renderVysl1(); }
-function toggleVysl1_prop(t) { toggle(vysl1.propadlici, t, 12); renderVysl1(); }
-
-let vysl2 = { qf: [], sf: [], finale: [], vitez: null };
-function initVysl2() {
-    const v = stav.vysledky || {};
-    vysl2 = { qf: [...(v.qf || [])], sf: [...(v.sf || [])], finale: [...(v.finale || [])], vitez: v.vitez || null };
-    renderVysl2();
-}
-function renderVysl2() {
-    const pool = (stav.bracket_r16 || []).flat();
-    chipHtml('v-qf', pool, vysl2.qf, 'toggleVysl2_qf');
-    chipHtml('v-sf', vysl2.qf, vysl2.sf, 'toggleVysl2_sf');
-    chipHtml('v-fin', vysl2.sf, vysl2.finale, 'toggleVysl2_fin');
-    document.getElementById('poc-vqf').textContent = `${vysl2.qf.length} / 8`;
-    document.getElementById('poc-vsf').textContent = `${vysl2.sf.length} / 4`;
-    document.getElementById('poc-vfin').textContent = `${vysl2.finale.length} / 2`;
-    const sel = document.getElementById('v-vitez');
-    if (sel) sel.innerHTML = '<option value="">– vyber –</option>' + vysl2.finale.map(t => `<option${t === vysl2.vitez ? ' selected' : ''}>${t}</option>`).join('');
-}
-function toggleVysl2_qf(t) { toggle(vysl2.qf, t, 8); vysl2.sf = vysl2.sf.filter(x => vysl2.qf.includes(x)); vysl2.finale = vysl2.finale.filter(x => vysl2.sf.includes(x)); renderVysl2(); }
-function toggleVysl2_sf(t) { toggle(vysl2.sf, t, 4); vysl2.finale = vysl2.finale.filter(x => vysl2.sf.includes(x)); renderVysl2(); }
-function toggleVysl2_fin(t) { toggle(vysl2.finale, t, 2); renderVysl2(); }
-
-/* ---------- ZÁPASY ---------- */
-async function pridejZapas() {
-    const domaci = document.getElementById('n-domaci').value.trim();
-    const hoste = document.getElementById('n-hoste').value.trim();
-    const faze = document.getElementById('n-faze').value;
-    const dl = document.getElementById('n-deadline').value;
-    if (!domaci || !hoste || !dl) return msg('Vyplň soupeře i deadline.', true);
-    const { error } = await sb.from('cl_zapasy').insert({ domaci, hoste, faze, deadline: new Date(dl).toISOString() });
-    if (error) return msg('Chyba: ' + error.message, true);
-    document.getElementById('n-domaci').value = '';
-    document.getElementById('n-hoste').value = '';
-    msg('ZÁPAS VYPSÁN ✅');
-    nactiZapasy();
-    posliNotifikaciZapas(domaci, hoste, dl);
+// ---------- ZÁPASY ----------
+async function addM() {
+    const d = document.getElementById('d').value.trim();
+    const h = document.getElementById('h').value.trim();
+    const dl = document.getElementById('dl').value;
+    const skupina = document.getElementById('sk').value;
+    if (!d || !h || !dl) return alert('Vyplň údaje!');
+    const kd = vsechnyStaty.find(s => s.n === d)?.c || 'un';
+    const kh = vsechnyStaty.find(s => s.n === h)?.c || 'un';
+    const { error } = await sb.from('hokej27_zapasy').insert({
+        domaci: d, hoste: h, kod_d: kd, kod_h: kh, skupina, deadline: new Date(dl).toISOString()
+    });
+    if (error) return msg('Chyba: ' + error.message, false);
+    msg('ZÁPAS PUBLIKOVÁN! ✅');
+    document.getElementById('d').value = ''; document.getElementById('h').value = '';
+    loadMatches();
+    posliNotifikaciZapas(d, h, dl);
 }
 
-// Push všem se zapnutou CL
+// 🔔 Pošle push všem, kdo mají v hubu zapnuté notifikace pro hokej
 async function posliNotifikaciZapas(domaci, hoste, deadline) {
+    console.log('🔔 [1/3] Spouštím odeslání notifikace...', { domaci, hoste, deadline });
     try {
         const kdy = new Date(deadline).toLocaleString('cs-CZ', {
             day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'
         });
+        // Voláme edge funkci přímo (spolehlivější než SDK invoke)
         const res = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/posli-notifikaci', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + SB_KEY
+            },
             body: JSON.stringify({
-                soutez: 'cl',
-                titulek: '⭐ Nový zápas k tipování!',
+                soutez: 'hokej',
+                titulek: '🏒 Nový zápas k tipování!',
                 zprava: domaci + ' vs ' + hoste + ' — uzávěrka ' + kdy,
-                url: 'https://sknadeje.cz/ChampionsLeague/index.html'
+                url: 'https://sknadeje.cz/hokej2027/index.html'
             })
         });
+        console.log('🔔 [2/3] Odpověď serveru, status:', res.status);
         const data = await res.json();
-        console.log('🔔 Notifikace:', data);
+        console.log('🔔 [3/3] Výsledek:', data);
         if (data.ok) msg('Notifikace odeslána 🔔');
-    } catch (e) { console.error('Notifikace selhala:', e); }
+    } catch (e) {
+        console.error('❌ Notifikace selhala (zápas je ale publikovaný):', e);
+    }
 }
 
-async function nactiZapasy() {
-    const [{ data: zapasy }, { data: tipy }] = await Promise.all([
-        sb.from('cl_zapasy').select('*').order('deadline', { ascending: false }),
-        sb.from('cl_tipy_zapasy').select('*')
+async function deleteM(id) {
+    if (!confirm('Smazat zápas včetně sázek?')) return;
+    await sb.from('hokej27_zapasy').delete().eq('id', id);
+    loadMatches();
+}
+
+async function loadMatches() {
+    const [{ data: zapasy }, { data: sazky }, { data: stav }, { count: dlZaplacene }] = await Promise.all([
+        sb.from('hokej27_zapasy').select('*').order('deadline'),
+        sb.from('hokej27_sazky').select('*'),
+        sb.from('hokej27_stav').select('*').eq('id', 1).maybeSingle(),
+        sb.from('hokej27_dlouhodobe').select('user_id', { count: 'exact', head: true }).eq('zaplaceno', true)
     ]);
-    const tMap = {};
-    (tipy || []).forEach(t => (tMap[t.zapas_id] = tMap[t.zapas_id] || []).push(t));
-    document.getElementById('seznamZapasu').innerHTML = (zapasy || []).map(z => {
-        const tt = tMap[z.id] || [];
-        const hotovo = z.status === 'vyhodnoceno';
-        return `<div class="zapas-row">
-            <b>${z.domaci} vs ${z.hoste}</b> · ${z.faze} · tipů: ${tt.length}
-            ${hotovo
-                ? ` · <span style="color:var(--green); font-weight:900;">✔ ${z.vysledek_d}:${z.vysledek_h}</span>${z.outsider ? ` · 🎲 ${z.outsider}` : ''}`
-                : ` <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
-                        <input class="pole" style="width:52px; margin:0; text-align:center;" id="vd-${z.id}" placeholder="0" inputmode="numeric">
-                        <b>:</b>
-                        <input class="pole" style="width:52px; margin:0; text-align:center;" id="vh-${z.id}" placeholder="0" inputmode="numeric">
-                        <button class="btn btn-mini btn-gold" onclick="vyhodnotZapas(${z.id})">VYHODNOTIT</button>
-                        <button class="btn btn-mini btn-red" onclick="smazZapas(${z.id})">🗑</button>
-                    </div>
-                    <div style="margin-top:8px; font-size:.78em; opacity:.7;">🎲 Outsider (trend 1→3 b., remíza 2 b.):</div>
-                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
-                        <button class="btn btn-mini" style="${!z.outsider ? 'background:var(--fial); color:#fff;' : 'background:#333; color:#fff;'}" onclick="nastavOutsidera(${z.id}, null)">Nikdo</button>
-                        <button class="btn btn-mini" style="${z.outsider === z.domaci ? 'background:var(--fial); color:#fff;' : 'background:#333; color:#fff;'}" onclick="nastavOutsidera(${z.id}, '${z.domaci.replace(/'/g, "\\'")}')">${z.domaci}</button>
-                        <button class="btn btn-mini" style="${z.outsider === z.hoste ? 'background:var(--fial); color:#fff;' : 'background:#333; color:#fff;'}" onclick="nastavOutsidera(${z.id}, '${z.hoste.replace(/'/g, "\\'")}')">${z.hoste}</button>
-                    </div>`}
-            <div style="font-size:.85em; opacity:.65; margin-top:5px;">${tt.map(t => `• ${t.jmeno}: ${t.skore}${hotovo ? ` (+${t.body})` : ''}`).join('<br>')}</div>
-        </div>`;
-    }).join('') || '<div style="opacity:.5;">Žádné zápasy.</div>';
+    // Fond: 5 Kč × sázky + 50 Kč × zaplacené dlouhodobky + ruční korekce
+    const korekce = Number(stav?.fond_korekce || 0);
+    const pocetDl = dlZaplacene || 0;
+    const fondAuto = (sazky || []).length * 5 + pocetDl * 50;
+    const fond = fondAuto + korekce;
+    const fondNyniEl = document.getElementById('fondNyni');
+    if (fondNyniEl) fondNyniEl.innerText = fond;
+    const korekceInfoEl = document.getElementById('fondKorekceInfo');
+    if (korekceInfoEl) korekceInfoEl.innerText = korekce !== 0 ? ` ${korekce > 0 ? '+' : ''}${korekce} Kč korekce` : '';
+    window._fondData = { pocetSazek: (sazky || []).length, pocetDl, korekce };
+
+    const aC = document.getElementById('activeMatches');
+    const hC = document.getElementById('historyMatches');
+    aC.innerHTML = ''; hC.innerHTML = '';
+    const prevedeny = Number(stav?.data?.prevedeny_bank ?? stav?.prevedeny_bank ?? 0);
+
+    (zapasy || []).forEach(m => {
+        const ms = (sazky || []).filter(s => s.zapas_id === m.id);
+        const div = document.createElement('div');
+        div.className = 'user-row';
+        div.style.cssText = 'display:block; padding:14px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left;';
+        const betRows = ms.map(s => `<div style="font-size:0.85em; opacity:0.9; padding:3px 0; display:flex; align-items:center; gap:6px;">
+            <span onclick="toggleZaplaceno(${s.id}, ${s.zaplaceno ? 'true' : 'false'})" style="cursor:pointer;" title="${s.zaplaceno ? 'Zaplaceno – klikni pro zrušení' : 'Nezaplaceno – klikni pro označení'}">${s.zaplaceno ? '✅' : '⏳'}</span>
+            <span style="flex:1;">${s.jmeno}: ${s.skore}${s.strelec ? ' + ' + s.strelec : ''}${s.skryt ? ' 🙈' : ''}${m.status === 'vyhodnoceno' ? ` → +${s.nb} NB${s.vyhra_kc > 0 ? ` 💰${s.vyhra_kc}` : ''}` : ''}</span>
+            <span onclick="editTip(${s.id}, '${(s.skore || '').replace(/'/g, '')}', '${(s.strelec || '').replace(/'/g, '')}', '${(s.jmeno || '').replace(/'/g, '')}')" style="cursor:pointer; opacity:.6;" title="Upravit tip">✏️</span>
+            <span onclick="delTip(${s.id}, '${(s.jmeno || '').replace(/'/g, '')}')" style="cursor:pointer; opacity:.6;" title="Smazat tip">🗑️</span>
+        </div>`).join('');
+        div.innerHTML = `
+            <b>${m.skupina ? '[' + m.skupina + '] ' : ''}${m.domaci} vs ${m.hoste}</b>
+            <span style="opacity:0.5; font-size:0.8em;"> · ${new Date(m.deadline).toLocaleString('cs-CZ')}</span>
+            ${m.status === 'vyhodnoceno' ? ` <span style="color:#27ae60; font-weight:900;">${m.vysledek_d}:${m.vysledek_h}</span>` : ''}
+            <div style="margin:6px 0;">Sázek: ${ms.length} (bank ${ms.length * VKLAD_DO_BANKU} Kč${m.status !== 'vyhodnoceno' && prevedeny > 0 ? ' + převod ' + prevedeny : ''})</div>
+            ${betRows}
+            ${m.status !== 'vyhodnoceno' ? `
+            <div style="margin-top:8px; font-size:.8em; opacity:.7;">🎲 Outsider (bonus za trend 1→3 NB):</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
+                <button class="small-btn" style="${!m.outsider ? 'background:var(--neon); color:#05121a;' : 'background:#333;'}" onclick="nastavOutsidera(${m.id}, null)">Nikdo</button>
+                <button class="small-btn" style="${m.outsider === m.domaci ? 'background:var(--neon); color:#05121a;' : 'background:#333;'}" onclick="nastavOutsidera(${m.id}, '${m.domaci.replace(/'/g, "\\'")}')">${m.domaci}</button>
+                <button class="small-btn" style="${m.outsider === m.hoste ? 'background:var(--neon); color:#05121a;' : 'background:#333;'}" onclick="nastavOutsidera(${m.id}, '${m.hoste.replace(/'/g, "\\'")}')">${m.hoste}</button>
+            </div>` : (m.outsider ? `<div style="margin-top:6px; font-size:.78em; opacity:.6;">🎲 Outsider byl: ${m.outsider}</div>` : '')}
+            <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                ${m.status !== 'vyhodnoceno' ? `
+                    <button class="small-btn" onclick="evalM(${m.id})">🏁 VYHODNOTIT</button>` : ''}
+                <button class="small-btn" style="background:#c0392b;" onclick="deleteM(${m.id})">🗑️</button>
+            </div>`;
+        (m.status === 'vyhodnoceno' ? hC : aC).appendChild(div);
+    });
 }
 
-async function nastavOutsidera(id, tym) {
-    const { error } = await sb.from('cl_zapasy').update({ outsider: tym }).eq('id', id);
-    if (error) return msg('Chyba: ' + error.message, true);
-    nactiZapasy();
+async function nastavOutsidera(mid, tym) {
+    const { error } = await sb.from('hokej27_zapasy').update({ outsider: tym }).eq('id', mid);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    await loadMatches();
 }
 
-async function vyhodnotZapas(id) {
-    const d = parseInt(document.getElementById('vd-' + id).value);
-    const h = parseInt(document.getElementById('vh-' + id).value);
-    if (isNaN(d) || isNaN(h)) return msg('Doplň skóre.', true);
-    const { data: zapas } = await sb.from('cl_zapasy').select('domaci, hoste, outsider').eq('id', id).maybeSingle();
-    const vitez = d > h ? zapas?.domaci : (h > d ? zapas?.hoste : null);
-    const outsiderVyhral = zapas?.outsider && vitez && zapas.outsider === vitez;
+// ---------- FOND NADĚJE ----------
+async function ulozFond() {
+    const msg = document.getElementById('fondMsg');
+    const nova = document.getElementById('fondNova').value;
+    if (nova === '' || isNaN(Number(nova))) { msg.style.color = '#ff4444'; msg.innerText = 'Zadej částku.'; return; }
+    const cil = Math.round(Number(nova));
+    const pocet = window._fondData?.pocetSazek || 0;
+    const pocetDl = window._fondData?.pocetDl || 0;
+    // korekce = kolik chybí/přebývá oproti automatickému výpočtu (sázky + zaplacené dlouhodobky)
+    const korekce = cil - (pocet * 5 + pocetDl * 50);
+    const { error } = await sb.from('hokej27_stav').update({ fond_korekce: korekce }).eq('id', 1);
+    if (error) { msg.style.color = '#ff4444'; msg.innerText = 'Chyba: ' + error.message; return; }
+    msg.style.color = '#27ae60';
+    msg.innerText = `✅ Fond nastaven na ${cil} Kč (korekce ${korekce > 0 ? '+' : ''}${korekce}). Další sázky se přičítají.`;
+    document.getElementById('fondNova').value = '';
+    await loadMatches();
+}
 
-    const { data: tipy } = await sb.from('cl_tipy_zapasy').select('*').eq('zapas_id', id);
-    for (const t of (tipy || [])) {
-        const [td, th] = t.skore.split(':').map(Number);
-        const presne = td === d && th === h;
-        const trend = (d > h && td > th) || (d < h && td < th) || (d === h && td === th);
+async function resetFond() {
+    const msg = document.getElementById('fondMsg');
+    if (!confirm('Zrušit ruční korekci? Fond se vrátí na čistý automatický výpočet (5 Kč × sázky).')) return;
+    const { error } = await sb.from('hokej27_stav').update({ fond_korekce: 0 }).eq('id', 1);
+    if (error) { msg.style.color = '#ff4444'; msg.innerText = 'Chyba: ' + error.message; return; }
+    msg.style.color = '#27ae60';
+    msg.innerText = '✅ Korekce zrušena, fond je zpět automatický.';
+    await loadMatches();
+}
 
-        // Trend: normálně 1 b. V outsider zápase: výhra outsidera 3 b., remíza 2 b.
-        let trendBody = 0;
-        if (trend) {
-            if (zapas?.outsider) {
+// ---------- PENĚŽENKY HRÁČŮ ----------
+async function loadPenezenky() {
+    const cont = document.getElementById('penezList');
+    if (!cont) return;
+    const { data: hraci, error } = await sb.from('hraci').select('user_id, jmeno, penezenka').order('jmeno');
+    if (error) { cont.innerHTML = `<div style="color:#ff4444;">Chyba: ${error.message}</div>`; return; }
+    if (!hraci || !hraci.length) { cont.innerHTML = '<div style="opacity:.5;">Zatím žádní hráči.</div>'; return; }
+    cont.innerHTML = hraci.map(h => `
+        <div style="display:flex; align-items:center; gap:8px; padding:8px 4px; border-bottom:1px solid rgba(255,255,255,.06);">
+            <span style="flex:1; font-weight:700;">${h.jmeno || '(bez jména)'}</span>
+            <span style="opacity:.6; font-size:.85em;">nyní: <b style="color:#f1c40f;">${Number(h.penezenka || 0)}</b> Kč</span>
+            <input type="number" id="pen-${h.user_id}" class="auth-input" placeholder="nový zůstatek" style="width:130px; padding:6px 8px;">
+            <button class="small-btn" onclick="ulozPenezenku('${h.user_id}', '${(h.jmeno || '').replace(/'/g, '')}')">💾</button>
+        </div>`).join('');
+}
+
+async function ulozPenezenku(userId, jmeno) {
+    const val = document.getElementById(`pen-${userId}`).value;
+    if (val === '' || isNaN(Number(val))) { alert('Zadej částku (číslo).'); return; }
+    const castka = Math.round(Number(val));
+    if (castka < 0) { alert('Zůstatek nemůže být záporný.'); return; }
+    const { error } = await sb.from('hraci').update({ penezenka: castka }).eq('user_id', userId);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    alert(`✅ Peněženka hráče ${jmeno} nastavena na ${castka} Kč.`);
+    await loadPenezenky();
+}
+
+// ---------- EDITACE / MAZÁNÍ TIPŮ HRÁČŮ ----------
+async function editTip(id, skore, strelec, jmeno) {
+    const noveSkore = prompt(`Upravit skóre pro ${jmeno} (formát D:H, např. 3:2):`, skore);
+    if (noveSkore === null) return;
+    if (!/^\d+:\d+$/.test(noveSkore.trim())) { alert('Skóre musí být ve formátu D:H (např. 3:2).'); return; }
+    const novyStrelec = prompt(`Upravit střelce pro ${jmeno} (nech prázdné, pokud bez střelce):`, strelec);
+    if (novyStrelec === null) return;
+    const { error } = await sb.from('hokej27_sazky')
+        .update({ skore: noveSkore.trim(), strelec: novyStrelec.trim() || null })
+        .eq('id', id);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    alert(`✅ Tip hráče ${jmeno} upraven.`);
+    await loadMatches();
+}
+
+async function delTip(id, jmeno) {
+    if (!confirm(`Opravdu smazat tip hráče ${jmeno}? Tuto akci nelze vrátit.`)) return;
+    const { error } = await sb.from('hokej27_sazky').delete().eq('id', id);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    await loadMatches();
+}
+
+async function toggleZaplaceno(id, aktualni) {
+    const { error } = await sb.from('hokej27_sazky').update({ zaplaceno: !aktualni }).eq('id', id);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    await loadMatches();
+}
+
+// ---------- VYHODNOCENÍ ----------
+async function evalM(mid) {
+    const { data: m } = await sb.from('hokej27_zapasy').select('*').eq('id', mid).maybeSingle();
+    currentStrelci = (m?.strelci || []).slice();
+    // Týmy zápasu pro výběr střelců ze soupisek
+    _evalTymy = [m?.domaci, m?.hoste].filter(Boolean);
+
+    document.getElementById('finalD').value = '';
+    document.getElementById('finalH').value = '';
+    document.getElementById('evalTitle').textContent = `${m?.domaci || ''} vs ${m?.hoste || ''}`;
+    renderTags();
+    document.getElementById('modalOverlay').style.display = 'block';
+    document.getElementById('evalModal').style.display = 'block';
+    document.getElementById('confirmEvalBtn').onclick = () => finishEval(mid);
+}
+
+function renderTags() {
+    const c = document.getElementById('finalStrelci');
+    c.innerHTML = '';
+    currentStrelci.forEach((s, i) => {
+        const t = document.createElement('span');
+        t.className = 'tag';
+        t.innerHTML = `${s} <b style="cursor:pointer;" onclick="currentStrelci.splice(${i},1); renderTags();">×</b>`;
+        c.appendChild(t);
+    });
+}
+
+// Výběr střelce ze soupisky (jen týmy zápasu, všechny pozice)
+let _evalTymy = [];
+function vyberStrelceEval() {
+    const box = document.getElementById('evalHracTymy');
+    box.innerHTML = _evalTymy.map(t => `
+        <button onclick="evalVyberTym('${t.replace(/'/g, "\\'")}')" style="
+            text-align:left; padding:12px 14px; border-radius:10px; cursor:pointer; font-family:inherit;
+            background:rgba(0,242,255,.06); border:1px solid rgba(0,242,255,.2); color:#fff; font-size:.92em; font-weight:600;">
+            ${t}
+        </button>`).join('');
+    document.getElementById('evalHracTymy').style.display = 'flex';
+    document.getElementById('evalHracSeznam').style.display = 'none';
+    document.getElementById('evalHracModal').style.display = 'block';
+}
+
+function evalVyberTym(tym) {
+    const soup = (typeof soupiskaTymu === 'function') ? soupiskaTymu(tym) : { G: [], O: [], U: [] };
+    const skupiny = [
+        { nazev: '🥅 Brankáři', hraci: soup.G },
+        { nazev: '🛡️ Obránci', hraci: soup.O },
+        { nazev: '⚡ Útočníci', hraci: soup.U },
+    ];
+    const seznam = document.getElementById('evalHracSeznam');
+    seznam.innerHTML = `<button onclick="vyberStrelceEval()" style="background:none;border:none;color:var(--neon);cursor:pointer;font-size:.85em;margin-bottom:10px;padding:0;">← zpět na týmy</button>
+        <div style="font-weight:800; margin-bottom:8px; color:var(--neon);">${tym}</div>` +
+        skupiny.map(sk => sk.hraci.length ? `
+            <div style="margin-bottom:12px;">
+                <div style="font-size:.72em; opacity:.55; text-transform:uppercase; margin-bottom:5px;">${sk.nazev}</div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    ${sk.hraci.map(h => `<button onclick="evalPridejStrelce('${h.replace(/'/g, "\\'")}')" style="
+                        text-align:left; padding:9px 12px; border-radius:8px; cursor:pointer; font-family:inherit;
+                        background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); color:#fff; font-size:.9em;">${h}</button>`).join('')}
+                </div>
+            </div>` : '').join('');
+    document.getElementById('evalHracTymy').style.display = 'none';
+    seznam.style.display = 'block';
+}
+
+function evalPridejStrelce(jmeno) {
+    if (jmeno && !currentStrelci.includes(jmeno)) { currentStrelci.push(jmeno); renderTags(); }
+    zavriEvalHrac();
+}
+
+function zavriEvalHrac() {
+    document.getElementById('evalHracModal').style.display = 'none';
+}
+
+function manualAddStrelec() {
+    const el = document.getElementById('manualStrelec');
+    const v = el.value.trim();
+    if (v && !currentStrelci.includes(v)) { currentStrelci.push(v); renderTags(); }
+    el.value = '';
+}
+
+async function finishEval(mid) {
+    const finalD = parseInt(document.getElementById('finalD').value);
+    const finalH = parseInt(document.getElementById('finalH').value);
+    if (isNaN(finalD) || isNaN(finalH)) return alert('Doplň skóre.');
+    const fst = currentStrelci.map(s => s.toLowerCase().trim());
+
+    const [{ data: sazky }, { data: stav }, { data: m }] = await Promise.all([
+        sb.from('hokej27_sazky').select('*').eq('zapas_id', mid),
+        sb.from('hokej27_stav').select('*').eq('id', 1).maybeSingle(),
+        sb.from('hokej27_zapasy').select('domaci, hoste, outsider').eq('id', mid).maybeSingle()
+    ]);
+    const prevedeny = Number(stav?.prevedeny_bank || 0);
+    const bank = (sazky || []).length * VKLAD_DO_BANKU + prevedeny;
+
+    // Kdo je vítěz zápasu (pro outsider bonus)
+    const vitezZapasu = finalD > finalH ? m?.domaci : (finalH > finalD ? m?.hoste : null);
+    const outsiderVyhral = m?.outsider && vitezZapasu && m.outsider === vitezZapasu;
+
+    // vyhodnocení sázek
+    const vyhodnocene = (sazky || []).map(s => {
+        const p = s.skore.split(':');
+        const sD = +p[0], sH = +p[1];
+        const hitSkore = sD === finalD && sH === finalH;
+        const pStr = (s.strelec || '').toLowerCase().trim();
+        const hitStrelec = pStr.length > 0 && fst.some(r => r.includes(pStr) || pStr.includes(r));
+        const hitTrend = (finalD > finalH && sD > sH) || (finalD < finalH && sD < sH) || (finalD === finalH && sD === sH);
+
+        // Trend: normálně 1 NB. V outsider zápase: výhra outsidera 3 NB, remíza 2 NB.
+        let trendNB = 0;
+        if (hitTrend) {
+            if (m?.outsider) {
                 if (outsiderVyhral &&
-                    ((d > h && td > th && zapas.outsider === zapas?.domaci) ||
-                     (h > d && th > td && zapas.outsider === zapas?.hoste))) {
-                    trendBody = 3;
-                } else if (d === h && td === th) {
-                    trendBody = 2;
+                    ((finalD > finalH && sD > sH && m.outsider === m?.domaci) ||
+                     (finalH > finalD && sH > sD && m.outsider === m?.hoste))) {
+                    trendNB = 3;   // trefil výhru outsidera
+                } else if (finalD === finalH && sD === sH) {
+                    trendNB = 2;   // trefil remízu v outsider zápase
                 } else {
-                    trendBody = 1;
+                    trendNB = 1;   // trefil výhru favorita
                 }
             } else {
-                trendBody = 1;
+                trendNB = 1;       // zápas bez outsidera
             }
         }
-        // Bonusy: stejný rozdíl skóre + stejný počet branek (jako u hokeje, sčítá se)
-        const hitRozdil = (td - th) === (d - h);
-        const hitPocet = (td + th) === (d + h);
 
-        // Body se sčítají (jako u hokeje): přesné skóre + trend + rozdíl + počet
-        const b = (presne ? BODY.presne : 0) + trendBody + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
-        await sb.from('cl_tipy_zapasy').update({
-            body: b, hit_skore: presne, hit_trend: trend,
-            hit_rozdil: hitRozdil, hit_pocet: hitPocet
-        }).eq('id', t.id);
+        // Nové bonusy (jen když netrefil přesné skóre – jinak by se to zdvojovalo? NE, uživatel chce sčítat)
+        const hitRozdil = (sD - sH) === (finalD - finalH);       // stejný rozdíl skóre
+        const hitPocet = (sD + sH) === (finalD + finalH);         // stejný počet branek
+
+        const nb = (hitSkore ? 5 : 0) + (hitStrelec ? 3 : 0) + trendNB
+                 + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
+        return { ...s, hitSkore, hitStrelec, hitTrend, hitRozdil, hitPocet, trendNB, nb };
+    });
+
+    // výherci banku: přesné skóre + střelec; když nikdo, bank se převádí dál
+    const vyherci = vyhodnocene.filter(s => s.hitSkore && s.hitStrelec);
+    const share = vyherci.length > 0 ? Math.floor(bank / vyherci.length) : 0;
+
+    for (const s of vyhodnocene) {
+        await sb.from('hokej27_sazky').update({
+            hit_skore: s.hitSkore, hit_strelec: s.hitStrelec, hit_trend: s.hitTrend,
+            hit_rozdil: s.hitRozdil, hit_pocet: s.hitPocet,
+            nb: s.nb,
+            vyhra_kc: (s.hitSkore && s.hitStrelec) ? share : 0
+        }).eq('id', s.id);
     }
-    await sb.from('cl_zapasy').update({ status: 'vyhodnoceno', vysledek_d: d, vysledek_h: h }).eq('id', id);
-    msg('VYHODNOCENO ✅ (' + (tipy || []).length + ' tipů)');
-    nactiZapasy();
-}
 
-async function smazZapas(id) {
-    if (!confirm('Smazat zápas včetně tipů?')) return;
-    await sb.from('cl_zapasy').delete().eq('id', id);
-    nactiZapasy();
-}
+    await sb.from('hokej27_zapasy').update({
+        status: 'vyhodnoceno', vysledek_d: finalD, vysledek_h: finalH,
+        strelci: currentStrelci, bank_zapasu: vyherci.length > 0 ? bank : 0
+    }).eq('id', mid);
 
-/* ---------- STAV / TÝMY ---------- */
-const radky = (id) => document.getElementById(id).value.split('\n').map(x => x.trim()).filter(Boolean);
-
-async function ulozTymy() {
-    const tymy = radky('t-tymy');
-    // Kompletní sada je 36 týmů. Míň (i 0) povolíme, ale upozorníme —
-    // hráčům se pak dlouhodobka 1 neotevře (index kontroluje >= 36), takže nebudou tipovat.
-    if (tymy.length !== 36) {
-        const jak = tymy.length === 0
-            ? 'Ukládáš PRÁZDNÝ seznam týmů — hráči nebudou moct tipovat dlouhodobku 1.'
-            : `Máš jen ${tymy.length} z 36 týmů — dokud jich nebude 36, hráči dlouhodobku 1 tipovat nemůžou.`;
-        if (!confirm(jak + '\n\nOpravdu uložit takto?')) return;
-    }
-    const dl = document.getElementById('t-dl1').value;
-    const { error } = await sb.from('cl_stav').update({
-        tymy, deadline_tip1: dl ? new Date(dl).toISOString() : null,
+    await sb.from('hokej27_stav').update({
+        prevedeny_bank: vyherci.length > 0 ? 0 : bank,
         aktualizovano: new Date().toISOString()
     }).eq('id', 1);
-    if (error) return msg('Chyba: ' + error.message, true);
-    stav.tymy = tymy;
-    naplnTymSelecty(); renderR16Pary(); initVysl1();
-    msg('TÝMY ULOŽENY ✅');
-    if (dl && confirm('Poslat hráčům notifikaci, že je dlouhodobý tip otevřený?')) {
-        const kdy = new Date(dl).toLocaleString('cs-CZ', { day:'numeric', month:'numeric', hour:'2-digit', minute:'2-digit' });
-        posliCLNotifikaci('📋 Dlouhodobý tip je otevřený!',
-            'Tipni top 8, vítěze základní části a propadlíky — uzávěrka ' + kdy);
+
+    // 🎉 Notifikace výhercům (jen těm, kdo vyhráli peníze) – každý dostane svou částku
+    if (vyherci.length > 0) {
+        const nazevZapasu = `${m?.domaci || ''} vs ${m?.hoste || ''}`.trim();
+        posliVyhruNotifikaci(vyherci.map(v => ({
+            user_id: v.user_id,
+            jmeno: v.jmeno,
+            vyhra: share,
+            zapas: nazevZapasu
+        })));
+        // Hláška do chatu (pod jménem admina) – jen když někdo vyhrál peníze
+        posliVyhruDoChatu(vyherci, share, nazevZapasu);
     }
+
+    msg(vyherci.length > 0
+        ? `VYHODNOCENO! Bank ${bank} Kč → ${vyherci.map(v => v.jmeno).join(', ')} (à ${share} Kč) 🏆`
+        : `VYHODNOCENO! Nikdo netrefil skóre+střelce → bank ${bank} Kč se převádí dál. 💰`);
+    closeAllModals();
+    loadMatches();
 }
 
-// Společný odesílač notifikací pro Champions League
-async function posliCLNotifikaci(titulek, zprava) {
+// Pošle notifikaci o výhře konkrétním výhercům (přes edge funkci posli-vyhru)
+async function posliVyhruNotifikaci(vyherci) {
     try {
-        const res = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/posli-notifikaci', {
+        const res = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/posli-vyhru', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
             body: JSON.stringify({
-                soutez: 'cl', titulek, zprava,
-                url: 'https://sknadeje.cz/ChampionsLeague/index.html'
+                titulek: '🎉 Tvůj tip vyšel!',
+                url: 'https://sknadeje.cz/hokej2027/index.html',
+                vyherci
             })
         });
         const data = await res.json();
-        console.log('🔔 Notifikace:', data);
-        if (data.ok) msg('Notifikace odeslána 🔔');
-    } catch (e) { console.error('Notifikace selhala:', e); }
-}
-
-async function ulozR16() {
-    const pary = [];
-    const pouzite = new Set();
-
-    // Zjisti, kolik polí je vyplněných
-    let vyplneno = 0;
-    for (let i = 0; i < 8; i++) {
-        if (document.getElementById(`r16-a-${i}`).value) vyplneno++;
-        if (document.getElementById(`r16-b-${i}`).value) vyplneno++;
-    }
-
-    // Úplně prázdný pavouk = reset dlouhodobky 2 (hráči ji pak nemůžou tipovat)
-    if (vyplneno === 0) {
-        if (!confirm('Ukládáš PRÁZDNÝ pavouk — tím se Cesta k titulu (dlouhodobka 2) zavře a hráči ji nebudou moct tipovat.\n\nTipy a body hráčů zůstanou zachované. Opravdu resetovat?')) return;
-        const dl = document.getElementById('t-dl2').value;
-        const { error } = await sb.from('cl_stav').update({
-            bracket_r16: [], osmifinaliste: [],
-            deadline_tip2: dl ? new Date(dl).toISOString() : null,
-            aktualizovano: new Date().toISOString()
-        }).eq('id', 1);
-        if (error) return msg('Chyba: ' + error.message, true);
-        stav.bracket_r16 = [];
-        stav.osmifinaliste = [];
-        renderVysl2();
-        return msg('PAVOUK VYRESETOVÁN (dlouhodobka 2 zavřená) ✅');
-    }
-
-    // Jinak vyžadujeme kompletní, korektní pavouk (půl pavouka nedává smysl)
-    for (let i = 0; i < 8; i++) {
-        const a = document.getElementById(`r16-a-${i}`).value;
-        const b = document.getElementById(`r16-b-${i}`).value;
-        if (!a || !b) return msg(`Vyplň oba týmy v páru č. ${i + 1} (nebo nech VŠECHNY prázdné pro reset).`, true);
-        if (a === b) return msg(`Pár č. ${i + 1}: tým nemůže hrát sám proti sobě.`, true);
-        if (pouzite.has(a) || pouzite.has(b)) return msg(`Tým se v párech opakuje (pár č. ${i + 1}).`, true);
-        pouzite.add(a); pouzite.add(b);
-        pary.push([a, b]);
-    }
-    const dl = document.getElementById('t-dl2').value;
-    const { error } = await sb.from('cl_stav').update({
-        bracket_r16: pary, osmifinaliste: pary.flat(),
-        deadline_tip2: dl ? new Date(dl).toISOString() : null,
-        aktualizovano: new Date().toISOString()
-    }).eq('id', 1);
-    if (error) return msg('Chyba: ' + error.message, true);
-    stav.bracket_r16 = pary;
-    renderVysl2();
-    msg('PÁRY OSMIFINÁLE ULOŽENY ✅');
-    if (confirm('Poslat hráčům notifikaci, že je Cesta k titulu otevřená?')) {
-        const kdyTxt = dl
-            ? ' — uzávěrka ' + new Date(dl).toLocaleString('cs-CZ', { day:'numeric', month:'numeric', hour:'2-digit', minute:'2-digit' })
-            : '';
-        posliCLNotifikaci('🏆 Cesta k titulu je otevřená!',
-            'Pavouk je nalosovaný — proklikej si cestu až k vítězi CL' + kdyTxt);
+        console.log('🔔 Notifikace výhry:', data);
+    } catch (e) {
+        console.error('Notifikace výhry selhala (vyhodnocení proběhlo):', e);
     }
 }
 
-/* ---------- DLOUHODOBKY VYHODNOCENÍ ---------- */
-const low = (x) => String(x || '').trim().toLowerCase();
-const maTym = (list, tym) => (list || []).some(x => low(x) === low(tym));
+// Zapíše hlášku o výhře do chatu pod jménem admina
+async function posliVyhruDoChatu(vyherci, share, nazevZapasu) {
+    try {
+        // Jméno admina z registru
+        const { data: adm } = await sb.from('hraci').select('jmeno').eq('user_id', ADMIN_ID).maybeSingle();
+        const adminJmeno = adm?.jmeno || 'Admin';
 
-async function vyhodnotDl1() {
-    const top8 = vysl1.top8, prop = vysl1.propadlici;
-    const vitezZC = document.getElementById('v-vitezZC').value.trim();
-    if (top8.length !== 8 || prop.length !== 12 || !vitezZC) return msg('Čekám 8 + vítěze + 12.', true);
+        const jmena = vyherci.map(v => v.jmeno).join(', ');
+        const zprava = vyherci.length === 1
+            ? `🎉 ${jmena} vyhrává ${share} Kč za ${nazevZapasu}! 💰`
+            : `🎉 ${nazevZapasu}: vyhrávají ${jmena} – každý ${share} Kč! 💰`;
 
-    // Skutečné výsledky Slavie z formuláře
-    const realCech = document.getElementById('v-cech').value || '';
-    const mistoRaw = document.getElementById('v-slavia-misto').value;
-    const bodyRaw  = document.getElementById('v-slavia-body').value;
-    const golyRaw  = document.getElementById('v-slavia-goly').value;
-    if (!realCech || mistoRaw === '' || bodyRaw === '' || golyRaw === '') {
-        return msg('Vyplň u Slavie všechny čtyři skutečné údaje (kam došla, umístění, body, góly).', true);
+        await sb.from('hokej27_chat').insert({
+            user_id: ADMIN_ID, name: adminJmeno, message: zprava
+        });
+    } catch (e) {
+        console.error('Hlášku do chatu se nepodařilo poslat (vyhodnocení proběhlo):', e);
     }
-    const realMisto = parseInt(mistoRaw);
-    const realBody  = parseInt(bodyRaw);
-    const realGoly  = parseInt(golyRaw);
+}
 
-    const { data: dl } = await sb.from('cl_dlouhodobe').select('*');
+// ---------- DLOUHODOBÉ ----------
+async function loadDlouhodobe() {
+    const [{ data: dl }, { data: stav }] = await Promise.all([
+        sb.from('hokej27_dlouhodobe').select('*').order('body', { ascending: false }),
+        sb.from('hokej27_stav').select('*').eq('id', 1).maybeSingle()
+    ]);
+    const cont = document.getElementById('dlList');
+    cont.innerHTML = (dl || []).map(r => {
+        const t = r.tip || {};
+        return `<div class="user-row" style="display:block; text-align:left; padding:10px; border-bottom:1px solid rgba(255,255,255,0.08);">
+            <b>${r.jmeno}</b> · ${r.body} b.
+            <button class="small-btn" style="background:${r.zaplaceno ? '#27ae60' : '#c0392b'}; margin-left:8px;" onclick="togglePaid('${r.user_id}', ${r.zaplaceno})">${r.zaplaceno ? '✅ zaplaceno' : '❌ nezaplaceno'}</button>
+            <div style="font-size:0.8em; opacity:0.7; margin-top:4px;">
+                A: ${t.vitezA || '–'} · B: ${t.vitezB || '–'} · 🏆 ${t.vitezTurnaje || '–'} · KB: ${t.vitezKB || '–'}<br>
+                All-Star: ${[t.allstar?.g, t.allstar?.d1, t.allstar?.d2, t.allstar?.u1, t.allstar?.u2, t.allstar?.u3].filter(Boolean).join(', ') || '–'}
+            </div>
+        </div>`;
+    }).join('') || '<div style="opacity:0.5;">Zatím žádné dlouhodobé tipy.</div>';
+
+    // předvyplň finální výsledky
+    const v = stav?.dlouhodobe_vysledky || {};
+    if (v.vitezA) document.getElementById('fin-vitezA').value = v.vitezA;
+    if (v.vitezB) document.getElementById('fin-vitezB').value = v.vitezB;
+    if (v.vitezTurnaje) document.getElementById('fin-vitezTurnaje').value = v.vitezTurnaje;
+    if (v.vitezKB) document.getElementById('fin-vitezKB').value = v.vitezKB;
+    ['g','d1','d2','u1','u2','u3'].forEach(k => { if (v.allstar?.[k]) document.getElementById('fin-' + k).value = v.allstar[k]; });
+}
+
+async function togglePaid(userId, cur) {
+    await sb.from('hokej27_dlouhodobe').update({ zaplaceno: !cur }).eq('user_id', userId);
+    loadDlouhodobe();
+    loadMatches();   // obnov i fond (zaplacené dlouhodobky se do něj počítají)
+}
+
+async function vyhodnotDlouhodobe() {
+    const vysledky = {
+        vitezA: document.getElementById('fin-vitezA').value.trim(),
+        vitezB: document.getElementById('fin-vitezB').value.trim(),
+        vitezTurnaje: document.getElementById('fin-vitezTurnaje').value.trim(),
+        vitezKB: document.getElementById('fin-vitezKB').value.trim(),
+        allstar: {
+            g: document.getElementById('fin-g').value.trim(),
+            d1: document.getElementById('fin-d1').value.trim(),
+            d2: document.getElementById('fin-d2').value.trim(),
+            u1: document.getElementById('fin-u1').value.trim(),
+            u2: document.getElementById('fin-u2').value.trim(),
+            u3: document.getElementById('fin-u3').value.trim()
+        }
+    };
+    await sb.from('hokej27_stav').update({ dlouhodobe_vysledky: vysledky }).eq('id', 1);
+
+    const eq = (a, b) => a && b && a.toLowerCase().trim() === b.toLowerCase().trim();
+    // hráči (příjmení) – tolerantní shoda jako u střelců
+    const eqHrac = (a, b) => {
+        if (!a || !b) return false;
+        const x = a.toLowerCase().trim(), y = b.toLowerCase().trim();
+        return x.includes(y) || y.includes(x);
+    };
+    const realAS = Object.values(vysledky.allstar).filter(Boolean);
+
+    const { data: dl } = await sb.from('hokej27_dlouhodobe').select('*');
     for (const r of (dl || [])) {
-        const t = r.tip1 || {};
-        let b = 0;
-        (t.top8 || []).forEach(x => { if (maTym(top8, x)) b += BODY.top8; });
-        if (low(t.vitezZC) === low(vitezZC)) b += BODY.vitezZC;
-        (t.propadlici || []).forEach(x => { if (maTym(prop, x)) b += BODY.propadlik; });
-        // 🇨🇿 Kam Slavia došla
-        if (t.cech === realCech) b += BODY.cech;
-        // 🇨🇿 Umístění v tabulce (přesná trefa)
-        if (t.slavia_misto != null && parseInt(t.slavia_misto) === realMisto) b += BODY.slavia_misto;
-        // 🇨🇿 Počet bodů (přesná trefa)
-        if (t.slavia_body != null && parseInt(t.slavia_body) === realBody) b += BODY.slavia_body;
-        // 🇨🇿 Počet gólů (přesná trefa)
-        if (t.slavia_goly != null && parseInt(t.slavia_goly) === realGoly) b += BODY.slavia_goly;
-        await sb.from('cl_dlouhodobe').update({ body1: b }).eq('user_id', r.user_id);
+        const t = r.tip || {};
+        let body = 0;
+        if (eq(t.vitezA, vysledky.vitezA)) body += 3;
+        if (eq(t.vitezB, vysledky.vitezB)) body += 3;
+        if (eq(t.vitezTurnaje, vysledky.vitezTurnaje)) body += 10;
+        if (eqHrac(t.vitezKB, vysledky.vitezKB)) body += 8;
+        // All-Star: každý tipnutý hráč, který je v reálné šestce (bez ohledu na pozici)
+        const tipAS = Object.values(t.allstar || {}).filter(Boolean);
+        tipAS.forEach(hrac => {
+            if (realAS.some(rh => eqHrac(hrac, rh))) body += 4;
+        });
+        await sb.from('hokej27_dlouhodobe').update({ body }).eq('user_id', r.user_id);
     }
-    await sb.from('cl_stav').update({
-        vysledky: { ...(stav.vysledky || {}), top8, vitezZC, propadlici: prop,
-                    cech: realCech, slavia_misto: realMisto, slavia_body: realBody, slavia_goly: realGoly },
-        aktualizovano: new Date().toISOString()
-    }).eq('id', 1);
-    msg('DLOUHODOBKA 1 SPOČÍTÁNA ✅');
+    msg('DLOUHODOBÉ TIPY PŘEPOČÍTÁNY! ⭐');
+    loadDlouhodobe();
 }
 
-async function vyhodnotDl2() {
-    const qf = vysl2.qf, sf = vysl2.sf, fin = vysl2.finale;
-    const vitez = document.getElementById('v-vitez').value.trim();
-    if (qf.length !== 8 || sf.length !== 4 || fin.length !== 2 || !vitez) return msg('Čekám 8 / 4 / 2 / vítěze.', true);
-    const { data: dl } = await sb.from('cl_dlouhodobe').select('*');
-    for (const r of (dl || [])) {
-        const t = r.tip2 || {};
-        let b = 0;
-        (t.qf || []).forEach(x => { if (maTym(qf, x)) b += BODY.qf; });
-        (t.sf || []).forEach(x => { if (maTym(sf, x)) b += BODY.sf; });
-        (t.finale || []).forEach(x => { if (maTym(fin, x)) b += BODY.finale; });
-        if (low(t.vitez) === low(vitez)) b += BODY.vitezCL;
-        await sb.from('cl_dlouhodobe').update({ body2: b }).eq('user_id', r.user_id);
-    }
-    await sb.from('cl_stav').update({
-        vysledky: { ...(stav.vysledky || {}), qf, sf, finale: fin, vitez },
-        sezona_ukoncena: true,
-        aktualizovano: new Date().toISOString()
-    }).eq('id', 1);
-    msg('DLOUHODOBKA 2 SPOČÍTÁNA ✅ – sezóna uzavřena');
-}
-
-/* ---------- STARTOVNÉ ---------- */
-async function nactiDlouhodobe() {
-    const { data: dl } = await sb.from('cl_dlouhodobe').select('*').order('jmeno');
-    document.getElementById('seznamDl').innerHTML = (dl || []).map(r => `
-        <div class="dl-radek">
-            <b>${r.jmeno}</b> · body: ${(r.body1 || 0) + (r.body2 || 0)}
-            <button class="btn btn-mini" style="background:${r.zaplaceno ? 'var(--green)' : 'var(--red)'}; color:#fff; margin-left:10px;"
-                onclick="togglePaid('${r.user_id}', ${r.zaplaceno})">${r.zaplaceno ? '✅ zaplaceno' : '❌ nezaplaceno'}</button>
-        </div>`).join('') || '<div style="opacity:.5;">Zatím nikdo nepodal dlouhodobý tip.</div>';
-}
-
-async function togglePaid(uid, curr) {
-    await sb.from('cl_dlouhodobe').update({ zaplaceno: !curr }).eq('user_id', uid);
-    nactiDlouhodobe();
-}
-
-init();
+window.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
