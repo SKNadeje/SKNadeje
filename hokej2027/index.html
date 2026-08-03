@@ -1080,10 +1080,11 @@ function renderZapasy(now) {
                     : `<div id="timer-${m.id}" class="timer-box">--:--:--</div>`}
             </div>
             <div class="flags-wrapper">
-                <div class="flag-container"><img class="flag-img" src="https://flagcdn.com/w160/${m.kod_d}.png"><br><small style="font-weight:800; opacity:0.8; display:block; margin-top:8px;">${m.domaci}</small>${m.outsider === m.domaci ? '<br><span style="display:inline-block; margin-top:5px; background:rgba(241,196,15,.15); border:1px solid rgba(241,196,15,.6); color:#f1c40f; font-size:.62em; font-weight:800; padding:2px 8px; border-radius:100px;">🎲 OUTSIDER +3</span>' : ''}</div>
+                <div class="flag-container"><img class="flag-img" src="https://flagcdn.com/w160/${m.kod_d}.png"><br><small style="font-weight:800; opacity:0.8; display:block; margin-top:8px;">${m.domaci}</small></div>
                 <div class="vs-circle">VS</div>
-                <div class="flag-container"><img class="flag-img" src="https://flagcdn.com/w160/${m.kod_h}.png"><br><small style="font-weight:800; opacity:0.8; display:block; margin-top:8px;">${m.hoste}</small>${m.outsider === m.hoste ? '<br><span style="display:inline-block; margin-top:5px; background:rgba(241,196,15,.15); border:1px solid rgba(241,196,15,.6); color:#f1c40f; font-size:.62em; font-weight:800; padding:2px 8px; border-radius:100px;">🎲 OUTSIDER +3</span>' : ''}</div>
+                <div class="flag-container"><img class="flag-img" src="https://flagcdn.com/w160/${m.kod_h}.png"><br><small style="font-weight:800; opacity:0.8; display:block; margin-top:8px;">${m.hoste}</small></div>
             </div>
+            ${m.outsider ? `<div style="text-align:center; margin:10px 0 2px;"><span style="display:inline-block; background:rgba(241,196,15,.15); border:1px solid rgba(241,196,15,.6); color:#f1c40f; font-size:.72em; font-weight:800; padding:3px 12px; border-radius:100px;">🎲 Outsider: ${m.outsider} · trend +3 NB</span></div>` : ''}
             <div class="barometer-container"><div class="bar-1" style="width:${p1}%"></div><div class="bar-0" style="width:${p0}%"></div><div class="bar-2" style="width:${p2}%"></div></div>
             <div class="bar-labels"><span>${m.domaci.substring(0,3).toUpperCase()} ${Math.round(p1)}%</span><span>REMÍZA ${Math.round(p0)}%</span><span>${m.hoste.substring(0,3).toUpperCase()} ${Math.round(p2)}%</span></div>
             <div id="detail-${m.id}" class="details" onclick="event.stopPropagation()">
