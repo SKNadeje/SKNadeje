@@ -705,7 +705,7 @@
     <a href="admin.html" class="admin-lock" id="adminLock" style="display:none;">⚙️</a>
 
     <img src="logo-hokej2027.png" class="header-logo" alt="SÁZKOVÁ KANCELÁŘ NADĚJE – MS 2027" onerror="this.outerHTML='<h1 style=\'color:var(--neon)\'>🏒 MS 2027</h1>'">
-   
+    <div style="font-size:0.75em; letter-spacing:3px; opacity:0.5; margin:-10px 0 20px; text-transform:uppercase;">MS v hokeji 2027 · Düsseldorf & Mannheim</div>
 
     <div id="userBadge" class="user-badge" style="display:none;">
         <span>👤</span>
@@ -907,6 +907,7 @@ let zapasyRezim = 'aktivni';   // 'aktivni' | 'vyhodnocene' – přepínač záp
 let sazkyCache = [];
 let stavCache = {};
 let mujDlouhodoby = null;
+let pocetZaplacenychDlouhodobek = 0;
 let localCart = {};
 let activeDeadlines = {};
 
@@ -948,16 +949,18 @@ async function doLogout() {
 
 // ---------- NAČTENÍ DAT ----------
 async function loadAll() {
-    const [zap, saz, st, dl] = await Promise.all([
+    const [zap, saz, st, dl, dlZaplacene] = await Promise.all([
         sb.from('hokej27_zapasy').select('*').order('deadline', { ascending: true }),
         sb.from('hokej27_sazky').select('*'),
         sb.from('hokej27_stav').select('*').eq('id', 1).maybeSingle(),
-        sb.from('hokej27_dlouhodobe').select('*').eq('user_id', currentUserId).maybeSingle()
+        sb.from('hokej27_dlouhodobe').select('*').eq('user_id', currentUserId).maybeSingle(),
+        sb.from('hokej27_dlouhodobe').select('user_id', { count: 'exact', head: true }).eq('zaplaceno', true)
     ]);
     zapasyCache = zap.data || [];
     sazkyCache = saz.data || [];
     stavCache = st.data || {};
     mujDlouhodoby = dl.data || null;
+    pocetZaplacenychDlouhodobek = dlZaplacene.count || 0;
     renderVse();
 }
 
@@ -965,9 +968,9 @@ async function loadAll() {
 function renderVse() {
     const now = Date.now();
 
-    // Fond = 5 Kč z každé sázky + ruční korekce admina (dlouhodobé vklady jdou zvlášť)
+    // Fond = 5 Kč z každé sázky + 50 Kč z každé zaplacené dlouhodobky + ruční korekce
     const fondKorekce = Number(stavCache?.fond_korekce || 0);
-    const fond = sazkyCache.length * VKLAD_DO_FONDU + fondKorekce;
+    const fond = sazkyCache.length * VKLAD_DO_FONDU + pocetZaplacenychDlouhodobek * 50 + fondKorekce;
     document.getElementById('uiHopeIndex').innerText = fond;
     document.getElementById('hope-1').innerText = Math.floor(fond * 0.5);
     document.getElementById('hope-2').innerText = Math.floor(fond * 0.3);
