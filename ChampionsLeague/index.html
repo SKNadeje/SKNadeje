@@ -443,6 +443,33 @@ function prepni(kam) {
    ============================================================ */
 const FAZE_TXT = { ZC: 'Základní část', PO: 'Play-off', OSM: 'Osmifinále', QF: 'Čtvrtfinále', SF: 'Semifinále', FINALE: 'Finále' };
 
+// Procentuální bar podle odevzdaných tipů (kdo tipuje výhru D / remízu / výhru H)
+function barSazek(tipy, m) {
+    if (!tipy || !tipy.length) return '';
+    let d = 0, r = 0, h = 0;
+    tipy.forEach(t => {
+        const p = (t.skore || '').split(':');
+        const sd = +p[0], sh = +p[1];
+        if (isNaN(sd) || isNaN(sh)) return;
+        if (sd > sh) d++; else if (sd < sh) h++; else r++;
+    });
+    const celkem = d + r + h;
+    if (!celkem) return '';
+    const pd = Math.round(d / celkem * 100);
+    const pr = Math.round(r / celkem * 100);
+    const ph = Math.round(h / celkem * 100);
+    const zkr = s => (s || '').substring(0, 3).toUpperCase();
+    return `
+        <div style="display:flex; height:8px; border-radius:100px; overflow:hidden; margin:10px 0 4px; background:rgba(255,255,255,.06);">
+            <div style="width:${pd}%; background:#2e6bff;"></div>
+            <div style="width:${pr}%; background:#8894a8;"></div>
+            <div style="width:${ph}%; background:#e0447a;"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:.62em; opacity:.6; font-weight:700;">
+            <span>${zkr(m.domaci)} ${pd}%</span><span>REMÍZA ${pr}%</span><span>${zkr(m.hoste)} ${ph}%</span>
+        </div>`;
+}
+
 function renderZapasy() {
     const cont = document.getElementById('matches');
     cont.innerHTML = '';
@@ -474,6 +501,8 @@ function renderZapasy() {
                 <span class="vs">VS</span>
                 <span style="flex:1; display:flex; align-items:center; justify-content:flex-start; gap:8px;">${logoTymu(m.hoste)} ${m.hoste}</span>
             </div>
+            ${m.outsider ? `<div style="text-align:center; margin:8px 0 2px;"><span style="display:inline-block; background:rgba(241,196,15,.15); border:1px solid rgba(241,196,15,.6); color:#f1c40f; font-size:.72em; font-weight:800; padding:3px 12px; border-radius:100px;">🎲 Outsider: ${m.outsider} · trend +3 b.</span></div>` : ''}
+            ${barSazek(tipy, m)}
             <div style="text-align:center; font-size:.68em; opacity:.5;">tipů: ${tipy.length}${mujTip ? ' · tvůj tip: ' + mujTip.skore + (hotovo ? ` (+${mujTip.body} b.)` : '') : ''}</div>
             <div id="detail-${m.id}" class="details" onclick="event.stopPropagation()">
                 ${(!zavreno && !hotovo && mojeId) ? `
