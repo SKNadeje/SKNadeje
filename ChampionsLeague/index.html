@@ -253,27 +253,34 @@ select.pole option { background: #10131f; color: #eef2ff; }
 
     <!-- ======= SEKCE TIPY ======= -->
     <div class="sekce on" id="sekce-tipy">
-        <div class="dl-karta" id="dl1-karta" onclick="otevriDl(1)">
-            <div class="t">📋 DLOUHODOBÝ TIP · ZÁKLADNÍ ČÁST</div>
-            <div class="s">Top 8 tabulky (à 3 b.) · vítěz základní části (8 b.) · 12 propadlíků bez play-off (à 2 b.)</div>
-            <div class="stav-tip" id="dl1-stav">…</div>
-        </div>
-        <div class="dl-karta" id="dl2-karta" onclick="otevriDl(2)">
-            <div class="t">🏆 DLOUHODOBÝ TIP · CESTA K TITULU</div>
-            <div class="s">Čtvrtfinalisté (à 2 b.) · semifinalisté (à 4 b.) · finalisté (à 6 b.) · vítěz CL (10 b.)</div>
-            <div class="stav-tip" id="dl2-stav">…</div>
-        </div>
+        <a href="statistiky.html" style="display:block; text-align:center; background:rgba(46,107,255,.1); border:1px solid rgba(46,107,255,.35); border-radius:12px; padding:12px; margin-bottom:16px; color:var(--fial); font-weight:800; font-size:.82em; letter-spacing:.5px; text-decoration:none;">📊 Podrobné žebříčky (výsledky · trendy · dlouhodobky)</a>
+
         <div class="zapasy-filtr">
-            <button class="zf-btn tady" id="zf-aktivni" onclick="prepniFiltrZapasu('aktivni')">📋 Aktuálně vypsané</button>
+            <button class="zf-btn tady" id="zf-aktivni" onclick="prepniFiltrZapasu('aktivni')">📋 Vypsané</button>
             <button class="zf-btn" id="zf-hotovo" onclick="prepniFiltrZapasu('hotovo')">✅ Vyhodnocené</button>
+            <button class="zf-btn" id="zf-dlouhodobe" onclick="prepniFiltrZapasu('dlouhodobe')">⭐ Dlouhodobé</button>
         </div>
+
+        <!-- Dlouhodobé tipy (jen ve filtru Dlouhodobé) -->
+        <div id="dlouhodobeWrap" style="display:none;">
+            <div class="dl-karta" id="dl1-karta" onclick="otevriDl(1)">
+                <div class="t">📋 DLOUHODOBÝ TIP · ZÁKLADNÍ ČÁST</div>
+                <div class="s">Top 8 tabulky (à 3 b.) · vítěz základní části (8 b.) · 12 propadlíků bez play-off (à 2 b.)</div>
+                <div class="stav-tip" id="dl1-stav">…</div>
+            </div>
+            <div class="dl-karta" id="dl2-karta" onclick="otevriDl(2)">
+                <div class="t">🏆 DLOUHODOBÝ TIP · CESTA K TITULU</div>
+                <div class="s">Čtvrtfinalisté (à 2 b.) · semifinalisté (à 4 b.) · finalisté (à 6 b.) · vítěz CL (10 b.)</div>
+                <div class="stav-tip" id="dl2-stav">…</div>
+            </div>
+        </div>
+
         <div id="matches"></div>
     </div>
 
     <!-- ======= SEKCE ŽEBŘÍČEK ======= -->
     <div class="sekce" id="sekce-zebricek">
         <div class="bank-info" id="bank-info">…</div>
-        <a href="statistiky.html" style="display:block; text-align:center; background:rgba(46,107,255,.1); border:1px solid rgba(46,107,255,.35); border-radius:12px; padding:12px; margin-bottom:16px; color:var(--fial); font-weight:800; font-size:.82em; letter-spacing:.5px; text-decoration:none;">📊 Podrobné žebříčky (výsledky · trendy · dlouhodobky)</a>
         <div id="zebricek"></div>
     </div>
 </div>
@@ -389,7 +396,13 @@ function prepniFiltrZapasu(f) {
     filtrZapasu = f;
     document.getElementById('zf-aktivni').classList.toggle('tady', f === 'aktivni');
     document.getElementById('zf-hotovo').classList.toggle('tady', f === 'hotovo');
-    renderZapasy();
+    document.getElementById('zf-dlouhodobe').classList.toggle('tady', f === 'dlouhodobe');
+
+    // Dlouhodobé karty jen ve svém režimu, seznam zápasů jen v ostatních
+    const jeDl = f === 'dlouhodobe';
+    document.getElementById('dlouhodobeWrap').style.display = jeDl ? 'block' : 'none';
+    document.getElementById('matches').style.display = jeDl ? 'none' : 'block';
+    if (!jeDl) renderZapasy();
 }
 
 /* ============================================================
