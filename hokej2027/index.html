@@ -7,11 +7,62 @@
     <style>
         /* --- ZÁKLADNÍ NASTAVENÍ A PROMĚNNÉ --- */
         :root {
+            /* Výchozí = TMAVÝ motiv */
             --neon: #00f2ff;
+            --neon-rgb: 0, 242, 255;
             --dark: #0f172a;
+            --bg-grad-1: #142036;
+            --bg-grad-2: #0f172a;
+            --text: #ffffff;
+            --text-dim: rgba(255,255,255,0.6);
             --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(var(--neon-rgb), 0.2);
+            --gold: #f1c40f;
+            --gold-rgb: 241, 196, 15;
             --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             --transition-fast: all 0.2s ease;
+        }
+        /* ☀️ SVĚTLÝ */
+        html[data-theme="svetly"] {
+            --neon: #0077b6;
+            --neon-rgb: 0, 119, 182;
+            --dark: #eef2f7;
+            --bg-grad-1: #ffffff;
+            --bg-grad-2: #dfe7f0;
+            --text: #12212f;
+            --text-dim: rgba(18,33,47,0.6);
+            --card-bg: rgba(0, 60, 100, 0.05);
+            --card-border: rgba(0, 119, 182, 0.3);
+            --gold: #c8901a;
+            --gold-rgb: 200, 144, 26;
+        }
+        /* 🇨🇿 ČESKO – modrá/červená/bílá */
+        html[data-theme="cesko"] {
+            --neon: #11457e;
+            --neon-rgb: 17, 69, 126;
+            --dark: #0a1a2f;
+            --bg-grad-1: #16305a;
+            --bg-grad-2: #0a1a2f;
+            --text: #ffffff;
+            --text-dim: rgba(255,255,255,0.65);
+            --card-bg: rgba(255, 255, 255, 0.06);
+            --card-border: rgba(215, 25, 32, 0.45);
+            --gold: #d7191f;
+            --gold-rgb: 215, 25, 31;
+        }
+        /* 🇩🇪 NĚMECKO – černá/červená/zlatá */
+        html[data-theme="nemecko"] {
+            --neon: #d4af37;
+            --neon-rgb: 212, 175, 55;
+            --dark: #0c0c0c;
+            --bg-grad-1: #2a1a1a;
+            --bg-grad-2: #0c0c0c;
+            --text: #ffffff;
+            --text-dim: rgba(255,255,255,0.6);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(212, 175, 55, 0.4);
+            --gold: #dd0000;
+            --gold-rgb: 221, 0, 0;
         }
 
         body {
@@ -46,7 +97,7 @@
             font-size: 1.3em;
             z-index: 9999;
             transition: var(--transition-slow);
-            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+            box-shadow: 0 0 15px rgba(var(--neon-rgb), 0.3);
             backdrop-filter: blur(10px);
         }
 
@@ -62,7 +113,7 @@
             width: 60%;
             height: auto;
             margin: 16px 0 30px 0;
-            filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.5));
+            filter: drop-shadow(0 0 10px rgba(var(--neon-rgb), 0.5));
             animation: neonGlow 4s ease-in-out infinite alternate;
         }
 
@@ -73,8 +124,8 @@
 
         /* --- BANKOVNÍ SYSTÉM --- */
         .bank-box {
-            background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,242,255,0.08) 100%);
-            border: 1px solid rgba(0, 242, 255, 0.4);
+            background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(var(--neon-rgb), 0.08) 100%);
+            border: 1px solid rgba(var(--neon-rgb), 0.4);
             border-radius: 30px;
             padding: 30px;
             min-width: 300px;
@@ -130,7 +181,7 @@
             display: inline-block;
             margin-bottom: 40px;
             padding: 16px 35px;
-            background: rgba(0, 242, 255, 0.05);
+            background: rgba(var(--neon-rgb), 0.05);
             border: 1px solid var(--neon);
             color: var(--neon);
             text-decoration: none;
@@ -160,12 +211,12 @@
         .zapas-fltr {
             flex: 1; padding: 12px 10px; border-radius: 12px; cursor: pointer;
             font-family: inherit; font-size: 0.82em; font-weight: 800; letter-spacing: .5px;
-            background: rgba(0,242,255,.05); border: 1px solid rgba(0,242,255,.25);
+            background: rgba(var(--neon-rgb), .05); border: 1px solid rgba(var(--neon-rgb), .25);
             color: #7fb8c4; transition: all .18s;
         }
-        .zapas-fltr:hover { border-color: rgba(0,242,255,.5); }
+        .zapas-fltr:hover { border-color: rgba(var(--neon-rgb), .5); }
         .zapas-fltr.on {
-            background: rgba(0,242,255,.15); border-color: var(--neon); color: var(--neon);
+            background: rgba(var(--neon-rgb), .15); border-color: var(--neon); color: var(--neon);
         }
 
         .match-card {
@@ -261,7 +312,7 @@
             background: rgba(0,0,0,0.6);
             padding: 10px 20px;
             border-radius: 100px;
-            border: 1px solid rgba(0, 242, 255, 0.2);
+            border: 1px solid rgba(var(--neon-rgb), 0.2);
         }
 
         /* --- DETAIL SÁZENÍ --- */
@@ -302,7 +353,7 @@
         .input-field:focus {
             border-color: var(--neon);
             background: rgba(0,0,0,0.6);
-            box-shadow: 0 0 15px rgba(0, 242, 255, 0.1);
+            box-shadow: 0 0 15px rgba(var(--neon-rgb), 0.1);
         }
 
         /* NOVÝ STYL PRO SKÓRE */
@@ -343,7 +394,7 @@
 
         .score-input:focus {
             border-color: var(--neon);
-            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+            box-shadow: 0 0 20px rgba(var(--neon-rgb), 0.2);
         }
 
         .hide-tip-row {
@@ -379,7 +430,7 @@
 
         .btn-add-ticket:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 242, 255, 0.3);
+            box-shadow: 0 10px 25px rgba(var(--neon-rgb), 0.3);
         }
 
         /* --- PLOVOUCÍ TLAČÍTKO (FAB) --- */
@@ -398,7 +449,7 @@
             font-size: 2em;
             cursor: pointer;
             z-index: 5000;
-            box-shadow: 0 15px 40px rgba(0, 242, 255, 0.4);
+            box-shadow: 0 15px 40px rgba(var(--neon-rgb), 0.4);
             animation: fabBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
@@ -429,9 +480,9 @@
             position: fixed; bottom: 18px; right: 18px; z-index: 950;
             width: 290px; max-width: calc(100vw - 36px);
             background: linear-gradient(160deg, #12203a, #0b1526);
-            border: 1px solid rgba(0,242,255,.45);
+            border: 1px solid rgba(var(--neon-rgb), .45);
             border-radius: 18px;
-            box-shadow: 0 12px 40px rgba(0,0,0,.6), 0 0 25px rgba(0,242,255,.12);
+            box-shadow: 0 12px 40px rgba(0,0,0,.6), 0 0 25px rgba(var(--neon-rgb), .12);
             padding: 14px 14px 12px;
             text-align: left;
             transform: translateY(20px); opacity: 0; pointer-events: none;
@@ -452,15 +503,15 @@
         #miniSlip .slip-del:hover { opacity: 1; color: #ff4444; }
         #miniSlip .slip-foot {
             display: flex; justify-content: space-between; align-items: center;
-            margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,242,255,.2);
+            margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(var(--neon-rgb), .2);
         }
         #miniSlip .slip-total { font-weight: 900; color: var(--neon); font-size: 1.05em; }
         #miniSlip .slip-send {
-            background: linear-gradient(135deg, #00f2ff, #0090aa); color: #05121a;
+            background: linear-gradient(135deg, var(--neon), #0090aa); color: #05121a;
             border: none; border-radius: 10px; padding: 10px 18px;
             font-weight: 900; font-size: .75em; letter-spacing: 1px; cursor: pointer;
             font-family: inherit; text-transform: uppercase;
-            box-shadow: 0 4px 14px rgba(0,242,255,.35);
+            box-shadow: 0 4px 14px rgba(var(--neon-rgb), .35);
         }
         #cartModal {
             position: fixed;
@@ -497,7 +548,7 @@
             border-radius: 25px;
             padding: 25px;
             margin-top: 25px;
-            border: 1px solid rgba(0, 242, 255, 0.15);
+            border: 1px solid rgba(var(--neon-rgb), 0.15);
             text-align: left;
         }
 
@@ -550,7 +601,7 @@
             opacity: 0.6;
         }
 
-        .win-glow { color: #f1c40f; text-shadow: 0 0 10px rgba(241,196,15,0.5); font-weight: 900; }
+        .win-glow { color: var(--gold); text-shadow: 0 0 10px rgba(var(--gold-rgb), 0.5); font-weight: 900; }
         .ok-glow { color: #27ae60; font-weight: 900; }
         .striker-hit { color: #3182ce; font-weight: 800; margin-left: 5px; }
         .loss-dim { color: #ff4444; opacity: 0.5; }
@@ -569,17 +620,17 @@
 
         .auth-box {
             background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(0,242,255,0.3);
+            border: 1px solid rgba(var(--neon-rgb), 0.3);
             border-radius: 30px;
             padding: 40px 35px;
             width: 100%; max-width: 380px;
-            box-shadow: 0 0 60px rgba(0,242,255,0.1);
+            box-shadow: 0 0 60px rgba(var(--neon-rgb), 0.1);
         }
 
         .auth-logo {
             max-width: 160px;
             margin-bottom: 25px;
-            filter: drop-shadow(0 0 10px rgba(0,242,255,0.5));
+            filter: drop-shadow(0 0 10px rgba(var(--neon-rgb), 0.5));
         }
 
         .auth-tabs {
@@ -618,7 +669,7 @@
 
         .auth-input:focus {
             border-color: var(--neon);
-            box-shadow: 0 0 15px rgba(0,242,255,0.1);
+            box-shadow: 0 0 15px rgba(var(--neon-rgb), 0.1);
         }
 
         .auth-btn {
@@ -642,8 +693,8 @@
         /* --- PŘIHLÁŠENÝ UŽIVATEL V HLAVIČCE --- */
         .user-badge {
             display: flex; align-items: center; gap: 10px;
-            background: rgba(0,242,255,0.08);
-            border: 1px solid rgba(0,242,255,0.2);
+            background: rgba(var(--neon-rgb), 0.08);
+            border: 1px solid rgba(var(--neon-rgb), 0.2);
             border-radius: 100px;
             padding: 8px 18px 8px 12px;
             margin-bottom: 20px;
@@ -666,9 +717,9 @@
     position: fixed; bottom: 18px; right: 18px; z-index: 950;
     width: 290px; max-width: calc(100vw - 36px);
     background: linear-gradient(160deg, #12203a, #0b1526);
-    border: 1px solid rgba(0,242,255,.45);
+    border: 1px solid rgba(var(--neon-rgb), .45);
     border-radius: 18px;
-    box-shadow: 0 12px 40px rgba(0,0,0,.6), 0 0 25px rgba(0,242,255,.12);
+    box-shadow: 0 12px 40px rgba(0,0,0,.6), 0 0 25px rgba(var(--neon-rgb), .12);
     padding: 14px 14px 12px;
     text-align: left;
     transform: translateY(20px); opacity: 0; pointer-events: none;
@@ -680,14 +731,67 @@
 #miniSlip .slip-item:last-of-type { border-bottom: none; }
 #miniSlip .slip-del { cursor: pointer; opacity: .5; margin-left: 8px; }
 #miniSlip .slip-del:hover { opacity: 1; color: #ff4444; }
-#miniSlip .slip-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,242,255,.2); }
+#miniSlip .slip-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(var(--neon-rgb), .2); }
 #miniSlip .slip-total { font-weight: 900; color: var(--neon); font-size: 1.05em; }
-#miniSlip .slip-send { background: linear-gradient(135deg, #00f2ff, #0090aa); color: #05121a; border: none; border-radius: 10px; padding: 10px 18px; font-weight: 900; font-size: .75em; letter-spacing: 1px; cursor: pointer; font-family: inherit; text-transform: uppercase; box-shadow: 0 4px 14px rgba(0,242,255,.35); }
+#miniSlip .slip-send { background: linear-gradient(135deg, var(--neon), #0090aa); color: #05121a; border: none; border-radius: 10px; padding: 10px 18px; font-weight: 900; font-size: .75em; letter-spacing: 1px; cursor: pointer; font-family: inherit; text-transform: uppercase; box-shadow: 0 4px 14px rgba(var(--neon-rgb), .35); }
 /* pojistka: modal skrytý, dokud ho JS neotevře */
 #cartModal { display: none; }
 </style>
+<script>
+// 🎨 MOTIVY – aplikuj uložený motiv co nejdřív (před vykreslením)
+(function() {
+    try {
+        const t = localStorage.getItem('hokej_theme') || 'tmavy';
+        if (t !== 'tmavy') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+})();
+function nastavTheme(t) {
+    try { localStorage.setItem('hokej_theme', t); } catch (e) {}
+    if (t === 'tmavy') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+    // zvýrazni vybraný
+    document.querySelectorAll('.theme-opt').forEach(b => b.classList.remove('on'));
+    const mapa = { tmavy: 0, svetly: 1, cesko: 2, nemecko: 3 };
+    const btns = document.querySelectorAll('.theme-opt');
+    if (btns[mapa[t]]) btns[mapa[t]].classList.add('on');
+    document.getElementById('themePanel').style.display = 'none';
+}
+function prepniThemePanel() {
+    const p = document.getElementById('themePanel');
+    p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    // zvýrazni aktuální při otevření
+    const t = (function(){ try { return localStorage.getItem('hokej_theme') || 'tmavy'; } catch(e){ return 'tmavy'; } })();
+    document.querySelectorAll('.theme-opt').forEach(b => b.classList.remove('on'));
+    const mapa = { tmavy: 0, svetly: 1, cesko: 2, nemecko: 3 };
+    const btns = document.querySelectorAll('.theme-opt');
+    if (btns[mapa[t]]) btns[mapa[t]].classList.add('on');
+}
+// zavři panel při kliknutí mimo
+document.addEventListener('click', function(e) {
+    const sw = document.getElementById('themeSwitch');
+    if (sw && !sw.contains(e.target)) {
+        const p = document.getElementById('themePanel');
+        if (p) p.style.display = 'none';
+    }
+});
+</script>
 </head>
 <body>
+<!-- 🎨 PŘEPÍNAČ MOTIVŮ -->
+<div id="themeSwitch" style="position:fixed; top:16px; right:74px; z-index:10000;">
+    <button onclick="prepniThemePanel()" style="background:var(--card-bg); border:1px solid var(--card-border); color:var(--text); width:42px; height:42px; border-radius:50%; cursor:pointer; font-size:1.2em; backdrop-filter:blur(6px);" title="Změnit vzhled">🎨</button>
+    <div id="themePanel" style="display:none; position:absolute; top:50px; right:0; background:var(--dark); border:1px solid var(--card-border); border-radius:14px; padding:8px; min-width:170px; box-shadow:0 12px 40px rgba(0,0,0,.5);">
+        <button class="theme-opt" onclick="nastavTheme('tmavy')">🌙 Tmavý</button>
+        <button class="theme-opt" onclick="nastavTheme('svetly')">☀️ Světlý</button>
+        <button class="theme-opt" onclick="nastavTheme('cesko')">🇨🇿 Česko</button>
+        <button class="theme-opt" onclick="nastavTheme('nemecko')">🇩🇪 Německo</button>
+    </div>
+</div>
+<style>
+    .theme-opt { display:block; width:100%; text-align:left; background:none; border:none; color:var(--text); padding:10px 12px; border-radius:8px; cursor:pointer; font-size:.9em; font-family:inherit; }
+    .theme-opt:hover { background:var(--card-bg); }
+    .theme-opt.on { background:rgba(var(--neon-rgb),.15); color:var(--neon); font-weight:800; }
+</style>
     <a href="../hub.html" style="display:inline-block; color:rgba(255,255,255,.45); text-decoration:none; font-size:.72em; margin:4px 0 10px;">← Zpět na výběr turnajů</a>
 
     <!-- PŘIHLÁŠENÍ – řeší centrálně welcome stránka -->
@@ -709,7 +813,7 @@
 
     <div id="userBadge" class="user-badge" style="display:none;">
         <span>👤</span>
-        <span id="userBadgeName" class="user-badge-name" style="cursor:pointer; text-decoration:underline; text-decoration-color:rgba(0,242,255,.4); text-underline-offset:3px;"
+        <span id="userBadgeName" class="user-badge-name" style="cursor:pointer; text-decoration:underline; text-decoration-color:rgba(var(--neon-rgb), .4); text-underline-offset:3px;"
               onclick="if(currentUserId) location.href='profil.html?id='+currentUserId;"
               title="Zobrazit můj profil"></span>
         <button class="user-logout" onclick="doLogout()">odhlásit</button>
@@ -722,9 +826,9 @@
             <span class="bank-total-label">Celkový bank v hře:</span>
             <span class="bank-total-val"><span id="uiTotalBank">0</span> Kč</span>
         </div>
-        <div class="bank-total-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(0, 242, 255, 0.2);">
+        <div class="bank-total-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(var(--neon-rgb), 0.2);">
             <span class="bank-total-label">Fond Naděje (kumulováno):</span>
-            <span class="bank-total-val" style="color: #f1c40f;"><span id="uiHopeIndex">0</span> Kč</span>
+            <span class="bank-total-val" style="color: var(--gold);"><span id="uiHopeIndex">0</span> Kč</span>
         </div>
         <div style="display:flex; justify-content:center; gap:16px; margin-top:10px; font-size:0.75em; opacity:0.7;">
             <span>🥇 <b id="hope-1">0</b> Kč</span>
@@ -743,16 +847,16 @@
     </div>
 
     <!-- DLOUHODOBÝ TIP (zobrazuje se jen ve filtru Dlouhodobé) -->
-    <div class="match-card" id="dlouhodobyCard" style="border-color:#f1c40f; display:none;">
+    <div class="match-card" id="dlouhodobyCard" style="border-color:var(--gold); display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="text-align:left;">
-                <div style="color:#f1c40f; font-weight:900; letter-spacing:1px;">⭐ DLOUHODOBÝ TIP (70 Kč)</div>
+                <div style="color:var(--gold); font-weight:900; letter-spacing:1px;">⭐ DLOUHODOBÝ TIP (70 Kč)</div>
                 <div style="font-size:0.75em; opacity:0.6; margin-top:5px;">Vítězové skupin · šampion · kanadské bodování · All-Star šestka</div>
             </div>
             <div id="timer-dlouhodoby" class="timer-box">--:--:--</div>
         </div>
         <div id="dlouhodobyStav" style="margin-top:15px; font-size:0.85em;"></div>
-        <button class="btn-add-ticket" style="background:linear-gradient(135deg,#f1c40f,#b8901e); margin-top:15px;" onclick="uiOpenDlouhodoby()" id="btnDlouhodoby">VYPLNIT DLOUHODOBÝ TIP</button>
+        <button class="btn-add-ticket" style="background:linear-gradient(135deg,var(--gold),#b8901e); margin-top:15px;" onclick="uiOpenDlouhodoby()" id="btnDlouhodoby">VYPLNIT DLOUHODOBÝ TIP</button>
     </div>
 
     <div id="matchList"></div>
@@ -761,14 +865,14 @@
         <div class="slip-head"><span>🎟️ TIKET</span><span id="slipCount" style="opacity:.6; font-size:.85em;"></span></div>
         <div id="slipItems"></div>
         <div id="slipPlatba" style="margin:10px 0 4px; border-top:1px solid rgba(255,255,255,.1); padding-top:10px;">
-            <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:9px; border:1px solid rgba(0,242,255,.3); background:rgba(0,242,255,.05); cursor:pointer; margin-bottom:6px; font-size:.85em;">
+            <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:9px; border:1px solid rgba(var(--neon-rgb), .3); background:rgba(var(--neon-rgb), .05); cursor:pointer; margin-bottom:6px; font-size:.85em;">
                 <input type="radio" name="platba" value="qr" checked onchange="uiUpdatePlatba()" style="accent-color:var(--neon);">
                 <span style="flex:1;">💳 QR kód</span>
             </label>
-            <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:9px; border:1px solid rgba(241,196,15,.3); background:rgba(241,196,15,.05); cursor:pointer; font-size:.85em;">
-                <input type="radio" name="platba" value="penezenka" onchange="uiUpdatePlatba()" style="accent-color:#f1c40f;">
+            <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:9px; border:1px solid rgba(var(--gold-rgb), .3); background:rgba(var(--gold-rgb), .05); cursor:pointer; font-size:.85em;">
+                <input type="radio" name="platba" value="penezenka" onchange="uiUpdatePlatba()" style="accent-color:var(--gold);">
                 <span style="flex:1;">👛 Z peněženky</span>
-                <span style="opacity:.7;"><b id="uiWalletBalance" style="color:#f1c40f;">– Kč</b></span>
+                <span style="opacity:.7;"><b id="uiWalletBalance" style="color:var(--gold);">– Kč</b></span>
             </label>
             <div id="uiWalletWarn" style="display:none; color:#ff6b6b; font-size:.76em; margin-top:6px;"></div>
         </div>
@@ -809,7 +913,7 @@
 
     <!-- MODAL VÝBĚRU HRÁČE (střelec / all-star) -->
     <div id="hracModal" style="display:none; position:fixed; inset:0; background:rgba(5,10,25,0.9); backdrop-filter:blur(6px); z-index:10005; overflow-y:auto; padding:24px 14px;">
-        <div style="max-width:440px; margin:auto; background:linear-gradient(160deg,#0d1a2a,#081018); border:1px solid rgba(0,242,255,.4); border-radius:22px; padding:22px 20px; box-shadow:0 25px 70px rgba(0,0,0,.7);">
+        <div style="max-width:440px; margin:auto; background:linear-gradient(160deg,#0d1a2a,#081018); border:1px solid rgba(var(--neon-rgb), .4); border-radius:22px; padding:22px 20px; box-shadow:0 25px 70px rgba(0,0,0,.7);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
                 <span id="hracModalTitle" style="font-weight:900; color:var(--neon); font-size:1.05rem;">Vyber hráče</span>
                 <span onclick="zavriVyberHrace()" style="cursor:pointer; opacity:.5; font-size:1.6rem; line-height:1;">×</span>
@@ -831,7 +935,7 @@
     <div id="dlouhodobyModal" style="display:none; position:fixed; inset:0; background:rgba(5,10,25,0.97); z-index:10000; overflow-y:auto; padding:30px 15px;">
         <div style="max-width:460px; margin:0 auto; text-align:left;">
             <span style="position:absolute; top:15px; right:25px; font-size:2.5em; cursor:pointer; opacity:0.4;" onclick="uiCloseDlouhodoby()">×</span>
-            <h2 style="color:#f1c40f;">⭐ Dlouhodobý tip</h2>
+            <h2 style="color:var(--gold);">⭐ Dlouhodobý tip</h2>
             <p style="font-size:0.8em; opacity:0.6;">Vklad 70 Kč (50 Kč fond + 20 Kč chod webu). Uzávěrka před prvním buly turnaje. Body: vítěz skupiny 3, šampion 10, kanadské bodování 8, každý trefený All-Star hráč 4.</p>
 
             <label class="input-label">🅰️ Vítěz skupiny A (Mannheim)</label>
@@ -846,7 +950,7 @@
             <label class="input-label">🎯 Vítěz kanadského bodování (příjmení)</label>
             <input type="text" id="dt-vitezKB" class="input-field" placeholder="Klikni a vyber hráče" readonly onclick="vyberAllStar('dt-vitezKB', null, 'Vítěz kanadského bodování')" style="cursor:pointer;">
 
-            <div style="color:#f1c40f; font-weight:900; margin:20px 0 5px;">ALL-STAR ŠESTKA TURNAJE</div>
+            <div style="color:var(--gold); font-weight:900; margin:20px 0 5px;">ALL-STAR ŠESTKA TURNAJE</div>
             <label class="input-label">🥅 Brankář</label>
             <input type="text" id="dt-g" class="input-field" placeholder="Klikni a vyber brankáře" readonly onclick="vyberAllStar('dt-g', 'G', 'Vyber brankáře')" style="cursor:pointer;">
             <label class="input-label">🛡️ Obránce 1</label>
@@ -860,7 +964,7 @@
             <label class="input-label">⚔️ Útočník 3</label>
             <input type="text" id="dt-u3" class="input-field" placeholder="Klikni a vyber útočníka" readonly onclick="vyberAllStar('dt-u3', 'U', 'Vyber útočníka')" style="cursor:pointer;">
 
-            <button class="btn-add-ticket" style="background:linear-gradient(135deg,#f1c40f,#b8901e); margin-top:20px;" onclick="actionUlozDlouhodoby()">ULOŽIT TIP (70 Kč)</button>
+            <button class="btn-add-ticket" style="background:linear-gradient(135deg,var(--gold),#b8901e); margin-top:20px;" onclick="actionUlozDlouhodoby()">ULOŽIT TIP (70 Kč)</button>
             <div id="dt-msg" style="margin-top:12px; font-size:0.85em; min-height:18px;"></div>
         </div>
     </div>
@@ -1004,11 +1108,11 @@ function renderDlouhodoby(now) {
 
     if (mujDlouhodoby) {
         const t = mujDlouhodoby.tip || {};
-        stavEl.innerHTML = `<div style="background:rgba(241,196,15,0.08); border:1px solid rgba(241,196,15,0.25); border-radius:12px; padding:12px; text-align:left; line-height:1.7;">
+        stavEl.innerHTML = `<div style="background:rgba(var(--gold-rgb), 0.08); border:1px solid rgba(var(--gold-rgb), 0.25); border-radius:12px; padding:12px; text-align:left; line-height:1.7;">
             🅰️ ${t.vitezA || '–'} &nbsp; 🅱️ ${t.vitezB || '–'} &nbsp; 🏆 <b>${t.vitezTurnaje || '–'}</b><br>
             🎯 ${t.vitezKB || '–'} &nbsp;·&nbsp; 🥅 ${t.allstar?.g || '–'} · 🛡️ ${t.allstar?.d1 || '–'}, ${t.allstar?.d2 || '–'}<br>
             ⚔️ ${t.allstar?.u1 || '–'}, ${t.allstar?.u2 || '–'}, ${t.allstar?.u3 || '–'}
-            ${mujDlouhodoby.zaplaceno ? '<div style="color:#27ae60; font-weight:900; margin-top:6px;">✅ ZAPLACENO</div>' : '<div style="color:#f1c40f; margin-top:6px;">⏳ čeká na platbu 70 Kč</div>'}
+            ${mujDlouhodoby.zaplaceno ? '<div style="color:#27ae60; font-weight:900; margin-top:6px;">✅ ZAPLACENO</div>' : '<div style="color:var(--gold); margin-top:6px;">⏳ čeká na platbu 70 Kč</div>'}
         </div>`;
         btn.innerText = zavreno ? 'UZÁVĚRKA PROBĚHLA' : 'UPRAVIT DLOUHODOBÝ TIP';
     } else {
@@ -1084,7 +1188,7 @@ function renderZapasy(now) {
                 <div class="vs-circle">VS</div>
                 <div class="flag-container"><img class="flag-img" src="https://flagcdn.com/w160/${m.kod_h}.png"><br><small style="font-weight:800; opacity:0.8; display:block; margin-top:8px;">${m.hoste}</small></div>
             </div>
-            ${m.outsider ? `<div style="text-align:center; margin:10px 0 2px;"><span style="display:inline-block; background:rgba(241,196,15,.15); border:1px solid rgba(241,196,15,.6); color:#f1c40f; font-size:.72em; font-weight:800; padding:3px 12px; border-radius:100px;">🎲 Outsider: ${m.outsider} · trend +3 NB</span></div>` : ''}
+            ${m.outsider ? `<div style="text-align:center; margin:10px 0 2px;"><span style="display:inline-block; background:rgba(var(--gold-rgb), .15); border:1px solid rgba(var(--gold-rgb), .6); color:var(--gold); font-size:.72em; font-weight:800; padding:3px 12px; border-radius:100px;">🎲 Outsider: ${m.outsider} · trend +3 NB</span></div>` : ''}
             <div class="barometer-container"><div class="bar-1" style="width:${p1}%"></div><div class="bar-0" style="width:${p0}%"></div><div class="bar-2" style="width:${p2}%"></div></div>
             <div class="bar-labels"><span>${m.domaci.substring(0,3).toUpperCase()} ${Math.round(p1)}%</span><span>REMÍZA ${Math.round(p0)}%</span><span>${m.hoste.substring(0,3).toUpperCase()} ${Math.round(p2)}%</span></div>
             <div id="detail-${m.id}" class="details" onclick="event.stopPropagation()">
@@ -1146,7 +1250,7 @@ function renderZapasy(now) {
            row.style.flexWrap = 'wrap';
             row.style.gap = '6px';
             row.style.alignItems = 'center';
-            row.innerHTML = `<span style="font-weight:800; cursor:pointer; text-decoration:underline; text-decoration-color:rgba(0,242,255,.35);" onclick="location.href='profil.html?id=${s.user_id}'">${isEvaluated && s.vyhra_kc > 0 ? '🏆 ' : ''}${s.jmeno}</span><span style="text-align:right; flex:1;">${obsah}</span>`;
+            row.innerHTML = `<span style="font-weight:800; cursor:pointer; text-decoration:underline; text-decoration-color:rgba(var(--neon-rgb), .35);" onclick="location.href='profil.html?id=${s.user_id}'">${isEvaluated && s.vyhra_kc > 0 ? '🏆 ' : ''}${s.jmeno}</span><span style="text-align:right; flex:1;">${obsah}</span>`;
             bList.appendChild(row);
         });
     });
@@ -1288,7 +1392,7 @@ function otevriVyberHrace(cilInputId, tymy, pozice = null, titulek = 'Vyber hrá
     box.innerHTML = tymy.map(t => `
         <button onclick="vyberTymProHrace('${t.replace(/'/g, "\\'")}')" style="
             text-align:left; padding:12px 14px; border-radius:10px; cursor:pointer; font-family:inherit;
-            background:rgba(0,242,255,.06); border:1px solid rgba(0,242,255,.2); color:#fff; font-size:.92em; font-weight:600;">
+            background:rgba(var(--neon-rgb), .06); border:1px solid rgba(var(--neon-rgb), .2); color:#fff; font-size:.92em; font-weight:600;">
             ${t}
         </button>`).join('');
     document.getElementById('hracKrokTym').style.display = 'block';
@@ -1420,7 +1524,7 @@ function ukazQrHokej(suma, msg) {
     }
     const qrUrl = `https://api.paylibo.com/paylibo/generator/czech/image?accountNumber=295511827&bankCode=0300&amount=${suma}&currency=CZK&message=${encodeURIComponent(msg)}`;
     overlay.innerHTML = `
-        <div style="background:linear-gradient(160deg,#0d1a2a,#081018); border:1px solid rgba(0,242,255,.4); border-radius:22px; max-width:400px; width:100%; padding:30px 24px; text-align:center; margin:auto; box-shadow:0 25px 70px rgba(0,0,0,.7);">
+        <div style="background:linear-gradient(160deg,#0d1a2a,#081018); border:1px solid rgba(var(--neon-rgb), .4); border-radius:22px; max-width:400px; width:100%; padding:30px 24px; text-align:center; margin:auto; box-shadow:0 25px 70px rgba(0,0,0,.7);">
             <div style="font-weight:900; color:var(--neon); font-size:1.5rem; margin-bottom:8px;">✅ Tiket přijat!</div>
             <p style="color:#cbd5e1; font-size:.88rem; margin-bottom:18px;">Zaplať částku a sázky ti aktivujeme.</p>
             <div style="background:white; padding:18px; border-radius:16px; display:inline-block; margin-bottom:18px;">
@@ -1432,7 +1536,7 @@ function ukazQrHokej(suma, msg) {
                 <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:.9em;"><span style="opacity:.7;">Částka:</span><b style="color:#27ae60;">${suma} Kč</b></div>
                 <div style="display:flex; justify-content:space-between; font-size:.9em;"><span style="opacity:.7;">Zpráva:</span><b>${msg}</b></div>
             </div>
-            <button onclick="document.getElementById('hokej-qr-overlay').style.display='none';" style="width:100%; margin-top:16px; background:linear-gradient(135deg,#00f2ff,#0088aa); color:#05121a; border:none; padding:14px; border-radius:12px; font-weight:800; letter-spacing:1px; cursor:pointer; font-family:inherit;">ZAVŘÍT</button>
+            <button onclick="document.getElementById('hokej-qr-overlay').style.display='none';" style="width:100%; margin-top:16px; background:linear-gradient(135deg,var(--neon),#0088aa); color:#05121a; border:none; padding:14px; border-radius:12px; font-weight:800; letter-spacing:1px; cursor:pointer; font-family:inherit;">ZAVŘÍT</button>
         </div>`;
     overlay.style.display = 'flex';
 }
@@ -1513,9 +1617,9 @@ function ukazPlatbuHokej(jmenoHrace) {
         document.body.appendChild(overlay);
     }
     overlay.innerHTML = `
-        <div style="background:linear-gradient(160deg,#0d1a2a,#081018); border:1px solid rgba(0,242,255,.4); border-radius:22px; max-width:400px; width:100%; padding:30px 24px; text-align:center; margin:auto; box-shadow:0 25px 70px rgba(0,0,0,.7);">
+        <div style="background:linear-gradient(160deg,#0d1a2a,#081018); border:1px solid rgba(var(--neon-rgb), .4); border-radius:22px; max-width:400px; width:100%; padding:30px 24px; text-align:center; margin:auto; box-shadow:0 25px 70px rgba(0,0,0,.7);">
             <div style="font-size:2.5rem; margin-bottom:8px;">🎉</div>
-            <h2 style="color:#00f2ff; margin:0 0 6px; font-size:1.4rem;">Tip uložen!</h2>
+            <h2 style="color:var(--neon); margin:0 0 6px; font-size:1.4rem;">Tip uložen!</h2>
             <p style="color:#cbd5e1; font-size:.88rem; margin-bottom:20px; line-height:1.5;">Pro zařazení do hry zbývá poslední krok:<br>poslat dlouhodobý vklad.</p>
             <div style="background:white; padding:20px; border-radius:16px; display:inline-block; margin-bottom:20px;">
                 <img src="${qrUrl}" alt="QR Platba" style="display:block; width:220px; height:220px; image-rendering:pixelated;"
@@ -1523,13 +1627,13 @@ function ukazPlatbuHokej(jmenoHrace) {
                 <div style="color:#000; font-weight:900; font-size:12px; margin-top:12px; letter-spacing:3px; opacity:.5;">QR PLATBA</div>
             </div>
             <div style="background:rgba(255,255,255,.05); padding:18px; border-radius:12px; border:1px solid rgba(255,255,255,.1); text-align:left; margin-bottom:8px;">
-                <div style="color:#f1c40f; font-size:.72rem; font-weight:800; text-transform:uppercase; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,.1); padding-bottom:5px;">Platební instrukce</div>
+                <div style="color:var(--gold); font-size:.72rem; font-weight:800; text-transform:uppercase; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,.1); padding-bottom:5px;">Platební instrukce</div>
                 <div style="display:flex; justify-content:space-between; margin-bottom:9px; font-size:1rem;"><span style="opacity:.7;">Částka:</span><b style="color:#27ae60;">${HOKEJ_PLATBA.castkaText}</b></div>
                 <div style="font-size:.72rem; opacity:.6; margin:-4px 0 12px;">50 Kč do 💎 Fondu Naděje · 20 Kč na chod webu</div>
                 <div style="display:flex; flex-direction:column; margin-bottom:9px;"><span style="opacity:.7; font-size:.78rem;">Číslo účtu:</span><b style="font-family:monospace;">${HOKEJ_PLATBA.ucet} / ${HOKEJ_PLATBA.banka}</b></div>
-                <div style="display:flex; flex-direction:column;"><span style="opacity:.7; font-size:.78rem;">Zpráva:</span><b style="color:#fff; font-size:1.05rem; border-left:3px solid #f1c40f; padding-left:8px; margin-top:4px;">${zprava}</b></div>
+                <div style="display:flex; flex-direction:column;"><span style="opacity:.7; font-size:.78rem;">Zpráva:</span><b style="color:#fff; font-size:1.05rem; border-left:3px solid var(--gold); padding-left:8px; margin-top:4px;">${zprava}</b></div>
             </div>
-            <button onclick="document.getElementById('hokej-payment-overlay').style.display='none';" style="width:100%; margin-top:14px; background:linear-gradient(135deg,#00f2ff,#0088aa); color:#05121a; border:none; padding:14px; border-radius:12px; font-weight:800; font-size:.9rem; letter-spacing:1px; cursor:pointer; font-family:inherit;">MÁM ZAPLACENO / ZAVŘÍT</button>
+            <button onclick="document.getElementById('hokej-payment-overlay').style.display='none';" style="width:100%; margin-top:14px; background:linear-gradient(135deg,var(--neon),#0088aa); color:#05121a; border:none; padding:14px; border-radius:12px; font-weight:800; font-size:.9rem; letter-spacing:1px; cursor:pointer; font-family:inherit;">MÁM ZAPLACENO / ZAVŘÍT</button>
         </div>`;
     overlay.style.display = 'flex';
 }
@@ -1537,7 +1641,7 @@ function ukazPlatbuHokej(jmenoHrace) {
 <script src="../chat.js"></script>
 <script>
 window.SB_KEY = SB_KEY;
-inicializujChat({ klient: sb, tabulka: 'hokej27_chat', soutez: 'hokej', barva: '#00f2ff' });
+inicializujChat({ klient: sb, tabulka: 'hokej27_chat', soutez: 'hokej', barva: 'var(--neon)' });
 </script>
 </body>
 </html>
