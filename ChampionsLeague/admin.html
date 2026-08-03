@@ -310,30 +310,71 @@ async function nactiZapasy() {
         return `<div class="zapas-row">
             <b>${z.domaci} vs ${z.hoste}</b> · ${z.faze} · tipů: ${tt.length}
             ${hotovo
-                ? ` · <span style="color:var(--green); font-weight:900;">✔ ${z.vysledek_d}:${z.vysledek_h}</span>`
+                ? ` · <span style="color:var(--green); font-weight:900;">✔ ${z.vysledek_d}:${z.vysledek_h}</span>${z.outsider ? ` · 🎲 ${z.outsider}` : ''}`
                 : ` <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
                         <input class="pole" style="width:52px; margin:0; text-align:center;" id="vd-${z.id}" placeholder="0" inputmode="numeric">
                         <b>:</b>
                         <input class="pole" style="width:52px; margin:0; text-align:center;" id="vh-${z.id}" placeholder="0" inputmode="numeric">
                         <button class="btn btn-mini btn-gold" onclick="vyhodnotZapas(${z.id})">VYHODNOTIT</button>
                         <button class="btn btn-mini btn-red" onclick="smazZapas(${z.id})">🗑</button>
+                    </div>
+                    <div style="margin-top:8px; font-size:.78em; opacity:.7;">🎲 Outsider (trend 1→3 b., remíza 2 b.):</div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
+                        <button class="btn btn-mini" style="${!z.outsider ? 'background:var(--fial); color:#fff;' : 'background:#333; color:#fff;'}" onclick="nastavOutsidera(${z.id}, null)">Nikdo</button>
+                        <button class="btn btn-mini" style="${z.outsider === z.domaci ? 'background:var(--fial); color:#fff;' : 'background:#333; color:#fff;'}" onclick="nastavOutsidera(${z.id}, '${z.domaci.replace(/'/g, "\\'")}')">${z.domaci}</button>
+                        <button class="btn btn-mini" style="${z.outsider === z.hoste ? 'background:var(--fial); color:#fff;' : 'background:#333; color:#fff;'}" onclick="nastavOutsidera(${z.id}, '${z.hoste.replace(/'/g, "\\'")}')">${z.hoste}</button>
                     </div>`}
             <div style="font-size:.85em; opacity:.65; margin-top:5px;">${tt.map(t => `• ${t.jmeno}: ${t.skore}${hotovo ? ` (+${t.body})` : ''}`).join('<br>')}</div>
         </div>`;
     }).join('') || '<div style="opacity:.5;">Žádné zápasy.</div>';
 }
 
+async function nastavOutsidera(id, tym) {
+    const { error } = await sb.from('cl_zapasy').update({ outsider: tym }).eq('id', id);
+    if (error) return msg('Chyba: ' + error.message, true);
+    nactiZapasy();
+}
+
 async function vyhodnotZapas(id) {
     const d = parseInt(document.getElementById('vd-' + id).value);
     const h = parseInt(document.getElementById('vh-' + id).value);
     if (isNaN(d) || isNaN(h)) return msg('Doplň skóre.', true);
+    const { data: zapas } = await sb.from('cl_zapasy').select('domaci, hoste, outsider').eq('id', id).maybeSingle();
+    const vitez = d > h ? zapas?.domaci : (h > d ? zapas?.hoste : null);
+    const outsiderVyhral = zapas?.outsider && vitez && zapas.outsider === vitez;
+
     const { data: tipy } = await sb.from('cl_tipy_zapasy').select('*').eq('zapas_id', id);
     for (const t of (tipy || [])) {
         const [td, th] = t.skore.split(':').map(Number);
         const presne = td === d && th === h;
         const trend = (d > h && td > th) || (d < h && td < th) || (d === h && td === th);
-        const b = presne ? BODY.presne : (trend ? BODY.trend : 0);
-        await sb.from('cl_tipy_zapasy').update({ body: b, hit_skore: presne, hit_trend: trend }).eq('id', t.id);
+
+        // Trend: normálně 1 b. V outsider zápase: výhra outsidera 3 b., remíza 2 b.
+        let trendBody = 0;
+        if (trend) {
+            if (zapas?.outsider) {
+                if (outsiderVyhral &&
+                    ((d > h && td > th && zapas.outsider === zapas?.domaci) ||
+                     (h > d && th > td && zapas.outsider === zapas?.hoste))) {
+                    trendBody = 3;
+                } else if (d === h && td === th) {
+                    trendBody = 2;
+                } else {
+                    trendBody = 1;
+                }
+            } else {
+                trendBody = 1;
+            }
+        }
+        // Bonusy: stejný rozdíl skóre + stejný počet branek (jako u hokeje, sčítá se)
+        const hitRozdil = (td - th) === (d - h);
+        const hitPocet = (td + th) === (d + h);
+
+        const b = (presne ? BODY.presne : trendBody) + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
+        await sb.from('cl_tipy_zapasy').update({
+            body: b, hit_skore: presne, hit_trend: trend,
+            hit_rozdil: hitRozdil, hit_pocet: hitPocet
+        }).eq('id', t.id);
     }
     await sb.from('cl_zapasy').update({ status: 'vyhodnoceno', vysledek_d: d, vysledek_h: h }).eq('id', id);
     msg('VYHODNOCENO ✅ (' + (tipy || []).length + ' tipů)');
