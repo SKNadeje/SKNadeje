@@ -734,8 +734,16 @@
         <div style="font-size:0.68em; opacity:0.45; margin-top:8px;">Fond si na konci turnaje dělí top 3 Indexu Naděje (50/30/20)</div>
     </div>
 
-    <!-- DLOUHODOBÝ TIP -->
-    <div class="match-card" id="dlouhodobyCard" style="border-color:#f1c40f;">
+    <a href="statistiky.html" class="btn-stats">📊 ŽEBŘÍČKY A STATISTIKY</a>
+
+    <div id="zapasyFiltr" style="display:flex; gap:8px; margin:18px 0 4px; flex-wrap:wrap;">
+        <button id="fltr-aktivni" class="zapas-fltr on" onclick="prepniZapasy('aktivni')">🟢 Aktivní</button>
+        <button id="fltr-vyhodnocene" class="zapas-fltr" onclick="prepniZapasy('vyhodnocene')">✅ Vyhodnocené</button>
+        <button id="fltr-dlouhodobe" class="zapas-fltr" onclick="prepniZapasy('dlouhodobe')">⭐ Dlouhodobé</button>
+    </div>
+
+    <!-- DLOUHODOBÝ TIP (zobrazuje se jen ve filtru Dlouhodobé) -->
+    <div class="match-card" id="dlouhodobyCard" style="border-color:#f1c40f; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="text-align:left;">
                 <div style="color:#f1c40f; font-weight:900; letter-spacing:1px;">⭐ DLOUHODOBÝ TIP (70 Kč)</div>
@@ -745,13 +753,6 @@
         </div>
         <div id="dlouhodobyStav" style="margin-top:15px; font-size:0.85em;"></div>
         <button class="btn-add-ticket" style="background:linear-gradient(135deg,#f1c40f,#b8901e); margin-top:15px;" onclick="uiOpenDlouhodoby()" id="btnDlouhodoby">VYPLNIT DLOUHODOBÝ TIP</button>
-    </div>
-
-    <a href="statistiky.html" class="btn-stats">📊 ŽEBŘÍČKY A STATISTIKY</a>
-
-    <div id="zapasyFiltr" style="display:flex; gap:8px; margin:18px 0 4px;">
-        <button id="fltr-aktivni" class="zapas-fltr on" onclick="prepniZapasy('aktivni')">🟢 Aktivní</button>
-        <button id="fltr-vyhodnocene" class="zapas-fltr" onclick="prepniZapasy('vyhodnocene')">✅ Vyhodnocené</button>
     </div>
 
     <div id="matchList"></div>
@@ -1019,7 +1020,14 @@ function prepniZapasy(rezim) {
     zapasyRezim = rezim;
     document.getElementById('fltr-aktivni').classList.toggle('on', rezim === 'aktivni');
     document.getElementById('fltr-vyhodnocene').classList.toggle('on', rezim === 'vyhodnocene');
-    renderZapasy(Date.now());
+    document.getElementById('fltr-dlouhodobe').classList.toggle('on', rezim === 'dlouhodobe');
+
+    // Dlouhodobá karta jen ve svém režimu, seznam zápasů jen v ostatních
+    const jeDlouhodobe = rezim === 'dlouhodobe';
+    document.getElementById('dlouhodobyCard').style.display = jeDlouhodobe ? 'block' : 'none';
+    document.getElementById('matchList').style.display = jeDlouhodobe ? 'none' : 'block';
+
+    if (!jeDlouhodobe) renderZapasy(Date.now());
 }
 
 function renderZapasy(now) {
