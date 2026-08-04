@@ -785,7 +785,7 @@ document.addEventListener('click', function(e) {
 </head>
 <body>
 <!-- 🎨 PŘEPÍNAČ MOTIVŮ -->
-<div id="themeSwitch" style="position:fixed; top:16px; right:74px; z-index:10000;">
+<div id="themeSwitch" style="position:fixed; top:16px; right:23px; z-index:10000;">
     <button onclick="prepniThemePanel()" style="background:var(--card-bg); border:1px solid var(--card-border); color:var(--text); width:42px; height:42px; border-radius:50%; cursor:pointer; font-size:1.2em; backdrop-filter:blur(6px);" title="Změnit vzhled">🎨</button>
     <div id="themePanel" style="display:none; position:absolute; top:50px; right:0; background:var(--dark); border:1px solid var(--card-border); border-radius:14px; padding:8px; min-width:170px; box-shadow:0 12px 40px rgba(0,0,0,.5);">
         <button class="theme-opt" onclick="nastavTheme('tmavy')">🌙 Tmavý</button>
@@ -1030,7 +1030,11 @@ async function init() {
         return;
     }
     currentUserId = session.user.id;
-    if (currentUserId === ADMIN_ID) document.getElementById('adminLock').style.display = 'flex';
+    if (currentUserId === ADMIN_ID) {
+        document.getElementById('adminLock').style.display = 'flex';
+        // Admin má zámek nahoře → posuň paletu pod něj
+        document.getElementById('themeSwitch').style.top = '78px';
+    }
 
     // jméno z centrálního registru (fallback fotbalové tipy)
     const { data: h } = await sb.from('hraci').select('jmeno, penezenka').eq('user_id', currentUserId).maybeSingle();
