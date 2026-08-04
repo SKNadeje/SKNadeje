@@ -41,14 +41,16 @@ function vlozChatHTML() {
     el.innerHTML = `
     <button id="chat-fab" onclick="prepniChat()" style="
         position:fixed; bottom:20px; right:20px; z-index:900;
-        width:58px; height:58px; border-radius:50%; border:none; cursor:pointer;
-        background:linear-gradient(135deg, ${b}, ${b}88); color:#05121a;
-        font-size:1.4em; box-shadow:0 6px 22px ${b}66;
+        width:60px; height:60px; border-radius:50%; cursor:pointer;
+        background:var(--neon, ${b}); color:#05121a;
+        border:2px solid rgba(255,255,255,.85);
+        font-size:1.5em; box-shadow:0 6px 26px rgba(0,0,0,.45), 0 0 22px ${b}88;
         display:flex; align-items:center; justify-content:center; font-family:inherit;
-    ">💬<span id="chat-badge" style="
+        transition:transform .2s ease;
+    " onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">💬<span id="chat-badge" style="
         position:absolute; top:-4px; right:-4px; background:#e74c3c; color:#fff;
         font-size:.42em; font-weight:900; min-width:22px; height:22px; border-radius:11px;
-        display:none; align-items:center; justify-content:center; padding:0 5px;
+        display:none; align-items:center; justify-content:center; padding:0 5px; border:2px solid #fff;
     ">0</span></button>
 
     <div id="chat-panel" style="
