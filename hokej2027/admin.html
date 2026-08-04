@@ -672,8 +672,21 @@ async function finishEval(mid) {
         strelci: currentStrelci, bank_zapasu: vyherci.length > 0 ? bank : 0
     }).eq('id', mid);
 
+    // Bank při nevýhře: 50 % bankZapasu → Fond Naděje (korekce), 50 % + převod z minula → dál
+    const bankZapasu = (sazky || []).length * VKLAD_DO_BANKU;   // jen z tohoto zápasu (bez převodu)
+    let novaKorekce = Number(stav?.fond_korekce || 0);
+    let novyPrevod = 0;
+    if (vyherci.length === 0) {
+        const doFondu = Math.floor(bankZapasu / 2);             // 50 % dolů, ať se nic neztratí
+        const doDalsiho = (bankZapasu - doFondu) + prevedeny;   // zbytek + celý převod z minula
+        novaKorekce = novaKorekce + doFondu;                    // natrvalo do fondu
+        novyPrevod = doDalsiho;
+    }
+    // (když někdo vyhrál, prevedeny_bank = 0 a korekce se nemění)
+
     await sb.from('hokej27_stav').update({
-        prevedeny_bank: vyherci.length > 0 ? 0 : bank,
+        prevedeny_bank: novyPrevod,
+        fond_korekce: novaKorekce,
         aktualizovano: new Date().toISOString()
     }).eq('id', 1);
 
@@ -686,11 +699,13 @@ async function finishEval(mid) {
             vyhra: share,
             zapas: nazevZapasu
         })));
+        // Hláška do chatu (pod jménem admina) – jen když někdo vyhrál peníze
+        posliVyhruDoChatu(vyherci, share, nazevZapasu);
     }
 
     msg(vyherci.length > 0
         ? `VYHODNOCENO! Bank ${bank} Kč → ${vyherci.map(v => v.jmeno).join(', ')} (à ${share} Kč) 🏆`
-        : `VYHODNOCENO! Nikdo netrefil skóre+střelce → bank ${bank} Kč se převádí dál. 💰`);
+        : `VYHODNOCENO! Nikdo netrefil → ${Math.floor(bankZapasu/2)} Kč do Fondu Naděje 💎, ${(bankZapasu - Math.floor(bankZapasu/2)) + prevedeny} Kč se převádí dál. 💰`);
     closeAllModals();
     loadMatches();
 }
@@ -711,6 +726,26 @@ async function posliVyhruNotifikaci(vyherci) {
         console.log('🔔 Notifikace výhry:', data);
     } catch (e) {
         console.error('Notifikace výhry selhala (vyhodnocení proběhlo):', e);
+    }
+}
+
+// Zapíše hlášku o výhře do chatu pod jménem admina
+async function posliVyhruDoChatu(vyherci, share, nazevZapasu) {
+    try {
+        // Jméno admina z registru
+        const { data: adm } = await sb.from('hraci').select('jmeno').eq('user_id', ADMIN_ID).maybeSingle();
+        const adminJmeno = adm?.jmeno || 'Admin';
+
+        const jmena = vyherci.map(v => v.jmeno).join(', ');
+        const zprava = vyherci.length === 1
+            ? `🎉 ${jmena} vyhrává ${share} Kč za ${nazevZapasu}! 💰`
+            : `🎉 ${nazevZapasu}: vyhrávají ${jmena} – každý ${share} Kč! 💰`;
+
+        await sb.from('hokej27_chat').insert({
+            user_id: ADMIN_ID, name: adminJmeno, message: zprava
+        });
+    } catch (e) {
+        console.error('Hlášku do chatu se nepodařilo poslat (vyhodnocení proběhlo):', e);
     }
 }
 
