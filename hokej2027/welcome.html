@@ -9,21 +9,58 @@
 <style>
 :root {
     --fial: #00f2ff;
+    --fial-rgb: 0,242,255;
     --magenta: #ff2ecc;
-    --fial-glow: rgba(0,242,255,.35);
+    --magenta-rgb: 255,46,204;
+    --fial-glow: rgba(var(--fial-rgb),.35);
     --gold: #d4af37;
     --dark: #05081c;
+    --bg-top: #0a1240;
+    --text: #eef2ff;
+}
+html[data-theme="svetly"] {
+    --fial: #0077b6;
+    --fial-rgb: 0,119,182;
+    --magenta: #c0179c;
+    --magenta-rgb: 192,23,156;
+    --fial-glow: rgba(0,119,182,.3);
+    --gold: #c8901a;
+    --dark: #dfe7f0;
+    --bg-top: #ffffff;
+    --text: #12212f;
+}
+html[data-theme="cesko"] {
+    --fial: #5b9bd5;
+    --fial-rgb: 91,155,213;
+    --magenta: #ef3340;
+    --magenta-rgb: 239,51,64;
+    --fial-glow: rgba(215,25,32,.35);
+    --gold: #ef3340;
+    --dark: #0a1836;
+    --bg-top: #16305a;
+    --text: #eef2ff;
+}
+html[data-theme="nemecko"] {
+    --fial: #ffce00;
+    --fial-rgb: 255,206,0;
+    --magenta: #e00000;
+    --magenta-rgb: 224,0,0;
+    --fial-glow: rgba(255,206,0,.35);
+    --gold: #e00000;
+    --dark: #0a0805;
+    --bg-top: #3a2410;
+    --text: #f5f0e8;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; overflow-x: hidden; max-width: 100%; }
 body {
     margin: 0;
     background:
-        radial-gradient(ellipse 900px 500px at 15% 0%, rgba(255,46,204,.14), transparent 55%),
-        radial-gradient(ellipse 900px 600px at 85% 15%, rgba(0,242,255,.22), transparent 55%),
-        radial-gradient(ellipse at top, #0a1240 0%, var(--dark) 70%);
+        radial-gradient(ellipse 900px 500px at 15% 0%, rgba(var(--magenta-rgb),.14), transparent 55%),
+        radial-gradient(ellipse 900px 600px at 85% 15%, rgba(var(--fial-rgb),.22), transparent 55%),
+        radial-gradient(ellipse at top, var(--bg-top) 0%, var(--dark) 70%);
     font-family: Inter, sans-serif;
-    color: #eef2ff;
+    color: var(--text);
     display: flex; align-items: center; justify-content: center;
     padding: 24px 16px;
     position: relative;
@@ -33,7 +70,7 @@ body {
 /* jemné hvězdné pozadí připomínající noční stadion */
 .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
 .stars span {
-    position: absolute; width: 2px; height: 2px; background: rgba(0,242,255,.7);
+    position: absolute; width: 2px; height: 2px; background: rgba(var(--fial-rgb),.7);
     border-radius: 50%; animation: tw 3.5s ease-in-out infinite;
 }
 @keyframes tw { 0%, 100% { opacity: .15; } 50% { opacity: .9; } }
@@ -70,7 +107,7 @@ body {
 .logo::before {
     content: ''; position: absolute; inset: -8%; z-index: 0;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(0,242,255,.45), rgba(0,242,255,.12) 45%, transparent 70%);
+    background: radial-gradient(circle, rgba(var(--fial-rgb),.45), rgba(var(--fial-rgb),.12) 45%, transparent 70%);
     animation: zare 4s ease-in-out infinite;
     pointer-events: none;
 }
@@ -79,8 +116,8 @@ body {
     50% { opacity: .9; transform: scale(1.08); }
 }
 @keyframes dych {
-    0%, 100% { filter: drop-shadow(0 0 22px rgba(0,242,255,.3)); }
-    50% { filter: drop-shadow(0 0 36px rgba(0,242,255,.55)); }
+    0%, 100% { filter: drop-shadow(0 0 22px rgba(var(--fial-rgb),.3)); }
+    50% { filter: drop-shadow(0 0 36px rgba(var(--fial-rgb),.55)); }
 }
 @media (prefers-reduced-motion: reduce) { .logo, .logo::before { animation: none; } }
 .logo-inner {
@@ -113,7 +150,7 @@ h1 {
 }
 .info-pasek span {
     font-size: .66rem; font-weight: 800; letter-spacing: .5px;
-    background: rgba(0,242,255,.1); border: 1px solid rgba(0,242,255,.35);
+    background: rgba(var(--fial-rgb),.1); border: 1px solid rgba(var(--fial-rgb),.35);
     color: var(--fial); padding: 5px 12px; border-radius: 100px;
 }
 
@@ -141,9 +178,9 @@ h1 {
 }
 @keyframes vstupPulse {
     0%, 100% { box-shadow: 0 5px 22px var(--fial-glow); }
-    50% { box-shadow: 0 5px 30px rgba(0,242,255,.65); }
+    50% { box-shadow: 0 5px 30px rgba(var(--fial-rgb),.65); }
 }
-.vstup:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,242,255,.5); animation: none; }
+.vstup:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(var(--fial-rgb),.5); animation: none; }
 .vstup:active { transform: translateY(0); }
 @media (prefers-reduced-motion: reduce) { .vstup { animation: none; } }
 
@@ -157,13 +194,13 @@ h1 {
 /* ===== TLAČÍTKO PRAVIDEL ===== */
 .pravidla-btn {
     display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(0,242,255,.08); border: 1px solid rgba(0,242,255,.4);
+    background: rgba(var(--fial-rgb),.08); border: 1px solid rgba(var(--fial-rgb),.4);
     color: #cbd5e1; text-decoration: none; cursor: pointer;
     font-size: .72rem; font-weight: 800; letter-spacing: 1px;
     padding: 11px 24px; border-radius: 10px; text-transform: uppercase;
     margin-top: 14px; font-family: inherit; transition: all .2s;
 }
-.pravidla-btn:hover { border-color: var(--fial); color: #fff; background: rgba(0,242,255,.15); }
+.pravidla-btn:hover { border-color: var(--fial); color: #fff; background: rgba(var(--fial-rgb),.15); }
 
 /* ===== MODAL PRAVIDEL ===== */
 .pr-overlay {
@@ -174,7 +211,7 @@ h1 {
 .pr-overlay.open { display: flex; }
 .pr-modal {
     background: linear-gradient(160deg, #0c1330, #070a1e);
-    border: 1px solid rgba(0,242,255,.4); border-radius: 22px;
+    border: 1px solid rgba(var(--fial-rgb),.4); border-radius: 22px;
     max-width: 460px; width: 100%; padding: 26px 24px 30px;
     box-shadow: 0 25px 70px rgba(0,0,0,.7); text-align: left;
     animation: vstup .35s ease both; margin: auto;
@@ -206,13 +243,44 @@ h1 {
 .pr-radek span:first-child { color: #cbd5e1; }
 .pr-radek b { color: #fff; white-space: nowrap; }
 .pr-castka {
-    background: rgba(0,242,255,.08); border: 1px solid rgba(0,242,255,.3);
+    background: rgba(var(--fial-rgb),.08); border: 1px solid rgba(var(--fial-rgb),.3);
     border-radius: 12px; padding: 14px 16px; margin-top: 8px;
 }
 .pr-castka .celkem { font-size: 1.5rem; font-weight: 900; color: var(--gold); text-align: center; margin-bottom: 6px; }
 </style>
+<script>
+(function(){ try { var t=localStorage.getItem('hokej_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
+</script>
 </head>
 <body>
+<div id="themeSwitch" style="position:fixed; top:12px; right:12px; z-index:10000;">
+    <button onclick="prepniThemePanel()" style="background:rgba(var(--fial-rgb),.1); border:1px solid rgba(var(--fial-rgb),.4); color:var(--text); width:42px; height:42px; border-radius:50%; cursor:pointer; font-size:1.2em; backdrop-filter:blur(6px);" title="Změnit vzhled">🎨</button>
+    <div id="themePanel" style="display:none; position:absolute; top:50px; right:0; background:var(--dark); border:1px solid rgba(var(--fial-rgb),.4); border-radius:14px; padding:8px; min-width:170px; box-shadow:0 12px 40px rgba(0,0,0,.5);">
+        <button class="theme-opt" onclick="nastavTheme('tmavy')">🌙 Tmavý</button>
+        <button class="theme-opt" onclick="nastavTheme('svetly')">☀️ Světlý</button>
+        <button class="theme-opt" onclick="nastavTheme('cesko')">🇨🇿 Česko</button>
+        <button class="theme-opt" onclick="nastavTheme('nemecko')">🇩🇪 Německo</button>
+    </div>
+</div>
+<style>
+    .theme-opt { display:block; width:100%; text-align:left; background:none; border:none; color:var(--text); padding:10px 12px; border-radius:8px; cursor:pointer; font-size:.9em; font-family:inherit; }
+    .theme-opt:hover { background:rgba(var(--fial-rgb),.1); }
+    .theme-opt.on { background:rgba(var(--fial-rgb),.18); color:var(--fial); font-weight:800; }
+</style>
+<script>
+function nastavTheme(t){ try{ localStorage.setItem('hokej_theme',t); }catch(e){}
+    if(t==='tmavy') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme',t);
+    document.querySelectorAll('.theme-opt').forEach(b=>b.classList.remove('on'));
+    var m={tmavy:0,svetly:1,cesko:2,nemecko:3}, btns=document.querySelectorAll('.theme-opt'); if(btns[m[t]]) btns[m[t]].classList.add('on');
+    document.getElementById('themePanel').style.display='none';
+}
+function prepniThemePanel(){ var p=document.getElementById('themePanel'); p.style.display=p.style.display==='none'?'block':'none';
+    var t=(function(){try{return localStorage.getItem('hokej_theme')||'tmavy';}catch(e){return 'tmavy';}})();
+    document.querySelectorAll('.theme-opt').forEach(b=>b.classList.remove('on'));
+    var m={tmavy:0,svetly:1,cesko:2,nemecko:3}, btns=document.querySelectorAll('.theme-opt'); if(btns[m[t]]) btns[m[t]].classList.add('on');
+}
+document.addEventListener('click',function(e){ var sw=document.getElementById('themeSwitch'); if(sw&&!sw.contains(e.target)){ var p=document.getElementById('themePanel'); if(p) p.style.display='none'; } });
+</script>
 <div class="stars" id="stars"></div>
 <a class="back" href="../hub.html">← Zpět na výběr turnajů</a>
 
