@@ -654,16 +654,23 @@ async function finishEval(mid) {
         return { ...s, hitSkore, hitStrelec, hitTrend, hitRozdil, hitPocet, trendNB, nb };
     });
 
-    // výherci banku: přesné skóre + střelec; když nikdo, bank se převádí dál
-    const vyherci = vyhodnocene.filter(s => s.hitSkore && s.hitStrelec);
+    // Výherci banku podle priority:
+    // 1) základ = všichni s přesným skóre
+    // 2) když někdo z nich má i střelce → berou jen ti se střelcem
+    // 3) když nikdo se střelcem → berou všichni s přesným skóre
+    // Střelec bez přesného skóre = jen body, žádný bank.
+    const presni = vyhodnocene.filter(s => s.hitSkore);
+    const presniSeStrelcem = presni.filter(s => s.hitStrelec);
+    const vyherci = presniSeStrelcem.length > 0 ? presniSeStrelcem : presni;
     const share = vyherci.length > 0 ? Math.floor(bank / vyherci.length) : 0;
 
+    const vyherciIds = new Set(vyherci.map(v => v.id));
     for (const s of vyhodnocene) {
         await sb.from('hokej27_sazky').update({
             hit_skore: s.hitSkore, hit_strelec: s.hitStrelec, hit_trend: s.hitTrend,
             hit_rozdil: s.hitRozdil, hit_pocet: s.hitPocet,
             nb: s.nb,
-            vyhra_kc: (s.hitSkore && s.hitStrelec) ? share : 0
+            vyhra_kc: vyherciIds.has(s.id) ? share : 0
         }).eq('id', s.id);
     }
 
