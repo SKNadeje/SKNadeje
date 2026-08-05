@@ -49,7 +49,7 @@
             --card-border: rgba(215, 25, 32, 0.55);
             --gold: #ef3340;
             --gold-rgb: 239, 51, 64;
-            --bg-cesko: linear-gradient(165deg, #c8102e 0%, #a00d24 12%, #16305a 40%, #0d2149 70%, #0a1836 100%);
+            --bg-cesko: linear-gradient(180deg, #c8102e 0%, #b01020 9%, #cbd5e6 16%, #7a94c4 23%, #3a5f9e 32%, #1e3d6b 48%, #12294d 68%, #0a1836 100%);
         }
         /* 🇩🇪 NĚMECKO – černá/červená/zlatá */
         html[data-theme="nemecko"] {
@@ -85,6 +85,13 @@
         html[data-theme="cesko"] body {
             background: var(--bg-cesko);
             background-attachment: fixed;
+        }
+        /* Čitelnost textů na světlém (bílém) pruhu trikolóry v horní části */
+        html[data-theme="cesko"] .back,
+        html[data-theme="cesko"] .header-sub,
+        html[data-theme="cesko"] #userBadge,
+        html[data-theme="cesko"] .user-badge {
+            text-shadow: 0 1px 3px rgba(0,0,0,.85), 0 0 2px rgba(0,0,0,.6);
         }
 
         /* --- FIXNÍ PRVKY --- */
