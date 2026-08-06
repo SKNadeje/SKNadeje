@@ -659,7 +659,7 @@
         .auth-tab {
             flex: 1; padding: 10px;
             border: none; background: transparent;
-            color: rgba(255,255,255,0.4);
+            color: var(--text); opacity: .6;
             border-radius: 12px;
             font-weight: 800; font-size: 0.85em;
             cursor: pointer; transition: 0.3s;
@@ -720,7 +720,7 @@
 
         .user-logout {
             background: none; border: none;
-            color: rgba(255,255,255,0.3);
+            color: var(--text); opacity: .5;
             cursor: pointer; font-size: 0.8em;
             padding: 4px 8px; border-radius: 8px;
             transition: 0.2s; margin-left: 5px;
@@ -807,7 +807,7 @@ document.addEventListener('click', function(e) {
     .theme-opt:hover { background:var(--card-bg); }
     .theme-opt.on { background:rgba(var(--neon-rgb),.15); color:var(--neon); font-weight:800; }
 </style>
-    <a href="../hub.html" style="display:inline-block; color:rgba(255,255,255,.45); text-decoration:none; font-size:.72em; margin:4px 0 10px;">← Zpět na výběr turnajů</a>
+    <a href="../hub.html" style="display:inline-block; color:var(--text); opacity:.55; text-decoration:none; font-size:.72em; margin:4px 0 10px;">← Zpět na výběr turnajů</a>
 
     <!-- PŘIHLÁŠENÍ – řeší centrálně welcome stránka -->
     <div id="authOverlay" style="display:none;">
@@ -824,7 +824,7 @@ document.addEventListener('click', function(e) {
     <a href="admin.html" class="admin-lock" id="adminLock" style="display:none;">⚙️</a>
 
     <img src="logo-hokej2027.png" class="header-logo" alt="SÁZKOVÁ KANCELÁŘ NADĚJE – MS 2027" onerror="this.outerHTML='<h1 style=\'color:var(--neon)\'>🏒 MS 2027</h1>'">
-    <div style="font-size:0.75em; letter-spacing:3px; opacity:0.5; margin:-10px 0 20px; text-transform:uppercase;">MS v hokeji 2027 · Düsseldorf & Mannheim</div>
+    <div style="font-size:0.75em; letter-spacing:3px; opacity:0.65; margin:-10px 0 20px; text-transform:uppercase;">MS v hokeji 2027 · Düsseldorf & Mannheim</div>
 
     <div id="userBadge" class="user-badge" style="display:none;">
         <span>👤</span>
