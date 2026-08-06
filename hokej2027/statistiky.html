@@ -161,7 +161,7 @@ function radek(h, hodnotaHtml, subHtml, korunka) {
     return `<div class="radek ${cls}">
         <span class="poradi">${h._rank}</span>
         <div class="telo">
-            <span class="jmeno" onclick="location.href='profil.html?id=${h.user_id}'">${h.jmeno}${korunka && h._rankNum === 1 ? ' 👑' : ''}</span>
+            <span class="jmeno" onclick="location.href='profil.html?id=${h.user_id}'">${(window._avatary && window._avatary[h.user_id]) ? window._avatary[h.user_id] + ' ' : ''}${h.jmeno}${korunka && h._rankNum === 1 ? ' 👑' : ''}</span>
             <div class="sub">${subHtml}</div>
         </div>
         <span class="hodnota">${hodnotaHtml}</span>
@@ -177,14 +177,18 @@ function vykresli(elId, list, klic, fmt, sub, korunka = true) {
 }
 
 async function load() {
-    const [zR, sR, stR, dlR] = await Promise.all([
+    const [zR, sR, stR, dlR, avR] = await Promise.all([
         sb.from('hokej27_zapasy').select('*'),
         sb.from('hokej27_sazky').select('*'),
         sb.from('hokej27_stav').select('fond_korekce').eq('id', 1).maybeSingle(),
-        sb.from('hokej27_dlouhodobe').select('user_id', { count: 'exact', head: true }).eq('zaplaceno', true)
+        sb.from('hokej27_dlouhodobe').select('user_id', { count: 'exact', head: true }).eq('zaplaceno', true),
+        sb.from('hraci').select('user_id, avatar')
     ]);
     const fondKorekce = Number(stR?.data?.fond_korekce || 0);
     const zaplaceneDlouhodobky = dlR?.count || 0;
+    // mapa user_id -> avatar
+    window._avatary = {};
+    (avR?.data || []).forEach(h => { if (h.avatar) window._avatary[h.user_id] = h.avatar; });
     const stats = spocitejStatistiky(zR.data || [], sR.data || [], fondKorekce, zaplaceneDlouhodobky);
 
     // Fond + medaile 50/30/20
