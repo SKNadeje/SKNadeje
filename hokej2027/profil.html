@@ -167,6 +167,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
 
     <div class="hero">
         <div class="cislo" id="hCislo"></div>
+        <div class="avatar-display" id="avatarDisplay" style="font-size:3.4em; line-height:1; margin-bottom:4px;"></div>
         <div class="jmeno" id="hJmeno">…</div>
         <div class="titul" id="hTitul"></div>
         <div class="hlaska" id="hHlaska"></div>
@@ -186,6 +187,13 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
         <div style="text-align:center; font-size:.72em; opacity:.55; line-height:1.5;">
             Zůstatek pro placení sázek. Dobíjí admin po přijetí platby.<br>Při sázce „z peněženky" se odečte automaticky.
         </div>
+    </div>
+
+    <!-- 🏒 VÝBĚR AVATARU (jen vlastní profil) -->
+    <div class="blok" id="avatarBox" style="display:none;">
+        <h2>🏒 Můj avatar</h2>
+        <div style="text-align:center; font-size:.72em; opacity:.55; margin-bottom:12px;">Vyber si ikonu, která tě bude reprezentovat v žebříčku.</div>
+        <div id="avatarVyber" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;"></div>
     </div>
 
     <div class="blok">
@@ -241,6 +249,9 @@ async function load() {
             box.style.display = 'block';
         }
     }
+
+    // 🏒 Avatar – načti a zobraz; výběr jen na vlastním profilu
+    await nactiAvatar(uid, mojeId);
 
     const { titul, hlaska, pozice } = urciTitul(stats, uid);
 
@@ -298,6 +309,47 @@ async function load() {
                 <div class="nb">${x.nb > 0 ? '+' : ''}${x.nb} NB${x.vyhra > 0 ? `<small>💰 ${x.vyhra} Kč</small>` : ''}</div>
             </div>`).join('')
         : '<div class="prazdno">Zatím žádné vyhodnocené tipy.</div>';
+}
+
+// 🏒 Hokejová sada avatarů
+const AVATARY = ['🏒','🥅','🧤','🏆','🥇','🚨','❄️','🐻','🦅','🦁','🐺','🦈','🐉','⚡','🔥','👑','🎯','💎','🛡️','🚀'];
+
+async function nactiAvatar(uid, mojeId) {
+    // Načti uložený avatar hráče
+    const { data } = await sb.from('hraci').select('avatar').eq('user_id', uid).maybeSingle();
+    const avatar = data?.avatar || '🏒';
+    const disp = document.getElementById('avatarDisplay');
+    if (disp) disp.textContent = avatar;
+
+    // Výběr jen na vlastním profilu
+    if (mojeId && uid === mojeId) {
+        const box = document.getElementById('avatarBox');
+        const vyber = document.getElementById('avatarVyber');
+        if (box && vyber) {
+            box.style.display = 'block';
+            vyber.innerHTML = AVATARY.map(a => `
+                <button onclick="ulozAvatar('${a}')" style="
+                    font-size:1.6em; width:52px; height:52px; border-radius:12px; cursor:pointer;
+                    background:${a === avatar ? 'rgba(var(--neon-rgb),.2)' : 'rgba(255,255,255,.05)'};
+                    border:2px solid ${a === avatar ? 'var(--neon)' : 'rgba(255,255,255,.1)'};
+                ">${a}</button>`).join('');
+        }
+    }
+}
+
+async function ulozAvatar(a) {
+    const { data: { session } } = await sb.auth.getSession();
+    const mojeId = session?.user?.id;
+    if (!mojeId) return;
+    const { error } = await sb.from('hraci').update({ avatar: a }).eq('user_id', mojeId);
+    if (error) { alert('Nepodařilo se uložit: ' + error.message); return; }
+    // aktualizuj zobrazení
+    document.getElementById('avatarDisplay').textContent = a;
+    document.querySelectorAll('#avatarVyber button').forEach(b => {
+        const je = b.textContent === a;
+        b.style.background = je ? 'rgba(var(--neon-rgb),.2)' : 'rgba(255,255,255,.05)';
+        b.style.border = '2px solid ' + (je ? 'var(--neon)' : 'rgba(255,255,255,.1)');
+    });
 }
 load();
 </script>
