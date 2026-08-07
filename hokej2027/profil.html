@@ -237,9 +237,8 @@ async function load() {
     ]);
     const stats = spocitejStatistiky(zR.data || [], sR.data || []);
     const h = stats.hraci.find(x => x.user_id === uid);
-    if (!h) { document.getElementById('hJmeno').textContent = 'Hráč zatím nesázel'; return; }
 
-    // 👛 Peněženka – jen když si hráč prohlíží SVŮJ profil
+    // 👛 Peněženka a 🏒 avatar – načti VŽDY (i před začátkem turnaje, když hráč ještě nesázel)
     if (mojeId && uid === mojeId) {
         const { data: mujHrac } = await sb.from('hraci').select('penezenka').eq('user_id', uid).maybeSingle();
         const zustatek = Number(mujHrac?.penezenka || 0);
@@ -249,9 +248,10 @@ async function load() {
             box.style.display = 'block';
         }
     }
-
-    // 🏒 Avatar – načti a zobraz; výběr jen na vlastním profilu
     await nactiAvatar(uid, mojeId);
+
+    // Statistiky hráče – jen když už má sázky
+    if (!h) { document.getElementById('hJmeno').textContent = 'Hráč zatím nesázel'; return; }
 
     const { titul, hlaska, pozice } = urciTitul(stats, uid);
 
