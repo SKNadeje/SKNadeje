@@ -1,2 +1,2 @@
 -- Avatar hráče (emoji) do profilu
-alter table hraci add column if not exists avatar text default '🏒';
+alter table hraci add column if not exists avatar text default '🏒'; 
