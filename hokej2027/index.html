@@ -1104,29 +1104,50 @@ function zavriVyhry() {
     document.getElementById('vyhryModal').style.display = 'none';
 }
 
+let _vyhraSeZpracovava = false;
+
 async function vyhruDoPenezenky(sazkaId, castka) {
-    // Čerstvý zůstatek + připočти výhru
-    const { data: h } = await sb.from('hraci').select('penezenka').eq('user_id', currentUserId).maybeSingle();
-    const novy = Number(h?.penezenka || 0) + Number(castka);
-    const { error: e1 } = await sb.from('hraci').update({ penezenka: novy }).eq('user_id', currentUserId);
-    if (e1) { alert('Chyba: ' + e1.message); return; }
-    const { error: e2 } = await sb.from('hokej27_sazky').update({ vyhra_stav: 'penezenka' }).eq('id', sazkaId);
-    if (e2) { alert('Chyba: ' + e2.message); return; }
-    mojePenezenka = novy;
-    // notifikace adminovi
-    posliAdminNotifikaci(castka, `${currentUser} – převod do peněženky`);
-    await zkontrolujVyhry();   // překresli (nebo zavře, když nic nezbývá)
-    if (document.getElementById('vyhrySeznam').innerHTML.trim() === '') zavriVyhry();
+    if (_vyhraSeZpracovava) return;
+    _vyhraSeZpracovava = true;
+    try {
+        const { data: kontrola } = await sb.from('hokej27_sazky')
+            .select('vyhra_stav, vyhra_kc').eq('id', sazkaId).maybeSingle();
+        if (!kontrola || kontrola.vyhra_stav !== null) {
+            await zkontrolujVyhry();
+            if (document.getElementById('vyhrySeznam').innerHTML.trim() === '') zavriVyhry();
+            return;
+        }
+        const bezpecnaCastka = Number(kontrola.vyhra_kc) || Number(castka);
+        const { error: e2 } = await sb.from('hokej27_sazky')
+            .update({ vyhra_stav: 'penezenka' }).eq('id', sazkaId).is('vyhra_stav', null);
+        if (e2) { alert('Chyba: ' + e2.message); return; }
+        const { data: hh } = await sb.from('hraci').select('penezenka').eq('user_id', currentUserId).maybeSingle();
+        const novy = Number(hh?.penezenka || 0) + bezpecnaCastka;
+        const { error: e1 } = await sb.from('hraci').update({ penezenka: novy }).eq('user_id', currentUserId);
+        if (e1) { alert('Chyba: ' + e1.message); return; }
+        mojePenezenka = novy;
+        posliAdminNotifikaci(bezpecnaCastka, currentUser + ' \u2013 p\u0159evod do pen\u011b\u017eenky');
+        await zkontrolujVyhry();
+        if (document.getElementById('vyhrySeznam').innerHTML.trim() === '') zavriVyhry();
+    } finally {
+        _vyhraSeZpracovava = false;
+    }
 }
 
 async function vyhruNaUcet(sazkaId, castka) {
-    const { error } = await sb.from('hokej27_sazky').update({ vyhra_stav: 'ceka_ucet' }).eq('id', sazkaId);
-    if (error) { alert('Chyba: ' + error.message); return; }
-    // notifikace adminovi
-    posliAdminNotifikaci(castka, `${currentUser} – POSLAT NA ÚČET`);
-    alert('Admin dostal zprávu a pošle ti peníze na účet. 💪');
-    await zkontrolujVyhry();
-    if (document.getElementById('vyhrySeznam').innerHTML.trim() === '') zavriVyhry();
+    if (_vyhraSeZpracovava) return;
+    _vyhraSeZpracovava = true;
+    try {
+        const { error } = await sb.from('hokej27_sazky')
+            .update({ vyhra_stav: 'ceka_ucet' }).eq('id', sazkaId).is('vyhra_stav', null);
+        if (error) { alert('Chyba: ' + error.message); return; }
+        posliAdminNotifikaci(castka, currentUser + ' \u2013 POSLAT NA \u00da\u010cET');
+        alert('Admin dostal zpr\u00e1vu a po\u0161le ti pen\u00edze na \u00fa\u010det. \ud83d\udcaa');
+        await zkontrolujVyhry();
+        if (document.getElementById('vyhrySeznam').innerHTML.trim() === '') zavriVyhry();
+    } finally {
+        _vyhraSeZpracovava = false;
+    }
 }
 
 // Push adminovi přes edge funkci (jen jemu). Používá stávající posli-vyhru,
