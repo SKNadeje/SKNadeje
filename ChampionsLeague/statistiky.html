@@ -98,6 +98,7 @@ h1 { text-align: center; font-size: 1.15em; letter-spacing: 3px; color: var(--go
         <div class="zalozka" data-kat="skore" onclick="prepni('skore')">🥅 Výsledky</div>
         <div class="zalozka" data-kat="trendy" onclick="prepni('trendy')">🧠 Trendy</div>
         <div class="zalozka" data-kat="dl" onclick="prepni('dl')">📋 Dlouhodobky</div>
+        <div class="zalozka" data-kat="rivalove" onclick="prepni('rivalove')">⚔️ Rivalové</div>
     </div>
 
     <div id="obsah"></div>
@@ -119,7 +120,7 @@ function radek(h, poradiNum, rankLabel, hodnotaHtml, subHtml) {
     return `<div class="radek ${cls}">
         <span class="poradi">${rankLabel}</span>
         <div class="telo">
-            <span class="jmeno" onclick="location.href='profil.html?id=${h.user_id}'">${h.jmeno}${korunka}</span>
+            <span class="jmeno" onclick="location.href='profil.html?id=${h.user_id}'">${(window._avatary && window._avatary[h.user_id]) ? window._avatary[h.user_id] + ' ' : ''}${h.jmeno}${korunka}</span>
             <div class="sub">${subHtml}</div>
         </div>
         <span class="hodnota">${hodnotaHtml}</span>
@@ -172,6 +173,11 @@ const POHLEDY = {
             h => `Základní část + cesta k titulu`,
             h => h.dlBody > 0);
         return `<div class="blok"><h2>📋 Dlouhodobé tipy</h2>${zeb}</div>`;
+    },
+    rivalove: () => {
+        // vykreslí se asynchronně přes nactiRivaly (kvůli session)
+        setTimeout(() => nactiRivaly(stats.hraci), 10);
+        return `<div class="blok" style="border-color:rgba(231,76,60,.45);"><h2>⚔️ Rivalové</h2><div id="rivalObsah"><div class="prazdno">Načítám…</div></div></div>`;
     }
 };
 
@@ -203,12 +209,98 @@ function animujCisla() {
     });
 }
 
+let _vsichniHraci = [];
+async function nactiRivaly(hraci) {
+    _vsichniHraci = hraci;
+    const box = document.getElementById('rivalObsah');
+    if (!box) return;
+    const { data: { session } } = await sb.auth.getSession();
+    const mojeId = session?.user?.id;
+
+    if (!mojeId) { box.innerHTML = '<div class="prazdno">Přihlas se v appce, abys mohl vyzvat rivala.</div>'; return; }
+    const ja = hraci.find(h => h.user_id === mojeId);
+    if (!ja) { box.innerHTML = '<div class="prazdno">Rivala si vybereš, až podáš první tip. 😉</div>'; return; }
+
+    const { data: mujZaznam } = await sb.from('hraci').select('rival_id').eq('user_id', mojeId).maybeSingle();
+    const rivalId = mujZaznam?.rival_id;
+    const rival = rivalId ? hraci.find(h => h.user_id === rivalId) : null;
+
+    box.innerHTML = rival ? vykresliSouboj(ja, rival) : vyberRivalaHTML(ja, hraci);
+}
+
+function avatarProUid(uid) {
+    return (window._avatary && window._avatary[uid]) ? window._avatary[uid] + ' ' : '';
+}
+
+function vykresliSouboj(ja, rival) {
+    const radekS = (label, maJa, maRival, jednotka = '') => {
+        const jaLepsi = maJa > maRival, rivalLepsi = maRival > maJa;
+        return `<div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.06);">
+            <div style="flex:1; text-align:right; font-weight:800; color:${jaLepsi ? 'var(--fial)' : 'var(--text)'};">${maJa}${jednotka}</div>
+            <div style="width:92px; text-align:center; font-size:.62em; opacity:.55; text-transform:uppercase; letter-spacing:1px;">${label}</div>
+            <div style="flex:1; text-align:left; font-weight:800; color:${rivalLepsi ? '#e74c3c' : 'var(--text)'};">${maRival}${jednotka}</div>
+        </div>`;
+    };
+    const vedu = ja.celkem > rival.celkem, prohravam = ja.celkem < rival.celkem;
+    const stav = vedu ? '<span style="color:var(--fial);">Vedeš! 🔥</span>'
+               : prohravam ? '<span style="color:#e74c3c;">Prohráváš 😤</span>'
+               : '<span style="opacity:.7;">Nerozhodně 🤝</span>';
+    return `
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <div style="flex:1; text-align:right; font-weight:900;">${avatarProUid(ja.user_id)}${ja.jmeno} <span style="font-size:.7em; opacity:.5;">(ty)</span></div>
+            <div style="font-size:1.1em;">⚔️</div>
+            <div style="flex:1; text-align:left; font-weight:900;">${avatarProUid(rival.user_id)}${rival.jmeno}</div>
+        </div>
+        <div style="text-align:center; font-size:.85em; margin-bottom:10px;">${stav}</div>
+        ${radekS('Celkem bodů', ja.celkem, rival.celkem)}
+        ${radekS('Přesných', ja.skore, rival.skore)}
+        ${radekS('Trendů', ja.trendy, rival.trendy)}
+        ${radekS('Dlouhodobky', ja.dlBody, rival.dlBody)}
+        <div style="text-align:center; margin-top:12px;">
+            <button onclick="zmenRivala()" style="background:none; border:1px solid rgba(255,255,255,.2); color:var(--text); opacity:.7; padding:7px 16px; border-radius:100px; cursor:pointer; font-size:.8em;">Změnit rivala</button>
+        </div>`;
+}
+
+function vyberRivalaHTML(ja, hraci) {
+    const soupeci = hraci.filter(h => h.user_id !== ja.user_id && (h.tipu > 0 || h.celkem > 0));
+    if (!soupeci.length) return '<div class="prazdno">Zatím nemáš koho vyzvat.</div>';
+    return `
+        <div style="text-align:center; font-size:.82em; opacity:.7; margin-bottom:12px;">Vyber si rivala a sleduj, kdo z vás je lepší. Můžeš ho kdykoliv změnit.</div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+            ${soupeci.map(h => `
+                <button onclick="ulozRivala('${h.user_id}')" style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); color:var(--text); padding:11px 14px; border-radius:12px; cursor:pointer; font-size:.9em;">
+                    <span style="font-weight:700;">${avatarProUid(h.user_id)}${h.jmeno}</span>
+                    <span style="opacity:.6; font-size:.85em;">${h.celkem} b.</span>
+                </button>`).join('')}
+        </div>`;
+}
+
+async function ulozRivala(rivalId) {
+    const { data: { session } } = await sb.auth.getSession();
+    const mojeId = session?.user?.id;
+    if (!mojeId) return;
+    const { error } = await sb.from('hraci').update({ rival_id: rivalId }).eq('user_id', mojeId);
+    if (error) { alert('Nepodařilo se uložit: ' + error.message); return; }
+    await nactiRivaly(_vsichniHraci);
+}
+
+async function zmenRivala() {
+    const { data: { session } } = await sb.auth.getSession();
+    const mojeId = session?.user?.id;
+    if (!mojeId) return;
+    await sb.from('hraci').update({ rival_id: null }).eq('user_id', mojeId);
+    await nactiRivaly(_vsichniHraci);
+}
+
 async function load() {
-    const [zR, tR, dR] = await Promise.all([
+    const [zR, tR, dR, avR] = await Promise.all([
         sb.from('cl_zapasy').select('*'),
         sb.from('cl_tipy_zapasy').select('*'),
-        sb.from('cl_dlouhodobe').select('*')
+        sb.from('cl_dlouhodobe').select('*'),
+        sb.from('hraci').select('user_id, avatar')
     ]);
+    window._avatary = {};
+    (avR?.data || []).forEach(h => { if (h.avatar) window._avatary[h.user_id] = h.avatar; });
     stats = spocitejStatistikyCL(zR.data || [], tR.data || [], dR.data || []);
     const paid = (dR.data || []).filter(d => d.zaplaceno).length;
     bank = paid * STARTOVNE;
