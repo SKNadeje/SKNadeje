@@ -744,14 +744,14 @@ async function finishEval(mid) {
     // 🎉 Notifikace výhercům (jen těm, kdo vyhráli peníze) – každý dostane svou částku
     if (vyherci.length > 0) {
         const nazevZapasu = `${m?.domaci || ''} vs ${m?.hoste || ''}`.trim();
-        posliVyhruNotifikaci(vyherci.map(v => ({
+        await posliVyhruNotifikaci(vyherci.map(v => ({
             user_id: v.user_id,
             jmeno: v.jmeno,
             vyhra: share,
             zapas: nazevZapasu
         })));
         // Hláška do chatu (pod jménem admina) – jen když někdo vyhrál peníze
-        posliVyhruDoChatu(vyherci, share, nazevZapasu);
+        await posliVyhruDoChatu(vyherci, share, nazevZapasu);
     }
 
     msg(vyherci.length > 0
