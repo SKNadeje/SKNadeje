@@ -191,9 +191,14 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
 
     <!-- 🏒 VÝBĚR AVATARU (jen vlastní profil) -->
     <div class="blok" id="avatarBox" style="display:none;">
-        <h2>🏒 Můj avatar</h2>
-        <div style="text-align:center; font-size:.72em; opacity:.55; margin-bottom:12px;">Vyber si ikonu, která tě bude reprezentovat v žebříčku.</div>
-        <div id="avatarVyber" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;"></div>
+        <h2 style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;" onclick="prepniAvatarVyber()">
+            <span>🏒 Můj avatar</span>
+            <span id="avatarToggle" style="font-size:.7em; opacity:.6;">▼ vybrat</span>
+        </h2>
+        <div id="avatarVyberWrap" style="display:none;">
+            <div style="text-align:center; font-size:.72em; opacity:.55; margin-bottom:12px;">Vyber si ikonu, která tě bude reprezentovat v žebříčku.</div>
+            <div id="avatarVyber" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;"></div>
+        </div>
     </div>
 
     <div class="blok">
@@ -311,8 +316,14 @@ async function load() {
         : '<div class="prazdno">Zatím žádné vyhodnocené tipy.</div>';
 }
 
-// 🏒 Hokejová sada avatarů
-const AVATARY = ['🏒','🥅','🧤','🏆','🥇','🚨','❄️','🐻','🦅','🦁','🐺','🦈','🐉','⚡','🔥','👑','🎯','💎','🛡️','🚀'];
+// 🏒 Hokejová + rozšířená sada avatarů
+const AVATARY = [
+    '🏒','🥅','🧤','🏆','🥇','🥈','🥉','🚨','❄️','⛸️',
+    '🐻','🦅','🦁','🐺','🦈','🐉','🐅','🦊','🦬','🐗',
+    '🦌','🦏','🐊','🦍','🐢','🦉','🐲','🦇',
+    '⚡','🔥','💥','⭐','👑','🎯','💎','🛡️','🚀','💪',
+    '😎','🤩','🥶','🤠','👽','🤖','👹','💀','🃏','🎲'
+];
 
 async function nactiAvatar(uid, mojeId) {
     // Načti uložený avatar hráče
@@ -350,6 +361,14 @@ async function ulozAvatar(a) {
         b.style.background = je ? 'rgba(var(--neon-rgb),.2)' : 'rgba(255,255,255,.05)';
         b.style.border = '2px solid ' + (je ? 'var(--neon)' : 'rgba(255,255,255,.1)');
     });
+}
+
+function prepniAvatarVyber() {
+    const wrap = document.getElementById('avatarVyberWrap');
+    const toggle = document.getElementById('avatarToggle');
+    const skryto = wrap.style.display === 'none';
+    wrap.style.display = skryto ? 'block' : 'none';
+    if (toggle) toggle.textContent = skryto ? '▲ skrýt' : '▼ vybrat';
 }
 load();
 </script>
