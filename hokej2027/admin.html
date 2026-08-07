@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="cs">
-<head> 
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADMIN – MS v hokeji 2027</title>
@@ -186,6 +186,16 @@ input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { fil
 
     <!-- PENĚŽENKY HRÁČŮ -->
     <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secVyhry')">🏦 VÝHRY K ODESLÁNÍ NA ÚČET <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secVyhry">
+            <div style="opacity:.55; font-size:.8em; margin-bottom:12px;">
+                Hráči, kteří si zvolili výhru poslat na účet. Pošli jim peníze a klikni „Odesláno".
+            </div>
+            <div id="vyhryList"></div>
+        </div>
+    </div>
+
+    <div class="card">
         <div class="collapsible-header" onclick="toggleSection('secPenez')">👛 PENĚŽENKY HRÁČŮ <span class="collapse-arrow">▼</span></div>
         <div class="collapsible-body" id="secPenez">
             <div style="opacity:.55; font-size:.8em; margin-bottom:12px;">
@@ -288,6 +298,7 @@ async function init() {
     await loadMatches();
     await loadDlouhodobe();
     await loadPenezenky();
+    await loadVyhry();
 }
 
 function toggleSection(id) {
@@ -478,6 +489,39 @@ async function loadPenezenky() {
             <input type="number" id="pen-${h.user_id}" class="auth-input" placeholder="nový zůstatek" style="width:130px; padding:6px 8px;">
             <button class="small-btn" onclick="ulozPenezenku('${h.user_id}', '${(h.jmeno || '').replace(/'/g, '')}')">💾</button>
         </div>`).join('');
+}
+
+// ---------- VÝHRY K ODESLÁNÍ NA ÚČET ----------
+async function loadVyhry() {
+    const cont = document.getElementById('vyhryList');
+    if (!cont) return;
+    const { data: vyhry, error } = await sb.from('hokej27_sazky')
+        .select('id, user_id, jmeno, vyhra_kc, zapas_id')
+        .eq('vyhra_stav', 'ceka_ucet');
+    if (error) { cont.innerHTML = `<div style="color:#ff4444;">Chyba: ${error.message}</div>`; return; }
+    if (!vyhry || !vyhry.length) { cont.innerHTML = '<div style="opacity:.5;">Žádné výhry k odeslání. 👍</div>'; return; }
+
+    // názvy zápasů
+    const ids = [...new Set(vyhry.map(v => v.zapas_id))];
+    const { data: zapasy } = await sb.from('hokej27_zapasy').select('id, domaci, hoste').in('id', ids);
+    const zMap = {}; (zapasy || []).forEach(z => zMap[z.id] = `${z.domaci} vs ${z.hoste}`);
+
+    cont.innerHTML = vyhry.map(v => `
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 4px; border-bottom:1px solid rgba(255,255,255,.06);">
+            <div style="flex:1;">
+                <div style="font-weight:800;">${v.jmeno || '(bez jména)'}</div>
+                <div style="font-size:.75em; opacity:.6;">${zMap[v.zapas_id] || 'Zápas'}</div>
+            </div>
+            <span style="font-weight:900; color:#f1c40f; font-size:1.1em;">${v.vyhra_kc} Kč</span>
+            <button class="small-btn" style="background:#27ae60;" onclick="oznacOdeslano(${v.id}, '${(v.jmeno || '').replace(/'/g, '')}', ${v.vyhra_kc})">✅ Odesláno</button>
+        </div>`).join('');
+}
+
+async function oznacOdeslano(sazkaId, jmeno, castka) {
+    if (!confirm(`Potvrzuješ, že jsi poslal ${castka} Kč hráči ${jmeno} na účet?`)) return;
+    const { error } = await sb.from('hokej27_sazky').update({ vyhra_stav: 'odeslano' }).eq('id', sazkaId);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    await loadVyhry();
 }
 
 async function ulozPenezenku(userId, jmeno) {
