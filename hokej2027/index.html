@@ -6,7 +6,7 @@
     <title>SÁZKOVÁ KANCELÁŘ NADĚJE – MS v hokeji 2027</title>
     <style>
         /* --- ZÁKLADNÍ NASTAVENÍ A PROMĚNNÉ --- */
-        :root { 
+        :root {
             /* Výchozí = TMAVÝ motiv */
             --neon: #00f2ff;
             --neon-rgb: 0, 242, 255;
@@ -1061,6 +1061,7 @@ async function init() {
     document.getElementById('userBadgeName').textContent = currentUser;
 
     await loadAll();
+    await zkontrolujVyhry();   // pop-up s nevyřízenými výhrami
     setInterval(updateTimers, 1000);
     setInterval(loadAll, 60000);   // obnova dat každou minutu
 }
@@ -1068,6 +1069,80 @@ async function init() {
 async function doLogout() {
     await sb.auth.signOut();
     window.location.href = '../welcome.html';
+}
+
+// ---------- VÝHRY K VYZVEDNUTÍ ----------
+async function zkontrolujVyhry() {
+    if (!currentUserId) return;
+    // Nevyřízené výhry = moje sázky s výhrou, které ještě nemají stav
+    const { data: vyhry } = await sb.from('hokej27_sazky')
+        .select('id, zapas_id, vyhra_kc, vyhra_stav')
+        .eq('user_id', currentUserId)
+        .gt('vyhra_kc', 0)
+        .is('vyhra_stav', null);
+    if (!vyhry || !vyhry.length) return;
+
+    // názvy zápasů
+    const ids = [...new Set(vyhry.map(v => v.zapas_id))];
+    const { data: zapasy } = await sb.from('hokej27_zapasy').select('id, domaci, hoste').in('id', ids);
+    const zMap = {}; (zapasy || []).forEach(z => zMap[z.id] = `${z.domaci} vs ${z.hoste}`);
+
+    const seznam = document.getElementById('vyhrySeznam');
+    seznam.innerHTML = vyhry.map(v => `
+        <div style="background:rgba(255,255,255,.05); border:1px solid rgba(var(--gold-rgb),.3); border-radius:16px; padding:14px; margin-bottom:12px;">
+            <div style="font-size:.8em; opacity:.7; margin-bottom:2px;">${zMap[v.zapas_id] || 'Zápas'}</div>
+            <div style="font-weight:900; font-size:1.3em; color:var(--gold); margin-bottom:10px;">${v.vyhra_kc} Kč</div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="vyhruDoPenezenky(${v.id}, ${v.vyhra_kc})" style="flex:1; background:linear-gradient(135deg,#f1c40f,#b8901e); color:#05121a; border:none; padding:11px; border-radius:12px; font-weight:800; cursor:pointer; font-size:.85em;">👛 Do peněženky</button>
+                <button onclick="vyhruNaUcet(${v.id}, ${v.vyhra_kc})" style="flex:1; background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.2); padding:11px; border-radius:12px; font-weight:800; cursor:pointer; font-size:.85em;">🏦 Na účet</button>
+            </div>
+        </div>`).join('');
+    document.getElementById('vyhryModal').style.display = 'flex';
+}
+
+function zavriVyhry() {
+    document.getElementById('vyhryModal').style.display = 'none';
+}
+
+async function vyhruDoPenezenky(sazkaId, castka) {
+    // Čerstvý zůstatek + připočти výhru
+    const { data: h } = await sb.from('hraci').select('penezenka').eq('user_id', currentUserId).maybeSingle();
+    const novy = Number(h?.penezenka || 0) + Number(castka);
+    const { error: e1 } = await sb.from('hraci').update({ penezenka: novy }).eq('user_id', currentUserId);
+    if (e1) { alert('Chyba: ' + e1.message); return; }
+    const { error: e2 } = await sb.from('hokej27_sazky').update({ vyhra_stav: 'penezenka' }).eq('id', sazkaId);
+    if (e2) { alert('Chyba: ' + e2.message); return; }
+    mojePenezenka = novy;
+    // notifikace adminovi
+    posliAdminNotifikaci(castka, `${currentUser} – převod do peněženky`);
+    await zkontrolujVyhry();   // překresli (nebo zavře, když nic nezbývá)
+    if (document.getElementById('vyhrySeznam').innerHTML.trim() === '') zavriVyhry();
+}
+
+async function vyhruNaUcet(sazkaId, castka) {
+    const { error } = await sb.from('hokej27_sazky').update({ vyhra_stav: 'ceka_ucet' }).eq('id', sazkaId);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    // notifikace adminovi
+    posliAdminNotifikaci(castka, `${currentUser} – POSLAT NA ÚČET`);
+    alert('Admin dostal zprávu a pošle ti peníze na účet. 💪');
+    await zkontrolujVyhry();
+    if (document.getElementById('vyhrySeznam').innerHTML.trim() === '') zavriVyhry();
+}
+
+// Push adminovi přes edge funkci (jen jemu). Používá stávající posli-vyhru,
+// která vyžaduje vyhra>0 – posíláme částku a popis v 'zapas'.
+async function posliAdminNotifikaci(castka, popis) {
+    try {
+        await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/posli-vyhru', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
+            body: JSON.stringify({
+                titulek: '🔔 Naděje – vyřízení výhry',
+                url: 'https://sknadeje.cz/hokej2027/admin.html',
+                vyherci: [{ user_id: ADMIN_ID, jmeno: 'Admin', vyhra: castka, zapas: popis }]
+            })
+        });
+    } catch (e) { console.error('Admin notifikace selhala:', e); }
 }
 
 // ---------- NAČTENÍ DAT ----------
@@ -1662,5 +1737,15 @@ function ukazPlatbuHokej(jmenoHrace) {
 window.SB_KEY = SB_KEY;
 inicializujChat({ klient: sb, tabulka: 'hokej27_chat', soutez: 'hokej', barva: 'var(--neon)' });
 </script>
+<!-- 🎉 POP-UP VÝHER K VYZVEDNUTÍ -->
+<div id="vyhryModal" style="display:none; position:fixed; inset:0; background:rgba(5,10,25,0.92); backdrop-filter:blur(6px); z-index:10010; overflow-y:auto; padding:24px 14px; align-items:center; justify-content:center;">
+    <div style="max-width:440px; margin:0 auto; background:linear-gradient(160deg,#0d1a2a,#081018); border:2px solid var(--gold); border-radius:24px; padding:26px 22px; box-shadow:0 20px 60px rgba(0,0,0,.6);">
+        <div style="text-align:center; font-size:2.2em; margin-bottom:6px;">🎉</div>
+        <div style="text-align:center; font-weight:900; font-size:1.3em; color:var(--gold); margin-bottom:4px;">Gratulace, vyhrál jsi!</div>
+        <div style="text-align:center; font-size:.8em; opacity:.6; margin-bottom:20px;">Vyber, jak chceš každou výhru vyřídit.</div>
+        <div id="vyhrySeznam"></div>
+        <button onclick="zavriVyhry()" style="width:100%; margin-top:16px; background:none; border:1px solid rgba(255,255,255,.2); color:#fff; opacity:.6; padding:10px; border-radius:12px; cursor:pointer; font-size:.85em;">Zavřít (vyřídím později)</button>
+    </div>
+</div>
 </body>
 </html>
