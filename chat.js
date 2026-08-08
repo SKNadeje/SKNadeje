@@ -56,7 +56,7 @@ function vlozChatHTML() {
     <div id="chat-panel" style="
         display:none; position:fixed; bottom:88px; right:20px; z-index:901;
         width:340px; max-width:calc(100vw - 40px); height:460px; max-height:70vh;
-        background:#0d1420; border:1px solid ${b}55; border-radius:18px;
+        background:#0d1420; border:1px solid ${b}55; border-radius:18px; color:#eef2f7;
         box-shadow:0 14px 46px rgba(0,0,0,.6); flex-direction:column; overflow:hidden;
     ">
         <div style="padding:13px 16px; border-bottom:1px solid ${b}33; display:flex; justify-content:space-between; align-items:center;">
@@ -75,8 +75,9 @@ function vlozChatHTML() {
                 border-radius:10px; padding:10px 12px; font-size:.85em; font-family:inherit; outline:none;
             ">
             <button id="chat-send-btn" onclick="posliChatZpravu()" style="
-                background:linear-gradient(135deg, ${b}, ${b}88); color:#05121a; border:none;
-                border-radius:10px; padding:0 16px; height:38px; font-weight:900; cursor:pointer; font-family:inherit;
+                background:var(--neon, ${b}); color:#fff; border:2px solid rgba(255,255,255,.85);
+                border-radius:12px; padding:0 18px; height:42px; font-weight:900; font-size:1.2em; cursor:pointer; font-family:inherit;
+                box-shadow:0 2px 10px rgba(0,0,0,.35); flex-shrink:0;
             ">➤</button>
         </div>
     </div>`;
