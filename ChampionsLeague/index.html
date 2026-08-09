@@ -32,12 +32,12 @@ html[data-theme="zlaty"] {
     --card-bg: rgba(212,175,55,.06);
     --bg-klub: linear-gradient(180deg, #4a3c0a 0%, #2a2410 40%, #12100a 75%, #0a0a0a 100%);
 }
-/* ⚪ REAL MADRID – bílá/zlatá/modrá */
+/* ⚪ REAL MADRID – bílá/zlatá na tmavé (elegance) */
 html[data-theme="real"] {
-    --fial: #00529f; --fial-rgb: 0,82,159; --magenta: #febe10; --magenta-rgb: 254,190,16;
-    --gold: #febe10; --gold-rgb: 254,190,16; --dark: #0c1a30; --bg-top: #1a3a66; --text: #ffffff; --text-rgb: 255,255,255;
+    --fial: #febe10; --fial-rgb: 254,190,16; --magenta: #ffffff; --magenta-rgb: 255,255,255;
+    --gold: #febe10; --gold-rgb: 254,190,16; --dark: #0a1428; --bg-top: #12244a; --text: #ffffff; --text-rgb: 255,255,255;
     --card-bg: rgba(255,255,255,.07);
-    --bg-klub: linear-gradient(180deg, #2a4a7a 0%, #1a3a66 25%, #14305a 50%, #0f2447 75%, #0a1c38 100%);
+    --bg-klub: linear-gradient(180deg, #e8ecf5 0%, #b8c4dc 10%, #4a5f8a 26%, #1e2f52 48%, #131f3c 72%, #0a1428 100%);
 }
 /* 🔵🔴 BARCELONA – blaugrana */
 html[data-theme="barca"] {
@@ -60,12 +60,12 @@ html[data-theme="psg"] {
     --card-bg: rgba(227,6,19,.07);
     --bg-klub: linear-gradient(180deg, #0a2f5c 0%, #071f3f 32%, #4a0810 64%, #8a0c16 85%, #4a0810 100%);
 }
-/* 🔴 ARSENAL – červená/bílá */
+/* 🔴 ARSENAL – červená s bílými rukávy */
 html[data-theme="arsenal"] {
-    --fial: #ef0107; --fial-rgb: 239,1,7; --magenta: #9c824a; --magenta-rgb: 156,130,74;
-    --gold: #db0007; --gold-rgb: 219,0,7; --dark: #1a0505; --bg-top: #3a0a0a; --text: #ffffff; --text-rgb: 255,255,255;
-    --card-bg: rgba(239,1,7,.08);
-    --bg-klub: linear-gradient(180deg, #f5f5f5 0%, #ef0107 14%, #d10509 32%, #9a0810 60%, #5a0810 82%, #3a0608 100%);
+    --fial: #ef0107; --fial-rgb: 239,1,7; --magenta: #ffffff; --magenta-rgb: 255,255,255;
+    --gold: #ffffff; --gold-rgb: 255,255,255; --dark: #1a0608; --bg-top: #7a0c10; --text: #ffffff; --text-rgb: 255,255,255;
+    --card-bg: rgba(255,255,255,.06);
+    --bg-klub: linear-gradient(180deg, #ef0107 0%, #d10509 18%, #9a0810 42%, #5a0810 68%, #2a0508 100%);
 }
 /* Ochrana čitelnosti textů na barevných klubových pozadích */
 html[data-theme="real"] .zpet, html[data-theme="real"] .podtitul, html[data-theme="real"] .auth-lista,
@@ -113,15 +113,19 @@ h1 {
         0 2px 6px rgba(0,0,0,.4);
     -webkit-text-fill-color: var(--text);
 }
-html[data-theme="zlaty"] h1, html[data-theme="real"] h1 {
+html[data-theme="zlaty"] h1 {
     color: var(--gold); -webkit-text-fill-color: var(--gold);
     text-shadow: 0 0 20px rgba(var(--gold-rgb, 212,175,55), .6), 0 2px 8px rgba(0,0,0,.5);
 }
-html[data-theme="arsenal"] h1 {
-    color: #c00509; -webkit-text-fill-color: #c00509;
-    text-shadow: 0 1px 3px rgba(255,255,255,.5);
+html[data-theme="real"] h1 {
+    color: #12244a; -webkit-text-fill-color: #12244a;
+    text-shadow: 0 1px 3px rgba(255,255,255,.6);
 }
-html[data-theme="arsenal"] .zpet { text-shadow: 0 1px 3px rgba(255,255,255,.6); }
+html[data-theme="real"] .zpet { text-shadow: 0 1px 3px rgba(255,255,255,.7); color: rgba(18,36,74,.7) !important; }
+html[data-theme="arsenal"] h1 {
+    color: #ffffff; -webkit-text-fill-color: #ffffff;
+    text-shadow: 0 0 18px rgba(255,255,255,.4), 0 2px 6px rgba(0,0,0,.5);
+}
 .podtitul { font-size: .66em; letter-spacing: 3px; color: var(--fial); text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
 .zlata-linka { width: 100px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 14px auto 20px; }
 
