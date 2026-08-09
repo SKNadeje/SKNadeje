@@ -93,7 +93,7 @@ html[data-theme="arsenal"] body {
     background-attachment: fixed;
 }
 .wrap { max-width:560px; margin:0 auto; }
-.back { display:inline-block; color:rgba(240,230,200,.4); text-decoration:none; font-size:.75em; margin-bottom:14px; border:1px solid rgba(212,175,55,.25); border-radius:100px; padding:8px 18px; }
+.back { display: block; width: fit-content; margin: 0 auto 14px; text-align: center; color:rgba(240,230,200,.4); text-decoration:none; font-size:.75em; border:1px solid rgba(212,175,55,.25); border-radius:100px; padding:8px 18px; }
 .back:hover { color:var(--gold); border-color:var(--gold); }
 
 .hero {
@@ -172,6 +172,10 @@ html[data-theme="arsenal"] body {
 .hist .s { font-size:.72em; opacity:.55; margin-top:2px; }
 .hist .b { font-weight:900; color:var(--gold); white-space:nowrap; }
 .prazdno { text-align:center; opacity:.4; padding:16px 0; font-size:.85em; }
+
+html[data-theme="real"] .back { text-shadow: 0 1px 3px rgba(255,255,255,.7); color: rgba(18,36,74,.7) !important; }
+html[data-theme="arsenal"] .back { text-shadow: 0 1px 3px rgba(255,255,255,.7); color: rgba(180,10,15,.75) !important; }
+html[data-theme="city"] .back, html[data-theme="city"] .zpet { text-shadow: 0 1px 3px rgba(0,0,0,.5); }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
