@@ -127,6 +127,13 @@ html[data-theme="arsenal"] h1 {
     text-shadow: 0 1px 3px rgba(255,255,255,.7);
 }
 html[data-theme="arsenal"] .zpet { text-shadow: 0 1px 3px rgba(255,255,255,.7); color: rgba(180,10,15,.75) !important; }
+/* Arsenal: stín všem textům pro kontrast bílé na červené (kromě nadpisu a zpět výše) */
+html[data-theme="arsenal"] body {
+    text-shadow: 0 1px 3px rgba(100,0,4,.65);
+}
+html[data-theme="arsenal"] h1, html[data-theme="arsenal"] .zpet {
+    /* nadpis a zpět mají vlastní světlý stín, nepřepisovat */
+}
 .podtitul { font-size: .66em; letter-spacing: 3px; color: var(--fial); text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
 .zlata-linka { width: 100px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 14px auto 20px; }
 
