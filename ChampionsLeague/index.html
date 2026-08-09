@@ -30,37 +30,55 @@ html[data-theme="zlaty"] {
     --fial: #d4af37; --fial-rgb: 212,175,55; --magenta: #b8860b; --magenta-rgb: 184,134,11;
     --gold: #ffd700; --dark: #0a0a0a; --bg-top: #2a2410; --text: #f5ecd0;
     --card-bg: rgba(212,175,55,.06);
+    --bg-klub: linear-gradient(180deg, #4a3c0a 0%, #2a2410 40%, #12100a 75%, #0a0a0a 100%);
 }
 /* ⚪ REAL MADRID – bílá/zlatá/modrá */
 html[data-theme="real"] {
     --fial: #00529f; --fial-rgb: 0,82,159; --magenta: #febe10; --magenta-rgb: 254,190,16;
     --gold: #febe10; --dark: #0c1a30; --bg-top: #1a3a66; --text: #ffffff;
-    --card-bg: rgba(255,255,255,.06);
+    --card-bg: rgba(255,255,255,.07);
+    --bg-klub: linear-gradient(180deg, #e8eef6 0%, #cdd8e8 12%, #6d84ab 30%, #2a4a7a 55%, #103867 78%, #0a2447 100%);
 }
 /* 🔵🔴 BARCELONA – blaugrana */
 html[data-theme="barca"] {
     --fial: #a50044; --fial-rgb: 165,0,68; --magenta: #004d98; --magenta-rgb: 0,77,152;
     --gold: #edbb00; --dark: #0a1836; --bg-top: #004d98; --text: #ffffff;
-    --card-bg: rgba(255,255,255,.06);
-    --bg-barca: linear-gradient(180deg, #004d98 0%, #043a73 35%, #6a0733 70%, #a50044 100%);
+    --card-bg: rgba(255,255,255,.07);
+    --bg-klub: linear-gradient(180deg, #004d98 0%, #033a73 30%, #6a0733 62%, #a50044 85%, #7a0033 100%);
 }
 /* 🩵 MAN CITY – nebeská modrá */
 html[data-theme="city"] {
     --fial: #6cabdd; --fial-rgb: 108,171,221; --magenta: #1c2c5b; --magenta-rgb: 28,44,91;
     --gold: #ffc659; --dark: #08172e; --bg-top: #16386a; --text: #eaf4ff;
-    --card-bg: rgba(108,171,221,.08);
+    --card-bg: rgba(108,171,221,.1);
+    --bg-klub: linear-gradient(180deg, #9fd4f0 0%, #6cabdd 18%, #3a7ab5 42%, #1c4a80 68%, #0a2648 100%);
 }
 /* 🔵🔴 PSG – tmavě modrá/červená */
 html[data-theme="psg"] {
     --fial: #e30613; --fial-rgb: 227,6,19; --magenta: #004170; --magenta-rgb: 0,65,112;
     --gold: #d4af37; --dark: #04122a; --bg-top: #0a2f5c; --text: #ffffff;
-    --card-bg: rgba(227,6,19,.06);
+    --card-bg: rgba(227,6,19,.07);
+    --bg-klub: linear-gradient(180deg, #0a2f5c 0%, #071f3f 32%, #4a0810 64%, #8a0c16 85%, #4a0810 100%);
 }
 /* 🔴 ARSENAL – červená/bílá */
 html[data-theme="arsenal"] {
     --fial: #ef0107; --fial-rgb: 239,1,7; --magenta: #9c824a; --magenta-rgb: 156,130,74;
     --gold: #db0007; --dark: #1a0505; --bg-top: #3a0a0a; --text: #ffffff;
-    --card-bg: rgba(239,1,7,.06);
+    --card-bg: rgba(239,1,7,.08);
+    --bg-klub: linear-gradient(180deg, #c00509 0%, #8a0308 30%, #4a0608 62%, #2a0505 100%);
+}
+/* Ochrana čitelnosti na světlých částech klubových pozadí (Real, City nahoře) */
+html[data-theme="real"] .zpet,
+html[data-theme="real"] .podtitul,
+html[data-theme="real"] .auth-lista,
+html[data-theme="city"] .zpet,
+html[data-theme="city"] .podtitul,
+html[data-theme="city"] .auth-lista {
+    text-shadow: 0 1px 4px rgba(0,0,0,.55);
+}
+html[data-theme="real"] h1,
+html[data-theme="city"] h1 {
+    text-shadow: 0 2px 8px rgba(0,0,0,.4);
 }
 * { box-sizing: border-box; }
 body {
@@ -75,8 +93,16 @@ body {
     text-align: center; min-height: 100vh;
     -webkit-tap-highlight-color: transparent;
 }
-/* Barcelona speciální gradient pozadí */
-html[data-theme="barca"] body { background: var(--bg-barca); background-attachment: fixed; }
+/* Klubové gradienty pozadí – výrazné barvy klubů */
+html[data-theme="zlaty"] body,
+html[data-theme="real"] body,
+html[data-theme="barca"] body,
+html[data-theme="city"] body,
+html[data-theme="psg"] body,
+html[data-theme="arsenal"] body {
+    background: var(--bg-klub);
+    background-attachment: fixed;
+}
 .wrap { max-width: 560px; margin: 0 auto; position: relative; }
 .zpet { display: inline-block; color: rgba(var(--text-rgb, 238,242,255),.4); text-decoration: none; font-size: .72em; margin: 4px 0 14px; }
 .zpet:hover { color: var(--fial); }
