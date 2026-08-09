@@ -60,12 +60,12 @@ html[data-theme="psg"] {
     --card-bg: rgba(227,6,19,.07);
     --bg-klub: linear-gradient(180deg, #0a2f5c 0%, #071f3f 32%, #4a0810 64%, #8a0c16 85%, #4a0810 100%);
 }
-/* 🔴 ARSENAL – červená s bílými rukávy */
+/* 🔴 ARSENAL – červená + výrazná bílá */
 html[data-theme="arsenal"] {
-    --fial: #ef0107; --fial-rgb: 239,1,7; --magenta: #ffffff; --magenta-rgb: 255,255,255;
-    --gold: #ffffff; --gold-rgb: 255,255,255; --dark: #1a0608; --bg-top: #7a0c10; --text: #ffffff; --text-rgb: 255,255,255;
-    --card-bg: rgba(255,255,255,.06);
-    --bg-klub: linear-gradient(180deg, #ef0107 0%, #d10509 18%, #9a0810 42%, #5a0810 68%, #2a0508 100%);
+    --fial: #ffffff; --fial-rgb: 255,255,255; --magenta: #ffffff; --magenta-rgb: 255,255,255;
+    --gold: #ffe680; --gold-rgb: 255,230,128; --dark: #1a0608; --bg-top: #ffffff; --text: #ffffff; --text-rgb: 255,255,255;
+    --card-bg: rgba(255,255,255,.1);
+    --bg-klub: linear-gradient(180deg, #ffffff 0%, #f0f0f0 8%, #ef0107 22%, #d10509 45%, #8a0810 72%, #3a0608 100%);
 }
 /* Ochrana čitelnosti textů na barevných klubových pozadích */
 html[data-theme="real"] .zpet, html[data-theme="real"] .podtitul, html[data-theme="real"] .auth-lista,
@@ -123,9 +123,10 @@ html[data-theme="real"] h1 {
 }
 html[data-theme="real"] .zpet { text-shadow: 0 1px 3px rgba(255,255,255,.7); color: rgba(18,36,74,.7) !important; }
 html[data-theme="arsenal"] h1 {
-    color: #ffffff; -webkit-text-fill-color: #ffffff;
-    text-shadow: 0 0 18px rgba(255,255,255,.4), 0 2px 6px rgba(0,0,0,.5);
+    color: #ef0107; -webkit-text-fill-color: #ef0107;
+    text-shadow: 0 1px 3px rgba(255,255,255,.7);
 }
+html[data-theme="arsenal"] .zpet { text-shadow: 0 1px 3px rgba(255,255,255,.7); color: rgba(180,10,15,.75) !important; }
 .podtitul { font-size: .66em; letter-spacing: 3px; color: var(--fial); text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
 .zlata-linka { width: 100px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 14px auto 20px; }
 
