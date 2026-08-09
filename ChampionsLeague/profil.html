@@ -8,7 +8,74 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root { --fial:#2e6bff; --magenta:#ff2ecc; --gold:#d4af37; --dark:#05081c; }
+:root { --fial:#2e6bff; --magenta:#ff2ecc; --gold:#d4af37; --dark:#05081c;  --fial-rgb: 46,107,255; --magenta-rgb: 255,46,204; --gold-rgb: 212,175,55; --text: #eef2ff; --text-rgb: 238,242,255; --bg-top: #0a1240; --card-bg: rgba(46,107,255,.05);}
+/* ☀️ SVĚTLÝ */
+html[data-theme="svetly"] {
+    --fial: #0077b6; --fial-rgb: 0,119,182; --magenta: #c0179c; --magenta-rgb: 192,23,156;
+    --gold: #c8901a; --gold-rgb: 200,144,26; --dark: #eef2f7; --bg-top: #ffffff; --text: #12212f; --text-rgb: 18,33,47;
+    --card-bg: rgba(0,60,100,.05);
+}
+/* 🏆 ZLATÝ */
+html[data-theme="zlaty"] {
+    --fial: #d4af37; --fial-rgb: 212,175,55; --magenta: #b8860b; --magenta-rgb: 184,134,11;
+    --gold: #ffd700; --gold-rgb: 255,215,0; --dark: #0a0a0a; --bg-top: #2a2410; --text: #f5ecd0; --text-rgb: 245,236,208;
+    --card-bg: rgba(212,175,55,.06);
+    --bg-klub: linear-gradient(180deg, #4a3c0a 0%, #2a2410 40%, #12100a 75%, #0a0a0a 100%);
+}
+/* ⚪ REAL MADRID – bílá/zlatá na tmavé (elegance) */
+html[data-theme="real"] {
+    --fial: #febe10; --fial-rgb: 254,190,16; --magenta: #ffffff; --magenta-rgb: 255,255,255;
+    --gold: #febe10; --gold-rgb: 254,190,16; --dark: #0a1428; --bg-top: #12244a; --text: #ffffff; --text-rgb: 255,255,255;
+    --card-bg: rgba(255,255,255,.07);
+    --bg-klub: linear-gradient(180deg, #e8ecf5 0%, #b8c4dc 10%, #4a5f8a 26%, #1e2f52 48%, #131f3c 72%, #0a1428 100%);
+}
+/* 🔵🔴 BARCELONA – blaugrana */
+html[data-theme="barca"] {
+    --fial: #a50044; --fial-rgb: 165,0,68; --magenta: #004d98; --magenta-rgb: 0,77,152;
+    --gold: #edbb00; --gold-rgb: 237,187,0; --dark: #0a1836; --bg-top: #004d98; --text: #ffffff; --text-rgb: 255,255,255;
+    --card-bg: rgba(255,255,255,.07);
+    --bg-klub: linear-gradient(180deg, #004d98 0%, #043a73 28%, #5a0730 60%, #7a0038 85%, #5a0028 100%);
+}
+/* 🩵 MAN CITY – nebeská modrá */
+html[data-theme="city"] {
+    --fial: #6cabdd; --fial-rgb: 108,171,221; --magenta: #1c2c5b; --magenta-rgb: 28,44,91;
+    --gold: #ffc659; --gold-rgb: 255,198,89; --dark: #08172e; --bg-top: #16386a; --text: #eaf4ff; --text-rgb: 234,244,255;
+    --card-bg: rgba(108,171,221,.1);
+    --bg-klub: linear-gradient(180deg, #3a7ab5 0%, #2a6299 25%, #1c4a80 50%, #123458 75%, #0a2648 100%);
+}
+/* 🔵🔴 PSG – tmavě modrá/červená */
+html[data-theme="psg"] {
+    --fial: #e30613; --fial-rgb: 227,6,19; --magenta: #004170; --magenta-rgb: 0,65,112;
+    --gold: #d4af37; --gold-rgb: 212,175,55; --dark: #04122a; --bg-top: #0a2f5c; --text: #ffffff; --text-rgb: 255,255,255;
+    --card-bg: rgba(227,6,19,.07);
+    --bg-klub: linear-gradient(180deg, #0a2f5c 0%, #071f3f 32%, #4a0810 64%, #8a0c16 85%, #4a0810 100%);
+}
+/* 🔴 ARSENAL – červená + výrazná bílá */
+html[data-theme="arsenal"] {
+    --fial: #ffffff; --fial-rgb: 255,255,255; --magenta: #ffffff; --magenta-rgb: 255,255,255;
+    --gold: #ffe680; --gold-rgb: 255,230,128; --dark: #1a0608; --bg-top: #ffffff; --text: #ffffff; --text-rgb: 255,255,255;
+    --card-bg: rgba(255,255,255,.1);
+    --bg-klub: linear-gradient(180deg, #ffffff 0%, #f0f0f0 8%, #ef0107 22%, #d10509 45%, #8a0810 72%, #3a0608 100%);
+}
+/* Ochrana čitelnosti textů na barevných klubových pozadích */
+html[data-theme="real"] .zpet, html[data-theme="real"] .podtitul, html[data-theme="real"] .auth-lista,
+html[data-theme="city"] .zpet, html[data-theme="city"] .podtitul, html[data-theme="city"] .auth-lista,
+html[data-theme="barca"] .zpet, html[data-theme="barca"] .podtitul, html[data-theme="barca"] .auth-lista,
+html[data-theme="psg"] .zpet, html[data-theme="psg"] .podtitul, html[data-theme="psg"] .auth-lista,
+html[data-theme="arsenal"] .zpet, html[data-theme="arsenal"] .podtitul, html[data-theme="arsenal"] .auth-lista,
+html[data-theme="zlaty"] .zpet, html[data-theme="zlaty"] .podtitul, html[data-theme="zlaty"] .auth-lista {
+    text-shadow: 0 1px 4px rgba(0,0,0,.6);
+}
+/* Ochrana čitelnosti textů na barevných klubových pozadích */
+html[data-theme="real"] .zpet, html[data-theme="real"] .podtitul, html[data-theme="real"] .auth-lista,
+html[data-theme="city"] .zpet, html[data-theme="city"] .podtitul, html[data-theme="city"] .auth-lista,
+html[data-theme="barca"] .zpet, html[data-theme="barca"] .podtitul, html[data-theme="barca"] .auth-lista,
+html[data-theme="psg"] .zpet, html[data-theme="psg"] .podtitul, html[data-theme="psg"] .auth-lista,
+html[data-theme="arsenal"] .zpet, html[data-theme="arsenal"] .podtitul, html[data-theme="arsenal"] .auth-lista,
+html[data-theme="zlaty"] .zpet, html[data-theme="zlaty"] .podtitul, html[data-theme="zlaty"] .auth-lista {
+    text-shadow: 0 1px 4px rgba(0,0,0,.6);
+}
+
 * { box-sizing:border-box; }
 body {
     background: radial-gradient(ellipse at top, #0a1240 0%, var(--dark) 70%);
@@ -96,8 +163,42 @@ body {
 .hist .b { font-weight:900; color:var(--gold); white-space:nowrap; }
 .prazdno { text-align:center; opacity:.4; padding:16px 0; font-size:.85em; }
 </style>
+<script>
+(function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
+</script>
 </head>
 <body>
+<div id="themeSwitch" style="position:fixed; top:12px; right:12px; z-index:10000;">
+    <button onclick="prepniThemePanel()" style="background:rgba(var(--fial-rgb),.12); border:1px solid rgba(var(--fial-rgb),.45); color:var(--text); width:42px; height:42px; border-radius:50%; cursor:pointer; font-size:1.2em; backdrop-filter:blur(6px);" title="Změnit vzhled">🎨</button>
+    <div id="themePanel" style="display:none; position:absolute; top:50px; right:0; background:var(--dark); border:1px solid rgba(var(--fial-rgb),.45); border-radius:14px; padding:8px; min-width:180px; max-height:60vh; overflow-y:auto; box-shadow:0 12px 40px rgba(0,0,0,.5);">
+        <button class="theme-opt" onclick="nastavTheme('tmavy')">🌙 Tmavý</button>
+        <button class="theme-opt" onclick="nastavTheme('svetly')">☀️ Světlý</button>
+        <button class="theme-opt" onclick="nastavTheme('zlaty')">🏆 Zlatý</button>
+        <button class="theme-opt" onclick="nastavTheme('real')">⚪ Real Madrid</button>
+        <button class="theme-opt" onclick="nastavTheme('barca')">🔵 Barcelona</button>
+        <button class="theme-opt" onclick="nastavTheme('city')">🩵 Man City</button>
+        <button class="theme-opt" onclick="nastavTheme('psg')">🔴 PSG</button>
+        <button class="theme-opt" onclick="nastavTheme('arsenal')">🔴 Arsenal</button>
+    </div>
+</div>
+<style>
+    .theme-opt { display:block; width:100%; text-align:left; background:none; border:none; color:var(--text); padding:10px 12px; border-radius:8px; cursor:pointer; font-size:.9em; font-family:inherit; }
+    .theme-opt:hover { background:rgba(var(--fial-rgb),.12); }
+    .theme-opt.on { background:rgba(var(--fial-rgb),.2); color:var(--fial); font-weight:800; }
+</style>
+<script>
+const CL_THEMES = ['tmavy','svetly','zlaty','real','barca','city','psg','arsenal'];
+function nastavTheme(t){ try{ localStorage.setItem('cl_theme',t); }catch(e){}
+    if(t==='tmavy') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme',t);
+    document.querySelectorAll('.theme-opt').forEach((b,i)=>b.classList.toggle('on', CL_THEMES[i]===t));
+    document.getElementById('themePanel').style.display='none';
+}
+function prepniThemePanel(){ var p=document.getElementById('themePanel'); p.style.display=p.style.display==='none'?'block':'none';
+    var t=(function(){try{return localStorage.getItem('cl_theme')||'tmavy';}catch(e){return 'tmavy';}})();
+    document.querySelectorAll('.theme-opt').forEach((b,i)=>b.classList.toggle('on', CL_THEMES[i]===t));
+}
+document.addEventListener('click',function(e){ var sw=document.getElementById('themeSwitch'); if(sw&&!sw.contains(e.target)){ var p=document.getElementById('themePanel'); if(p) p.style.display='none'; } });
+</script>
 <div class="wrap">
     <a class="back" href="index.html">← Zpět na Champions League</a>
 
