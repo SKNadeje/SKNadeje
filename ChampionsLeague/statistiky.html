@@ -98,7 +98,7 @@ html[data-theme="arsenal"] body {
     background-attachment: fixed;
 }
 .wrap { max-width: 600px; margin: 0 auto; }
-.back { display: inline-block; color: rgba(238,242,255,.45); text-decoration: none; font-size: .75em; margin-bottom: 12px; }
+.back { display: block; text-align: center; color: rgba(238,242,255,.45); text-decoration: none; font-size: .75em; margin-bottom: 12px; }
 h1 { text-align: center; font-size: 1.15em; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; margin: 6px 0 6px; }
 .podtitul { text-align: center; font-size: .72em; opacity: .5; margin-bottom: 18px; letter-spacing: 1px; }
 
@@ -162,6 +162,10 @@ h1 { text-align: center; font-size: 1.15em; letter-spacing: 3px; color: var(--go
 .radek.r3 .poradi { color: #e8965a; }
 .prazdno { text-align: center; opacity: .45; padding: 20px 0; font-size: .85em; }
 .mini { display: inline-flex; align-items: center; gap: 3px; background: rgba(255,255,255,.07); border-radius: 6px; padding: 1px 7px; margin-right: 6px; }
+
+html[data-theme="real"] .back { text-shadow: 0 1px 3px rgba(255,255,255,.7); color: rgba(18,36,74,.7) !important; }
+html[data-theme="arsenal"] .back { text-shadow: 0 1px 3px rgba(255,255,255,.7); color: rgba(180,10,15,.75) !important; }
+html[data-theme="city"] .back, html[data-theme="city"] .zpet { text-shadow: 0 1px 3px rgba(0,0,0,.5); }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
