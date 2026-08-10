@@ -599,7 +599,9 @@ async function odesliPush() {
         });
         const data = await res.json();
         if (data.ok) {
-            msg.innerHTML = '<span style="color:#27ae60;">✅ Odesláno!</span>';
+            let t = '✅ Odesláno!';
+            if (data.preskoceno) t += ' (' + data.preskoceno + ' hráč(ů) nemá zapnuté notifikace)';
+            msg.innerHTML = '<span style="color:#27ae60;">' + t + '</span>';
             document.getElementById('pushTitulek').value = '';
             document.getElementById('pushText').value = '';
             document.querySelectorAll('.push-hrac:checked').forEach(c => c.checked = false);
