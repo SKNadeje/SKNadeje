@@ -237,8 +237,10 @@ async function odesliPush() {
             document.getElementById('pushTitulek').value = '';
             document.getElementById('pushText').value = '';
             document.querySelectorAll('.push-hrac:checked').forEach(c => c.checked = false);
+        } else if (data.odeslano === 0 && data.detail) {
+            msg.innerHTML = '<span style="color:#ff9944;">⚠️ Nikomu se neodeslalo – ' + data.detail + ' (musí si zapnout notifikace v centru Naděje 🔔)</span>';
         } else {
-            msg.innerHTML = '<span style="color:#ff5555;">Chyba: ' + JSON.stringify(data.chyby || data.error) + '</span>';
+            msg.innerHTML = '<span style="color:#ff5555;">Chyba: ' + JSON.stringify(data.chyby || data.error || data.detail || 'neznámá') + '</span>';
         }
     } catch (e) {
         msg.innerHTML = '<span style="color:#ff5555;">Chyba spojení: ' + e.message + '</span>';
