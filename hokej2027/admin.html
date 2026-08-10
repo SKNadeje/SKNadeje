@@ -186,6 +186,28 @@ input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { fil
 
     <!-- PENĚŽENKY HRÁČŮ -->
     <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secPush')">📢 POSLAT OZNÁMENÍ <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secPush">
+            <div style="padding:6px 2px;">
+                <label class="auth-label" style="display:block; margin-bottom:4px; font-size:.85em;">Titulek:</label>
+                <input type="text" id="pushTitulek" class="auth-input" placeholder="např. ⚠️ Pozor" maxlength="60" style="width:100%; margin-bottom:10px;">
+                <label class="auth-label" style="display:block; margin-bottom:4px; font-size:.85em;">Text zprávy:</label>
+                <textarea id="pushText" class="auth-input" placeholder="např. Zítra ve 20:00 uzávěrka, nezapomeňte tipnout!" maxlength="180" style="width:100%; min-height:70px; resize:vertical; font-family:inherit; margin-bottom:10px;"></textarea>
+                <label class="auth-label" style="display:block; margin-bottom:6px; font-size:.85em;">Komu poslat:</label>
+                <div style="display:flex; gap:8px; margin-bottom:10px;">
+                    <button class="small-btn" id="pushKomuVsichni" onclick="pushKomu('vsichni')" style="flex:1;">👥 Všem</button>
+                    <button class="small-btn" id="pushKomuVyber" onclick="pushKomu('vyber')" style="flex:1; background:#555;">☑️ Vybraným</button>
+                </div>
+                <div id="pushHraciBox" style="display:none; margin-bottom:10px; max-height:200px; overflow-y:auto; border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:8px;">
+                    <div id="pushHraciList" style="font-size:.9em;"></div>
+                </div>
+                <button class="small-btn" style="background:#27ae60; width:100%; padding:12px;" onclick="odesliPush()">📤 Odeslat oznámení</button>
+                <div id="pushMsg" style="margin-top:8px; font-size:.85em;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
         <div class="collapsible-header" onclick="toggleSection('secVyhry')">🏦 VÝHRY K ODESLÁNÍ NA ÚČET <span class="collapse-arrow">▼</span></div>
         <div class="collapsible-body" id="secVyhry">
             <div style="opacity:.55; font-size:.8em; margin-bottom:12px;">
@@ -522,6 +544,71 @@ async function oznacOdeslano(sazkaId, jmeno, castka) {
     const { error } = await sb.from('hokej27_sazky').update({ vyhra_stav: 'odeslano' }).eq('id', sazkaId);
     if (error) { alert('Chyba: ' + error.message); return; }
     await loadVyhry();
+}
+
+// ---------- PUSH OZNÁMENÍ ----------
+let _pushKomu = 'vsichni';
+function pushKomu(kdo) {
+    _pushKomu = kdo;
+    document.getElementById('pushKomuVsichni').style.background = kdo === 'vsichni' ? '' : '#555';
+    document.getElementById('pushKomuVyber').style.background = kdo === 'vyber' ? '' : '#555';
+    const box = document.getElementById('pushHraciBox');
+    box.style.display = kdo === 'vyber' ? 'block' : 'none';
+    if (kdo === 'vyber') nactiPushHrace();
+}
+
+async function nactiPushHrace() {
+    const list = document.getElementById('pushHraciList');
+    const { data: hraci } = await sb.from('hraci').select('user_id, jmeno').order('jmeno');
+    if (!hraci || !hraci.length) { list.innerHTML = '<div style="opacity:.5;">Žádní hráči.</div>'; return; }
+    list.innerHTML = hraci.map(h => `
+        <label style="display:flex; align-items:center; gap:8px; padding:6px 4px; cursor:pointer;">
+            <input type="checkbox" class="push-hrac" value="${h.user_id}" style="width:18px; height:18px;">
+            <span>${h.jmeno || '(bez jména)'}</span>
+        </label>`).join('');
+}
+
+async function odesliPush() {
+    const titulek = document.getElementById('pushTitulek').value.trim();
+    const text = document.getElementById('pushText').value.trim();
+    const msg = document.getElementById('pushMsg');
+    if (!text) { msg.innerHTML = '<span style="color:#ff4444;">Napiš text zprávy.</span>'; return; }
+
+    let user_ids = [];
+    if (_pushKomu === 'vyber') {
+        user_ids = [...document.querySelectorAll('.push-hrac:checked')].map(c => c.value);
+        if (!user_ids.length) { msg.innerHTML = '<span style="color:#ff4444;">Vyber aspoň jednoho hráče.</span>'; return; }
+    }
+
+    const potvrz = _pushKomu === 'vsichni'
+        ? 'Opravdu poslat oznámení VŠEM hráčům?'
+        : `Poslat oznámení ${user_ids.length} vybraným hráčům?`;
+    if (!confirm(potvrz)) return;
+
+    msg.innerHTML = '<span style="opacity:.6;">Odesílám…</span>';
+    try {
+        const res = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/posli-oznameni', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
+            body: JSON.stringify({
+                titulek, text,
+                url: 'https://sknadeje.cz/hokej2027/index.html',
+                komu: _pushKomu,
+                user_ids
+            })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            msg.innerHTML = '<span style="color:#27ae60;">✅ Odesláno!</span>';
+            document.getElementById('pushTitulek').value = '';
+            document.getElementById('pushText').value = '';
+            document.querySelectorAll('.push-hrac:checked').forEach(c => c.checked = false);
+        } else {
+            msg.innerHTML = '<span style="color:#ff4444;">Chyba: ' + JSON.stringify(data.chyby || data.error) + '</span>';
+        }
+    } catch (e) {
+        msg.innerHTML = '<span style="color:#ff4444;">Chyba spojení: ' + e.message + '</span>';
+    }
 }
 
 async function ulozPenezenku(userId, jmeno) {
