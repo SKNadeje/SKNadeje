@@ -75,7 +75,7 @@ function vlozChatHTML() {
                 border-radius:10px; padding:11px 12px; font-size:.9em; font-family:inherit; outline:none;
             ">
             <button id="chat-send-btn" onclick="posliChatZpravu()" style="
-                background:${b}; color:#fff; border:1px solid rgba(255,255,255,.5);
+                background:rgba(20,28,42,.95); color:#fff; border:2px solid ${b};
                 border-radius:10px; width:48px; font-weight:900; font-size:1.15em; cursor:pointer; font-family:inherit;
                 box-shadow:0 2px 8px rgba(0,0,0,.3); flex-shrink:0; display:flex; align-items:center; justify-content:center;
             ">➤</button>
