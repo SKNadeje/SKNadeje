@@ -56,28 +56,28 @@ function vlozChatHTML() {
     <div id="chat-panel" style="
         display:none; position:fixed; bottom:88px; right:20px; z-index:901;
         width:340px; max-width:calc(100vw - 40px); height:460px; max-height:70vh;
-        background:#0d1420; border:1px solid ${b}55; border-radius:18px; color:#eef2f7;
-        box-shadow:0 14px 46px rgba(0,0,0,.6); flex-direction:column; overflow:hidden;
+        background:linear-gradient(160deg, #131c2b, #0a1119); border:1px solid ${b}55; border-radius:18px; color:#eef2f7;
+        box-shadow:0 16px 50px rgba(0,0,0,.65); flex-direction:column; overflow:hidden;
     ">
-        <div style="padding:13px 16px; border-bottom:1px solid ${b}33; display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-weight:900; color:${b}; font-size:.85em; letter-spacing:1px;">💬 CHAT</span>
-            <span onclick="prepniChat()" style="cursor:pointer; opacity:.5; font-size:1.4em; line-height:1;">×</span>
+        <div style="padding:14px 16px; border-bottom:1px solid ${b}44; display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,.03);">
+            <span style="font-weight:900; color:#fff; font-size:.9em; letter-spacing:1.5px;">💬 CHAT</span>
+            <span onclick="prepniChat()" style="cursor:pointer; opacity:.55; font-size:1.5em; line-height:1; padding:0 4px;">×</span>
         </div>
         <div id="chat-zpravy" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px;"></div>
         <div id="chat-emoji-paleta" style="display:none; padding:8px 10px; border-top:1px solid ${b}33; flex-wrap:wrap; gap:4px; max-height:120px; overflow-y:auto;"></div>
-        <div id="chat-vstup" style="padding:10px; border-top:1px solid ${b}33; display:flex; gap:7px; align-items:center;">
+        <div id="chat-vstup" style="padding:10px; border-top:1px solid ${b}33; display:flex; gap:7px; align-items:stretch;">
             <button onclick="prepniEmoji()" style="
-                background:rgba(255,255,255,.06); border:1px solid ${b}44; color:#fff;
-                border-radius:10px; padding:0 10px; height:38px; cursor:pointer; font-size:1.1em; font-family:inherit;
+                background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); color:#fff;
+                border-radius:10px; width:44px; cursor:pointer; font-size:1.15em; font-family:inherit; flex-shrink:0;
             ">😊</button>
             <input id="chat-text" placeholder="Napiš zprávu…" maxlength="300" onkeydown="if(event.key==='Enter')posliChatZpravu()" style="
-                flex:1; background:rgba(255,255,255,.06); color:#fff; border:1px solid ${b}44;
-                border-radius:10px; padding:10px 12px; font-size:.85em; font-family:inherit; outline:none;
+                flex:1; min-width:0; background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.15);
+                border-radius:10px; padding:11px 12px; font-size:.9em; font-family:inherit; outline:none;
             ">
             <button id="chat-send-btn" onclick="posliChatZpravu()" style="
-                background:var(--neon, ${b}); color:#fff; border:2px solid rgba(255,255,255,.85);
-                border-radius:12px; padding:0 18px; height:42px; font-weight:900; font-size:1.2em; cursor:pointer; font-family:inherit;
-                box-shadow:0 2px 10px rgba(0,0,0,.35); flex-shrink:0;
+                background:${b}; color:#fff; border:1px solid rgba(255,255,255,.5);
+                border-radius:10px; width:48px; font-weight:900; font-size:1.15em; cursor:pointer; font-family:inherit;
+                box-shadow:0 2px 8px rgba(0,0,0,.3); flex-shrink:0; display:flex; align-items:center; justify-content:center;
             ">➤</button>
         </div>
     </div>`;
