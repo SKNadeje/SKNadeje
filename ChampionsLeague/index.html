@@ -839,19 +839,67 @@ function bracketTeam(kolo, idx, strana) {
     if (kolo === 'final') return finalePar()[strana] || null;
 }
 
+// Krokový pavouk: 0=osmifinále, 1=čtvrtfinále, 2=semifinále, 3=finále
+let bracketKrok = 0;
+const BR_KOLA = [
+    { kolo: 'r16', nazev: 'Osmifinále', popis: 'Kdo postoupí do čtvrtfinále?', pocet: 8 },
+    { kolo: 'qf',  nazev: 'Čtvrtfinále', popis: 'Kdo postoupí do semifinále?', pocet: 4 },
+    { kolo: 'sf',  nazev: 'Semifinále', popis: 'Kdo postoupí do finále?', pocet: 2 },
+    { kolo: 'final', nazev: 'Finále', popis: 'Kdo zvedne pohár?', pocet: 1 },
+];
+
 function bracketPick_(kolo, idx, strana) {
     const tym = bracketTeam(kolo, idx, strana);
     if (!tym) return; // TBD – ještě nelze vybrat
-    if (kolo === 'r16') { bracketPick.qf[idx] = tym; bracketPick.sf = Array(4).fill(null); bracketPick.finale = Array(2).fill(null); bracketPick.vitez = null; }
-    else if (kolo === 'qf') { bracketPick.sf[idx] = tym; bracketPick.finale = Array(2).fill(null); bracketPick.vitez = null; }
-    else if (kolo === 'sf') { bracketPick.finale[idx] = tym; bracketPick.vitez = null; }
-    else if (kolo === 'final') { bracketPick.vitez = tym; }
+
+    if (kolo === 'r16') {
+        const stary = bracketPick.qf[idx];
+        bracketPick.qf[idx] = tym;
+        if (stary && stary !== tym) resetCestaTymu(stary);  // reset jen cesty vyřazeného
+    } else if (kolo === 'qf') {
+        const stary = bracketPick.sf[idx];
+        bracketPick.sf[idx] = tym;
+        if (stary && stary !== tym) resetCestaTymu(stary);
+    } else if (kolo === 'sf') {
+        const stary = bracketPick.finale[idx];
+        bracketPick.finale[idx] = tym;
+        if (stary && stary !== tym) resetCestaTymu(stary);
+    } else if (kolo === 'final') {
+        bracketPick.vitez = tym;
+    }
     renderBracket();
+}
+
+// Vymaže tým z vyšších kol (jen jeho cestu), když ho v nižším kole nahradil jiný
+function resetCestaTymu(tym) {
+    bracketPick.sf = bracketPick.sf.map(t => t === tym ? null : t);
+    bracketPick.finale = bracketPick.finale.map(t => t === tym ? null : t);
+    if (bracketPick.vitez === tym) bracketPick.vitez = null;
+    // po vyčištění může být ve vyšším kole tým, jehož soupeř zmizel – necháme,
+    // hráč ho přepíše, až se k tomu kolu dostane
 }
 
 function bracketResetVse() {
     bracketPick = { qf: Array(8).fill(null), sf: Array(4).fill(null), finale: Array(2).fill(null), vitez: null };
+    bracketKrok = 0;
     renderBracket();
+}
+
+// Kolik párů v daném kole už má vybraného vítěze
+function bracketHotovoVKole(krok) {
+    const k = BR_KOLA[krok];
+    if (k.kolo === 'r16') return bracketPick.qf.filter(x => x).length;
+    if (k.kolo === 'qf')  return bracketPick.sf.filter(x => x).length;
+    if (k.kolo === 'sf')  return bracketPick.finale.filter(x => x).length;
+    if (k.kolo === 'final') return bracketPick.vitez ? 1 : 0;
+    return 0;
+}
+
+function bracketDal() {
+    if (bracketKrok < BR_KOLA.length - 1) { bracketKrok++; renderBracket(); }
+}
+function bracketZpet() {
+    if (bracketKrok > 0) { bracketKrok--; renderBracket(); }
 }
 
 function bracketRadek(kolo, pary, vybrane) {
@@ -866,20 +914,54 @@ function renderBracket() {
     const ob = document.getElementById('dl-obsah');
     if (!ob) return;
     const r16 = stav.bracket_r16 || [];
+    const k = BR_KOLA[bracketKrok];
+
+    // páry a vybrané pro aktuální kolo
+    let pary, vybrane;
+    if (k.kolo === 'r16') { pary = r16; vybrane = bracketPick.qf; }
+    else if (k.kolo === 'qf') { pary = qfPary(); vybrane = bracketPick.sf; }
+    else if (k.kolo === 'sf') { pary = sfPary(); vybrane = bracketPick.finale; }
+    else { pary = [finalePar()]; vybrane = [bracketPick.vitez]; }
+
+    const hotovo = bracketHotovoVKole(bracketKrok);
+    const vseHotovo = hotovo >= k.pocet;
+    const jePosledni = bracketKrok === BR_KOLA.length - 1;
+
+    // tečky postupu ● ○
+    const tecky = BR_KOLA.map((_, i) => i === bracketKrok
+        ? '<span style="color:var(--gold); font-size:1.1em;">●</span>'
+        : (i < bracketKrok ? '<span style="color:var(--gold); opacity:.5;">●</span>' : '<span style="opacity:.3;">○</span>')
+    ).join(' ');
+
     ob.innerHTML = `
         <h2 style="color:var(--gold); margin-top:0;">🏆 Cesta k titulu</h2>
-        <p style="font-size:.72em; opacity:.6; margin-top:-8px;">Klikni na vítěze každého páru – tvůj tip se propíše do dalšího kola. Klidně si to celé projdi až k vítězi.</p>
+        <div style="text-align:center; margin:-4px 0 12px; letter-spacing:4px;">${tecky}</div>
 
-        <div class="br-round"><h3>Osmifinále → kdo postoupí do čtvrtfinále</h3>${bracketRadek('r16', r16, bracketPick.qf)}</div>
-        <div class="br-round"><h3>Čtvrtfinále → kdo postoupí do semifinále</h3>${bracketRadek('qf', qfPary(), bracketPick.sf)}</div>
-        <div class="br-round"><h3>Semifinále → finalisté</h3>${bracketRadek('sf', sfPary(), bracketPick.finale)}</div>
-        <div class="br-round"><h3>Finále</h3>${bracketRadek('final', [finalePar()], [bracketPick.vitez])}</div>
+        <div class="br-round">
+            <h3 style="display:flex; justify-content:space-between; align-items:center;">
+                <span>${k.nazev} → ${k.popis}</span>
+                <span style="color:var(--fial); opacity:.85;">${hotovo}/${k.pocet}</span>
+            </h3>
+            ${bracketRadek(k.kolo, pary, vybrane)}
+        </div>
 
+        ${jePosledni && bracketPick.vitez ? `
         <div class="br-vitez">
             <div class="lbl">🏆 Tvůj vítěz Ligy mistrů</div>
-            <div class="jm">${bracketPick.vitez || '— zatím nevybráno —'}</div>
+            <div class="jm">${bracketPick.vitez}</div>
+        </div>` : ''}
+
+        <div style="display:flex; gap:8px; margin-top:16px;">
+            <button class="br-nav-btn" onclick="bracketZpet()" ${bracketKrok === 0 ? 'disabled' : ''}
+                style="flex:1; padding:12px; border-radius:12px; border:1px solid rgba(var(--fial-rgb),.35); background:rgba(var(--fial-rgb),.08); color:var(--text); font-weight:800; cursor:pointer; ${bracketKrok === 0 ? 'opacity:.35; cursor:not-allowed;' : ''}">← Zpět</button>
+            ${!jePosledni ? `
+            <button class="br-nav-btn" onclick="bracketDal()" ${!vseHotovo ? 'disabled' : ''}
+                style="flex:1; padding:12px; border-radius:12px; border:none; background:${vseHotovo ? 'var(--gold)' : 'rgba(255,255,255,.1)'}; color:${vseHotovo ? '#1a1200' : 'rgba(255,255,255,.4)'}; font-weight:900; cursor:${vseHotovo ? 'pointer' : 'not-allowed'};">Dál →</button>`
+            : ''}
         </div>
-        <button class="br-reset" onclick="bracketResetVse()">↺ začít pavouka znovu od osmifinále</button>`;
+        ${!vseHotovo ? `<div style="text-align:center; font-size:.7em; opacity:.5; margin-top:8px;">Vyber vítěze všech párů (${hotovo}/${k.pocet}), pak můžeš dál.</div>` : ''}
+
+        <button class="br-reset" onclick="bracketResetVse()" style="margin-top:12px;">↺ začít pavouka znovu od osmifinále</button>`;
 }
 
 function otevriDl(faze) {
@@ -923,6 +1005,7 @@ function otevriDl(faze) {
         (t.sf || []).forEach((tym, j) => { const par = qfPary()[j] || []; if (par.includes(tym)) bracketPick.sf[j] = tym; });
         (t.finale || []).forEach((tym, k) => { const par = sfPary()[k] || []; if (par.includes(tym)) bracketPick.finale[k] = tym; });
         if (t.vitez && finalePar().includes(t.vitez)) bracketPick.vitez = t.vitez;
+        bracketKrok = 0;
         renderBracket();
     }
     document.getElementById('dl-msg').textContent = '';
