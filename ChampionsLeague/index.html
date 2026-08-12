@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="cs">
-<head> 
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NADĚJE · Champions League</title>
@@ -902,12 +902,21 @@ function bracketZpet() {
     if (bracketKrok > 0) { bracketKrok--; renderBracket(); }
 }
 
+// Barvy pro dvojice párů, co se potkají v dalším kole (sousední páry i*2, i*2+1)
+const BR_SKUPINY = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
+
 function bracketRadek(kolo, pary, vybrane) {
-    return `<div class="br-grid">` + pary.map((p, i) => `
-        <div class="br-pair">
+    const jeFinale = kolo === 'final';
+    return `<div class="br-grid">` + pary.map((p, i) => {
+        // dvojice párů i*2 a i*2+1 se potkají dál → stejná barva. Finále nemá "další kolo".
+        const barva = jeFinale ? null : BR_SKUPINY[Math.floor(i / 2) % BR_SKUPINY.length];
+        const okraj = barva ? `border-left:4px solid ${barva};` : '';
+        return `
+        <div class="br-pair" style="${okraj}">
             <div class="br-team ${vybrane[i] === p[0] ? 'sel' : ''} ${!p[0] ? 'tbd' : ''}" onclick="bracketPick_('${kolo}', ${i}, 0)">${p[0] || '— čeká na výsledek —'}</div>
             <div class="br-team ${vybrane[i] === p[1] ? 'sel' : ''} ${!p[1] ? 'tbd' : ''}" onclick="bracketPick_('${kolo}', ${i}, 1)">${p[1] || '— čeká na výsledek —'}</div>
-        </div>`).join('') + `</div>`;
+        </div>`;
+    }).join('') + `</div>`;
 }
 
 function renderBracket() {
@@ -942,6 +951,7 @@ function renderBracket() {
                 <span>${k.nazev} → ${k.popis}</span>
                 <span style="color:var(--fial); opacity:.85;">${hotovo}/${k.pocet}</span>
             </h3>
+            ${!jePosledni ? '<div style="font-size:.68em; opacity:.55; margin:-4px 0 10px;">🎨 Páry se stejnou barvou se v dalším kole potkají.</div>' : ''}
             ${bracketRadek(k.kolo, pary, vybrane)}
         </div>
 
