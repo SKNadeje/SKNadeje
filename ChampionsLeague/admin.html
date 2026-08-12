@@ -238,7 +238,7 @@ async function odesliPush() {
             document.getElementById('pushText').value = '';
             document.querySelectorAll('.push-hrac:checked').forEach(c => c.checked = false);
         } else if (data.odeslano === 0 && data.detail) {
-            msg.innerHTML = '<span style="color:#ff9944;">⚠️ Nikomu se neodeslalo – ' + data.detail + ' (musí si zapnout notifikace v centru Naděje 🔔)</span>';
+            msg.innerHTML = '<span style="color:#f1c40f;">📨 Zpráva odeslána do OneSignal. Pokud někomu nedorazí, nemá zapnuté notifikace (může chvíli trvat, než dorazí).</span>';
         } else {
             msg.innerHTML = '<span style="color:#ff5555;">Chyba: ' + JSON.stringify(data.chyby || data.error || data.detail || 'neznámá') + '</span>';
         }
@@ -275,12 +275,29 @@ function renderR16Pary() {
     const tymy = stav.tymy || [];
     const ulozene = stav.bracket_r16 || [];
     const opt = (sel) => '<option value="">–</option>' + tymy.map(t => `<option${t === sel ? ' selected' : ''}>${t}</option>`).join('');
-    cont.innerHTML = Array.from({ length: 8 }).map((_, i) => `
-        <div class="par-radek">
-            <select class="pole" id="r16-a-${i}">${opt(ulozene[i]?.[0] || '')}</select>
-            <span>vs</span>
-            <select class="pole" id="r16-b-${i}">${opt(ulozene[i]?.[1] || '')}</select>
-        </div>`).join('');
+    // Barvy dvojic párů co se v pavouku potkají (0-1, 2-3, 4-5, 6-7) – MUSÍ ladit s indexem
+    const BR_SKUPINY = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
+    // které čtvrtfinále z které dvojice
+    const qfLabels = ['A', 'B', 'C', 'D'];
+
+    cont.innerHTML = `<div style="font-size:.8em; opacity:.7; margin-bottom:12px; line-height:1.5;">
+        ⚠️ <b>Pořadí párů určuje pavouk.</b> Vítězové párů se stejnou barvou se potkají ve čtvrtfinále.
+        Zadej je tak, aby to sedělo na skutečný los CL.
+    </div>` + Array.from({ length: 8 }).map((_, i) => {
+        const barva = BR_SKUPINY[Math.floor(i / 2)];
+        const qf = qfLabels[Math.floor(i / 2)];
+        const prvniVeDvojici = i % 2 === 0;
+        return `
+        <div class="par-radek" style="border-left:4px solid ${barva}; padding-left:10px; ${prvniVeDvojici ? 'margin-top:14px;' : 'margin-bottom:4px;'}">
+            ${prvniVeDvojici ? `<div style="font-size:.7em; font-weight:800; color:${barva}; margin-bottom:4px; letter-spacing:1px;">⬇️ VÍTĚZOVÉ TĚCHTO 2 PÁRŮ → ČTVRTFINÁLE ${qf}</div>` : ''}
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:.75em; opacity:.5; min-width:20px;">${i + 1}.</span>
+                <select class="pole" id="r16-a-${i}" style="flex:1;">${opt(ulozene[i]?.[0] || '')}</select>
+                <span>vs</span>
+                <select class="pole" id="r16-b-${i}" style="flex:1;">${opt(ulozene[i]?.[1] || '')}</select>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 /* ---------- CHIPY ---------- */
