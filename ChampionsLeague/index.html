@@ -340,6 +340,24 @@ select.pole option { background: #10131f; color: var(--text); }
 html[data-theme="real"] .back { text-shadow: 0 1px 3px rgba(255,255,255,.7); color: rgba(18,36,74,.7) !important; }
 html[data-theme="arsenal"] .back { text-shadow: 0 1px 3px rgba(255,255,255,.7); color: rgba(180,10,15,.75) !important; }
 html[data-theme="city"] .back, html[data-theme="city"] .zpet { text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+/* Náhled pavouka (symetrický s logy) */
+.np-wrap { max-width:1100px; margin:0 auto; }
+.np-header { text-align:center; margin-bottom:16px; }
+.np-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:12px; }
+.np-bracket { display:flex; align-items:center; gap:10px; min-width:900px; padding:10px; }
+.np-sloupec { display:flex; flex-direction:column; justify-content:space-around; gap:10px; flex:1; min-width:120px; }
+.np-stred-v { justify-content:space-around; height:100%; }
+.np-par { display:flex; flex-direction:column; gap:3px; background:rgba(255,255,255,.03); border:1px solid rgba(var(--fial-rgb),.15); border-radius:8px; padding:4px; }
+.np-tym { display:flex; align-items:center; gap:6px; padding:6px 8px; border-radius:6px; font-size:.75em; font-weight:700; background:rgba(255,255,255,.04); }
+.np-tym img { width:22px; height:22px; object-fit:contain; flex-shrink:0; }
+.np-tym span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.np-vitez { background:linear-gradient(135deg, rgba(var(--gold-rgb,212,175,55),.3), rgba(var(--gold-rgb,212,175,55),.1)); border:1px solid var(--gold); color:var(--gold); }
+.np-prazdny { opacity:.35; font-style:italic; justify-content:center; }
+.np-finale { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; flex:1.2; min-width:140px; }
+.np-pohar { font-size:2.4em; }
+.np-vitez-box { background:linear-gradient(135deg, rgba(var(--gold-rgb,212,175,55),.25), transparent); border:2px solid var(--gold); border-radius:12px; padding:8px; min-width:130px; }
+.np-vitez-box .np-tym { background:none; font-size:.85em; }
+.np-zavrit { display:block; margin:20px auto 0; padding:12px 40px; background:var(--gold); color:#1a1200; border:none; border-radius:100px; font-weight:900; cursor:pointer; font-size:.9em; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -919,6 +937,73 @@ function bracketRadek(kolo, pary, vybrane) {
     }).join('') + `</div>`;
 }
 
+// ═══════ NÁHLED PAVOUKA (symetrický, s logy) ═══════
+function nahledTym(tym, zvyrazni) {
+    if (!tym) return `<div class="np-tym np-prazdny">— ? —</div>`;
+    const logo = (typeof logoTymu === 'function') ? logoTymu(tym, 22) : '';
+    return `<div class="np-tym ${zvyrazni ? 'np-vitez' : ''}">${logo}<span>${tym}</span></div>`;
+}
+
+function nahledPar(dvojice, vybrany) {
+    // dvojice = [tymA, tymB], vybrany = kdo postoupil
+    return `<div class="np-par">
+        ${nahledTym(dvojice[0], vybrany && vybrany === dvojice[0])}
+        ${nahledTym(dvojice[1], vybrany && vybrany === dvojice[1])}
+    </div>`;
+}
+
+function zobrazPavoukNahled() {
+    const r16 = stav.bracket_r16 || [];
+    if (!r16.length) { alert('Pavouk zatím není vypsaný adminem.'); return; }
+
+    const qf = bracketPick.qf, sf = bracketPick.sf, fin = bracketPick.finale, vit = bracketPick.vitez;
+
+    // Levá půlka: osmifinále páry 0-3, čtvrtfinále 0-1, semifinále 0
+    // Pravá půlka: osmifinále páry 4-7, čtvrtfinále 2-3, semifinále 1
+    const qfPar = qfPary();   // 4 páry čtvrtfinále
+    const sfPar = sfPary();   // 2 páry semifinále
+
+    const levaR16 = [0,1,2,3].map(i => nahledPar(r16[i] || [null,null], qf[i]));
+    const pravaR16 = [4,5,6,7].map(i => nahledPar(r16[i] || [null,null], qf[i]));
+    const levaQf = [0,1].map(i => nahledPar(qfPar[i], sf[i]));
+    const pravaQf = [2,3].map(i => nahledPar(qfPar[i], sf[i]));
+    const levaSf = nahledPar(sfPar[0], fin[0]);
+    const pravaSf = nahledPar(sfPar[1], fin[1]);
+
+    const html = `
+        <div class="np-wrap">
+            <div class="np-header">
+                <div style="font-size:.7em; letter-spacing:3px; opacity:.6;">${currentUser || ''} · CESTA K TITULU</div>
+                <div style="font-size:1.2em; font-weight:900; color:var(--gold);">🏆 Tvůj pavouk</div>
+            </div>
+            <div class="np-scroll">
+                <div class="np-bracket">
+                    <div class="np-sloupec">${levaR16.join('')}</div>
+                    <div class="np-sloupec np-stred-v">${levaQf.join('')}</div>
+                    <div class="np-sloupec np-stred-v">${levaSf}</div>
+                    <div class="np-finale">
+                        <div class="np-pohar">🏆</div>
+                        <div class="np-vitez-box">${vit ? nahledTym(vit, true) : '<div class="np-tym np-prazdny">— ? —</div>'}</div>
+                    </div>
+                    <div class="np-sloupec np-stred-v">${pravaSf}</div>
+                    <div class="np-sloupec np-stred-v">${pravaQf.join('')}</div>
+                    <div class="np-sloupec">${pravaR16.join('')}</div>
+                </div>
+            </div>
+            <button class="np-zavrit" onclick="document.getElementById('pavoukNahled').style.display='none';">Zavřít</button>
+        </div>`;
+
+    let modal = document.getElementById('pavoukNahled');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'pavoukNahled';
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(5,8,20,.95); z-index:10050; overflow-y:auto; padding:20px 8px;';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = html;
+    modal.style.display = 'block';
+}
+
 function renderBracket() {
     const ob = document.getElementById('dl-obsah');
     if (!ob) return;
@@ -959,7 +1044,8 @@ function renderBracket() {
         <div class="br-vitez">
             <div class="lbl">🏆 Tvůj vítěz Ligy mistrů</div>
             <div class="jm">${bracketPick.vitez}</div>
-        </div>` : ''}
+        </div>
+        <button onclick="zobrazPavoukNahled()" style="width:100%; margin-top:10px; padding:11px; border-radius:12px; border:1px solid var(--gold); background:rgba(var(--gold-rgb,212,175,55),.12); color:var(--gold); font-weight:800; cursor:pointer;">👁 Zobrazit celý pavouk</button>` : ''}
 
         <div style="display:flex; gap:8px; margin-top:16px;">
             <button class="br-nav-btn" onclick="bracketZpet()" ${bracketKrok === 0 ? 'disabled' : ''}
@@ -1062,11 +1148,15 @@ async function ulozDl() {
     msg.textContent = '✔ Uloženo!'; msg.style.color = '#2ecc71';
     await nactiVse();
 
+    // Po uložení pavouka (tip2) ukaž náhled celé cesty
+    const byloPavouk = payload && payload.tip2;
+
     // Po uložení dlouhodobého tipu zavři editační modal a ukaž QR platbu.
     // Platbu ukazujeme jen tomu, kdo ještě nezaplatil (zaplaceno se drží na řádku v cl_dlouhodobe).
     zavriDl();
     const uzZaplatil = mujDl && mujDl.zaplaceno;
     if (!uzZaplatil) ukazPlatbu(mojeJmeno);
+    else if (byloPavouk) setTimeout(() => zobrazPavoukNahled(), 300);
 }
 
 /* ============================================================
