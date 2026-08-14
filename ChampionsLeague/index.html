@@ -365,7 +365,7 @@ select.pole option { background: #10131f; color: var(--text); }
 .br-pair { border: 1px solid rgba(var(--fial-rgb),.22); border-radius: 10px; overflow: hidden; }
 .br-team { padding: 9px 11px; font-size: .8em; font-weight: 700; cursor: pointer; border-bottom: 1px solid rgba(var(--fial-rgb),.12); transition: background .15s; color: var(--text); }
 .br-team-logo { display: flex; align-items: center; gap: 8px; }
-.br-team-logo img { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
+.br-team-logo img { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; background: #fff; border-radius: 50%; padding: 2px; }
 .br-team-logo span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .br-team:last-child { border-bottom: none; }
 .br-team:hover:not(.tbd) { background: rgba(var(--fial-rgb),.1); }
@@ -414,7 +414,7 @@ html[data-theme="city"] .back, html[data-theme="city"] .zpet { text-shadow: 0 1p
 .np-stred-v { justify-content:space-around; height:100%; }
 .np-par { display:flex; flex-direction:column; gap:3px; background:rgba(255,255,255,.03); border:1px solid rgba(var(--fial-rgb),.15); border-radius:8px; padding:4px; }
 .np-tym { display:flex; align-items:center; gap:6px; padding:6px 8px; border-radius:6px; font-size:.75em; font-weight:700; background:rgba(255,255,255,.04); }
-.np-tym img { width:22px; height:22px; object-fit:contain; flex-shrink:0; }
+.np-tym img { width:22px; height:22px; object-fit:contain; flex-shrink:0; background:#fff; border-radius:50%; padding:2px; }
 .np-tym span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .np-vitez { background:linear-gradient(135deg, rgba(var(--gold-rgb,212,175,55),.3), rgba(var(--gold-rgb,212,175,55),.1)); border:1px solid var(--gold); color:var(--gold); }
 .np-prazdny { opacity:.35; font-style:italic; justify-content:center; }
@@ -454,7 +454,7 @@ function zobrazKlubOdznak(t) {
 </head>
 <body>
 <img id="klubOdznak" src="" alt="" style="display:none; position:fixed; top:10px; left:12px; z-index:10000; width:64px; height:64px; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));">
-<img id="klubVodoznak" src="" alt="" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:0; width:75vw; max-width:420px; height:auto; object-fit:contain; opacity:.20; pointer-events:none;">
+<img id="klubVodoznak" src="" alt="" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:0; width:75vw; max-width:420px; height:auto; object-fit:contain; opacity:.05; pointer-events:none;">
 <div id="themeSwitch" style="position:fixed; top:12px; right:12px; z-index:10000;">
     <button onclick="prepniThemePanel()" style="background:rgba(var(--fial-rgb),.12); border:1px solid rgba(var(--fial-rgb),.45); color:var(--text); width:42px; height:42px; border-radius:50%; cursor:pointer; font-size:1.2em; backdrop-filter:blur(6px);" title="Změnit vzhled">🎨</button>
     <div id="themePanel" style="display:none; position:absolute; top:50px; right:0; background:var(--dark); border:1px solid rgba(var(--fial-rgb),.45); border-radius:14px; padding:8px; min-width:180px; max-height:60vh; overflow-y:auto; box-shadow:0 12px 40px rgba(0,0,0,.5);">
