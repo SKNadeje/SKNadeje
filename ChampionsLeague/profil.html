@@ -165,7 +165,17 @@ html[data-theme="arsenal"] body {
 
 
 /* HISTORIE */
-.hist { display:flex; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid rgba(212,175,55,.08); }
+.hist { display:flex; align-items:flex-start; gap:12px; padding:11px 4px; border-bottom:1px solid rgba(212,175,55,.08); }
+.hist.klik { cursor:pointer; }
+.hist .sipka { font-size:.7em; opacity:.5; display:inline-block; transition:transform .2s; }
+.hist.otevreno .sipka { transform:rotate(180deg); }
+.rozpad { display:none; margin:8px 0 2px; padding:9px 11px; background:rgba(var(--gold-rgb),.06); border:1px solid rgba(var(--gold-rgb),.18); border-radius:10px; }
+.rozpad.open { display:block; }
+.rozpad .rr { display:flex; justify-content:space-between; align-items:center; font-size:.74em; padding:3px 0; }
+.rozpad .rr b.ok { color:#33c27a; }
+.rozpad .rr b.no { opacity:.4; font-weight:600; }
+.rozpad .rr.celkem { margin-top:5px; padding-top:6px; border-top:1px solid rgba(var(--gold-rgb),.18); font-size:.82em; }
+.rozpad .rr.celkem b { color:var(--gold); }
 .hist .ikona { font-size:1.3em; }
 .hist .telo { flex:1; min-width:0; }
 .hist .t { font-weight:800; font-size:.92em; }
@@ -494,18 +504,43 @@ async function load() {
             const jeMuj = uid === mojeAktualniId;
             const zacal = z && Date.now() > new Date(z.deadline).getTime();
             const skryt = !jeMuj && !zacal && !hotovo;
-            return `<div class="hist">
+            // Rozpad bodů z uložených příznaků. Trend dopočítám jako zbytek, ať sedí i outsider bonus (1/2/3 b.).
+            const rozbal = hotovo && !skryt;
+            const bSkore = t.hit_skore ? 5 : 0;
+            const bRozdil = t.hit_rozdil ? 1 : 0;
+            const bPocet = t.hit_pocet ? 1 : 0;
+            const bTrend = Math.max(0, (t.body || 0) - bSkore - bRozdil - bPocet);
+            const rr = (nazev, zisk) => `<div class="rr"><span>${nazev}</span><b class="${zisk ? 'ok' : 'no'}">${zisk ? '+' + zisk + ' b.' : '—'}</b></div>`;
+            const onclickAttr = rozbal ? ` onclick="prepniRozpad('${t.id}')"` : '';
+            const rozpadHtml = rozbal ? `<div class="rozpad" id="rozpad-${t.id}">
+                        ${rr('🎯 Přesné skóre', bSkore)}
+                        ${rr('↗️ Vítěz (trend)', bTrend)}
+                        ${rr('➖ Rozdíl skóre', bRozdil)}
+                        ${rr('🔢 Počet branek', bPocet)}
+                        <div class="rr celkem"><span>Celkem</span><b>${t.body || 0} b.</b></div>
+                    </div>` : '';
+            return `<div class="hist${rozbal ? ' klik' : ''}"${onclickAttr}>
                 <span class="ikona">${skryt ? '🙈' : (!hotovo ? '⏳' : (trefil ? '✅' : '❌'))}</span>
                 <div class="telo">
-                    <div class="t">${z ? `${z.domaci} vs ${z.hoste}` : 'Neznámý zápas'}</div>
+                    <div class="t">${z ? `${z.domaci} vs ${z.hoste}` : 'Neznámý zápas'}${rozbal ? ' <span class="sipka">▾</span>' : ''}</div>
                     <div class="s">${skryt
                         ? 'Tip skrytý do uzávěrky 🔒'
                         : `Tip: ${t.skore}${hotovo ? ` | Výsledek: ${z.vysledek_d}:${z.vysledek_h}` : ' | čeká na výsledek'}`}</div>
+                    ${rozpadHtml}
                 </div>
                 <div class="b">${hotovo ? `+${t.body || 0} b.` : '–'}</div>
             </div>`;
         }).join('')
         : '<div class="prazdno">Zatím žádné tipy na zápasy.</div>';
+}
+
+// Rozbalení/sbalení rozpadu bodů u vyhodnoceného zápasu
+function prepniRozpad(id) {
+    const el = document.getElementById('rozpad-' + id);
+    if (!el) return;
+    const otev = el.classList.toggle('open');
+    const row = el.closest('.hist');
+    if (row) row.classList.toggle('otevreno', otev);
 }
 
 // ⚽ Fotbalová + rozšířená sada avatarů
