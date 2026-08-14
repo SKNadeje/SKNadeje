@@ -318,17 +318,34 @@ html[data-theme="arsenal"] h1, html[data-theme="arsenal"] .zpet {
 #dlModal { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(8,10,18,.97); overflow-y: auto; padding: 28px 16px 46px; }
 .modal-inner { max-width: 500px; margin: 0 auto; text-align: left; position: relative; }
 .modal-close { position: absolute; top: -6px; right: 0; font-size: 2.1em; cursor: pointer; opacity: .4; line-height: 1; color: var(--text); }
-.dl-sekce { margin-bottom: 20px; }
+.dl-sekce { margin-bottom: 22px; }
 .dl-sekce h3 { color: var(--gold); font-size: .78em; letter-spacing: 1.5px; text-transform: uppercase; margin: 0 0 4px; }
 .dl-sekce .pocitadlo { font-size: .68em; opacity: .5; margin-bottom: 9px; }
+/* Progress bar výběru */
+.dl-progress { height: 5px; background: rgba(var(--fial-rgb),.12); border-radius: 100px; margin: 4px 0 12px; overflow: hidden; }
+.dl-progress .fill { height: 100%; background: linear-gradient(90deg, var(--fial), var(--gold)); border-radius: 100px; transition: width .3s; }
+.dl-progress.full .fill { background: linear-gradient(90deg, #2ecc71, var(--gold)); }
 .chips { display: flex; flex-wrap: wrap; gap: 7px; }
 .chip {
     font-size: .72em; font-weight: 700; padding: 7px 13px; color: var(--text);
     border: 1px solid rgba(212,175,55,.25); border-radius: 100px;
-    cursor: pointer; user-select: none; transition: all .15s; opacity: .75;
+    cursor: pointer; user-select: none; transition: all .15s; opacity: .72;
 }
-.chip.on { background: rgba(var(--fial-rgb),.2); border-color: var(--fial); color: var(--fial); opacity: 1; }
+.chip.on {
+    background: linear-gradient(135deg, rgba(var(--fial-rgb),.28), rgba(var(--gold-rgb,212,175,55),.15));
+    border-color: var(--fial); color: var(--fial); opacity: 1; font-weight: 800;
+    box-shadow: 0 2px 8px rgba(var(--fial-rgb),.2);
+}
+.chip.on::before { content: '✓ '; font-weight: 900; }
 .chip.dis { opacity: .3; cursor: not-allowed; }
+/* České otázky (Slavia) blok */
+.dl-cesko-blok {
+    background: linear-gradient(135deg, rgba(215,20,26,.1), rgba(0,82,159,.06));
+    border: 1px solid rgba(215,20,26,.3); border-radius: 14px; padding: 14px; margin-bottom: 20px;
+}
+.dl-cesko-blok .dl-cesko-hlava { font-weight: 900; color: var(--gold); font-size: .82em; letter-spacing: 1px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.dl-cesko-blok .dl-sekce { margin-bottom: 14px; }
+.dl-cesko-blok .dl-sekce:last-child { margin-bottom: 0; }
 select.pole, input.pole {
     width: 100%; background: rgba(5,8,15,.6); color: var(--text);
     border: 1px solid rgba(212,175,55,.25); border-radius: 11px;
@@ -347,6 +364,9 @@ select.pole option { background: #10131f; color: var(--text); }
 .br-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .br-pair { border: 1px solid rgba(var(--fial-rgb),.22); border-radius: 10px; overflow: hidden; }
 .br-team { padding: 9px 11px; font-size: .8em; font-weight: 700; cursor: pointer; border-bottom: 1px solid rgba(var(--fial-rgb),.12); transition: background .15s; color: var(--text); }
+.br-team-logo { display: flex; align-items: center; gap: 8px; }
+.br-team-logo img { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
+.br-team-logo span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .br-team:last-child { border-bottom: none; }
 .br-team:hover:not(.tbd) { background: rgba(var(--fial-rgb),.1); }
 .br-team.sel { background: rgba(212,175,55,.16); color: var(--gold); }
@@ -434,7 +454,7 @@ function zobrazKlubOdznak(t) {
 </head>
 <body>
 <img id="klubOdznak" src="" alt="" style="display:none; position:fixed; top:10px; left:12px; z-index:10000; width:64px; height:64px; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));">
-<img id="klubVodoznak" src="" alt="" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:0; width:75vw; max-width:420px; height:auto; object-fit:contain; opacity:.05; pointer-events:none;">
+<img id="klubVodoznak" src="" alt="" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:0; width:75vw; max-width:420px; height:auto; object-fit:contain; opacity:.20; pointer-events:none;">
 <div id="themeSwitch" style="position:fixed; top:12px; right:12px; z-index:10000;">
     <button onclick="prepniThemePanel()" style="background:rgba(var(--fial-rgb),.12); border:1px solid rgba(var(--fial-rgb),.45); color:var(--text); width:42px; height:42px; border-radius:50%; cursor:pointer; font-size:1.2em; backdrop-filter:blur(6px);" title="Změnit vzhled">🎨</button>
     <div id="themePanel" style="display:none; position:absolute; top:50px; right:0; background:var(--dark); border:1px solid rgba(var(--fial-rgb),.45); border-radius:14px; padding:8px; min-width:180px; max-height:60vh; overflow-y:auto; box-shadow:0 12px 40px rgba(0,0,0,.5);">
@@ -887,6 +907,13 @@ function toggleChip(klic, tym, max, kontejner) {
     document.getElementById(kontejner).outerHTML = chipy(kontejner, tymy, klic, max);
     const poc = document.getElementById('poc-' + klic);
     if (poc) poc.textContent = `${vyber[klic].length} / ${max}`;
+    // aktualizuj progress bar
+    const prog = document.getElementById('prog-' + klic);
+    if (prog) {
+        const pct = vyber[klic].length / max * 100;
+        prog.querySelector('.fill').style.width = pct + '%';
+        prog.classList.toggle('full', vyber[klic].length >= max);
+    }
     if (dlFaze === 2) obnovNavazne(klic);
 }
 
@@ -998,14 +1025,19 @@ const BR_SKUPINY = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
 
 function bracketRadek(kolo, pary, vybrane) {
     const jeFinale = kolo === 'final';
+    const tymHtml = (nazev) => {
+        if (!nazev) return '— čeká na výsledek —';
+        const logo = (typeof logoTymu === 'function') ? logoTymu(nazev, 20) : '';
+        return `${logo}<span>${nazev}</span>`;
+    };
     return `<div class="br-grid">` + pary.map((p, i) => {
         // dvojice párů i*2 a i*2+1 se potkají dál → stejná barva. Finále nemá "další kolo".
         const barva = jeFinale ? null : BR_SKUPINY[Math.floor(i / 2) % BR_SKUPINY.length];
         const okraj = barva ? `border-left:4px solid ${barva};` : '';
         return `
         <div class="br-pair" style="${okraj}">
-            <div class="br-team ${vybrane[i] === p[0] ? 'sel' : ''} ${!p[0] ? 'tbd' : ''}" onclick="bracketPick_('${kolo}', ${i}, 0)">${p[0] || '— čeká na výsledek —'}</div>
-            <div class="br-team ${vybrane[i] === p[1] ? 'sel' : ''} ${!p[1] ? 'tbd' : ''}" onclick="bracketPick_('${kolo}', ${i}, 1)">${p[1] || '— čeká na výsledek —'}</div>
+            <div class="br-team br-team-logo ${vybrane[i] === p[0] ? 'sel' : ''} ${!p[0] ? 'tbd' : ''}" onclick="bracketPick_('${kolo}', ${i}, 0)">${tymHtml(p[0])}</div>
+            <div class="br-team br-team-logo ${vybrane[i] === p[1] ? 'sel' : ''} ${!p[1] ? 'tbd' : ''}" onclick="bracketPick_('${kolo}', ${i}, 1)">${tymHtml(p[1])}</div>
         </div>`;
     }).join('') + `</div>`;
 }
@@ -1148,22 +1180,30 @@ function otevriDl(faze) {
         vyber.propadlici = [...(t.propadlici || [])];
         ob.innerHTML = `
             <h2 style="color:var(--gold); margin-top:0;">📋 Základní část</h2>
-            <div class="dl-sekce"><h3>Top 8 tabulky <span class="pocitadlo" id="poc-top8">${vyber.top8.length} / 8</span></h3>${chipy('ch-top8', stav.tymy, 'top8', 8)}</div>
+            <div class="dl-sekce">
+                <h3>Top 8 tabulky <span class="pocitadlo" id="poc-top8">${vyber.top8.length} / 8</span></h3>
+                <div class="dl-progress ${vyber.top8.length>=8?'full':''}" id="prog-top8"><div class="fill" style="width:${vyber.top8.length/8*100}%"></div></div>
+                ${chipy('ch-top8', stav.tymy, 'top8', 8)}
+            </div>
             <div class="dl-sekce"><h3>👑 Vítěz základní části</h3>
                 <select class="pole" id="dl-vitezZC"><option value="">– vyber –</option>${stav.tymy.map(x => `<option${t.vitezZC === x ? ' selected' : ''}>${x}</option>`).join('')}</select></div>
-            <div class="dl-sekce"><h3>📉 Propadlíci (bez play-off, místa 25–36) <span class="pocitadlo" id="poc-propadlici">${vyber.propadlici.length} / 12</span></h3>${chipy('ch-prop', stav.tymy, 'propadlici', 12)}</div>
+            <div class="dl-sekce">
+                <h3>📉 Propadlíci (bez play-off, místa 25–36) <span class="pocitadlo" id="poc-propadlici">${vyber.propadlici.length} / 12</span></h3>
+                <div class="dl-progress ${vyber.propadlici.length>=12?'full':''}" id="prog-propadlici"><div class="fill" style="width:${vyber.propadlici.length/12*100}%"></div></div>
+                ${chipy('ch-prop', stav.tymy, 'propadlici', 12)}
+            </div>
 
-            <div class="dl-sekce"><h3>🇨🇿 SK Slavia Praha – kam dojde v soutěži (${BODY.cech} b.)</h3>
-                <select class="pole" id="dl-cech"><option value="">– vyber –</option>${CECH_MOZNOSTI.map(m => `<option${t.cech === m ? ' selected' : ''}>${m}</option>`).join('')}</select></div>
-
-            <div class="dl-sekce"><h3>🇨🇿 Slavia – umístění v tabulce ligové fáze (${BODY.slavia_misto} b.)</h3>
-                <input class="pole" id="dl-slavia-misto" type="number" min="1" max="36" placeholder="1–36" value="${t.slavia_misto ?? ''}"></div>
-
-            <div class="dl-sekce"><h3>🇨🇿 Slavia – počet bodů v ligové fázi (${BODY.slavia_body} b.)</h3>
-                <input class="pole" id="dl-slavia-body" type="number" min="0" placeholder="např. 12" value="${t.slavia_body ?? ''}"></div>
-
-            <div class="dl-sekce"><h3>🇨🇿 Slavia – počet vstřelených gólů (${BODY.slavia_goly} b.)</h3>
-                <input class="pole" id="dl-slavia-goly" type="number" min="0" placeholder="např. 14" value="${t.slavia_goly ?? ''}"></div>`;
+            <div class="dl-cesko-blok">
+                <div class="dl-cesko-hlava">🇨🇿 České otázky · SK Slavia Praha</div>
+                <div class="dl-sekce"><h3>Kam Slavia dojde (${BODY.cech} b.)</h3>
+                    <select class="pole" id="dl-cech"><option value="">– vyber –</option>${CECH_MOZNOSTI.map(m => `<option${t.cech === m ? ' selected' : ''}>${m}</option>`).join('')}</select></div>
+                <div class="dl-sekce"><h3>Umístění v tabulce ligové fáze (${BODY.slavia_misto} b.)</h3>
+                    <input class="pole" id="dl-slavia-misto" type="number" min="1" max="36" placeholder="1–36" value="${t.slavia_misto ?? ''}"></div>
+                <div class="dl-sekce"><h3>Počet bodů v ligové fázi (${BODY.slavia_body} b.)</h3>
+                    <input class="pole" id="dl-slavia-body" type="number" min="0" placeholder="např. 12" value="${t.slavia_body ?? ''}"></div>
+                <div class="dl-sekce"><h3>Počet vstřelených gólů (${BODY.slavia_goly} b.)</h3>
+                    <input class="pole" id="dl-slavia-goly" type="number" min="0" placeholder="např. 14" value="${t.slavia_goly ?? ''}"></div>
+            </div>`;
     } else {
         if ((stav.bracket_r16 || []).length < 8) return;
         const d2 = stav.deadline_tip2 ? new Date(stav.deadline_tip2) : null;
