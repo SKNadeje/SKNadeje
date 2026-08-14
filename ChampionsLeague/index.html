@@ -206,6 +206,28 @@ html[data-theme="arsenal"] h1, html[data-theme="arsenal"] .zpet {
 .dl-karta.zamceno { opacity: .6; cursor: default; }
 .dl-karta .t { font-weight: 900; color: var(--gold); font-size: .9em; letter-spacing: .8px; }
 .dl-karta .s { font-size: .72em; opacity: .55; margin-top: 5px; line-height: 1.5; }
+/* Nové karty dlouhodobek v2 */
+.dl-karta-v2 {
+    display: flex; align-items: center; gap: 14px;
+    background: linear-gradient(135deg, rgba(var(--gold-rgb,212,175,55),.1), rgba(var(--fial-rgb),.04));
+    border: 1px solid rgba(var(--gold-rgb,212,175,55),.3); border-radius: 16px;
+    padding: 16px 14px; margin-bottom: 12px; cursor: pointer; transition: all .2s; position: relative; overflow: hidden;
+}
+.dl-karta-v2:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+.dl-karta-v2 .dl-ikona {
+    font-size: 2em; flex-shrink: 0; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;
+    background: rgba(var(--gold-rgb,212,175,55),.15); border-radius: 14px;
+}
+.dl-karta-v2 .dl-telo { flex: 1; min-width: 0; }
+.dl-karta-v2 .dl-nadpis { font-weight: 900; color: var(--gold); font-size: 1.05em; letter-spacing: .5px; margin-bottom: 8px; }
+.dl-body-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.dl-bod {
+    font-size: .68em; background: rgba(var(--fial-rgb),.1); border: 1px solid rgba(var(--fial-rgb),.2);
+    padding: 3px 8px; border-radius: 100px; opacity: .9; white-space: nowrap;
+}
+.dl-bod b { color: var(--gold); margin-left: 3px; }
+.dl-karta-v2 .dl-sipka { font-size: 1.8em; color: var(--gold); opacity: .5; flex-shrink: 0; }
+.dl-karta-v2 .stav-tip { margin-top: 8px; font-size: .72em; font-weight: 800; }
 .dl-karta .stav-tip { margin-top: 8px; font-size: .72em; font-weight: 800; }
 .dl-odpocet {
     margin-top: 9px; display: inline-flex; align-items: center; gap: 7px;
@@ -412,7 +434,7 @@ function zobrazKlubOdznak(t) {
 </head>
 <body>
 <img id="klubOdznak" src="" alt="" style="display:none; position:fixed; top:10px; left:12px; z-index:10000; width:64px; height:64px; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));">
-<img id="klubVodoznak" src="" alt="" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:0; width:75vw; max-width:420px; height:auto; object-fit:contain; opacity:.30; pointer-events:none;">
+<img id="klubVodoznak" src="" alt="" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:0; width:75vw; max-width:420px; height:auto; object-fit:contain; opacity:.05; pointer-events:none;">
 <div id="themeSwitch" style="position:fixed; top:12px; right:12px; z-index:10000;">
     <button onclick="prepniThemePanel()" style="background:rgba(var(--fial-rgb),.12); border:1px solid rgba(var(--fial-rgb),.45); color:var(--text); width:42px; height:42px; border-radius:50%; cursor:pointer; font-size:1.2em; backdrop-filter:blur(6px);" title="Změnit vzhled">🎨</button>
     <div id="themePanel" style="display:none; position:absolute; top:50px; right:0; background:var(--dark); border:1px solid rgba(var(--fial-rgb),.45); border-radius:14px; padding:8px; min-width:180px; max-height:60vh; overflow-y:auto; box-shadow:0 12px 40px rgba(0,0,0,.5);">
@@ -479,15 +501,32 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
 
         <!-- Dlouhodobé tipy (jen ve filtru Dlouhodobé) -->
         <div id="dlouhodobeWrap" style="display:none;">
-            <div class="dl-karta" id="dl1-karta" onclick="otevriDl(1)">
-                <div class="t">📋 DLOUHODOBÝ TIP · ZÁKLADNÍ ČÁST</div>
-                <div class="s">Top 8 tabulky (à 3 b.) · vítěz základní části (8 b.) · 12 propadlíků bez play-off (à 2 b.)</div>
-                <div class="stav-tip" id="dl1-stav">…</div>
+            <div class="dl-karta dl-karta-v2" id="dl1-karta" onclick="otevriDl(1)">
+                <div class="dl-ikona">📋</div>
+                <div class="dl-telo">
+                    <div class="dl-nadpis">Základní část</div>
+                    <div class="dl-body-list">
+                        <span class="dl-bod">Top 8 <b>3 b.</b></span>
+                        <span class="dl-bod">Vítěz ZČ <b>8 b.</b></span>
+                        <span class="dl-bod">Propadlíci <b>2 b.</b></span>
+                    </div>
+                    <div class="stav-tip" id="dl1-stav">…</div>
+                </div>
+                <div class="dl-sipka">›</div>
             </div>
-            <div class="dl-karta" id="dl2-karta" onclick="otevriDl(2)">
-                <div class="t">🏆 DLOUHODOBÝ TIP · CESTA K TITULU</div>
-                <div class="s">Čtvrtfinalisté (à 2 b.) · semifinalisté (à 4 b.) · finalisté (à 6 b.) · vítěz CL (10 b.)</div>
-                <div class="stav-tip" id="dl2-stav">…</div>
+            <div class="dl-karta dl-karta-v2" id="dl2-karta" onclick="otevriDl(2)">
+                <div class="dl-ikona">🏆</div>
+                <div class="dl-telo">
+                    <div class="dl-nadpis">Cesta k titulu</div>
+                    <div class="dl-body-list">
+                        <span class="dl-bod">Čtvrtfinále <b>2 b.</b></span>
+                        <span class="dl-bod">Semifinále <b>4 b.</b></span>
+                        <span class="dl-bod">Finále <b>6 b.</b></span>
+                        <span class="dl-bod">Vítěz CL <b>10 b.</b></span>
+                    </div>
+                    <div class="stav-tip" id="dl2-stav">…</div>
+                </div>
+                <div class="dl-sipka">›</div>
             </div>
         </div>
 
@@ -1096,6 +1135,8 @@ function renderBracket() {
 
 function otevriDl(faze) {
     if (!mojeId) return alert('Nejdřív se přihlas na hlavní stránce.');
+    // Schovej klubový odznak v rohu – překrýval by nadpis dlouhodobky
+    var _od = document.getElementById('klubOdznak'); if (_od) _od.style.visibility = 'hidden';
     dlFaze = faze;
     const ob = document.getElementById('dl-obsah');
     if (faze === 1) {
@@ -1141,7 +1182,7 @@ function otevriDl(faze) {
     document.getElementById('dl-msg').textContent = '';
     document.getElementById('dlModal').style.display = 'block';
 }
-function zavriDl() { document.getElementById('dlModal').style.display = 'none'; }
+function zavriDl() { document.getElementById('dlModal').style.display = 'none'; var _od = document.getElementById('klubOdznak'); if (_od) _od.style.visibility = 'visible'; }
 
 async function ulozDl() {
     const msg = document.getElementById('dl-msg');
