@@ -611,8 +611,8 @@ async function vyhodnotZapas(id) {
                 trendBody = 1;
             }
         }
-        // Bonusy: stejný rozdíl skóre + stejný počet branek (jako u hokeje, sčítá se)
-        const hitRozdil = (td - th) === (d - h);
+        // Bonusy: stejný ROZDÍL skóre (ABSOLUTNÍ – nezáleží, kdo vyhrál: 3:1 i 0:2 = rozdíl 2) + stejný počet branek, sčítá se
+        const hitRozdil = Math.abs(td - th) === Math.abs(d - h);
         const hitPocet = (td + th) === (d + h);
 
         // Body se sčítají (jako u hokeje): přesné skóre + trend + rozdíl + počet
