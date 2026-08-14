@@ -819,9 +819,6 @@ async function togglePaid(uid, curr) {
     nactiDlouhodobe();
 }
 
-init();
-</script>
-<script>
 // Rozbalovací sekce adminu – default vše sbalené, klikáním otvírám
 function initSbalovani() {
     document.querySelectorAll('.karta').forEach(function(karta) {
@@ -847,6 +844,9 @@ function initSbalovani() {
         });
     });
 }
+
+// Spustit až teď, když jsou obě funkce (init i initSbalovani) bezpečně definované
+init();
 </script>
 </body>
 </html>
