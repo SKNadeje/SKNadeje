@@ -75,13 +75,12 @@ async function init() {
     document.getElementById('obsah').className = '';
     document.getElementById('obsah').innerHTML = `
         <div class="karta">
-            <h2>➕ Vypsat zápas k tipování</h2>
-            <div class="flexrow">
-                <select class="pole" id="n-domaci"><option value="">– domácí –</option></select>
-                <select class="pole" id="n-hoste"><option value="">– hosté –</option></select>
+            <h2>➕ Vypsat zápasy k tipování</h2>
+            <div style="font-size:.8em; opacity:.7; margin-bottom:10px;">
+                Nastav <b>společný deadline</b> a fázi – předvyplní se všem řádkům. U jednotlivého zápasu je můžeš přepsat.
             </div>
             <div class="flexrow">
-                <select class="pole" id="n-faze">
+                <select class="pole" id="hr-faze">
                     <option value="ZC">Základní část</option>
                     <option value="PO">Play-off (únor)</option>
                     <option value="OSM">Osmifinále</option>
@@ -89,9 +88,15 @@ async function init() {
                     <option value="SF">Semifinále</option>
                     <option value="FINALE">Finále</option>
                 </select>
-                <input class="pole" id="n-deadline" type="datetime-local">
+                <input class="pole" id="hr-deadline" type="datetime-local" title="Společný deadline">
             </div>
-            <button class="btn" onclick="pridejZapas()">VYPSAT ZÁPAS</button>
+            <button class="btn btn-mini" style="margin:6px 0;" onclick="hrPredvyplnit()">⬇️ Předvyplnit deadline+fázi do všech řádků</button>
+
+            <div id="hr-radky"></div>
+
+            <button class="btn btn-mini" style="background:#2c3e50; margin-top:8px;" onclick="hrPridejRadek()">➕ Další zápas</button>
+            <button class="btn" style="margin-top:10px;" onclick="hrUlozVse()">📤 VYPSAT VŠECHNY ZÁPASY</button>
+            <div id="hr-msg" style="margin-top:8px; font-size:.85em;"></div>
         </div>
 
         <div class="karta">
@@ -260,13 +265,119 @@ async function nactiStav() {
     initVysl2();
 }
 
-function naplnTymSelecty() {
+// ── HROMADNÉ VYPISOVÁNÍ ZÁPASŮ ──
+function tymOptions(sel) {
     const tymy = stav.tymy || [];
-    const opt = '<option value="">– vyber –</option>' + tymy.map(t => `<option>${t}</option>`).join('');
-    ['n-domaci', 'n-hoste'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.innerHTML = opt;
+    return '<option value="">– vyber –</option>' + tymy.map(t => `<option${t === sel ? ' selected' : ''}>${t}</option>`).join('');
+}
+const FAZE_OPTS = [['ZC','Základní část'],['PO','Play-off'],['OSM','Osmifinále'],['QF','Čtvrtfinále'],['SF','Semifinále'],['FINALE','Finále']];
+
+function hrRadekHTML(i) {
+    return `
+    <div class="hr-radek" data-i="${i}" style="border:1px solid rgba(var(--fial-rgb),.2); border-radius:10px; padding:10px; margin-bottom:8px;">
+        <div class="flexrow">
+            <select class="pole hr-domaci">${tymOptions('')}</select>
+            <select class="pole hr-hoste">${tymOptions('')}</select>
+        </div>
+        <div class="flexrow" style="margin-top:6px;">
+            <select class="pole hr-faze">${FAZE_OPTS.map(f=>`<option value="${f[0]}">${f[1]}</option>`).join('')}</select>
+            <input class="pole hr-dl" type="datetime-local" title="Deadline tohoto zápasu">
+        </div>
+        <div style="margin-top:6px; font-size:.8em; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <span style="opacity:.7;">🎲 Outsider (3b výhra / 2b remíza):</span>
+            <select class="pole hr-outsider" style="flex:1; min-width:120px;">
+                <option value="">Nikdo</option>
+            </select>
+            <button class="btn btn-mini" style="background:#7a2020;" onclick="hrSmazRadek(${i})">✕</button>
+        </div>
+    </div>`;
+}
+
+let _hrPocet = 0;
+function hrPridejRadek() {
+    const cont = document.getElementById('hr-radky');
+    if (!cont) return;
+    const div = document.createElement('div');
+    div.innerHTML = hrRadekHTML(_hrPocet++);
+    const radek = div.firstElementChild;
+    cont.appendChild(radek);
+    // Naplň outsider select podle vybraných týmů (aktualizuje se při změně)
+    const dom = radek.querySelector('.hr-domaci');
+    const hos = radek.querySelector('.hr-hoste');
+    const out = radek.querySelector('.hr-outsider');
+    function updateOut() {
+        const d = dom.value, h = hos.value;
+        out.innerHTML = '<option value="">Nikdo</option>' +
+            (d ? `<option value="${d}">${d}</option>` : '') +
+            (h ? `<option value="${h}">${h}</option>` : '');
+    }
+    dom.addEventListener('change', updateOut);
+    hos.addEventListener('change', updateOut);
+    // předvyplň deadline+fázi z horních společných polí
+    const dl = document.getElementById('hr-deadline')?.value;
+    const fz = document.getElementById('hr-faze')?.value;
+    if (dl) radek.querySelector('.hr-dl').value = dl;
+    if (fz) radek.querySelector('.hr-faze').value = fz;
+}
+
+function hrSmazRadek(i) {
+    const r = document.querySelector(`.hr-radek[data-i="${i}"]`);
+    if (r) r.remove();
+}
+
+function hrPredvyplnit() {
+    const dl = document.getElementById('hr-deadline').value;
+    const fz = document.getElementById('hr-faze').value;
+    document.querySelectorAll('.hr-radek').forEach(r => {
+        if (dl) r.querySelector('.hr-dl').value = dl;
+        if (fz) r.querySelector('.hr-faze').value = fz;
     });
+    msg('Předvyplněno do všech řádků.');
+}
+
+async function hrUlozVse() {
+    const radky = [...document.querySelectorAll('.hr-radek')];
+    const m = document.getElementById('hr-msg');
+    if (!radky.length) { m.innerHTML = '<span style="color:#ff5555;">Přidej aspoň jeden zápas.</span>'; return; }
+
+    const zapasy = [];
+    for (const r of radky) {
+        const domaci = r.querySelector('.hr-domaci').value.trim();
+        const hoste = r.querySelector('.hr-hoste').value.trim();
+        const faze = r.querySelector('.hr-faze').value;
+        const dl = r.querySelector('.hr-dl').value;
+        const outsider = r.querySelector('.hr-outsider').value.trim() || null;
+        if (!domaci || !hoste || !dl) {
+            m.innerHTML = '<span style="color:#ff5555;">Každý zápas musí mít domácí, hosty i deadline.</span>';
+            return;
+        }
+        if (domaci === hoste) {
+            m.innerHTML = '<span style="color:#ff5555;">Domácí a hosté nemůžou být stejný tým.</span>';
+            return;
+        }
+        zapasy.push({ domaci, hoste, faze, deadline: new Date(dl).toISOString(), outsider });
+    }
+
+    m.innerHTML = '<span style="opacity:.6;">Ukládám…</span>';
+    const { error } = await sb.from('cl_zapasy').insert(zapasy);
+    if (error) { m.innerHTML = '<span style="color:#ff5555;">Chyba: ' + error.message + '</span>'; return; }
+
+    // Notifikace na každý zápas (jako u jednotlivého)
+    for (const z of zapasy) {
+        const kdy = new Date(z.deadline).toLocaleString('cs-CZ', { day:'numeric', month:'numeric', hour:'2-digit', minute:'2-digit' });
+        posliNotifikaciZapas(z.domaci, z.hoste, z.deadline);
+    }
+
+    m.innerHTML = `<span style="color:#2ecc71;">✅ Vypsáno ${zapasy.length} zápasů!</span>`;
+    document.getElementById('hr-radky').innerHTML = '';
+    hrPridejRadek();
+    nactiZapasy();
+}
+
+function naplnTymSelecty() {
+    // Při načtení připrav jeden prázdný řádek hromadného zadávání
+    const cont = document.getElementById('hr-radky');
+    if (cont && !cont.children.length) hrPridejRadek();
 }
 
 function renderR16Pary() {
