@@ -187,6 +187,27 @@ html[data-theme="slavia"] {
 html[data-theme="slavia"] body { background: var(--bg-klub) !important; background-attachment: fixed; text-shadow: 0 1px 3px rgba(90,0,4,.6); }
 html[data-theme="slavia"] h1 { color: #ffffff; -webkit-text-fill-color: #ffffff; text-shadow: 0 0 12px rgba(120,10,15,.9), 0 2px 6px rgba(0,0,0,.6), 0 0 3px rgba(120,10,15,1); }
 html[data-theme="slavia"] .zpet, html[data-theme="slavia"] .back { text-shadow: 0 1px 3px rgba(255,255,255,.7); color: rgba(150,10,15,.8) !important; }
+
+/* 🔵 CHELSEA – královská modrá */
+html[data-theme="chelsea"] {
+    --fial: #6a9fd8; --fial-rgb: 106,159,216; --magenta: #ffffff; --magenta-rgb: 255,255,255;
+    --gold: #ffd700; --gold-rgb: 255,215,0; --dark: #030f26; --bg-top: #0a3a80; --text: #eaf2ff; --text-rgb: 234,242,255;
+    --card-bg: rgba(106,159,216,.1);
+    --bg-klub: linear-gradient(180deg, #0a52b5 0%, #084298 25%, #063372 50%, #04214d 75%, #030f26 100%);
+}
+/* 🟡 DORTMUND – žluto-černá */
+html[data-theme="dortmund"] {
+    --fial: #fde100; --fial-rgb: 253,225,0; --magenta: #fde100; --magenta-rgb: 253,225,0;
+    --gold: #fde100; --gold-rgb: 253,225,0; --dark: #0a0a0a; --bg-top: #1a1a1a; --text: #ffffff; --text-rgb: 255,255,255;
+    --card-bg: rgba(253,225,0,.08);
+    --bg-klub: linear-gradient(180deg, #2a2a1a 0%, #1a1a10 30%, #121208 55%, #0a0a05 100%);
+}
+html[data-theme="chelsea"] body,
+html[data-theme="dortmund"] body {
+    background: var(--bg-klub) !important; background-attachment: fixed;
+}
+html[data-theme="dortmund"] h1 { color: #fde100; -webkit-text-fill-color: #fde100; text-shadow: 0 0 14px rgba(253,225,0,.4), 0 2px 6px rgba(0,0,0,.6); }
+
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -198,18 +219,22 @@ const KLUB_LOGA = {
     city: 'https://crests.football-data.org/65.png',
     psg: 'https://crests.football-data.org/524.png',
     arsenal: 'https://crests.football-data.org/57.png',
-    slavia: 'https://crests.football-data.org/930.png'
+    slavia: 'https://crests.football-data.org/930.png',
+    chelsea: 'https://crests.football-data.org/61.png',
+    dortmund: 'https://crests.football-data.org/4.png'
 };
 function zobrazKlubOdznak(t) {
+    var vz = document.getElementById('klubVodoznak');
+    if (vz) { if (KLUB_LOGA[t]) { vz.src = KLUB_LOGA[t]; vz.style.display = 'block'; } else { vz.style.display = 'none'; } }
     var el = document.getElementById('klubOdznak');
     if (!el) return;
-    if (KLUB_LOGA[t]) { el.src = KLUB_LOGA[t]; el.style.display = 'block'; }
-    else { el.style.display = 'none'; }
+    el.style.display = "none";
 }
 document.addEventListener('DOMContentLoaded',function(){ var t=(function(){try{return localStorage.getItem('cl_theme')||'tmavy';}catch(e){return 'tmavy';}})(); zobrazKlubOdznak(t); });
 </script>
 </head>
 <body>
+<img id="klubVodoznak" src="" alt="" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:0; width:75vw; max-width:420px; height:auto; object-fit:contain; opacity:.10; pointer-events:none;">
 <img id="klubOdznak" src="" alt="" style="display:none; position:fixed; top:80px; right:16px; z-index:9999; width:72px; height:72px; object-fit:contain; filter:drop-shadow(0 2px 10px rgba(0,0,0,.6));">
 <div id="themeSwitch" style="position:fixed; top:12px; right:12px; z-index:10000;">
     <button onclick="prepniThemePanel()" style="background:rgba(var(--fial-rgb),.12); border:1px solid rgba(var(--fial-rgb),.45); color:var(--text); width:42px; height:42px; border-radius:50%; cursor:pointer; font-size:1.2em; backdrop-filter:blur(6px);" title="Změnit vzhled">🎨</button>
@@ -223,6 +248,8 @@ document.addEventListener('DOMContentLoaded',function(){ var t=(function(){try{r
         <button class="theme-opt" onclick="nastavTheme('psg')">🔴 PSG</button>
         <button class="theme-opt" onclick="nastavTheme('arsenal')">🔴 Arsenal</button>
         <button class="theme-opt" onclick="nastavTheme('slavia')">🔴 Slavia Praha</button>
+        <button class="theme-opt" onclick="nastavTheme('chelsea')">🔵 Chelsea</button>
+        <button class="theme-opt" onclick="nastavTheme('dortmund')">🟡 Dortmund</button>
     </div>
 </div>
 <style>
@@ -231,7 +258,7 @@ document.addEventListener('DOMContentLoaded',function(){ var t=(function(){try{r
     .theme-opt.on { background:rgba(var(--fial-rgb),.2); color:var(--fial); font-weight:800; }
 </style>
 <script>
-const CL_THEMES = ['tmavy','svetly','zlaty','real','barca','city','psg','arsenal','slavia'];
+const CL_THEMES = ['tmavy','svetly','zlaty','real','barca','city','psg','arsenal','slavia','chelsea','dortmund'];
 function nastavTheme(t){ try{ localStorage.setItem('cl_theme',t); }catch(e){}
     if(t==='tmavy') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme',t);
     document.querySelectorAll('.theme-opt').forEach((b,i)=>b.classList.toggle('on', CL_THEMES[i]===t));
