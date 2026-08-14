@@ -973,7 +973,7 @@ function zobrazPavoukNahled() {
     const html = `
         <div class="np-wrap">
             <div class="np-header">
-                <div style="font-size:.7em; letter-spacing:3px; opacity:.6;">${currentUser || ''} · CESTA K TITULU</div>
+                <div style="font-size:.7em; letter-spacing:3px; opacity:.6;">${(typeof mojeJmeno !== 'undefined' ? mojeJmeno : '') || ''} · CESTA K TITULU</div>
                 <div style="font-size:1.2em; font-weight:900; color:var(--gold);">🏆 Tvůj pavouk</div>
             </div>
             <div class="np-scroll">
