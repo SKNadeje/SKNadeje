@@ -324,8 +324,11 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     </div>
 
     <div class="blok">
-        <h2>🏅 Odznáčky</h2>
-        <div class="odznaky" id="odznaky"></div>
+        <h2 style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;" onclick="prepniOdznaky()">
+            <span>🏅 Odznáčky <span id="odznakyPocet" style="font-size:.7em; opacity:.6; font-weight:600;"></span></span>
+            <span id="odznakyToggle" style="font-size:.7em; opacity:.6;">▼ zobrazit</span>
+        </h2>
+        <div class="odznaky" id="odznaky" style="display:none;"></div>
     </div>
 
     <div class="blok">
@@ -416,16 +419,74 @@ async function load() {
     document.getElementById('hHlaska').textContent = `„${titul.hlasky[Math.abs(hashCode(uid)) % titul.hlasky.length]}"`;
 
     // ODZNÁČKY
+    // ===== STATISTIKY PRO ODZNAKY =====
+    const odVyhod = mojeTipy.filter(t => zapasMap[t.zapas_id]?.status === 'vyhodnoceno');
+    const odSlozky = (t) => {
+        const z = zapasMap[t.zapas_id];
+        const [td, th] = t.skore.split(':').map(Number);
+        const d = z.vysledek_d, h = z.vysledek_h;
+        return {
+            presne: td === d && th === h,
+            trend: (d > h && td > th) || (d < h && td < th) || (d === h && td === th),
+            rozdil: Math.abs(td - th) === Math.abs(d - h),
+            pocet: (td + th) === (d + h)
+        };
+    };
+    const odTrend = odVyhod.filter(t => odSlozky(t).trend).length;
+    const odRozdil = odVyhod.filter(t => odSlozky(t).rozdil).length;
+    const odPocet = odVyhod.filter(t => odSlozky(t).pocet).length;
+    const odMaxBody = odVyhod.reduce((m, t) => Math.max(m, t.body || 0), 0);
+    const odChrono = [...odVyhod].sort((a, b) =>
+        new Date(zapasMap[a.zapas_id]?.deadline || 0) - new Date(zapasMap[b.zapas_id]?.deadline || 0));
+    let _st = 0, odSerieTrend = 0, _sp = 0, odSerieP = 0;
+    odChrono.forEach(t => {
+        const s = odSlozky(t);
+        if (s.trend) { _st++; if (_st > odSerieTrend) odSerieTrend = _st; } else _st = 0;
+        if (s.presne) { _sp++; if (_sp > odSerieP) odSerieP = _sp; } else _sp = 0;
+    });
+    const odPocetTipu = mojeTipy.length;
+
+    // ===== 30 ODZNAKŮ (on = splněno) =====
     const odz = [
-        { on: mojeTipy.length > 0, ic: '⚽', l: 'První tip', p: 'Vsadil aspoň na jeden zápas.' },
+        // Účast a tipy
+        { on: odPocetTipu >= 1, ic: '⚽', l: 'První tip', p: 'Vsadil aspoň na jeden zápas.' },
+        { on: odPocetTipu >= 5, ic: '🐣', l: 'Rozkoukáno', p: 'Tipnul 5 zápasů.' },
+        { on: odPocetTipu >= 15, ic: '🔁', l: 'Stálice', p: 'Tipnul 15 zápasů.' },
+        { on: odPocetTipu >= 30, ic: '🏃', l: 'Maratonec', p: 'Tipnul 30 zápasů – dlouhá sezóna!' },
+        { on: ucast >= 80 && odPocetTipu >= 5, ic: '📅', l: 'Věrný fanoušek', p: 'Účast 80 %+ na vypsaných zápasech.' },
+        // Přesné výsledky
         { on: presnych >= 1, ic: '🎯', l: 'Přesňák', p: `Trefil přesný výsledek (${presnych}×).` },
-        { on: presnych >= 3, ic: '🔮', l: 'Věštec', p: 'Trefil 3+ přesných výsledků.' },
-        { on: ucast >= 80 && mojeTipy.length >= 3, ic: '📅', l: 'Věrný fanoušek', p: 'Účast 80 %+ na vypsaných zápasech.' },
-        { on: !!tip1Kompletni, ic: '📋', l: 'Základní část hotova', p: 'Vyplnil kompletní dlouhodobku 1.' },
-        { on: !!tip2Kompletni, ic: '🏆', l: 'Cesta k titulu', p: 'Vyplnil kompletní dlouhodobku 2.' },
+        { on: presnych >= 3, ic: '🔮', l: 'Věštec', p: '3+ přesných výsledků.' },
+        { on: presnych >= 6, ic: '📜', l: 'Prorok', p: '6+ přesných výsledků.' },
+        { on: presnych >= 12, ic: '🧿', l: 'Vševidoucí', p: '12+ přesných výsledků.' },
+        // Trendy (vítěz/remíza)
+        { on: odTrend >= 5, ic: '📈', l: 'Čtenář hry', p: '5+ správných trendů.' },
+        { on: odTrend >= 15, ic: '♟️', l: 'Taktik', p: '15+ správných trendů.' },
+        { on: odTrend >= 30, ic: '🧠', l: 'Stratég', p: '30+ správných trendů.' },
+        // Rozdíl a počet branek
+        { on: odRozdil >= 8, ic: '➖', l: 'Odhadce rozdílu', p: '8+ trefených rozdílů skóre.' },
+        { on: odPocet >= 8, ic: '🔢', l: 'Počtář', p: '8+ trefených počtů branek.' },
+        // Série za sebou
+        { on: odSerieTrend >= 3, ic: '🔥', l: 'Ve formě', p: '3 správné trendy za sebou.' },
+        { on: odSerieTrend >= 6, ic: '🚂', l: 'Rozjetý vlak', p: '6 správných trendů za sebou.' },
+        { on: odSerieP >= 2, ic: '💎', l: 'Neomylný', p: '2 přesné výsledky za sebou.' },
+        // Body ze zápasů
+        { on: bodyZap >= 25, ic: '✳️', l: 'Bodující', p: '25+ bodů ze zápasů.' },
+        { on: bodyZap >= 50, ic: '📊', l: 'Sběratel', p: '50+ bodů ze zápasů.' },
+        { on: bodyZap >= 100, ic: '💠', l: 'Stovkař', p: '100+ bodů ze zápasů.' },
+        { on: bodyZap >= 200, ic: '🏵️', l: 'Dvoustovkař', p: '200+ bodů ze zápasů.' },
+        // Speciální zásahy
+        { on: odMaxBody >= 8, ic: '✨', l: 'Dokonalý zásah', p: 'Aspoň 8 bodů za jediný zápas.' },
+        { on: odMaxBody >= 10, ic: '🎲', l: 'Prorok překvapení', p: 'Přesně trefil i outsider zápas (10 b.).' },
+        // Dlouhodobky
+        { on: !!tip1Kompletni, ic: '📋', l: 'Základní část', p: 'Vyplnil kompletní dlouhodobku 1.' },
+        { on: !!tip2Kompletni, ic: '🗺️', l: 'Cesta k titulu', p: 'Vyplnil kompletní dlouhodobku 2.' },
+        { on: !!tip1Kompletni && !!tip2Kompletni, ic: '🔭', l: 'Vizionář', p: 'Vyplnil obě dlouhodobky.' },
+        { on: bodyDl >= 20, ic: '🎇', l: 'Body z dálky', p: '20+ bodů z dlouhodobek.' },
         { on: !!mujDl?.zaplaceno, ic: '💰', l: 'Zaplaceno', p: 'Uhradil startovné 200 Kč.' },
+        // Žebříček
+        { on: pozice >= 1 && pozice <= 3 && celkem > 0, ic: '🥉', l: 'Na bedně', p: 'Drží 1.–3. místo v žebříčku.' },
         { on: pozice === 1 && celkem > 0, ic: '👑', l: 'Vládce ligy', p: 'Vede celkový žebříček.' },
-        { on: pozice >= 2 && pozice <= 3 && celkem > 0, ic: '🥈', l: 'Na bedně', p: 'Drží 2.–3. místo v žebříčku.' },
     ];
     // ===== FORMA (posledních 5 vyhodnocených) =====
     const vyhodnocene = mojeTipy.filter(t => zapasMap[t.zapas_id]?.status === 'vyhodnoceno').slice(0, 5);
@@ -478,6 +539,8 @@ async function load() {
             <div class="l">${o.l}</div>
             <div class="p">${o.p}</div>
         </div>`).join('');
+    const _pocOdz = document.getElementById('odznakyPocet');
+    if (_pocOdz) _pocOdz.textContent = odz.filter(o => o.on).length + '/' + odz.length;
 
     // DLOUHODOBKA PŘEHLED
     const dlHtml = [];
@@ -585,6 +648,16 @@ async function ulozAvatar(a) {
         b.style.background = je ? 'rgba(var(--fial-rgb),.2)' : 'rgba(255,255,255,.05)';
         b.style.border = '2px solid ' + (je ? 'var(--fial)' : 'rgba(255,255,255,.1)');
     });
+}
+
+// Rozbalení/skrytí sekce odznaků (v základu skryté)
+function prepniOdznaky() {
+    const w = document.getElementById('odznaky');
+    const t = document.getElementById('odznakyToggle');
+    if (!w) return;
+    const skryto = w.style.display === 'none' || !w.style.display;
+    w.style.display = skryto ? 'grid' : 'none';
+    if (t) t.textContent = skryto ? '▲ skrýt' : '▼ zobrazit';
 }
 
 function prepniAvatarVyber() {
