@@ -165,6 +165,17 @@ async function init() {
         </div>
 
         <div class="karta">
+            <h2>🎨 Viditelnost vodoznaku (loga na pozadí)</h2>
+            <div style="font-size:.8em; opacity:.7; margin-bottom:10px;">Platí pro všechny stránky CL. 0 % = vypnuto.</div>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <input type="range" id="vodoznakRange" min="0" max="40" step="1" value="10" style="flex:1;" oninput="document.getElementById('vodoznakVal').textContent=this.value+' %'">
+                <span id="vodoznakVal" style="font-weight:900; color:var(--gold); min-width:44px; text-align:right;">10 %</span>
+            </div>
+            <button class="btn btn-gold" style="width:100%; margin-top:10px;" onclick="ulozVodoznak()">💾 ULOŽIT VIDITELNOST</button>
+            <div id="vodoznakMsg" style="margin-top:8px; font-size:.85em;"></div>
+        </div>
+
+        <div class="karta">
             <h2>📢 Poslat oznámení</h2>
             <input type="text" id="pushTitulek" placeholder="Titulek (např. ⚠️ Pozor)" maxlength="60" style="width:100%; padding:10px; margin-bottom:8px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:8px; color:#fff; font-family:inherit;">
             <textarea id="pushText" placeholder="Text zprávy (např. Zítra uzávěrka dlouhodobky!)" maxlength="180" style="width:100%; min-height:70px; padding:10px; margin-bottom:8px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:8px; color:#fff; font-family:inherit; resize:vertical;"></textarea>
@@ -263,6 +274,22 @@ async function nactiStav() {
     renderR16Pary();
     initVysl1();
     initVysl2();
+    // vodoznak posuvník
+    const vr = document.getElementById('vodoznakRange');
+    if (vr) {
+        const pct = Math.round(((stav.vodoznak_opacity ?? 0.10) * 100));
+        vr.value = pct;
+        document.getElementById('vodoznakVal').textContent = pct + ' %';
+    }
+}
+
+async function ulozVodoznak() {
+    const pct = parseInt(document.getElementById('vodoznakRange').value, 10);
+    const m = document.getElementById('vodoznakMsg');
+    m.innerHTML = '<span style="opacity:.6;">Ukládám…</span>';
+    const { error } = await sb.from('cl_stav').update({ vodoznak_opacity: pct / 100 }).eq('id', 1);
+    if (error) { m.innerHTML = '<span style="color:#ff5555;">Chyba: ' + error.message + '</span>'; return; }
+    m.innerHTML = '<span style="color:#2ecc71;">✅ Uloženo! Projeví se hráčům při načtení stránky.</span>';
 }
 
 // ── HROMADNÉ VYPISOVÁNÍ ZÁPASŮ ──
