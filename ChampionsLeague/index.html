@@ -761,7 +761,11 @@ function barSazek(tipy, m) {
 function renderZapasy() {
     const cont = document.getElementById('matches');
     cont.innerHTML = '';
-    const zobrazit = zapasy.filter(m => filtrZapasu === 'hotovo' ? m.status === 'vyhodnoceno' : m.status !== 'vyhodnoceno');
+    const zobrazit = zapasy
+        .filter(m => filtrZapasu === 'hotovo' ? m.status === 'vyhodnoceno' : m.status !== 'vyhodnoceno')
+        .sort((a, b) => filtrZapasu === 'hotovo'
+            ? new Date(b.deadline) - new Date(a.deadline)    // vyhodnocené: nejnovější (podle uzávěrky) nahoře
+            : new Date(a.deadline) - new Date(b.deadline));  // vypsané: nejbližší uzávěrka první
     if (!zobrazit.length) {
         cont.innerHTML = filtrZapasu === 'hotovo'
             ? '<div class="prazdno">Zatím žádné vyhodnocené zápasy.</div>'
