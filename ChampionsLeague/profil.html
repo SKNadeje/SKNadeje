@@ -438,12 +438,11 @@ async function load() {
     const odMaxBody = odVyhod.reduce((m, t) => Math.max(m, t.body || 0), 0);
     const odChrono = [...odVyhod].sort((a, b) =>
         new Date(zapasMap[a.zapas_id]?.deadline || 0) - new Date(zapasMap[b.zapas_id]?.deadline || 0));
-    let _st = 0, odSerieTrend = 0, _sp = 0, odSerieP = 0;
-    odChrono.forEach(t => {
-        const s = odSlozky(t);
-        if (s.trend) { _st++; if (_st > odSerieTrend) odSerieTrend = _st; } else _st = 0;
-        if (s.presne) { _sp++; if (_sp > odSerieP) odSerieP = _sp; } else _sp = 0;
-    });
+    // ŽIVÁ (aktuální) série – počítá se od nejnovějšího vyhodnoceného zápasu zpět.
+    // Jakmile se série přeruší, hodnota spadne a odznak zhasne; novou sérií zase naskočí.
+    let odAktSerieTrend = 0, odAktSerieP = 0;
+    for (let i = odChrono.length - 1; i >= 0; i--) { if (odSlozky(odChrono[i]).trend) odAktSerieTrend++; else break; }
+    for (let i = odChrono.length - 1; i >= 0; i--) { if (odSlozky(odChrono[i]).presne) odAktSerieP++; else break; }
     const odPocetTipu = mojeTipy.length;
 
     // ===== 30 ODZNAKŮ (on = splněno) =====
@@ -467,9 +466,9 @@ async function load() {
         { on: odRozdil >= 8, ic: '➖', l: 'Odhadce rozdílu', p: '8+ trefených rozdílů skóre.' },
         { on: odPocet >= 8, ic: '🔢', l: 'Počtář', p: '8+ trefených počtů branek.' },
         // Série za sebou
-        { on: odSerieTrend >= 3, ic: '🔥', l: 'Ve formě', p: '3 správné trendy za sebou.' },
-        { on: odSerieTrend >= 6, ic: '🚂', l: 'Rozjetý vlak', p: '6 správných trendů za sebou.' },
-        { on: odSerieP >= 2, ic: '💎', l: 'Neomylný', p: '2 přesné výsledky za sebou.' },
+        { on: odAktSerieTrend >= 3, ic: '🔥', l: 'Ve formě', p: 'Právě teď 3 správné trendy v řadě.' },
+        { on: odAktSerieTrend >= 6, ic: '🚂', l: 'Rozjetý vlak', p: 'Právě teď 6 správných trendů v řadě.' },
+        { on: odAktSerieP >= 2, ic: '💎', l: 'Neomylný', p: 'Právě teď 2 přesné výsledky v řadě.' },
         // Body ze zápasů
         { on: bodyZap >= 25, ic: '✳️', l: 'Bodující', p: '25+ bodů ze zápasů.' },
         { on: bodyZap >= 50, ic: '📊', l: 'Sběratel', p: '50+ bodů ze zápasů.' },
