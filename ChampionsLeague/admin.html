@@ -37,6 +37,11 @@ label.lbl { display: block; font-size: .62em; letter-spacing: 1.5px; text-transf
 .par-radek .pole { margin-bottom:0; }
 .par-radek span { opacity:.4; font-size:.8em; flex-shrink:0; }
 select.pole option { background:#14101f; color:#fff; }
+.karta h2.sbal { cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin: 0; user-select: none; }
+.karta h2.sbal .arrow { transition: transform .2s; font-size: .8em; opacity: .7; }
+.karta h2.sbal.open .arrow { transform: rotate(180deg); }
+.karta-obsah { overflow: hidden; }
+.karta-obsah.zavreno { display: none; }
 </style>
 </head>
 <body>
@@ -189,6 +194,7 @@ async function init() {
             <button class="btn btn-gold" onclick="odesliPush()" style="width:100%;">📤 ODESLAT OZNÁMENÍ</button>
             <div id="pushMsg" style="margin-top:8px; font-size:.85em;"></div>
         </div>`;
+    initSbalovani();
     await nactiStav();
     await nactiZapasy();
     await nactiDlouhodobe();
@@ -814,6 +820,33 @@ async function togglePaid(uid, curr) {
 }
 
 init();
+</script>
+<script>
+// Rozbalovací sekce adminu – default vše sbalené, klikáním otvírám
+function initSbalovani() {
+    document.querySelectorAll('.karta').forEach(function(karta) {
+        const h2 = karta.querySelector('h2');
+        if (!h2 || h2.classList.contains('sbal')) return; // už zpracováno
+        // obal veškerý obsah za h2 do .karta-obsah
+        const obsah = document.createElement('div');
+        obsah.className = 'karta-obsah zavreno';
+        let el = h2.nextSibling;
+        while (el) {
+            const dalsi = el.nextSibling;
+            obsah.appendChild(el);
+            el = dalsi;
+        }
+        karta.appendChild(obsah);
+        // uprav h2 na klikatelný s šipkou
+        h2.classList.add('sbal');
+        h2.innerHTML = '<span>' + h2.innerHTML + '</span><span class="arrow">▼</span>';
+        h2.addEventListener('click', function() {
+            const otevreno = !obsah.classList.contains('zavreno');
+            obsah.classList.toggle('zavreno', otevreno);
+            h2.classList.toggle('open', !otevreno);
+        });
+    });
+}
 </script>
 </body>
 </html>
