@@ -105,8 +105,13 @@ async function init() {
         </div>
 
         <div class="karta">
-            <h2>🎯 Aktivní a vyhodnocené zápasy</h2>
-            <div id="seznamZapasu">Načítám…</div>
+            <h2>🎯 Aktivní zápasy (k vyhodnocení)</h2>
+            <div id="seznamZapasuAktivni">Načítám…</div>
+        </div>
+
+        <div class="karta">
+            <h2>✅ Vyhodnocené zápasy</h2>
+            <div id="seznamZapasuHotove">Načítám…</div>
         </div>
 
         <div class="karta">
@@ -549,31 +554,65 @@ async function nactiZapasy() {
     ]);
     const tMap = {};
     (tipy || []).forEach(t => (tMap[t.zapas_id] = tMap[t.zapas_id] || []).push(t));
-    document.getElementById('seznamZapasu').innerHTML = (zapasy || []).map(z => {
+
+    const esc = s => (s || '').replace(/'/g, "\\'");
+    // Tlačítka pro outsidera – stejná pro aktivní zápas i pro opravu vyhodnoceného
+    const outsiderBtny = (z) => `<div style="margin-top:8px; font-size:.78em; opacity:.7;">🎲 Outsider (trend 1→3 b., remíza 2 b.):</div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
+                    <button class="btn btn-mini" style="${!z.outsider ? 'background:var(--fial); color:#fff;' : 'background:#333; color:#fff;'}" onclick="nastavOutsidera(${z.id}, null)">Nikdo</button>
+                    <button class="btn btn-mini" style="${z.outsider === z.domaci ? 'background:var(--fial); color:#fff;' : 'background:#333; color:#fff;'}" onclick="nastavOutsidera(${z.id}, '${esc(z.domaci)}')">${z.domaci}</button>
+                    <button class="btn btn-mini" style="${z.outsider === z.hoste ? 'background:var(--fial); color:#fff;' : 'background:#333; color:#fff;'}" onclick="nastavOutsidera(${z.id}, '${esc(z.hoste)}')">${z.hoste}</button>
+                </div>`;
+    // Výpis tipů hráčů pod zápasem
+    const tipyHtml = (tt, hotovo) => `<div style="font-size:.85em; opacity:.65; margin-top:5px;">${tt.map(t => `• ${t.jmeno}: ${t.skore}${hotovo ? ` (+${t.body})` : ''}`).join('<br>')}</div>`;
+
+    const zapasyArr = zapasy || [];
+    const aktivni = zapasyArr.filter(z => z.status !== 'vyhodnoceno');
+    const hotove = zapasyArr.filter(z => z.status === 'vyhodnoceno');
+
+    // AKTIVNÍ zápasy – zadání výsledku a vyhodnocení
+    document.getElementById('seznamZapasuAktivni').innerHTML = aktivni.map(z => {
         const tt = tMap[z.id] || [];
-        const hotovo = z.status === 'vyhodnoceno';
         return `<div class="zapas-row">
             <b>${z.domaci} vs ${z.hoste}</b> · ${z.faze} · tipů: ${tt.length}
-            ${hotovo
-                ? ` · <span style="color:var(--green); font-weight:900;">✔ ${z.vysledek_d}:${z.vysledek_h}</span>${z.outsider ? ` · 🎲 ${z.outsider}` : ''}`
-                : ` <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
-                        <input class="pole" style="width:52px; margin:0; text-align:center;" id="vd-${z.id}" placeholder="0" inputmode="numeric">
-                        <b>:</b>
-                        <input class="pole" style="width:52px; margin:0; text-align:center;" id="vh-${z.id}" placeholder="0" inputmode="numeric">
-                        <button class="btn btn-mini btn-gold" onclick="vyhodnotZapas(${z.id})">VYHODNOTIT</button>
-                        <button class="btn btn-mini btn-red" onclick="smazZapas(${z.id})">🗑</button>
-                    </div>
-                    <div style="margin-top:8px; font-size:.78em; opacity:.7;">🎲 Outsider (trend 1→3 b., remíza 2 b.):</div>
-                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
-                        <button class="btn btn-mini" style="${!z.outsider ? 'background:var(--fial); color:#fff;' : 'background:#333; color:#fff;'}" onclick="nastavOutsidera(${z.id}, null)">Nikdo</button>
-                        <button class="btn btn-mini" style="${z.outsider === z.domaci ? 'background:var(--fial); color:#fff;' : 'background:#333; color:#fff;'}" onclick="nastavOutsidera(${z.id}, '${z.domaci.replace(/'/g, "\\'")}')">${z.domaci}</button>
-                        <button class="btn btn-mini" style="${z.outsider === z.hoste ? 'background:var(--fial); color:#fff;' : 'background:#333; color:#fff;'}" onclick="nastavOutsidera(${z.id}, '${z.hoste.replace(/'/g, "\\'")}')">${z.hoste}</button>
-                    </div>`}
-            <div style="font-size:.85em; opacity:.65; margin-top:5px;">${tt.map(t => `• ${t.jmeno}: ${t.skore}${hotovo ? ` (+${t.body})` : ''}`).join('<br>')}</div>
+            <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+                <input class="pole" style="width:52px; margin:0; text-align:center;" id="vd-${z.id}" placeholder="0" inputmode="numeric">
+                <b>:</b>
+                <input class="pole" style="width:52px; margin:0; text-align:center;" id="vh-${z.id}" placeholder="0" inputmode="numeric">
+                <button class="btn btn-mini btn-gold" onclick="vyhodnotZapas(${z.id})">VYHODNOTIT</button>
+                <button class="btn btn-mini btn-red" onclick="smazZapas(${z.id})">🗑</button>
+            </div>
+            ${outsiderBtny(z)}
+            ${tipyHtml(tt, false)}
         </div>`;
-    }).join('') || '<div style="opacity:.5;">Žádné zápasy.</div>';
+    }).join('') || '<div style="opacity:.5;">Žádné aktivní zápasy.</div>';
+
+    // VYHODNOCENÉ zápasy – zobrazení + možnost opravy (přehodnocení)
+    document.getElementById('seznamZapasuHotove').innerHTML = hotove.map(z => {
+        const tt = tMap[z.id] || [];
+        return `<div class="zapas-row">
+            <b>${z.domaci} vs ${z.hoste}</b> · ${z.faze} · tipů: ${tt.length} · <span style="color:var(--green); font-weight:900;">✔ ${z.vysledek_d}:${z.vysledek_h}</span>${z.outsider ? ` · 🎲 ${z.outsider}` : ''}
+            <button class="btn btn-mini" style="margin-left:8px; background:#2c3e50;" onclick="prepniOpravu(${z.id})">✏️ Opravit</button>
+            <div id="oprava-${z.id}" style="display:none; margin-top:8px; padding:10px; border:1px dashed rgba(167,139,250,.35); border-radius:10px;">
+                <div style="font-size:.72em; opacity:.7; margin-bottom:6px;">Uprav výsledek a dej PŘEHODNOTIT – body všech hráčů u tohoto zápasu se přepočítají.</div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input class="pole" style="width:52px; margin:0; text-align:center;" id="vd-${z.id}" value="${z.vysledek_d}" inputmode="numeric">
+                    <b>:</b>
+                    <input class="pole" style="width:52px; margin:0; text-align:center;" id="vh-${z.id}" value="${z.vysledek_h}" inputmode="numeric">
+                    <button class="btn btn-mini btn-gold" onclick="vyhodnotZapas(${z.id})">PŘEHODNOTIT</button>
+                    <button class="btn btn-mini btn-red" onclick="smazZapas(${z.id})">🗑</button>
+                </div>
+                ${outsiderBtny(z)}
+            </div>
+            ${tipyHtml(tt, true)}
+        </div>`;
+    }).join('') || '<div style="opacity:.5;">Zatím žádné vyhodnocené zápasy.</div>';
 }
 
+function prepniOpravu(id) {
+    const el = document.getElementById('oprava-' + id);
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
 async function nastavOutsidera(id, tym) {
     const { error } = await sb.from('cl_zapasy').update({ outsider: tym }).eq('id', id);
     if (error) return msg('Chyba: ' + error.message, true);
