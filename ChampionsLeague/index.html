@@ -1449,5 +1449,17 @@ function zavriPlatbu() {
 window.SB_KEY = SB_KEY;
 inicializujChat({ klient: sb, tabulka: 'cl_chat', soutez: 'cl', barva: 'var(--fial)' });
 </script>
+
+<script>
+// Načti viditelnost vodoznaku z cl_stav a aplikuj (nastavená adminem, platí všude)
+(async function(){
+    try {
+        const { data } = await sb.from('cl_stav').select('vodoznak_opacity').eq('id', 1).maybeSingle();
+        const op = (data && data.vodoznak_opacity != null) ? data.vodoznak_opacity : 0.10;
+        const vz = document.getElementById('klubVodoznak');
+        if (vz) vz.style.opacity = op;
+    } catch(e) { /* necháme výchozí opacity z CSS */ }
+})();
+</script>
 </body>
 </html>
