@@ -143,6 +143,7 @@ html[data-theme="arsenal"] body {
 }
 .forma .f small { font-size:.42em; opacity:.7; font-weight:700; }
 .forma .ok { background:rgba(39,174,96,.12); border-color:rgba(39,174,96,.5); }
+.forma .part { background:rgba(230,170,40,.12); border-color:rgba(230,170,40,.5); }
 .forma .fail { background:rgba(231,76,60,.08); border-color:rgba(231,76,60,.4); }
 
 /* ÚSPĚŠNOST */
@@ -282,7 +283,7 @@ function prepniThemePanel(){ var p=document.getElementById('themePanel'); p.styl
 document.addEventListener('click',function(e){ var sw=document.getElementById('themeSwitch'); if(sw&&!sw.contains(e.target)){ var p=document.getElementById('themePanel'); if(p) p.style.display='none'; } });
 </script>
 <div class="wrap">
-    <a class="back" href="statistiky.html">← Zpět na žebříček</a>
+    <a class="back" href="index.html">← Zpět na Champions League</a>
 
     <div class="hero">
         <div class="avatar-display" id="avatarDisplay" style="font-size:3.2em; line-height:1; margin-bottom:4px;"></div>
@@ -491,9 +492,13 @@ async function load() {
     const vyhodnocene = mojeTipy.filter(t => zapasMap[t.zapas_id]?.status === 'vyhodnoceno').slice(0, 5);
     document.getElementById('forma').innerHTML = vyhodnocene.length
         ? vyhodnocene.map(t => {
-            const z = zapasMap[t.zapas_id];
-            const trefil = `${z.vysledek_d}:${z.vysledek_h}` === t.skore;
-            return `<div class="f ${t.body > 0 ? 'ok' : 'fail'}">${trefil ? '🎯' : (t.body > 0 ? '✅' : '❌')}<small>${z.vysledek_d}:${z.vysledek_h}</small></div>`;
+            const s = odSlozky(t);
+            let ikona, trida;
+            if ((t.body || 0) === 0) { ikona = '❌'; trida = 'fail'; }
+            else if (s.presne) { ikona = '🎯'; trida = 'ok'; }
+            else if (s.trend) { ikona = '✅'; trida = 'ok'; }
+            else { ikona = '🟡'; trida = 'part'; }
+            return `<div class="f ${trida}">${ikona}<small>+${t.body || 0} b.</small></div>`;
         }).join('')
         : '<div class="prazdno" style="flex:1;">Zatím žádné vyhodnocené tipy.</div>';
 
@@ -516,6 +521,8 @@ async function load() {
     document.getElementById('uspesnost').innerHTML =
         bar('Přesné výsledky', '🎯', presnych, pct(presnych), 'linear-gradient(90deg,#2e6bff,#1a4bb8)') +
         bar('Správné trendy', '📈', trendy, pct(trendy), 'linear-gradient(90deg,#ff2ecc,#a0009a)') +
+        bar('Rozdíly ve skóre', '➖', odRozdil, pct(odRozdil), 'linear-gradient(90deg,#2fbf71,#1c8f52)') +
+        bar('Počet branek', '🔢', odPocet, pct(odPocet), 'linear-gradient(90deg,#ff9f2e,#c9791a)') +
         bar('Účast na zápasech', '📅', pocetVyhodnocenych, ucast, 'linear-gradient(90deg,#d4af37,#9a7b1e)');
 
     // ===== POZICE V ŽEBŘÍČKU =====
