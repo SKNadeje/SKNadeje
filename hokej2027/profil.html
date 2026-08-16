@@ -33,6 +33,39 @@ html[data-theme="nemecko"] {
     --text:#ffffff; --text-dim:rgba(255,255,255,.68);
     --card-bg:rgba(255,255,255,.05); --card-border:rgba(255,206,0,.45);
 }
+html[data-theme="svedsko"] {
+    --neon:#ffd21e; --neon-rgb:255,210,30; --gold:#ffcf33; --gold-rgb:255,207,51;
+    --dark:#01305c; --bg-grad-1:#005ea3; --bg-grad-2:#012a4f; --pink:#ffd21e;
+    --text:#ffffff; --text-dim:rgba(255,255,255,.72);
+    --card-bg:rgba(255,255,255,.06); --card-border:rgba(255,210,30,.6);
+    --bg-svedsko:
+        radial-gradient(circle at 88% 5%, rgba(255,210,30,.65), rgba(255,210,30,0) 32%),
+        radial-gradient(circle at 6% 96%, rgba(255,210,30,.45), rgba(255,210,30,0) 30%),
+        linear-gradient(160deg, #0a80d4 0%, #0060a8 40%, #013f74 72%, #01284c 100%);
+}
+html[data-theme="svedsko"] body { background: var(--bg-svedsko); background-attachment: fixed; }
+html[data-theme="finsko"] {
+    --neon:#8ad3ff; --neon-rgb:138,211,255; --gold:#eaf6ff; --gold-rgb:234,246,255;
+    --dark:#04152a; --bg-grad-1:#14508f; --bg-grad-2:#04101f; --pink:#8ad3ff;
+    --text:#ffffff; --text-dim:rgba(255,255,255,.72);
+    --card-bg:rgba(255,255,255,.06); --card-border:rgba(180,225,255,.6);
+    --bg-finsko:
+        radial-gradient(circle at 88% 5%, rgba(235,247,255,.6), rgba(235,247,255,0) 30%),
+        radial-gradient(circle at 6% 96%, rgba(150,205,255,.5), rgba(150,205,255,0) 30%),
+        linear-gradient(160deg, #1d7ac2 0%, #12558f 42%, #0a3159 74%, #04162a 100%);
+}
+html[data-theme="finsko"] body { background: var(--bg-finsko); background-attachment: fixed; }
+html[data-theme="kanada"] {
+    --neon:#ffffff; --neon-rgb:255,255,255; --gold:#ff8a8a; --gold-rgb:255,138,138;
+    --dark:#3a0810; --bg-grad-1:#c20a24; --bg-grad-2:#300309; --pink:#ffffff;
+    --text:#ffffff; --text-dim:rgba(255,255,255,.78);
+    --card-bg:rgba(255,255,255,.07); --card-border:rgba(255,255,255,.5);
+    --bg-kanada:
+        radial-gradient(circle at 88% 5%, rgba(255,255,255,.55), rgba(255,255,255,0) 28%),
+        radial-gradient(circle at 6% 96%, rgba(255,255,255,.4), rgba(255,255,255,0) 28%),
+        linear-gradient(160deg, #e40b26 0%, #b30820 40%, #6e0514 72%, #300309 100%);
+}
+html[data-theme="kanada"] body { background: var(--bg-kanada); background-attachment: fixed; }
 * { box-sizing:border-box; }
 body {
     background: linear-gradient(165deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 70%); background-attachment: fixed;
@@ -159,6 +192,9 @@ html[data-theme="cesko"] body { background: var(--bg-cesko); background-attachme
         <button class="theme-opt" onclick="nastavTheme('svetly')">☀️ Světlý</button>
         <button class="theme-opt" onclick="nastavTheme('cesko')">🇨🇿 Česko</button>
         <button class="theme-opt" onclick="nastavTheme('nemecko')">🇩🇪 Německo</button>
+        <button class="theme-opt" onclick="nastavTheme('svedsko')">👑 Švédsko</button>
+        <button class="theme-opt" onclick="nastavTheme('finsko')">🦁 Finsko</button>
+        <button class="theme-opt" onclick="nastavTheme('kanada')">🍁 Kanada</button>
     </div>
 </div>
 <style>
@@ -170,13 +206,13 @@ html[data-theme="cesko"] body { background: var(--bg-cesko); background-attachme
 function nastavTheme(t){ try{ localStorage.setItem('hokej_theme',t); }catch(e){}
     if(t==='tmavy') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme',t);
     document.querySelectorAll('.theme-opt').forEach(b=>b.classList.remove('on'));
-    var m={tmavy:0,svetly:1,cesko:2,nemecko:3}, btns=document.querySelectorAll('.theme-opt'); if(btns[m[t]]) btns[m[t]].classList.add('on');
+    var m={tmavy:0,svetly:1,cesko:2,nemecko:3,svedsko:4,finsko:5,kanada:6}, btns=document.querySelectorAll('.theme-opt'); if(btns[m[t]]) btns[m[t]].classList.add('on');
     document.getElementById('themePanel').style.display='none';
 }
 function prepniThemePanel(){ var p=document.getElementById('themePanel'); p.style.display=p.style.display==='none'?'block':'none';
     var t=(function(){try{return localStorage.getItem('hokej_theme')||'tmavy';}catch(e){return 'tmavy';}})();
     document.querySelectorAll('.theme-opt').forEach(b=>b.classList.remove('on'));
-    var m={tmavy:0,svetly:1,cesko:2,nemecko:3}, btns=document.querySelectorAll('.theme-opt'); if(btns[m[t]]) btns[m[t]].classList.add('on');
+    var m={tmavy:0,svetly:1,cesko:2,nemecko:3,svedsko:4,finsko:5,kanada:6}, btns=document.querySelectorAll('.theme-opt'); if(btns[m[t]]) btns[m[t]].classList.add('on');
 }
 document.addEventListener('click',function(e){ var sw=document.getElementById('themeSwitch'); if(sw&&!sw.contains(e.target)){ var p=document.getElementById('themePanel'); if(p) p.style.display='none'; } });
 </script>
