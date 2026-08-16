@@ -38,18 +38,18 @@
         }
         /* 🇨🇿 ČESKO – modrá/červená/bílá */
         html[data-theme="cesko"] {
-            --neon: #5b9bd5;
-            --neon-rgb: 91, 155, 213;
-            --dark: #0d2149;
-            --bg-grad-1: #1b3a7a;
-            --bg-grad-2: #0a1836;
+            --neon: #6fb3ff;
+            --neon-rgb: 111, 179, 255;
+            --dark: #0b1f42;
+            --bg-grad-1: #123f86;
+            --bg-grad-2: #081a3c;
             --text: #ffffff;
             --text-dim: rgba(255,255,255,0.72);
             --card-bg: rgba(255, 255, 255, 0.07);
-            --card-border: rgba(215, 25, 32, 0.55);
+            --card-border: rgba(255, 255, 255, 0.42);
             --gold: #ef3340;
             --gold-rgb: 239, 51, 64;
-            --bg-cesko: linear-gradient(180deg, #c8102e 0%, #b01020 9%, #cbd5e6 16%, #7a94c4 23%, #3a5f9e 32%, #1e3d6b 48%, #12294d 68%, #0a1836 100%);
+            --bg-cesko: radial-gradient(circle at 88% 4%, rgba(239,51,64,.7), rgba(239,51,64,0) 34%), radial-gradient(circle at 6% 95%, rgba(255,255,255,.24), rgba(255,255,255,0) 30%), linear-gradient(160deg, #1657b0 0%, #123f86 40%, #0c2a5c 72%, #081a3c 100%);
         }
         /* 🇩🇪 NĚMECKO – černá/červená/zlatá */
         html[data-theme="nemecko"] {
@@ -64,6 +64,30 @@
             --card-border: rgba(255, 206, 0, 0.45);
             --gold: #e00000;
             --gold-rgb: 224, 0, 0;
+        }
+        /* 👑 ŠVÉDSKO */
+        html[data-theme="svedsko"] {
+            --neon:#ffd21e; --neon-rgb:255,210,30; --gold:#ffcf33; --gold-rgb:255,207,51;
+            --dark:#01305c; --bg-grad-1:#005ea3; --bg-grad-2:#012a4f;
+            --text:#ffffff; --text-dim:rgba(255,255,255,0.72);
+            --card-bg:rgba(255,255,255,0.06); --card-border:rgba(255,210,30,0.6);
+            --bg-svedsko: radial-gradient(circle at 88% 5%, rgba(255,210,30,.65), rgba(255,210,30,0) 32%), radial-gradient(circle at 6% 96%, rgba(255,210,30,.45), rgba(255,210,30,0) 30%), linear-gradient(160deg, #0a80d4 0%, #0060a8 40%, #013f74 72%, #01284c 100%);
+        }
+        /* 🦁 FINSKO */
+        html[data-theme="finsko"] {
+            --neon:#8ad3ff; --neon-rgb:138,211,255; --gold:#eaf6ff; --gold-rgb:234,246,255;
+            --dark:#04152a; --bg-grad-1:#14508f; --bg-grad-2:#04101f;
+            --text:#ffffff; --text-dim:rgba(255,255,255,0.72);
+            --card-bg:rgba(255,255,255,0.06); --card-border:rgba(180,225,255,0.6);
+            --bg-finsko: radial-gradient(circle at 88% 5%, rgba(235,247,255,.6), rgba(235,247,255,0) 30%), radial-gradient(circle at 6% 96%, rgba(150,205,255,.5), rgba(150,205,255,0) 30%), linear-gradient(160deg, #1d7ac2 0%, #12558f 42%, #0a3159 74%, #04162a 100%);
+        }
+        /* 🍁 KANADA */
+        html[data-theme="kanada"] {
+            --neon:#ffffff; --neon-rgb:255,255,255; --gold:#ff8a8a; --gold-rgb:255,138,138;
+            --dark:#3a0810; --bg-grad-1:#c20a24; --bg-grad-2:#300309;
+            --text:#ffffff; --text-dim:rgba(255,255,255,0.78);
+            --card-bg:rgba(255,255,255,0.07); --card-border:rgba(255,255,255,0.5);
+            --bg-kanada: radial-gradient(circle at 88% 5%, rgba(255,255,255,.55), rgba(255,255,255,0) 28%), radial-gradient(circle at 6% 96%, rgba(255,255,255,.4), rgba(255,255,255,0) 28%), linear-gradient(160deg, #e40b26 0%, #b30820 40%, #6e0514 72%, #300309 100%);
         }
 
         body {
@@ -86,6 +110,16 @@
             background: var(--bg-cesko);
             background-attachment: fixed;
         }
+        html[data-theme="svedsko"] body { background: var(--bg-svedsko); background-attachment: fixed; }
+        html[data-theme="finsko"] body { background: var(--bg-finsko); background-attachment: fixed; }
+        html[data-theme="kanada"] body { background: var(--bg-kanada); background-attachment: fixed; }
+        /* VODOZNAK – PNG ve složce hokej2027/ */
+        #vodoznak { position:fixed; inset:0; z-index:-1; pointer-events:none; background-repeat:no-repeat; background-position:center 42%; background-size:min(74vw,420px); opacity:0; }
+        html[data-theme="cesko"] #vodoznak { background-image:url('cesko.png'); opacity:.14; }
+        html[data-theme="nemecko"] #vodoznak { background-image:url('nemecko.png'); opacity:.14; }
+        html[data-theme="svedsko"] #vodoznak { background-image:url('svedsko.png'); opacity:.14; }
+        html[data-theme="finsko"] #vodoznak { background-image:url('finsko.png'); opacity:.14; }
+        html[data-theme="kanada"] #vodoznak { background-image:url('kanada.png'); opacity:.14; }
         /* Čitelnost textů na světlém (bílém) pruhu trikolóry v horní části */
         html[data-theme="cesko"] .back,
         html[data-theme="cesko"] .header-sub,
@@ -766,7 +800,7 @@ function nastavTheme(t) {
     else document.documentElement.setAttribute('data-theme', t);
     // zvýrazni vybraný
     document.querySelectorAll('.theme-opt').forEach(b => b.classList.remove('on'));
-    const mapa = { tmavy: 0, svetly: 1, cesko: 2, nemecko: 3 };
+    const mapa = { tmavy: 0, svetly: 1, cesko: 2, nemecko: 3, svedsko: 4, finsko: 5, kanada: 6 };
     const btns = document.querySelectorAll('.theme-opt');
     if (btns[mapa[t]]) btns[mapa[t]].classList.add('on');
     document.getElementById('themePanel').style.display = 'none';
@@ -777,7 +811,7 @@ function prepniThemePanel() {
     // zvýrazni aktuální při otevření
     const t = (function(){ try { return localStorage.getItem('hokej_theme') || 'tmavy'; } catch(e){ return 'tmavy'; } })();
     document.querySelectorAll('.theme-opt').forEach(b => b.classList.remove('on'));
-    const mapa = { tmavy: 0, svetly: 1, cesko: 2, nemecko: 3 };
+    const mapa = { tmavy: 0, svetly: 1, cesko: 2, nemecko: 3, svedsko: 4, finsko: 5, kanada: 6 };
     const btns = document.querySelectorAll('.theme-opt');
     if (btns[mapa[t]]) btns[mapa[t]].classList.add('on');
 }
@@ -792,6 +826,7 @@ document.addEventListener('click', function(e) {
 </script>
 </head>
 <body>
+<div id="vodoznak"></div>
 <!-- 🎨 PŘEPÍNAČ MOTIVŮ -->
 <div id="themeSwitch" style="position:fixed; top:16px; right:23px; z-index:10000;">
     <button onclick="prepniThemePanel()" style="background:var(--card-bg); border:1px solid var(--card-border); color:var(--text); width:42px; height:42px; border-radius:50%; cursor:pointer; font-size:1.2em; backdrop-filter:blur(6px);" title="Změnit vzhled">🎨</button>
@@ -800,6 +835,9 @@ document.addEventListener('click', function(e) {
         <button class="theme-opt" onclick="nastavTheme('svetly')">☀️ Světlý</button>
         <button class="theme-opt" onclick="nastavTheme('cesko')">🇨🇿 Česko</button>
         <button class="theme-opt" onclick="nastavTheme('nemecko')">🇩🇪 Německo</button>
+        <button class="theme-opt" onclick="nastavTheme('svedsko')">🇸🇪 Švédsko</button>
+        <button class="theme-opt" onclick="nastavTheme('finsko')">🇫🇮 Finsko</button>
+        <button class="theme-opt" onclick="nastavTheme('kanada')">🇨🇦 Kanada</button>
     </div>
 </div>
 <style>
