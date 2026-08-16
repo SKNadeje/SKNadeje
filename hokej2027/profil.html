@@ -66,6 +66,13 @@ html[data-theme="kanada"] {
         linear-gradient(160deg, #e40b26 0%, #b30820 40%, #6e0514 72%, #300309 100%);
 }
 html[data-theme="kanada"] body { background: var(--bg-kanada); background-attachment: fixed; }
+/* VODOZNAK – obrázek země na pozadí (PNG nahraj do složky hokej2027/) */
+#vodoznak { position:fixed; inset:0; z-index:-1; pointer-events:none; background-repeat:no-repeat; background-position:center 42%; background-size:min(74vw, 420px); opacity:0; }
+html[data-theme="cesko"]   #vodoznak { background-image:url('cesko.png');   opacity:.14; }
+html[data-theme="nemecko"] #vodoznak { background-image:url('nemecko.png'); opacity:.14; }
+html[data-theme="svedsko"] #vodoznak { background-image:url('svedsko.png'); opacity:.14; }
+html[data-theme="finsko"]  #vodoznak { background-image:url('finsko.png');  opacity:.14; }
+html[data-theme="kanada"]  #vodoznak { background-image:url('kanada.png');  opacity:.14; }
 * { box-sizing:border-box; }
 body {
     background: linear-gradient(165deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 70%); background-attachment: fixed;
@@ -185,6 +192,7 @@ html[data-theme="cesko"] body { background: var(--bg-cesko); background-attachme
 </script>
 </head>
 <body>
+<div id="vodoznak"></div>
 <div id="themeSwitch" style="position:fixed; top:12px; right:12px; z-index:10000;">
     <button onclick="prepniThemePanel()" style="background:var(--card-bg); border:1px solid var(--card-border); color:var(--text); width:42px; height:42px; border-radius:50%; cursor:pointer; font-size:1.2em; backdrop-filter:blur(6px);" title="Změnit vzhled">🎨</button>
     <div id="themePanel" style="display:none; position:absolute; top:50px; right:0; background:var(--dark); border:1px solid var(--card-border); border-radius:14px; padding:8px; min-width:170px; box-shadow:0 12px 40px rgba(0,0,0,.5);">
@@ -192,9 +200,9 @@ html[data-theme="cesko"] body { background: var(--bg-cesko); background-attachme
         <button class="theme-opt" onclick="nastavTheme('svetly')">☀️ Světlý</button>
         <button class="theme-opt" onclick="nastavTheme('cesko')">🇨🇿 Česko</button>
         <button class="theme-opt" onclick="nastavTheme('nemecko')">🇩🇪 Německo</button>
-        <button class="theme-opt" onclick="nastavTheme('svedsko')">👑 Švédsko</button>
-        <button class="theme-opt" onclick="nastavTheme('finsko')">🦁 Finsko</button>
-        <button class="theme-opt" onclick="nastavTheme('kanada')">🍁 Kanada</button>
+        <button class="theme-opt" onclick="nastavTheme('svedsko')">🇸🇪 Švédsko</button>
+        <button class="theme-opt" onclick="nastavTheme('finsko')">🇫🇮 Finsko</button>
+        <button class="theme-opt" onclick="nastavTheme('kanada')">🇨🇦 Kanada</button>
     </div>
 </div>
 <style>
