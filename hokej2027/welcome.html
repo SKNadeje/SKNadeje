@@ -475,5 +475,20 @@ setInterval(() => {
     setTimeout(() => { idx = (idx + 1) % HLASKY.length; ukaz(); }, 400);
 }, 6000);
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// Vodoznak – poloha a viditelnost nastavená adminem (hokej27_stav)
+(async () => {
+    try {
+        const sbw = supabase.createClient("https://vlabocwezmpwnxrwxihs.supabase.co", "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X");
+        const { data } = await sbw.from('hokej27_stav').select('vodoznak_x, vodoznak_y, vodoznak_opacity').eq('id', 1).maybeSingle();
+        const el = document.getElementById('vodoznak');
+        if (el && data) {
+            if (data.vodoznak_x != null && data.vodoznak_y != null) el.style.backgroundPosition = data.vodoznak_x + '% ' + data.vodoznak_y + '%';
+            if (data.vodoznak_opacity != null) el.style.opacity = data.vodoznak_opacity;
+        }
+    } catch (e) {}
+})();
+</script>
 </body>
 </html>
