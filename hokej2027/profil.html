@@ -113,7 +113,7 @@ html[data-theme="cesko"] body { background: var(--bg-cesko); background-attachme
 
 /* HISTORIE */
 .hist {
-    display:flex; align-items:center; gap:12px;
+    display:flex; align-items:flex-start; gap:12px;
     padding:12px 4px; border-bottom:1px solid rgba(255,255,255,.06);
 }
 .hist .ikona { font-size:1.4em; }
@@ -125,6 +125,27 @@ html[data-theme="cesko"] body { background: var(--bg-cesko); background-attachme
 .hist .nb { font-weight:900; color:var(--pink); white-space:nowrap; font-size:.95em; }
 .hist .nb small { display:block; color:var(--gold); font-weight:800; text-align:right; }
 .prazdno { text-align:center; opacity:.45; padding:16px 0; font-size:.85em; }
+/* FORMA – žlutá úroveň */
+.forma .part { background:rgba(230,170,40,.12); border-color:rgba(230,170,40,.5); }
+/* HISTORIE – klikací + šipka */
+.hist.klik { cursor:pointer; }
+.hist .sipka { font-size:.7em; opacity:.5; display:inline-block; transition:transform .2s; }
+.hist.otevreno .sipka { transform:rotate(180deg); }
+/* ROZPAD BODŮ */
+.rozpad { display:none; margin:8px 0 2px; padding:9px 11px; background:rgba(var(--gold-rgb),.06); border:1px solid rgba(var(--gold-rgb),.18); border-radius:10px; }
+.rozpad.open { display:block; }
+.rozpad .rr { display:flex; justify-content:space-between; align-items:center; font-size:.74em; padding:3px 0; }
+.rozpad .rr b.ok { color:#33c27a; }
+.rozpad .rr b.no { opacity:.4; font-weight:600; }
+.rozpad .rr.celkem { margin-top:5px; padding-top:6px; border-top:1px solid rgba(var(--gold-rgb),.18); font-size:.82em; }
+.rozpad .rr.celkem b { color:var(--gold); }
+/* ODZNAKY */
+.odznaky { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.odz { display:flex; flex-direction:column; align-items:center; text-align:center; gap:3px; padding:12px 8px; border-radius:14px; border:1px solid rgba(var(--gold-rgb),.15); background:rgba(255,255,255,.03); opacity:.4; filter:grayscale(1); }
+.odz.on { opacity:1; filter:none; border-color:rgba(var(--gold-rgb),.55); background:rgba(var(--gold-rgb),.08); box-shadow:0 0 14px rgba(var(--gold-rgb),.15); }
+.odz .ic { font-size:1.7em; line-height:1; }
+.odz .l { font-weight:800; font-size:.8em; }
+.odz .p { font-size:.64em; opacity:.6; line-height:1.3; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('hokej_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -212,6 +233,14 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     </div>
 
     <div class="blok">
+        <h2 style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;" onclick="prepniOdznaky()">
+            <span>🏅 Odznáčky <span id="odznakyPocet" style="font-size:.7em; opacity:.6; font-weight:600;"></span></span>
+            <span id="odznakyToggle" style="font-size:.7em; opacity:.6;">▼ zobrazit</span>
+        </h2>
+        <div class="odznaky" id="odznaky" style="display:none;"></div>
+    </div>
+
+    <div class="blok">
         <h2>🏅 Pozice v žebříčcích</h2>
         <div class="pozice" id="pozice"></div>
     </div>
@@ -269,10 +298,45 @@ async function load() {
     document.getElementById('hVyhry').textContent = h.vyhry + ' Kč';
     document.getElementById('hUcast').textContent = h.ucast + '%';
 
-    // FORMA – posledních 5 vyhodnocených
-    const forma = h.historie.slice(0, 5);
+    // ===== STATISTIKY (dopočítané z tipu vs výsledku) – pro formu, rozpad, úspěšnost, odznaky =====
+    const hSloz = (x) => {
+        const p = (x.tip || '').split(':').map(n => parseInt(n, 10));
+        const v = (x.vysledek || '').split(':').map(n => parseInt(n, 10));
+        if (p.length < 2 || v.length < 2 || p.some(isNaN) || v.some(isNaN))
+            return { trend: false, rozdil: false, pocet: false };
+        const [td, th] = p, [d, hh] = v;
+        return {
+            trend: (d > hh && td > th) || (d < hh && td < th) || (d === hh && td === th),
+            rozdil: Math.abs(td - th) === Math.abs(d - hh),
+            pocet: (td + th) === (d + hh)
+        };
+    };
+    const hist = h.historie || [];
+    const hVyhod = hist.length;
+    const hRozdil = hist.filter(x => hSloz(x).rozdil).length;
+    const hPocet = hist.filter(x => hSloz(x).pocet).length;
+    const hMaxNB = hist.reduce((m, x) => Math.max(m, x.nb || 0), 0);
+    const pctH = (n) => hVyhod ? Math.round(n / hVyhod * 100) : 0;
+    // živá série trendů – historie je řazená nejnovější první, čteme od začátku
+    let hSerie = 0;
+    for (let i = 0; i < hist.length; i++) { if (hSloz(hist[i]).trend) hSerie++; else break; }
+
+    // FORMA – posledních 5 vyhodnocených (4 úrovně + body)
+    const forma = hist.slice(0, 5);
+    // Symbol formy/historie podle kvality tipu (střelec = vlastní 🎯, je za 3 body)
+    const formaIkona = (x, s) => {
+        if ((x.nb || 0) === 0) return { ik: '❌', tr: 'fail' };
+        if (x.hit_skore) return { ik: '🏆', tr: 'ok' };
+        if (x.hit_strelec) return { ik: '🎯', tr: 'ok' };
+        if (s.trend) return { ik: '✅', tr: 'ok' };
+        return { ik: '🟡', tr: 'part' };
+    };
+
     document.getElementById('forma').innerHTML = forma.length
-        ? forma.map(x => `<div class="f ${x.nb > 0 ? 'ok' : 'fail'}">${x.nb > 0 ? '✅' : '❌'}<small>${x.vysledek}</small></div>`).join('')
+        ? forma.map(x => {
+            const { ik, tr } = formaIkona(x, hSloz(x));
+            return `<div class="f ${tr}">${ik}<small>+${x.nb || 0} NB</small></div>`;
+        }).join('')
         : '<div class="prazdno" style="flex:1;">Zatím žádné vyhodnocené tipy.</div>';
 
     // ÚSPĚŠNOST
@@ -284,7 +348,9 @@ async function load() {
     document.getElementById('uspesnost').innerHTML =
         bar('Přesná skóre', '🥅', h.skore, h.uspSkore, 'linear-gradient(90deg,var(--neon),#0090aa)') +
         bar('Střelci', '🎯', h.strelci, h.uspStrelci, 'linear-gradient(90deg,#ffd75e,var(--gold))') +
-        bar('Trendy', '📈', h.trendy, h.uspTrendy, 'linear-gradient(90deg,#ff00ea,#a0009a)');
+        bar('Trendy', '📈', h.trendy, h.uspTrendy, 'linear-gradient(90deg,#ff00ea,#a0009a)') +
+        bar('Rozdíly ve skóre', '➖', hRozdil, pctH(hRozdil), 'linear-gradient(90deg,#2fbf71,#1c8f52)') +
+        bar('Počet branek', '🔢', hPocet, pctH(hPocet), 'linear-gradient(90deg,#ff9f2e,#c9791a)');
 
     // POZICE
     const pKarta = (rank, nazev, hodnota) => {
@@ -303,17 +369,95 @@ async function load() {
     // HISTORIE
     document.getElementById('histPocet').textContent = h.historie.length;
     document.getElementById('historie').innerHTML = h.historie.length
-        ? h.historie.map(x => `
-            <div class="hist">
-                <span class="ikona">${x.hit_skore ? '🏆' : (x.nb > 0 ? '✅' : '❌')}</span>
+        ? h.historie.map((x, i) => {
+            const s = hSloz(x);
+            const bSkore = x.hit_skore ? 5 : 0;
+            const bStrelec = x.hit_strelec ? 3 : 0;
+            const bRozdil = s.rozdil ? 1 : 0;
+            const bPocet = s.pocet ? 1 : 0;
+            const bTrend = Math.max(0, (x.nb || 0) - bSkore - bStrelec - bRozdil - bPocet);
+            const rr = (naz, z) => `<div class="rr"><span>${naz}</span><b class="${z ? 'ok' : 'no'}">${z ? '+' + z + ' NB' : '—'}</b></div>`;
+            const ik = formaIkona(x, s).ik;
+            return `<div class="hist klik" onclick="prepniRozpad(${i})">
+                <span class="ikona">${ik}</span>
                 <div class="telo">
                     <div class="z">${x.zapas}</div>
-                    <div class="t">Tip: ${x.tip} | Výsledek: ${x.vysledek}</div>
+                    <div class="t">Tip: ${x.tip} | Výsledek: ${x.vysledek} <span class="sipka">▾</span></div>
                     ${x.strelec ? `<div class="s">🎯 ${x.strelec}${x.hit_strelec ? ' <span class="trefil">(TREFIL!)</span>' : ''}</div>` : ''}
+                    <div class="rozpad" id="rozpad-${i}">
+                        ${rr('🏆 Přesné skóre', bSkore)}
+                        ${x.strelec ? rr('🎯 Střelec', bStrelec) : ''}
+                        ${rr('↗️ Trend', bTrend)}
+                        ${rr('➖ Rozdíl skóre', bRozdil)}
+                        ${rr('🔢 Počet branek', bPocet)}
+                        <div class="rr celkem"><span>Celkem</span><b>${x.nb || 0} NB</b></div>
+                    </div>
                 </div>
                 <div class="nb">${x.nb > 0 ? '+' : ''}${x.nb} NB${x.vyhra > 0 ? `<small>💰 ${x.vyhra} Kč</small>` : ''}</div>
-            </div>`).join('')
+            </div>`;
+        }).join('')
         : '<div class="prazdno">Zatím žádné vyhodnocené tipy.</div>';
+
+    // ===== ODZNAKY (hokej) =====
+    const odz = [
+        { on: h.tipu >= 1, ic: '🏒', l: 'První sázka', p: 'Vsadil aspoň na jeden zápas.' },
+        { on: h.tipu >= 5, ic: '🐣', l: 'Rozjezd', p: 'Vsadil 5 zápasů.' },
+        { on: h.tipu >= 15, ic: '🔁', l: 'Stálice', p: 'Vsadil 15 zápasů.' },
+        { on: h.tipu >= 30, ic: '🏃', l: 'Maratonec', p: 'Vsadil 30 zápasů.' },
+        { on: h.ucast >= 80 && h.tipu >= 5, ic: '📅', l: 'Věrný fanoušek', p: 'Účast 80 %+ na zápasech.' },
+        { on: h.skore >= 1, ic: '🏆', l: 'Přesňák', p: `Trefil přesné skóre (${h.skore}×).` },
+        { on: h.skore >= 3, ic: '🔮', l: 'Věštec', p: '3+ přesných skóre.' },
+        { on: h.skore >= 6, ic: '📜', l: 'Prorok', p: '6+ přesných skóre.' },
+        { on: h.skore >= 12, ic: '🧿', l: 'Vševidoucí', p: '12+ přesných skóre.' },
+        { on: h.strelci >= 1, ic: '🎯', l: 'Snajpr', p: 'Trefil střelce.' },
+        { on: h.strelci >= 3, ic: '🏹', l: 'Ostrostřelec', p: '3+ trefených střelců.' },
+        { on: h.strelci >= 8, ic: '💥', l: 'Odstřelovač', p: '8+ trefených střelců.' },
+        { on: h.trendy >= 5, ic: '📈', l: 'Čtenář hry', p: '5+ správných trendů.' },
+        { on: h.trendy >= 15, ic: '♟️', l: 'Taktik', p: '15+ správných trendů.' },
+        { on: h.trendy >= 30, ic: '🧠', l: 'Stratég', p: '30+ správných trendů.' },
+        { on: hRozdil >= 8, ic: '➖', l: 'Odhadce rozdílu', p: '8+ trefených rozdílů skóre.' },
+        { on: hPocet >= 8, ic: '🔢', l: 'Počtář', p: '8+ trefených počtů branek.' },
+        { on: hSerie >= 3, ic: '🔥', l: 'Ve formě', p: 'Právě teď 3 správné trendy v řadě.' },
+        { on: hSerie >= 6, ic: '🚂', l: 'Rozjetý vlak', p: 'Právě teď 6 správných trendů v řadě.' },
+        { on: h.nb >= 25, ic: '✳️', l: 'Bodující', p: '25+ NB bodů.' },
+        { on: h.nb >= 50, ic: '📊', l: 'Sběratel', p: '50+ NB bodů.' },
+        { on: h.nb >= 100, ic: '💠', l: 'Stovkař', p: '100+ NB bodů.' },
+        { on: h.nb >= 200, ic: '🏵️', l: 'Dvoustovkař', p: '200+ NB bodů.' },
+        { on: hMaxNB >= 8, ic: '✨', l: 'Dokonalý zásah', p: 'Aspoň 8 NB za jediný zápas.' },
+        { on: hMaxNB >= 11, ic: '🎩', l: 'Hattrick tipaře', p: 'Přesné skóre i střelec v jednom zápase.' },
+        { on: h.vyhry >= 100, ic: '💰', l: 'Bankéř', p: 'Vyhrál z banku 100+ Kč.' },
+        { on: h.vyhry >= 500, ic: '🏦', l: 'Bankovní lupič', p: 'Vyhrál z banku 500+ Kč.' },
+        { on: !!(pozice.index && pozice.index.rankNum <= 3), ic: '🥉', l: 'Na bedně', p: 'Drží 1.–3. místo v Indexu naděje.' },
+        { on: !!(pozice.index && pozice.index.rankNum === 1), ic: '👑', l: 'Vládce indexu', p: 'Vede Index naděje.' },
+        { on: !!(pozice.vyhry && pozice.vyhry.rankNum === 1), ic: '💎', l: 'Král banku', p: 'Nejvíc vyhraných peněz.' },
+    ];
+    document.getElementById('odznaky').innerHTML = odz.map(o => `
+        <div class="odz ${o.on ? 'on' : ''}">
+            <div class="ic">${o.ic}</div>
+            <div class="l">${o.l}</div>
+            <div class="p">${o.p}</div>
+        </div>`).join('');
+    const _pO = document.getElementById('odznakyPocet');
+    if (_pO) _pO.textContent = odz.filter(o => o.on).length + '/' + odz.length;
+}
+
+// Rozbalení/sbalení rozpadu bodů u zápasu v historii
+function prepniRozpad(id) {
+    const el = document.getElementById('rozpad-' + id);
+    if (!el) return;
+    const otev = el.classList.toggle('open');
+    const row = el.closest('.hist');
+    if (row) row.classList.toggle('otevreno', otev);
+}
+
+// Rozbalení/skrytí sekce odznaků (v základu skryté)
+function prepniOdznaky() {
+    const w = document.getElementById('odznaky');
+    const t = document.getElementById('odznakyToggle');
+    if (!w) return;
+    const skryto = w.style.display === 'none' || !w.style.display;
+    w.style.display = skryto ? 'grid' : 'none';
+    if (t) t.textContent = skryto ? '▲ skrýt' : '▼ zobrazit';
 }
 
 // 🏒 Hokejová + rozšířená sada avatarů
