@@ -184,6 +184,24 @@ input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { fil
         </div>
     </div>
 
+    <!-- VODOZNAK NA POZADÍ -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secVodoznak')">🎨 VODOZNAK NA POZADÍ <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secVodoznak">
+            <div style="padding:6px 2px;">
+                <div style="font-size:.82em; opacity:.7; margin-bottom:12px;">Poloha a viditelnost obrázku na pozadí (lev/vlajka podle tématu). Platí pro profil, statistiky a index.</div>
+                <label class="auth-label" style="display:block; font-size:.85em;">↔️ Vodorovně (doleva–doprava): <b id="vodXVal">50 %</b></label>
+                <input type="range" id="vodX" min="0" max="100" step="1" value="50" style="width:100%;" oninput="document.getElementById('vodXVal').textContent=this.value+' %'">
+                <label class="auth-label" style="display:block; font-size:.85em; margin-top:12px;">↕️ Svisle (nahoru–dolů): <b id="vodYVal">42 %</b></label>
+                <input type="range" id="vodY" min="0" max="100" step="1" value="42" style="width:100%;" oninput="document.getElementById('vodYVal').textContent=this.value+' %'">
+                <label class="auth-label" style="display:block; font-size:.85em; margin-top:12px;">👁️ Viditelnost: <b id="vodOpVal">14 %</b></label>
+                <input type="range" id="vodOp" min="0" max="40" step="1" value="14" style="width:100%;" oninput="document.getElementById('vodOpVal').textContent=this.value+' %'">
+                <button class="small-btn" style="width:100%; margin-top:14px;" onclick="ulozVodoznak()">💾 Uložit vodoznak</button>
+                <div id="vodMsg" style="margin-top:8px; font-size:.85em;"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- PENĚŽENKY HRÁČŮ -->
     <div class="card">
         <div class="collapsible-header" onclick="toggleSection('secPush')">📢 POSLAT OZNÁMENÍ <span class="collapse-arrow">▼</span></div>
@@ -423,6 +441,15 @@ async function loadMatches() {
     if (fondNyniEl) fondNyniEl.innerText = fond;
     const korekceInfoEl = document.getElementById('fondKorekceInfo');
     if (korekceInfoEl) korekceInfoEl.innerText = korekce !== 0 ? ` ${korekce > 0 ? '+' : ''}${korekce} Kč korekce` : '';
+
+    // Vodoznak – naplnit posuvníky uloženými hodnotami
+    const vX = document.getElementById('vodX'), vY = document.getElementById('vodY'), vO = document.getElementById('vodOp');
+    if (vX && vY && vO) {
+        const x = stav?.vodoznak_x ?? 50, y = stav?.vodoznak_y ?? 42, op = Math.round((stav?.vodoznak_opacity ?? 0.14) * 100);
+        vX.value = x; document.getElementById('vodXVal').textContent = x + ' %';
+        vY.value = y; document.getElementById('vodYVal').textContent = y + ' %';
+        vO.value = op; document.getElementById('vodOpVal').textContent = op + ' %';
+    }
     window._fondData = { pocetSazek: (sazky || []).length, pocetDl, korekce };
 
     const aC = document.getElementById('activeMatches');
@@ -555,6 +582,17 @@ function pushKomu(kdo) {
     const box = document.getElementById('pushHraciBox');
     box.style.display = kdo === 'vyber' ? 'block' : 'none';
     if (kdo === 'vyber') nactiPushHrace();
+}
+
+async function ulozVodoznak() {
+    const x = parseInt(document.getElementById('vodX').value, 10);
+    const y = parseInt(document.getElementById('vodY').value, 10);
+    const op = parseInt(document.getElementById('vodOp').value, 10);
+    const m = document.getElementById('vodMsg');
+    m.innerHTML = '<span style="opacity:.6;">Ukládám…</span>';
+    const { error } = await sb.from('hokej27_stav').update({ vodoznak_x: x, vodoznak_y: y, vodoznak_opacity: op / 100 }).eq('id', 1);
+    if (error) { m.innerHTML = '<span style="color:#ff5555;">Chyba: ' + error.message + '</span>'; return; }
+    m.innerHTML = '<span style="color:#2ecc71;">✅ Uloženo! Projeví se na stránkách po načtení (tvrdý refresh).</span>';
 }
 
 async function nactiPushHrace() {
