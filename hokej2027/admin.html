@@ -781,7 +781,7 @@ async function finishEval(mid) {
         }
 
         // Nové bonusy (jen když netrefil přesné skóre – jinak by se to zdvojovalo? NE, uživatel chce sčítat)
-        const hitRozdil = (sD - sH) === (finalD - finalH);       // stejný rozdíl skóre
+        const hitRozdil = Math.abs(sD - sH) === Math.abs(finalD - finalH);   // stejný ROZDÍL skóre (ABSOLUTNÍ – i na druhou stranu, jako CL)
         const hitPocet = (sD + sH) === (finalD + finalH);         // stejný počet branek
 
         const nb = (hitSkore ? 5 : 0) + (hitStrelec ? 3 : 0) + trendNB
