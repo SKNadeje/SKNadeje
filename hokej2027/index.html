@@ -845,7 +845,7 @@ document.addEventListener('click', function(e) {
     .theme-opt:hover { background:var(--card-bg); }
     .theme-opt.on { background:rgba(var(--neon-rgb),.15); color:var(--neon); font-weight:800; }
 </style>
-    <a href="welcome.html" style="display:inline-block; color:var(--text); opacity:.55; text-decoration:none; font-size:.72em; margin:4px 0 10px;">← Zpět na uvítací stránku</a>
+    <a href="../hub.html" style="display:inline-block; color:var(--text); opacity:.55; text-decoration:none; font-size:.72em; margin:4px 0 10px;">← Zpět na uvítací stránku</a>
 
     <!-- PŘIHLÁŠENÍ – řeší centrálně welcome stránka -->
     <div id="authOverlay" style="display:none;">
@@ -1032,6 +1032,18 @@ document.addEventListener('click', function(e) {
 const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
 const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
 const sb = supabase.createClient(SB_URL, SB_KEY);
+
+// Vodoznak – poloha a viditelnost nastavená adminem (hokej27_stav)
+(async () => {
+    try {
+        const { data } = await sb.from('hokej27_stav').select('vodoznak_x, vodoznak_y, vodoznak_opacity').eq('id', 1).maybeSingle();
+        const el = document.getElementById('vodoznak');
+        if (el && data) {
+            if (data.vodoznak_x != null && data.vodoznak_y != null) el.style.backgroundPosition = data.vodoznak_x + '% ' + data.vodoznak_y + '%';
+            if (data.vodoznak_opacity != null) el.style.opacity = data.vodoznak_opacity;
+        }
+    } catch (e) {}
+})();
 const ADMIN_ID = "92a1e51b-e03c-48d7-99df-76c2f60a455f";
 
 // ⚙️ KONFIGURACE TURNAJE
