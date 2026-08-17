@@ -239,7 +239,7 @@ h1 {
 .beam.r { right:5%; transform-origin:top center; background:linear-gradient(to bottom, rgba(var(--magenta-rgb),.45), rgba(var(--magenta-rgb),.05) 45%, transparent 70%); animation:sweepR 14s ease-in-out infinite; }
 @keyframes sweepL { 0%,100%{transform:rotate(-15deg);} 50%{transform:rotate(6deg);} }
 @keyframes sweepR { 0%,100%{transform:rotate(15deg);} 50%{transform:rotate(-6deg);} }
-.embers { position:fixed; inset:0; z-index:0; pointer-events:none; }
+.embers { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
 .ember { position:absolute; bottom:-16px; width:4px; height:4px; border-radius:50%; background:radial-gradient(circle, var(--gold), rgba(var(--gold-rgb),0) 70%); animation:emberFloat linear infinite; }
 @keyframes emberFloat { 0%{transform:translateY(0) scale(1); opacity:0;} 12%{opacity:.9;} 88%{opacity:.5;} 100%{transform:translateY(-104vh) scale(.4); opacity:0;} }
 .flash { position:fixed; inset:0; z-index:50; pointer-events:none; background:radial-gradient(circle at 50% 30%, rgba(var(--fial-rgb),.8), rgba(var(--fial-rgb),.28) 42%, transparent 72%); animation:flashOut 1.1s ease-out forwards; }
