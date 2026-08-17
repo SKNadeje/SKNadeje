@@ -745,16 +745,19 @@ async function ulozR16() {
         return msg('PAVOUK VYRESETOVÁN (dlouhodobka 2 zavřená) ✅');
     }
 
-    // Jinak vyžadujeme kompletní, korektní pavouk (půl pavouka nedává smysl)
+    // Půjde uložit i NEÚPLNÝ pavouk (los ještě není hotový):
+    // každý pár musí být buď KOMPLETNÍ (oba týmy), nebo úplně PRÁZDNÝ. Prázdné páry přeskočíme.
     for (let i = 0; i < 8; i++) {
         const a = document.getElementById(`r16-a-${i}`).value;
         const b = document.getElementById(`r16-b-${i}`).value;
-        if (!a || !b) return msg(`Vyplň oba týmy v páru č. ${i + 1} (nebo nech VŠECHNY prázdné pro reset).`, true);
+        if (!a && !b) continue;
+        if (!a || !b) return msg(`Pár č. ${i + 1}: vyplň OBA týmy, nebo nech oba prázdné.`, true);
         if (a === b) return msg(`Pár č. ${i + 1}: tým nemůže hrát sám proti sobě.`, true);
         if (pouzite.has(a) || pouzite.has(b)) return msg(`Tým se v párech opakuje (pár č. ${i + 1}).`, true);
         pouzite.add(a); pouzite.add(b);
         pary.push([a, b]);
     }
+    const kompletni = pary.length === 8;
     const dl = document.getElementById('t-dl2').value;
     const { error } = await sb.from('cl_stav').update({
         bracket_r16: pary, osmifinaliste: pary.flat(),
@@ -764,7 +767,11 @@ async function ulozR16() {
     if (error) return msg('Chyba: ' + error.message, true);
     stav.bracket_r16 = pary;
     renderVysl2();
-    msg('PÁRY OSMIFINÁLE ULOŽENY ✅');
+    if (!kompletni) {
+        msg(`ULOŽENO ČÁSTEČNĚ: ${pary.length} z 8 párů ✅ — dokud nebude 8 párů, nech uzávěrku prázdnou, ať se hráčům neotevře neúplná Cesta k titulu.`);
+        return;
+    }
+    msg('PÁRY OSMIFINÁLE ULOŽENY ✅ (kompletní pavouk)');
     if (confirm('Poslat hráčům notifikaci, že je Cesta k titulu otevřená?')) {
         const kdyTxt = dl
             ? ' — uzávěrka ' + new Date(dl).toLocaleString('cs-CZ', { day:'numeric', month:'numeric', hour:'2-digit', minute:'2-digit' })
