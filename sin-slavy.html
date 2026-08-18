@@ -43,75 +43,6 @@ h1 {
 .panel.on { display: block; animation: fadeUp .4s ease both; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
-/* Právě probíhající turnaje (odkaz na jejich appky) */
-const PRAVE = [
-    { emoji: '⚽', nazev: 'Champions League', sezona: 'Sezóna 2026/27', app: 'ChampionsLeague/welcome.html', stav: 'Probíhá' },
-    { emoji: '🏒', nazev: 'MS v hokeji', sezona: 'Německo 2027', app: 'hokej2027/welcome.html', stav: 'Brzy startuje' }
-];
-
-/* ===== ŠAMPION (úřadující) ===== */
-function renderSampion() {
-    const el = document.getElementById('sampion');
-    if (!ARCHIV.length) { el.style.display = 'none'; return; }
-    const t = ARCHIV[0];
-    const w = seradSRankem(t.zebricek)[0];
-    if (!w) { el.style.display = 'none'; return; }
-    let tituly = 0;
-    ARCHIV.forEach(tt => { const top = seradSRankem(tt.zebricek)[0]; if (top && top.jmeno === w.jmeno) tituly++; });
-    el.innerHTML = `
-        <div class="sh-eyebrow">Úřadující šampion</div>
-        <div class="sh-trophy">🏆</div>
-        <div class="sh-name">${w.jmeno}</div>
-        <div class="sh-turnaj">${t.nazev}</div>
-        <div class="sh-meta">
-            <div class="m"><b>${w.body}</b><span>bodů</span></div>
-            <div class="m"><b>1.</b><span>místo</span></div>
-            <div class="m"><b>${tituly}×</b><span>${tituly === 1 ? 'titul' : 'tituly'}</span></div>
-        </div>`;
-}
-
-/* ===== SÍŇ REKORDŮ ===== */
-function spocitejRekordy() {
-    let nejBody = { v: 0 }, nejNaskok = { v: -1 }, nejUcast = { v: 0 }, nejTituly = { v: 0 };
-    const tituly = {};
-    ARCHIV.forEach(t => {
-        const raz = seradSRankem(t.zebricek);
-        raz.forEach(r => { if (r.body > nejBody.v) nejBody = { v: r.body, kdo: r.jmeno }; });
-        if (raz[0]) tituly[raz[0].jmeno] = (tituly[raz[0].jmeno] || 0) + 1;
-        if (raz.length >= 2) { const n = raz[0].body - raz[1].body; if (n > nejNaskok.v) nejNaskok = { v: n, kdo: raz[0].jmeno }; }
-        if (raz.length > nejUcast.v) nejUcast = { v: raz.length, kde: t.nazev };
-    });
-    Object.keys(tituly).forEach(k => { if (tituly[k] > nejTituly.v) nejTituly = { v: tituly[k], kdo: k }; });
-    return { nejBody, nejNaskok, nejUcast, nejTituly };
-}
-function rekordyHtml() {
-    const r = spocitejRekordy();
-    const item = (ic, val, lbl, sub) => `<div class="rek"><div class="rek-ic">${ic}</div><div class="rek-val">${val}</div><div class="rek-lbl">${lbl}</div><div class="rek-sub">${sub || '&nbsp;'}</div></div>`;
-    return `<div class="sekce-nadpis">📊 Síň rekordů</div><div class="rekordy">
-        ${item('🎯', r.nejBody.v + ' b.', 'Nejvíc bodů v turnaji', r.nejBody.kdo || '')}
-        ${item('👑', r.nejTituly.v + '×', 'Nejvíc titulů', r.nejTituly.kdo || '')}
-        ${item('⚡', (r.nejNaskok.v >= 0 ? r.nejNaskok.v : '–') + ' b.', 'Největší náskok vítěze', r.nejNaskok.kdo || '')}
-        ${item('👥', r.nejUcast.v, 'Největší účast (hráčů)', r.nejUcast.kde || '')}
-    </div>`;
-}
-
-/* ===== JEDNA LEGENDA ===== */
-function legendaHtml(h, i) {
-    const cab = [];
-    if (h.zlato) cab.push(`<span class="cab zlato">🥇 ${h.zlato}</span>`);
-    if (h.stribro) cab.push(`<span class="cab stribro">🥈 ${h.stribro}</span>`);
-    if (h.bronz) cab.push(`<span class="cab bronz">🥉 ${h.bronz}</span>`);
-    if (!cab.length) cab.push(`<span class="cab">bez medaile</span>`);
-    return `<div class="legenda ${i === 0 ? 'top' : ''}">
-        <div class="lg-rank">${i + 1}</div>
-        <div class="lg-main">
-            <div class="lg-name">${h.jmeno}${i === 0 ? ' <span class="goat">GOAT</span>' : ''}</div>
-            <div class="lg-cab">${cab.join('')}</div>
-        </div>
-        <div class="lg-stats"><div><b>${h.turnaje}</b><span>turnajů</span></div><div><b>${h.body}</b><span>bodů</span></div></div>
-    </div>`;
-}
-
 /* ===== SUMÁŘ ===== */
 .sum-hrac {
     display: flex; align-items: center; gap: 12px;
@@ -206,19 +137,13 @@ function legendaHtml(h, i) {
 .sh-meta { display:flex; gap:26px; justify-content:center; margin-top:16px; flex-wrap:wrap; }
 .sh-meta .m b { display:block; font-size:1.2rem; font-weight:900; color:#f0e6c8; }
 .sh-meta .m span { font-size:.55rem; letter-spacing:1.5px; text-transform:uppercase; color:#5a6480; }
-
-/* ===== SEKCE NADPIS ===== */
 .sekce-nadpis { font-size:.68rem; letter-spacing:2px; text-transform:uppercase; color:rgba(212,175,55,.65); font-weight:800; margin:4px 4px 12px; text-align:center; }
-
-/* ===== SÍŇ REKORDŮ ===== */
 .rekordy { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:28px; }
 .rek { background:rgba(15,20,35,.6); border:1px solid rgba(212,175,55,.18); border-radius:14px; padding:14px 12px; text-align:center; }
 .rek-ic { font-size:1.4rem; }
 .rek-val { font-size:1.1rem; font-weight:900; color:#f0e6c8; margin-top:2px; }
 .rek-lbl { font-size:.55rem; letter-spacing:1px; text-transform:uppercase; color:#5a6480; margin-top:3px; }
 .rek-sub { font-size:.68rem; color:#c9b678; margin-top:4px; font-weight:700; }
-
-/* ===== ŽEBŘÍČEK LEGEND ===== */
 .legenda { display:flex; align-items:center; gap:13px; background:rgba(15,20,35,.6); border:1px solid rgba(212,175,55,.15); border-radius:13px; padding:12px 15px; margin-bottom:7px; }
 .legenda.top { border-color:#d4af37; background:linear-gradient(90deg, rgba(212,175,55,.13), rgba(15,20,35,.6) 62%); box-shadow:0 0 18px rgba(212,175,55,.12); }
 .lg-rank { width:24px; text-align:center; font-weight:900; font-size:1.1rem; color:rgba(240,230,200,.4); flex-shrink:0; }
@@ -235,8 +160,6 @@ function legendaHtml(h, i) {
 .lg-stats > div { text-align:center; }
 .lg-stats b { display:block; font-size:.95rem; font-weight:900; color:#f0e6c8; }
 .lg-stats span { font-size:.48rem; letter-spacing:1px; text-transform:uppercase; color:#5a6480; }
-
-/* ===== PRÁVĚ SE HRAJE ===== */
 .prave { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:28px; }
 .prave-card { display:block; text-decoration:none; background:rgba(15,20,35,.7); border:1px solid rgba(77,184,255,.3); border-radius:16px; padding:16px 14px; text-align:center; transition:.2s; }
 .prave-card:hover { border-color:#4db8ff; transform:translateY(-2px); box-shadow:0 6px 20px rgba(77,184,255,.15); }
@@ -244,7 +167,6 @@ function legendaHtml(h, i) {
 .pc-name { font-weight:800; color:#f0e6c8; font-size:.92rem; margin-top:5px; }
 .pc-sezona { font-size:.64rem; color:#8a93ad; margin-top:2px; }
 .pc-stav { display:inline-block; margin-top:9px; font-size:.54rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#4db8ff; background:rgba(77,184,255,.12); border:1px solid rgba(77,184,255,.35); padding:3px 10px; border-radius:100px; }
-
 @media (max-width:560px){ .rekordy, .prave { grid-template-columns:1fr; } .lg-stats { gap:10px; } .sh-name{font-size:1.55rem;} }
 </style>
 </head>
@@ -344,6 +266,63 @@ function prepniTab(kam) {
 }
 
 /* ===== SUMÁŘ ===== */
+/* Právě probíhající turnaje */
+const PRAVE = [
+    { emoji: '⚽', nazev: 'Champions League', sezona: 'Sezóna 2026/27', app: 'ChampionsLeague/welcome.html', stav: 'Probíhá' },
+    { emoji: '🏒', nazev: 'MS v hokeji', sezona: 'Německo 2027', app: 'hokej2027/welcome.html', stav: 'Brzy startuje' }
+];
+
+function renderSampion() {
+    const el = document.getElementById('sampion');
+    if (!ARCHIV.length) { el.style.display = 'none'; return; }
+    const t = ARCHIV[0];
+    const w = seradSRankem(t.zebricek)[0];
+    if (!w) { el.style.display = 'none'; return; }
+    let tituly = 0;
+    ARCHIV.forEach(tt => { const top = seradSRankem(tt.zebricek)[0]; if (top && top.jmeno === w.jmeno) tituly++; });
+    el.innerHTML = `
+        <div class="sh-eyebrow">Úřadující šampion</div>
+        <div class="sh-trophy">🏆</div>
+        <div class="sh-name">${w.jmeno}</div>
+        <div class="sh-turnaj">${t.nazev}</div>
+        <div class="sh-meta">
+            <div class="m"><b>${w.body}</b><span>bodů</span></div>
+            <div class="m"><b>1.</b><span>místo</span></div>
+            <div class="m"><b>${tituly}×</b><span>${tituly === 1 ? 'titul' : 'tituly'}</span></div>
+        </div>`;
+}
+
+function spocitejRekordy() {
+    let nejBody = { v: 0 }, nejNaskok = { v: -1 }, nejUcast = { v: 0 }, nejTituly = { v: 0 };
+    const tituly = {};
+    ARCHIV.forEach(t => {
+        const raz = seradSRankem(t.zebricek);
+        raz.forEach(r => { if (r.body > nejBody.v) nejBody = { v: r.body, kdo: r.jmeno }; });
+        if (raz[0]) tituly[raz[0].jmeno] = (tituly[raz[0].jmeno] || 0) + 1;
+        if (raz.length >= 2) { const n = raz[0].body - raz[1].body; if (n > nejNaskok.v) nejNaskok = { v: n, kdo: raz[0].jmeno }; }
+        if (raz.length > nejUcast.v) nejUcast = { v: raz.length, kde: t.nazev };
+    });
+    Object.keys(tituly).forEach(k => { if (tituly[k] > nejTituly.v) nejTituly = { v: tituly[k], kdo: k }; });
+    return { nejBody, nejNaskok, nejUcast, nejTituly };
+}
+function rekordyHtml() {
+    const r = spocitejRekordy();
+    const item = (ic, val, lbl, sub) => `<div class="rek"><div class="rek-ic">${ic}</div><div class="rek-val">${val}</div><div class="rek-lbl">${lbl}</div><div class="rek-sub">${sub || '&nbsp;'}</div></div>`;
+    return `<div class="sekce-nadpis">📊 Síň rekordů</div><div class="rekordy">${item('🎯', r.nejBody.v + ' b.', 'Nejvíc bodů v turnaji', r.nejBody.kdo || '')}${item('👑', r.nejTituly.v + '×', 'Nejvíc titulů', r.nejTituly.kdo || '')}${item('⚡', (r.nejNaskok.v >= 0 ? r.nejNaskok.v : '–') + ' b.', 'Největší náskok vítěze', r.nejNaskok.kdo || '')}${item('👥', r.nejUcast.v, 'Největší účast (hráčů)', r.nejUcast.kde || '')}</div>`;
+}
+function legendaHtml(h, i) {
+    const cab = [];
+    if (h.zlato) cab.push(`<span class="cab zlato">🥇 ${h.zlato}</span>`);
+    if (h.stribro) cab.push(`<span class="cab stribro">🥈 ${h.stribro}</span>`);
+    if (h.bronz) cab.push(`<span class="cab bronz">🥉 ${h.bronz}</span>`);
+    if (!cab.length) cab.push(`<span class="cab">bez medaile</span>`);
+    return `<div class="legenda ${i === 0 ? 'top' : ''}"><div class="lg-rank">${i + 1}</div><div class="lg-main"><div class="lg-name">${h.jmeno}${i === 0 ? ' <span class="goat">GOAT</span>' : ''}</div><div class="lg-cab">${cab.join('')}</div></div><div class="lg-stats"><div><b>${h.turnaje}</b><span>turnajů</span></div><div><b>${h.body}</b><span>bodů</span></div></div></div>`;
+}
+function praveHtml() {
+    if (!PRAVE.length) return '';
+    return `<div class="sekce-nadpis">🔥 Právě se hraje o slávu</div><div class="prave">${PRAVE.map(p => `<a class="prave-card" href="${p.app}"><div class="pc-emoji">${p.emoji}</div><div class="pc-name">${p.nazev}</div><div class="pc-sezona">${p.sezona}</div><div class="pc-stav">${p.stav}</div></a>`).join('')}</div>`;
+}
+
 function renderSumar() {
     const el = document.getElementById('panel-sumar');
     if (!ARCHIV.length) {
@@ -405,16 +384,6 @@ function turnajHtml(t) {
     </div>`;
 }
 
-function praveHtml() {
-    if (!PRAVE.length) return '';
-    return `<div class="sekce-nadpis">🔥 Právě se hraje o slávu</div><div class="prave">${PRAVE.map(p => `
-        <a class="prave-card" href="${p.app}">
-            <div class="pc-emoji">${p.emoji}</div>
-            <div class="pc-name">${p.nazev}</div>
-            <div class="pc-sezona">${p.sezona}</div>
-            <div class="pc-stav">${p.stav}</div>
-        </a>`).join('')}</div>`;
-}
 function renderArchiv() {
     const el = document.getElementById('panel-archiv');
     const archiv = ARCHIV.length
@@ -423,9 +392,19 @@ function renderArchiv() {
     el.innerHTML = praveHtml() + archiv;
 }
 
-renderSampion();
-renderSumar();
-renderArchiv();
+function initSin() {
+    try {
+        renderSampion();
+        renderSumar();
+        renderArchiv();
+    } catch (e) {
+        var el = document.getElementById('panel-sumar');
+        if (el) el.innerHTML = '<div class="empty"><div class="big">⚠️</div>Chyba při načítání: ' + (e && e.message ? e.message : e) + '</div>';
+        console.error('Síň slávy:', e);
+    }
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSin);
+else initSin();
 </script>
 </body>
 </html>
