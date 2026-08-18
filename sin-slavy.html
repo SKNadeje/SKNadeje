@@ -293,22 +293,25 @@ function renderSampion() {
 }
 
 function spocitejRekordy() {
-    let nejBody = { v: 0 }, nejNaskok = { v: -1 }, nejUcast = { v: 0 }, nejTituly = { v: 0 };
-    const tituly = {};
+    let nejUcast = { v: 0 };            // nejvíc hráčů v jednom turnaji
+    const H = {};                       // per hráč: tituly, medaile, počet turnajů
     ARCHIV.forEach(t => {
         const raz = seradSRankem(t.zebricek);
-        raz.forEach(r => { if (r.body > nejBody.v) nejBody = { v: r.body, kdo: r.jmeno }; });
-        if (raz[0]) tituly[raz[0].jmeno] = (tituly[raz[0].jmeno] || 0) + 1;
-        if (raz.length >= 2) { const n = raz[0].body - raz[1].body; if (n > nejNaskok.v) nejNaskok = { v: n, kdo: raz[0].jmeno }; }
+        raz.forEach(r => {
+            const h = H[r.jmeno] = H[r.jmeno] || { tituly: 0, medaile: 0, turnaje: 0 };
+            if (r._rankNum === 1) h.tituly++;
+            if (r._rankNum <= 3) h.medaile++;
+            h.turnaje++;
+        });
         if (raz.length > nejUcast.v) nejUcast = { v: raz.length, kde: t.nazev };
     });
-    Object.keys(tituly).forEach(k => { if (tituly[k] > nejTituly.v) nejTituly = { v: tituly[k], kdo: k }; });
-    return { nejBody, nejNaskok, nejUcast, nejTituly };
+    const nej = (klic) => { let best = { v: 0 }; Object.keys(H).forEach(k => { if (H[k][klic] > best.v) best = { v: H[k][klic], kdo: k }; }); return best; };
+    return { nejTituly: nej('tituly'), nejMedaile: nej('medaile'), nejUcastiHrac: nej('turnaje'), nejUcast };
 }
 function rekordyHtml() {
     const r = spocitejRekordy();
     const item = (ic, val, lbl, sub) => `<div class="rek"><div class="rek-ic">${ic}</div><div class="rek-val">${val}</div><div class="rek-lbl">${lbl}</div><div class="rek-sub">${sub || '&nbsp;'}</div></div>`;
-    return `<div class="sekce-nadpis">📊 Síň rekordů</div><div class="rekordy">${item('🎯', r.nejBody.v + ' b.', 'Nejvíc bodů v turnaji', r.nejBody.kdo || '')}${item('👑', r.nejTituly.v + '×', 'Nejvíc titulů', r.nejTituly.kdo || '')}${item('⚡', (r.nejNaskok.v >= 0 ? r.nejNaskok.v : '–') + ' b.', 'Největší náskok vítěze', r.nejNaskok.kdo || '')}${item('👥', r.nejUcast.v, 'Největší účast (hráčů)', r.nejUcast.kde || '')}</div>`;
+    return `<div class="sekce-nadpis">📊 Síň rekordů</div><div class="rekordy">${item('👑', r.nejTituly.v + '×', 'Nejvíc titulů', r.nejTituly.kdo || '')}${item('🏅', r.nejMedaile.v + '×', 'Nejvíc medailí', r.nejMedaile.kdo || '')}${item('🎯', r.nejUcastiHrac.v + '×', 'Nejvíc účastí', r.nejUcastiHrac.kdo || '')}${item('👥', r.nejUcast.v, 'Největší účast (hráčů)', r.nejUcast.kde || '')}</div>`;
 }
 function legendaHtml(h, i) {
     const cab = [];
@@ -316,7 +319,7 @@ function legendaHtml(h, i) {
     if (h.stribro) cab.push(`<span class="cab stribro">🥈 ${h.stribro}</span>`);
     if (h.bronz) cab.push(`<span class="cab bronz">🥉 ${h.bronz}</span>`);
     if (!cab.length) cab.push(`<span class="cab">bez medaile</span>`);
-    return `<div class="legenda ${i === 0 ? 'top' : ''}"><div class="lg-rank">${i + 1}</div><div class="lg-main"><div class="lg-name">${h.jmeno}${i === 0 ? ' <span class="goat">GOAT</span>' : ''}</div><div class="lg-cab">${cab.join('')}</div></div><div class="lg-stats"><div><b>${h.turnaje}</b><span>turnajů</span></div><div><b>${h.body}</b><span>bodů</span></div></div></div>`;
+    return `<div class="legenda ${i === 0 ? 'top' : ''}"><div class="lg-rank">${i + 1}</div><div class="lg-main"><div class="lg-name">${h.jmeno}${i === 0 ? ' <span class="goat">GOAT</span>' : ''}</div><div class="lg-cab">${cab.join('')}</div></div><div class="lg-stats"><div><b>${h.turnaje}</b><span>turnajů</span></div><div><b>${h.best}.</b><span>nejlépe</span></div></div></div>`;
 }
 function praveHtml() {
     if (!PRAVE.length) return '';
@@ -333,13 +336,13 @@ function renderSumar() {
     const H = {};
     ARCHIV.forEach(t => {
         seradSRankem(t.zebricek).forEach(r => {
-            const h = H[r.jmeno] = H[r.jmeno] || { jmeno: r.jmeno, zlato: 0, stribro: 0, bronz: 0, turnaje: 0, body: 0, best: 99 };
+            const h = H[r.jmeno] = H[r.jmeno] || { jmeno: r.jmeno, zlato: 0, stribro: 0, bronz: 0, turnaje: 0, best: 99 };
             if (r._rankNum === 1) h.zlato++; else if (r._rankNum === 2) h.stribro++; else if (r._rankNum === 3) h.bronz++;
-            h.turnaje++; h.body += r.body; h.best = Math.min(h.best, r._rankNum);
+            h.turnaje++; h.best = Math.min(h.best, r._rankNum);
         });
     });
     const legendy = Object.values(H).sort((a, b) =>
-        b.zlato - a.zlato || b.stribro - a.stribro || b.bronz - a.bronz || a.best - b.best || b.body - a.body);
+        b.zlato - a.zlato || b.stribro - a.stribro || b.bronz - a.bronz || a.best - b.best || b.turnaje - a.turnaje);
     el.innerHTML = rekordyHtml()
         + `<div class="sekce-nadpis">🏅 Žebříček legend</div>`
         + legendy.map((h, i) => legendaHtml(h, i)).join('');
