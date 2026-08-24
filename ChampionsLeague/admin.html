@@ -186,6 +186,15 @@ async function init() {
         </div>
 
         <div class="karta">
+            <h2>👑 Král kola</h2>
+            <div style="font-size:.82em; opacity:.75; margin-bottom:10px;">Spočítá, kdo od <b>minulého vyhlášení</b> získal nejvíc bodů za zápasy. První vyhlášení bere body od začátku (základ 0). Nejdřív ukáže návrh, teprve po potvrzení odejde push.</div>
+            <button class="btn btn-gold" onclick="vyhodnotKolo()" style="width:100%;">🧮 Vyhodnotit kolo</button>
+            <div id="kralVysledek" style="margin-top:10px;"></div>
+            <div id="kralHistorie" style="margin-top:14px; font-size:.85em;"></div>
+            <div id="kralMsg" style="margin-top:8px; font-size:.85em;"></div>
+        </div>
+
+        <div class="karta">
             <h2>📢 Poslat oznámení</h2>
             <input type="text" id="pushTitulek" placeholder="Titulek (např. ⚠️ Pozor)" maxlength="60" style="width:100%; padding:10px; margin-bottom:8px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:8px; color:#fff; font-family:inherit;">
             <textarea id="pushText" placeholder="Text zprávy (např. Zítra uzávěrka dlouhodobky!)" maxlength="180" style="width:100%; min-height:70px; padding:10px; margin-bottom:8px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:8px; color:#fff; font-family:inherit; resize:vertical;"></textarea>
@@ -203,6 +212,7 @@ async function init() {
     await nactiStav();
     await nactiZapasy();
     await nactiDlouhodobe();
+    await nactiKrale();
 }
 
 // ---------- PUSH OZNÁMENÍ ----------
@@ -892,6 +902,90 @@ function initSbalovani() {
 }
 
 // Spustit až teď, když jsou obě funkce (init i initSbalovani) bezpečně definované
+let _kralNavrh = null; // dočasný návrh krále čekající na potvrzení
+
+async function nactiKrale() {
+    const box = document.getElementById('kralHistorie');
+    if (!box) return;
+    const { data: kola } = await sb.from('cl_kola').select('*').order('id', { ascending: false });
+    if (!kola || !kola.length) { box.innerHTML = '<div style="opacity:.5;">Zatím nevyhlášeno žádné kolo.</div>'; return; }
+    box.innerHTML = '<div style="opacity:.6; margin-bottom:6px; text-transform:uppercase; letter-spacing:1px; font-size:.8em;">Síň králů</div>' +
+        kola.map((k, idx) => {
+            const cislo = kola.length - idx;
+            const kral = (k.kral || []).map(x => `${x.jmeno} (+${x.body} b.)`).join(', ');
+            return `<div style="padding:5px 0; border-bottom:1px solid rgba(255,255,255,.06);">👑 <b>${cislo}. kolo:</b> ${kral || '—'}</div>`;
+        }).join('');
+}
+
+async function vyhodnotKolo() {
+    const msg = document.getElementById('kralMsg');
+    const vys = document.getElementById('kralVysledek');
+    _kralNavrh = null; vys.innerHTML = '';
+    msg.innerHTML = '<span style="opacity:.6;">Počítám…</span>';
+
+    // 1) aktuální součet bodů za ZÁPASY per hráč
+    const { data: tipy, error: e1 } = await sb.from('cl_tipy_zapasy').select('user_id, jmeno, body');
+    if (e1) { msg.innerHTML = '<span style="color:#ff5555;">Chyba: ' + e1.message + '</span>'; return; }
+    const soucet = {};
+    (tipy || []).forEach(t => {
+        const so = soucet[t.user_id] = soucet[t.user_id] || { jmeno: t.jmeno, body: 0 };
+        so.body += (t.body || 0);
+        if (t.jmeno) so.jmeno = t.jmeno;
+    });
+
+    // 2) poslední snímek = základ (není-li žádné kolo → základ 0)
+    const { data: posl } = await sb.from('cl_kola').select('*').order('id', { ascending: false }).limit(1);
+    const zaklad = (posl && posl[0] && posl[0].snapshot) ? posl[0].snapshot : {};
+    const { count } = await sb.from('cl_kola').select('*', { count: 'exact', head: true });
+    const cisloKola = (count || 0) + 1;
+
+    // 3) přírůstky od minula
+    let nej = 0; const gains = [];
+    Object.keys(soucet).forEach(uid => {
+        const g = soucet[uid].body - (Number(zaklad[uid]) || 0);
+        gains.push({ jmeno: soucet[uid].jmeno, gain: g });
+        if (g > nej) nej = g;
+    });
+
+    if (nej <= 0) {
+        msg.innerHTML = '<span style="color:#e0a53a;">Od minulého kola nikdo nezískal žádné body — není koho vyhlásit. Vyhodnotil jsi zápasy tohoto kola?</span>';
+        return;
+    }
+
+    // 4) bezpečnostní kontrola: zápasy po uzávěrce bez vyhodnocení
+    const { data: zap } = await sb.from('cl_zapasy').select('deadline, status');
+    const nevyh = (zap || []).filter(z => z.status !== 'vyhodnoceno' && new Date(z.deadline).getTime() < Date.now()).length;
+
+    const kraluje = gains.filter(g => g.gain === nej);
+    const snapshot = {}; Object.keys(soucet).forEach(uid => snapshot[uid] = soucet[uid].body);
+    _kralNavrh = { cisloKola, kral: kraluje.map(k => ({ jmeno: k.jmeno, body: k.gain })), snapshot };
+
+    const jmena = kraluje.map(k => k.jmeno).join(', ');
+    vys.innerHTML = `<div style="background:rgba(212,175,55,.12); border:1px solid var(--gold); border-radius:12px; padding:14px; text-align:center;">
+            <div style="font-size:.7em; letter-spacing:2px; text-transform:uppercase; color:var(--gold); font-weight:900;">Návrh – ${cisloKola}. kolo</div>
+            <div style="font-size:1.4em; font-weight:900; margin:6px 0;">👑 ${jmena}</div>
+            <div style="opacity:.85;">+${nej} b. za toto kolo${kraluje.length > 1 ? ' · shodně (spolukrálové)' : ''}</div>
+            ${nevyh ? `<div style="color:#e0a53a; margin-top:8px; font-size:.85em;">⚠️ Pozor: ${nevyh} zápas(ů) po uzávěrce ještě NENÍ vyhodnoceno. Fakt vyhlásit?</div>` : ''}
+            <button class="btn btn-gold" style="width:100%; margin-top:12px;" onclick="potvrdKrale()">✅ Potvrdit a poslat push</button>
+        </div>`;
+    msg.innerHTML = '';
+}
+
+async function potvrdKrale() {
+    if (!_kralNavrh) return;
+    const msg = document.getElementById('kralMsg');
+    msg.innerHTML = '<span style="opacity:.6;">Ukládám…</span>';
+    const { error } = await sb.from('cl_kola').insert({ kral: _kralNavrh.kral, snapshot: _kralNavrh.snapshot });
+    if (error) { msg.innerHTML = '<span style="color:#ff5555;">Chyba: ' + error.message + '</span>'; return; }
+    const jmena = _kralNavrh.kral.map(k => k.jmeno).join(', ');
+    const body = _kralNavrh.kral[0] ? _kralNavrh.kral[0].body : 0;
+    await posliCLNotifikaci(`👑 Král ${_kralNavrh.cisloKola}. kola`, `${jmena} — nejvíc bodů tohoto kola (+${body} b.). Gratulace!`);
+    _kralNavrh = null;
+    document.getElementById('kralVysledek').innerHTML = '';
+    msg.innerHTML = '<span style="color:#2ecc71;">✅ Vyhlášeno a push odeslán.</span>';
+    nactiKrale();
+}
+
 init();
 </script>
 </body>
