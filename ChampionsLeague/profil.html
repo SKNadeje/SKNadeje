@@ -219,15 +219,13 @@ html[data-theme="dortmund"] body {
 }
 html[data-theme="dortmund"] h1 { color: #fde100; -webkit-text-fill-color: #fde100; text-shadow: 0 0 14px rgba(253,225,0,.4), 0 2px 6px rgba(0,0,0,.6); }
 
+.kral-ribbon { display:inline-block; margin-top:8px; background:linear-gradient(135deg,#f0c359,#d4af37); color:#1a1206; font-weight:900; font-size:.8em; letter-spacing:1px; padding:5px 14px; border-radius:100px; box-shadow:0 2px 12px rgba(212,175,55,.4); }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
 </script>
 <script>
 const KLUB_LOGA = {
-     tmavy: 'trophy.png',
-    svetly: 'trophy.png',
-    zlaty: 'trophy.png',
     real: 'https://crests.football-data.org/86.png',
     barca: 'https://crests.football-data.org/81.png',
     city: 'https://crests.football-data.org/65.png',
@@ -239,7 +237,7 @@ const KLUB_LOGA = {
 };
 function zobrazKlubOdznak(t) {
     var vz = document.getElementById('klubVodoznak');
-    if (vz) { if (KLUB_LOGA[t]) { vz.src = KLUB_LOGA[t]; vz.style.display = 'block'; } else { vz.style.display = 'none'; } }
+    if (vz) { if (KLUB_LOGA[t]) { vz.src = KLUB_LOGA[t]; vz.style.display = 'block'; } else if (t === 'tmavy' || t === 'svetly') { vz.src = 'trophy.png'; vz.style.display = 'block'; } else { vz.style.display = 'none'; } }
     var el = document.getElementById('klubOdznak');
     if (!el) return;
     el.style.display = "none";
@@ -286,13 +284,14 @@ function prepniThemePanel(){ var p=document.getElementById('themePanel'); p.styl
 document.addEventListener('click',function(e){ var sw=document.getElementById('themeSwitch'); if(sw&&!sw.contains(e.target)){ var p=document.getElementById('themePanel'); if(p) p.style.display='none'; } });
 </script>
 <div class="wrap">
-    <a class="back" href="statistiky.html">← Zpět na žebříček</a>
+    <a class="back" href="index.html">← Zpět na Champions League</a>
 
     <div class="hero">
         <div class="avatar-display" id="avatarDisplay" style="font-size:3.2em; line-height:1; margin-bottom:4px;"></div>
         <div class="jmeno" id="hJmeno">…</div>
         <div class="titul" id="hTitul"></div>
         <div class="hlaska" id="hHlaska"></div>
+        <div id="hKral"></div>
         <div class="staty">
             <div class="stat"><div class="v" id="hCelkem">–</div><div class="l">Celkem bodů</div></div>
             <div class="stat"><div class="v" id="hZapasy">–</div><div class="l">Body ze zápasů</div></div>
@@ -370,12 +369,20 @@ async function load() {
     const { data: { session: mojeSession } } = await sb.auth.getSession();
     const mojeAktualniId = mojeSession?.user?.id;
 
-    const [zR, tR, dR] = await Promise.all([
+    const [zR, tR, dR, kR] = await Promise.all([
         sb.from('cl_zapasy').select('*'),
         sb.from('cl_tipy_zapasy').select('*'),
-        sb.from('cl_dlouhodobe').select('*')
+        sb.from('cl_dlouhodobe').select('*'),
+        sb.from('cl_kola').select('*').order('id', { ascending: true })
     ]);
     const zapasy = zR.data || [], tipy = tR.data || [], dlouhodobe = dR.data || [];
+    // Král kola
+    const kola = kR.data || [];
+    const kolaVyhrana = kola.filter(k => (k.kral || []).some(x => x.user_id === uid)).length;
+    const posledniKolo = kola.length ? kola[kola.length - 1] : null;
+    const jeAktualniKral = posledniKolo && (posledniKolo.kral || []).some(x => x.user_id === uid);
+    const hKralEl = document.getElementById('hKral');
+    if (hKralEl) hKralEl.innerHTML = jeAktualniKral ? `<span class="kral-ribbon">👑 Král ${kola.length}. kola</span>` : '';
     const zapasMap = {}; zapasy.forEach(z => zapasMap[z.id] = z);
 
     const mojeTipy = tipy.filter(t => t.user_id === uid).sort((a, b) =>
@@ -451,6 +458,9 @@ async function load() {
 
     // ===== 30 ODZNAKŮ (on = splněno) =====
     const odz = [
+        // Král kola
+        { on: kolaVyhrana >= 1, ic: '👑', l: 'Král kola', p: `Získal nejvíc bodů v jednom kole (${kolaVyhrana}×).` },
+        { on: kolaVyhrana >= 3, ic: '🔥', l: 'Sériový král', p: 'Kraloval 3+ kolům.' },
         // Účast a tipy
         { on: odPocetTipu >= 1, ic: '⚽', l: 'První tip', p: 'Vsadil aspoň na jeden zápas.' },
         { on: odPocetTipu >= 5, ic: '🐣', l: 'Rozkoukáno', p: 'Tipnul 5 zápasů.' },
