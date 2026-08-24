@@ -943,7 +943,7 @@ async function vyhodnotKolo() {
     let nej = 0; const gains = [];
     Object.keys(soucet).forEach(uid => {
         const g = soucet[uid].body - (Number(zaklad[uid]) || 0);
-        gains.push({ jmeno: soucet[uid].jmeno, gain: g });
+        gains.push({ user_id: uid, jmeno: soucet[uid].jmeno, gain: g });
         if (g > nej) nej = g;
     });
 
@@ -958,7 +958,7 @@ async function vyhodnotKolo() {
 
     const kraluje = gains.filter(g => g.gain === nej);
     const snapshot = {}; Object.keys(soucet).forEach(uid => snapshot[uid] = soucet[uid].body);
-    _kralNavrh = { cisloKola, kral: kraluje.map(k => ({ jmeno: k.jmeno, body: k.gain })), snapshot };
+    _kralNavrh = { cisloKola, kral: kraluje.map(k => ({ user_id: k.user_id, jmeno: k.jmeno, body: k.gain })), snapshot };
 
     const jmena = kraluje.map(k => k.jmeno).join(', ');
     vys.innerHTML = `<div style="background:rgba(212,175,55,.12); border:1px solid var(--gold); border-radius:12px; padding:14px; text-align:center;">
