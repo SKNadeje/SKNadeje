@@ -423,15 +423,14 @@ html[data-theme="city"] .back, html[data-theme="city"] .zpet { text-shadow: 0 1p
 .np-vitez-box { background:linear-gradient(135deg, rgba(var(--gold-rgb,212,175,55),.25), transparent); border:2px solid var(--gold); border-radius:12px; padding:8px; min-width:130px; }
 .np-vitez-box .np-tym { background:none; font-size:.85em; }
 .np-zavrit { display:block; margin:20px auto 0; padding:12px 40px; background:var(--gold); color:#1a1200; border:none; border-radius:100px; font-weight:900; cursor:pointer; font-size:.9em; }
+.kral-banner { background: linear-gradient(135deg, rgba(212,175,55,.18), rgba(212,175,55,.06)); border:1px solid rgba(212,175,55,.5); border-radius:14px; padding:12px 16px; margin-bottom:14px; text-align:center; font-size:.95em; color:#f0e6c8; }
+.kral-banner .kral-body { color:#d4af37; font-weight:900; margin-left:6px; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
 </script>
 <script>
 const KLUB_LOGA = {
-    tmavy: 'trophy.png',
-    svetly: 'trophy.png',
-    zlaty: 'trophy.png',
     real: 'https://crests.football-data.org/86.png',
     barca: 'https://crests.football-data.org/81.png',
     city: 'https://crests.football-data.org/65.png',
@@ -450,6 +449,7 @@ function zobrazKlubOdznak(t) {
     }
     if (vz) {
         if (KLUB_LOGA[t]) { vz.src = KLUB_LOGA[t]; vz.style.display = 'block'; }
+        else if (t === 'tmavy' || t === 'svetly') { vz.src = 'trophy.png'; vz.style.display = 'block'; }
         else { vz.style.display = 'none'; }
     }
 }
@@ -495,7 +495,7 @@ document.addEventListener('DOMContentLoaded',function(){ var t=(function(){try{r
 document.addEventListener('click',function(e){ var sw=document.getElementById('themeSwitch'); if(sw&&!sw.contains(e.target)){ var p=document.getElementById('themePanel'); if(p) p.style.display='none'; } });
 </script>
 <div class="wrap">
-    <a class="zpet" href="welcome.html">← Zpět na uvítací stránku</a>
+    <a class="zpet" href="../hub.html">← Zpět na výběr turnajů</a>
     <h1>Liga mistrů</h1>
     <div class="zlata-linka"></div>
 
@@ -559,6 +559,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     <!-- ======= SEKCE ŽEBŘÍČEK ======= -->
     <div class="sekce" id="sekce-zebricek">
         <div class="bank-info" id="bank-info">…</div>
+        <div id="kralKola"></div>
         <div id="zebricek"></div>
     </div>
 </div>
@@ -717,6 +718,7 @@ async function nactiVse() {
     renderDlKarty();
     renderZapasy();
     renderZebricek();
+    nactiKralKola();
 }
 
 /* ============================================================
@@ -1284,6 +1286,20 @@ async function ulozDl() {
 /* ============================================================
    ŽEBŘÍČEK (zápasy + dlouhodobky v jednom)
    ============================================================ */
+async function nactiKralKola() {
+    const el = document.getElementById('kralKola');
+    if (!el) return;
+    try {
+        const { data } = await sb.from('cl_kola').select('*').order('id', { ascending: false }).limit(1);
+        const { count } = await sb.from('cl_kola').select('*', { count: 'exact', head: true });
+        if (!data || !data[0]) { el.innerHTML = ''; return; }
+        const k = data[0];
+        const jmena = (k.kral || []).map(x => x.jmeno).join(', ');
+        const body = (k.kral && k.kral[0]) ? k.kral[0].body : 0;
+        el.innerHTML = `<div class="kral-banner">👑 <b>Král ${count || ''}. kola:</b> ${jmena} <span class="kral-body">+${body} b.</span></div>`;
+    } catch (e) { el.innerHTML = ''; }
+}
+
 function renderZebricek() {
     const body = {}; // user_id -> {jm, zap, dl, user_id, zaplaceno}
     function zajisti(user_id, jmeno) {
