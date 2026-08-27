@@ -326,7 +326,7 @@ function vykresli(list, klic, fmt, sub, filtr) {
 
 function vykresliPodium() {
     // top 3 podle celkem, pódium jen když jsou jednoznační a mají body
-    const rows = seradSRankemCL(stats.hraci.filter(h => h.celkem > 0 || h.tipu > 0), 'celkem');
+    const rows = seradSRankemCL(stats.hraci.filter(h => h.celkem > 0 || h.tipu > 0 || (window._dlUsers && window._dlUsers.has(h.user_id))), 'celkem');
     const maBody = rows.some(r => r.celkem > 0);
     const trojiceRuzne = new Set(rows.slice(0, 3).map(r => r.celkem)).size === Math.min(3, rows.length);
     if (!maBody || !trojiceRuzne || rows.length < 3) return '';
@@ -367,7 +367,7 @@ const POHLEDY = {
         const zeb = vykresli(stats.hraci, 'celkem',
             h => `${h.celkem} <small>b.</small>`,
             h => `<span class="mini">🥅 ${h.zapasBody} b.</span><span class="mini">📋 ${h.dlBody} b.</span>`,
-            h => h.celkem > 0 || h.tipu > 0);
+            h => h.celkem > 0 || h.tipu > 0 || (window._dlUsers && window._dlUsers.has(h.user_id)));
         return bankBox + podium + `<div class="blok celkem"><h2>⭐ Celkové pořadí</h2>${zeb}</div>`;
     },
     skore: () => {
@@ -479,7 +479,7 @@ function vykresliSouboj(ja, rival) {
 }
 
 function vyberRivalaHTML(ja, hraci) {
-    const soupeci = hraci.filter(h => h.user_id !== ja.user_id && (h.tipu > 0 || h.celkem > 0));
+    const soupeci = hraci.filter(h => h.user_id !== ja.user_id && (h.tipu > 0 || h.celkem > 0 || (window._dlUsers && window._dlUsers.has(h.user_id))));
     if (!soupeci.length) return '<div class="prazdno">Zatím nemáš koho vyzvat.</div>';
     return `
         <div style="text-align:center; font-size:.82em; opacity:.7; margin-bottom:12px;">Vyber si rivala a sleduj, kdo z vás je lepší. Můžeš ho kdykoliv změnit.</div>
@@ -519,6 +519,7 @@ async function load() {
     window._avatary = {};
     (avR?.data || []).forEach(h => { if (h.avatar) window._avatary[h.user_id] = h.avatar; });
     stats = spocitejStatistikyCL(zR.data || [], tR.data || [], dR.data || []);
+    window._dlUsers = new Set((dR.data || []).map(d => d.user_id)); // hráči s dlouhodobkou (i s 0 body)
     const paid = (dR.data || []).filter(d => d.zaplaceno).length;
     bank = paid * STARTOVNE;
     prepni('celkem');
