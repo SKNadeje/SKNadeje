@@ -438,6 +438,35 @@ html[data-theme="city"] .back, html[data-theme="city"] .zpet { text-shadow: 0 1p
 body { animation: pageIn .35s ease both; }
 @keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .skel-row, .skel-card, body, .vysledek-badge, .razitko { animation: none !important; } .lb-row.moje { position: static; } }
+.los-info { text-align:center; font-size:.8em; opacity:.7; margin-bottom:14px; }
+.los-info .h { color:#2ecc71; } .los-info .a { color:#4db8ff; }
+.los-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:8px; }
+.los-tym { display:flex; align-items:center; gap:9px; padding:10px 12px; border-radius:12px; background:var(--card-bg); border:1px solid var(--card-border); color:var(--text); cursor:pointer; font-size:.86em; font-weight:600; text-align:left; transition:.15s; font-family:inherit; }
+.los-tym:hover { border-color:var(--fial); transform:translateY(-1px); }
+.los-tym > span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.los-zpet { background:none; border:none; color:var(--fial); font-weight:700; cursor:pointer; font-size:.9em; padding:6px 0; margin-bottom:8px; font-family:inherit; }
+.los-detail-head { display:flex; align-items:center; gap:12px; font-size:1.25em; font-weight:900; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--card-border); }
+.los-souperi { display:flex; flex-direction:column; gap:8px; }
+.los-souper { display:flex; align-items:center; gap:12px; padding:9px 12px; border-radius:12px; background:var(--card-bg); border:1px solid var(--card-border); }
+.los-souper-nazev { flex:1; font-weight:600; font-size:.92em; }
+.los-ha { width:28px; height:28px; flex-shrink:0; display:grid; place-items:center; border-radius:8px; font-weight:900; font-size:.8em; }
+.los-ha.h { background:rgba(46,204,113,.18); color:#2ecc71; border:1px solid rgba(46,204,113,.5); }
+.los-ha.a { background:rgba(77,184,255,.18); color:#4db8ff; border:1px solid rgba(77,184,255,.5); }
+.los-modal { position:fixed; inset:0; z-index:99999; background:rgba(2,6,23,.78); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; padding:20px; }
+.los-modal.on { display:flex; animation:losFade .2s ease; }
+@keyframes losFade { from { opacity:0; } to { opacity:1; } }
+.los-modal-card { position:relative; width:100%; max-width:440px; border-radius:18px; overflow:hidden; background:linear-gradient(160deg,#14297a 0%,#0b1c5e 55%,#08154a 100%); border:1px solid rgba(120,160,255,.3); box-shadow:0 30px 80px rgba(0,0,0,.6); }
+.los-modal-x { position:absolute; top:10px; right:12px; z-index:3; background:rgba(255,255,255,.14); border:none; color:#fff; width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:.85em; line-height:1; }
+.los-modal-souperi { padding:22px 0 6px; }
+.los-modal-row { display:flex; align-items:center; gap:12px; padding-left:18px; height:46px; }
+.los-modal-row .lm-logo { width:32px; display:flex; justify-content:center; flex-shrink:0; }
+.los-modal-row .lm-name { flex:1; color:#fff; font-weight:800; text-transform:uppercase; letter-spacing:.5px; font-size:.92em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.los-modal-row .lm-ha { width:52px; height:46px; flex-shrink:0; display:grid; place-items:center; font-weight:900; font-size:1.15em; color:#fff; }
+.los-modal-row .lm-ha.h { background:#2f6bff; }
+.los-modal-row .lm-ha.a { background:rgba(255,255,255,.05); color:#aebbe0; }
+.los-modal-tym { display:flex; align-items:center; justify-content:center; gap:12px; padding:16px; background:rgba(47,107,255,.3); border-top:2px solid #2f6bff; }
+.los-modal-tym span { color:#fff; font-weight:900; text-transform:uppercase; letter-spacing:1px; font-size:1.12em; }
+.lm-empty { color:#c7d3f0; text-align:center; padding:28px 16px; opacity:.8; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -514,6 +543,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
 
     <div class="nav">
         <button class="tady" id="nav-tipy" onclick="prepni('tipy')">Tipy</button>
+        <button id="nav-los" onclick="prepni('los')">🗺️ Los</button>
         <a href="statistiky.html" style="text-decoration:none;"><button id="nav-zebricek">Žebříček</button></a>
         <a id="nav-admin" href="admin.html" style="display:none; text-decoration:none;"><button style="background:rgba(212,175,55,.15); border:1px solid rgba(212,175,55,.5); color:#d4af37;">⚙️ Admin</button></a>
     </div>
@@ -570,6 +600,8 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     </div>
 
     <!-- ======= SEKCE ŽEBŘÍČEK ======= -->
+    <div class="sekce" id="sekce-los"></div>
+
     <div class="sekce" id="sekce-zebricek">
         <div class="bank-info" id="bank-info">…</div>
         <div id="kralKola"></div>
@@ -760,11 +792,241 @@ async function nactiVse() {
     renderZapasy();
     renderZebricek();
     nactiKralKola();
+    renderLos();
 }
 
 /* ============================================================
    NAVIGACE
    ============================================================ */
+/* ============================================================
+   LOS ZÁKLADNÍ ČÁSTI
+   Každý zápas jednou jako [domácí, hosté]. Appka ho zrcadlí:
+   u domácího = H (doma), u hostů = A (venku).
+   ============================================================ */
+const LOS_PARY = [
+    // Kompletní los ligové fáze CL 2026/27 (jen domácí zápasy, venkovní se dopočítají zrcadlením)
+    ['Paris Saint-Germain', 'FC Barcelona'],
+    ['Paris Saint-Germain', 'AS Řím'],
+    ['Paris Saint-Germain', 'Galatasaray'],
+    ['Paris Saint-Germain', 'Slovan Bratislava'],
+
+    ['Real Madrid', 'Inter Milán'],
+    ['Real Madrid', 'PSV Eindhoven'],
+    ['Real Madrid', 'RB Lipsko'],
+    ['Real Madrid', 'LASK'],
+
+    ['Arsenal FC', 'Real Madrid'],
+    ['Arsenal FC', 'Borussia Dortmund'],
+    ['Arsenal FC', 'LOSC Lille'],
+    ['Arsenal FC', 'Sabah FK'],
+
+    ['Manchester City', 'Paris Saint-Germain'],
+    ['Manchester City', 'Sporting CP'],
+    ['Manchester City', 'SSC Neapol'],
+    ['Manchester City', 'AEK'],
+
+    ['FC Barcelona', 'Manchester City'],
+    ['FC Barcelona', 'Aston Villa'],
+    ['FC Barcelona', 'Feyenoord'],
+    ['FC Barcelona', 'Como 1907'],
+
+    ['Bayern Mnichov', 'Arsenal FC'],
+    ['Bayern Mnichov', 'Real Betis'],
+    ['Bayern Mnichov', 'FK Bodø/Glimt'],
+    ['Bayern Mnichov', 'SK Slavia Praha'],
+
+    ['Liverpool FC', 'Atlético Madrid'],
+    ['Liverpool FC', 'FC Porto'],
+    ['Liverpool FC', 'Villarreal CF'],
+    ['Liverpool FC', 'RC Lens'],
+
+    ['Manchester United', 'Bayern Mnichov'],
+    ['Manchester United', 'AS Řím'],
+    ['Manchester United', 'RB Lipsko'],
+    ['Manchester United', 'Sabah FK'],
+
+    ['Inter Milán', 'Liverpool FC'],
+    ['Inter Milán', 'Club Brugge'],
+    ['Inter Milán', 'Šachtar Doněck'],
+    ['Inter Milán', 'VfB Stuttgart'],
+
+    ['Atlético Madrid', 'Bayern Mnichov'],
+    ['Atlético Madrid', 'Manchester United'],
+    ['Atlético Madrid', 'Fenerbahce'],
+    ['Atlético Madrid', 'Viking'],
+
+    ['Borussia Dortmund', 'Inter Milán'],
+    ['Borussia Dortmund', 'Real Betis'],
+    ['Borussia Dortmund', 'Villarreal CF'],
+    ['Borussia Dortmund', 'AEK'],
+
+    ['AS Řím', 'Real Madrid'],
+    ['AS Řím', 'Sporting CP'],
+    ['AS Řím', 'LOSC Lille'],
+    ['AS Řím', 'Slovan Bratislava'],
+
+    ['Aston Villa', 'Paris Saint-Germain'],
+    ['Aston Villa', 'Borussia Dortmund'],
+    ['Aston Villa', 'Fenerbahce'],
+    ['Aston Villa', 'Viking'],
+
+    ['RB Lipsko', 'Manchester City'],
+    ['RB Lipsko', 'PSV Eindhoven'],
+    ['RB Lipsko', 'Šachtar Doněck'],
+    ['RB Lipsko', 'RC Lens'],
+
+    ['Como 1907', 'Paris Saint-Germain'],
+    ['Como 1907', 'Manchester United'],
+    ['Como 1907', 'RB Lipsko'],
+    ['Como 1907', 'AEK'],
+
+    ['SSC Neapol', 'Arsenal FC'],
+    ['SSC Neapol', 'Club Brugge'],
+    ['SSC Neapol', 'FK Bodø/Glimt'],
+    ['SSC Neapol', 'Viking'],
+
+    ['FC Porto', 'Manchester City'],
+    ['FC Porto', 'PSV Eindhoven'],
+    ['FC Porto', 'SSC Neapol'],
+    ['FC Porto', 'SK Slavia Praha'],
+
+    ['VfB Stuttgart', 'Atlético Madrid'],
+    ['VfB Stuttgart', 'Club Brugge'],
+    ['VfB Stuttgart', 'LOSC Lille'],
+    ['VfB Stuttgart', 'Viking'],
+
+    ['Sporting CP', 'FC Barcelona'],
+    ['Sporting CP', 'Manchester United'],
+    ['Sporting CP', 'Galatasaray'],
+    ['Sporting CP', 'LASK'],
+
+    ['Galatasaray', 'FC Barcelona'],
+    ['Galatasaray', 'Aston Villa'],
+    ['Galatasaray', 'Feyenoord'],
+    ['Galatasaray', 'VfB Stuttgart'],
+
+    ['Villarreal CF', 'Paris Saint-Germain'],
+    ['Villarreal CF', 'Manchester United'],
+    ['Villarreal CF', 'SSC Neapol'],
+    ['Villarreal CF', 'Sabah FK'],
+
+    ['PSV Eindhoven', 'Atlético Madrid'],
+    ['PSV Eindhoven', 'Club Brugge'],
+    ['PSV Eindhoven', 'Šachtar Doněck'],
+    ['PSV Eindhoven', 'VfB Stuttgart'],
+
+    ['Real Betis', 'Arsenal FC'],
+    ['Real Betis', 'FC Porto'],
+    ['Real Betis', 'Feyenoord'],
+    ['Real Betis', 'Como 1907'],
+
+    ['LOSC Lille', 'Bayern Mnichov'],
+    ['LOSC Lille', 'Real Betis'],
+    ['LOSC Lille', 'Galatasaray'],
+    ['LOSC Lille', 'Slovan Bratislava'],
+
+    ['Feyenoord', 'Inter Milán'],
+    ['Feyenoord', 'FC Porto'],
+    ['Feyenoord', 'RB Lipsko'],
+    ['Feyenoord', 'Como 1907'],
+
+    ['Club Brugge', 'Liverpool FC'],
+    ['Club Brugge', 'Aston Villa'],
+    ['Club Brugge', 'FK Bodø/Glimt'],
+    ['Club Brugge', 'RC Lens'],
+
+    ['Šachtar Doněck', 'Real Madrid'],
+    ['Šachtar Doněck', 'Sporting CP'],
+    ['Šachtar Doněck', 'Fenerbahce'],
+    ['Šachtar Doněck', 'AEK'],
+
+    ['RC Lens', 'Manchester City'],
+    ['RC Lens', 'Sporting CP'],
+    ['RC Lens', 'FK Bodø/Glimt'],
+    ['RC Lens', 'Como 1907'],
+
+    ['SK Slavia Praha', 'Arsenal FC'],
+    ['SK Slavia Praha', 'Aston Villa'],
+    ['SK Slavia Praha', 'Villarreal CF'],
+    ['SK Slavia Praha', 'RC Lens'],
+
+    ['FK Bodø/Glimt', 'Atlético Madrid'],
+    ['FK Bodø/Glimt', 'Borussia Dortmund'],
+    ['FK Bodø/Glimt', 'LOSC Lille'],
+    ['FK Bodø/Glimt', 'LASK'],
+
+    ['LASK', 'Liverpool FC'],
+    ['LASK', 'FC Porto'],
+    ['LASK', 'Fenerbahce'],
+    ['LASK', 'Slovan Bratislava'],
+
+    ['Sabah FK', 'FC Barcelona'],
+    ['Sabah FK', 'Borussia Dortmund'],
+    ['Sabah FK', 'SSC Neapol'],
+    ['Sabah FK', 'SK Slavia Praha'],
+
+    ['AEK', 'Real Madrid'],
+    ['AEK', 'AS Řím'],
+    ['AEK', 'Galatasaray'],
+    ['AEK', 'LASK'],
+
+    ['Fenerbahce', 'Liverpool FC'],
+    ['Fenerbahce', 'AS Řím'],
+    ['Fenerbahce', 'Villarreal CF'],
+    ['Fenerbahce', 'SK Slavia Praha'],
+
+    ['Viking', 'Bayern Mnichov'],
+    ['Viking', 'PSV Eindhoven'],
+    ['Viking', 'Feyenoord'],
+    ['Viking', 'Sabah FK'],
+
+    ['Slovan Bratislava', 'Inter Milán'],
+    ['Slovan Bratislava', 'Real Betis'],
+    ['Slovan Bratislava', 'Šachtar Doněck'],
+    ['Slovan Bratislava', 'VfB Stuttgart'],
+];
+
+function losMapa() {
+    const m = {};
+    LOS_PARY.forEach(par => {
+        const d = par[0], h = par[1];
+        (m[d] = m[d] || []).push({ souper: h, doma: true });
+        (m[h] = m[h] || []).push({ souper: d, doma: false });
+    });
+    return m;
+}
+
+function renderLos() {
+    const el = document.getElementById('sekce-los');
+    if (!el) return;
+    const tymy = stav.tymy || [];
+    if (!tymy.length) { el.innerHTML = '<div class="prazdno">Seznam týmů zatím není zadán (dlouhodobka 1 v adminu).</div>'; return; }
+    const logo = (n, v) => (typeof logoTymu === 'function') ? logoTymu(n, v) : '';
+    el.innerHTML =
+        `<div class="los-info">Klikni na tým a uvidíš jeho 8 soupeřů — <b class="h">H</b> = doma, <b class="a">A</b> = venku.</div>` +
+        `<div class="los-grid">${tymy.map((t, i) =>
+            `<button class="los-tym" onclick="losOtevri(${i})">${logo(t, 30)}<span>${t}</span></button>`
+        ).join('')}</div>`;
+}
+
+function losOtevri(i) {
+    const tym = (stav.tymy || [])[i]; if (!tym) return;
+    const souperi = losMapa()[tym] || [];
+    const logo = (n, v) => (typeof logoTymu === 'function') ? logoTymu(n, v) : '';
+    const rows = souperi.length
+        ? souperi.map(so => `<div class="los-modal-row"><span class="lm-logo">${logo(so.souper, 30)}</span><span class="lm-name">${so.souper}</span><span class="lm-ha ${so.doma ? 'h' : 'a'}">${so.doma ? 'H' : 'A'}</span></div>`).join('')
+        : '<div class="lm-empty">Los tohoto týmu zatím nebyl zadán.</div>';
+    const modal = document.createElement('div');
+    modal.className = 'los-modal on';
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    modal.innerHTML = `<div class="los-modal-card">
+        <button class="los-modal-x" onclick="this.closest('.los-modal').remove()">✕</button>
+        <div class="los-modal-souperi">${rows}</div>
+        <div class="los-modal-tym">${logo(tym, 34)}<span>${tym}</span></div>
+    </div>`;
+    document.body.appendChild(modal);
+}
+
 function prepni(kam) {
     document.querySelectorAll('.sekce').forEach(s => s.classList.remove('on'));
     document.getElementById('sekce-' + kam).classList.add('on');
@@ -1519,12 +1781,4 @@ inicializujChat({ klient: sb, tabulka: 'cl_chat', soutez: 'cl', barva: 'var(--fi
 // Načti viditelnost vodoznaku z cl_stav a aplikuj (nastavená adminem, platí všude)
 (async function(){
     try {
-        const { data } = await sb.from('cl_stav').select('vodoznak_opacity').eq('id', 1).maybeSingle();
-        const op = (data && data.vodoznak_opacity != null) ? data.vodoznak_opacity : 0.10;
-        const vz = document.getElementById('klubVodoznak');
-        if (vz) vz.style.opacity = op;
-    } catch(e) { /* necháme výchozí opacity z CSS */ }
-})();
-</script>
-</body>
-</html>
+      
