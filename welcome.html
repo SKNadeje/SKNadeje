@@ -126,6 +126,16 @@ h1 {
             <button class="vstup vstup-ghost" style="flex:1; padding:13px 8px; font-size:.75rem;" onclick="wRegistrace()">Registrace</button>
         </div>
         <div id="w-msg" style="font-size:.7rem; color:#d97b3a; margin-top:10px; min-height:16px;"></div>
+        <div style="margin-top:6px;">
+            <span onclick="wZapomenuteHeslo()" style="cursor:pointer; font-size:.68rem; text-decoration:underline; color:#5a6480;">Zapomněl(a) jsi heslo?</span>
+        </div>
+    </div>
+
+    <div id="reset-box" style="display:none; max-width:300px; margin:0 auto;">
+        <div style="font-size:.8rem; color:#d4af37; margin-bottom:10px; font-weight:600;">🔑 Nastav si nové heslo</div>
+        <input type="password" id="w-nove-heslo" placeholder="Nové heslo (min. 6 znaků)" class="w-input">
+        <button class="vstup" style="width:100%; padding:13px 8px; font-size:.75rem; margin-top:12px;" onclick="wNastavHeslo()">Uložit nové heslo</button>
+        <div id="w-reset-msg" style="font-size:.7rem; color:#d97b3a; margin-top:10px; min-height:16px;"></div>
     </div>
 
     <div id="logged-box" style="display:none;">
@@ -209,6 +219,7 @@ async function wZjistiJmeno(userId) {
 }
 
 async function wRefresh() {
+    if (window.wRecoveryMode) return; // v režimu obnovy hesla nech formulář na nové heslo
     const { data: { session } } = await sb.auth.getSession();
     const authBox = document.getElementById('auth-box');
     const loggedBox = document.getElementById('logged-box');
@@ -260,6 +271,38 @@ async function wLogout() {
     await sb.auth.signOut();
     wRefresh();
 }
+
+async function wZapomenuteHeslo() {
+    const email = document.getElementById('w-email').value.trim();
+    if (!email) return wMsg('Napiš svůj e-mail do políčka výše a klikni znovu na „Zapomněl(a) jsi heslo?".');
+    const redirectTo = window.location.href.split('#')[0].split('?')[0];
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) return wMsg('Nepovedlo se odeslat: ' + error.message);
+    wMsg('Poslali jsme ti e-mail s odkazem na obnovu hesla. Zkontroluj schránku (i spam). ✔', true);
+}
+
+async function wNastavHeslo() {
+    const nove = document.getElementById('w-nove-heslo').value;
+    const msg = document.getElementById('w-reset-msg');
+    if (nove.length < 6) { msg.style.color = '#d97b3a'; msg.textContent = 'Heslo musí mít aspoň 6 znaků.'; return; }
+    const { error } = await sb.auth.updateUser({ password: nove });
+    if (error) { msg.style.color = '#d97b3a'; msg.textContent = 'Chyba: ' + error.message; return; }
+    msg.style.color = '#2ecc71';
+    msg.textContent = 'Heslo změněno! ✔ Přihlašuji…';
+    window.wRecoveryMode = false;
+    document.getElementById('reset-box').style.display = 'none';
+    setTimeout(wRefresh, 800);
+}
+
+// Když hráč přijde z e-mailu na obnovu hesla, Supabase spustí PASSWORD_RECOVERY:
+sb.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') {
+        window.wRecoveryMode = true;
+        document.getElementById('auth-box').style.display = 'none';
+        document.getElementById('logged-box').style.display = 'none';
+        document.getElementById('reset-box').style.display = 'block';
+    }
+});
 
 document.addEventListener('DOMContentLoaded', wRefresh);
 </script>
