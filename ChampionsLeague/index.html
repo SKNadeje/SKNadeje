@@ -727,12 +727,12 @@ const LOGA = {
     'Šachtar Doněck': 'https://crests.football-data.org/1887.png',
     'RC Lens': 'https://crests.football-data.org/546.png',
     'Como 1907': 'https://media.api-sports.io/football/teams/895.png',
-    'LASK Linz': 'https://media.api-sports.io/football/teams/1026.png',
+    'LASK': 'https://media.api-sports.io/football/teams/1026.png',
     'Sabah FK': 'https://media.api-sports.io/football/teams/13976.png',
-    'AEK Athény': 'https://media.api-sports.io/football/teams/575.png',
-    'Viking FK': 'https://media.api-sports.io/football/teams/759.png',
-    'ŠK Slovan Bratislava': 'https://media.api-sports.io/football/teams/656.png',
-    'Fenerbahce SK': 'https://crests.football-data.org/613.png',
+    'AEK': 'https://media.api-sports.io/football/teams/575.png',
+    'Viking': 'https://media.api-sports.io/football/teams/759.png',
+    'Slovan Bratislava': 'https://media.api-sports.io/football/teams/656.png',
+    'Fenerbahce': 'https://crests.football-data.org/613.png',
 };
 
 // Normalizace názvu pro robustní párování (bez diakritiky, malá písmena,
@@ -851,12 +851,12 @@ const LOS_PARY = [
     ['Paris Saint-Germain', 'FC Barcelona'],
     ['Paris Saint-Germain', 'AS Řím'],
     ['Paris Saint-Germain', 'Galatasaray'],
-    ['Paris Saint-Germain', 'Slovan Bratislava'],
+    ['Paris Saint-Germain', 'ŠK Slovan Bratislava'],
 
     ['Real Madrid', 'Inter Milán'],
     ['Real Madrid', 'PSV Eindhoven'],
     ['Real Madrid', 'RB Lipsko'],
-    ['Real Madrid', 'LASK'],
+    ['Real Madrid', 'LASK Linz'],
 
     ['Arsenal FC', 'Real Madrid'],
     ['Arsenal FC', 'Borussia Dortmund'],
@@ -866,7 +866,7 @@ const LOS_PARY = [
     ['Manchester City', 'Paris Saint-Germain'],
     ['Manchester City', 'Sporting CP'],
     ['Manchester City', 'SSC Neapol'],
-    ['Manchester City', 'AEK'],
+    ['Manchester City', 'AEK Athény'],
 
     ['FC Barcelona', 'Manchester City'],
     ['FC Barcelona', 'Aston Villa'],
@@ -895,23 +895,23 @@ const LOS_PARY = [
 
     ['Atlético Madrid', 'Bayern Mnichov'],
     ['Atlético Madrid', 'Manchester United'],
-    ['Atlético Madrid', 'Fenerbahce'],
-    ['Atlético Madrid', 'Viking'],
+    ['Atlético Madrid', 'Fenerbahce SK'],
+    ['Atlético Madrid', 'Viking FK'],
 
     ['Borussia Dortmund', 'Inter Milán'],
     ['Borussia Dortmund', 'Real Betis'],
     ['Borussia Dortmund', 'Villarreal CF'],
-    ['Borussia Dortmund', 'AEK'],
+    ['Borussia Dortmund', 'AEK Athény'],
 
     ['AS Řím', 'Real Madrid'],
     ['AS Řím', 'Sporting CP'],
     ['AS Řím', 'LOSC Lille'],
-    ['AS Řím', 'Slovan Bratislava'],
+    ['AS Řím', 'ŠK Slovan Bratislava'],
 
     ['Aston Villa', 'Paris Saint-Germain'],
     ['Aston Villa', 'Borussia Dortmund'],
-    ['Aston Villa', 'Fenerbahce'],
-    ['Aston Villa', 'Viking'],
+    ['Aston Villa', 'Fenerbahce SK'],
+    ['Aston Villa', 'Viking FK'],
 
     ['RB Lipsko', 'Manchester City'],
     ['RB Lipsko', 'PSV Eindhoven'],
@@ -921,12 +921,12 @@ const LOS_PARY = [
     ['Como 1907', 'Paris Saint-Germain'],
     ['Como 1907', 'Manchester United'],
     ['Como 1907', 'RB Lipsko'],
-    ['Como 1907', 'AEK'],
+    ['Como 1907', 'AEK Athény'],
 
     ['SSC Neapol', 'Arsenal FC'],
     ['SSC Neapol', 'Club Brugge'],
     ['SSC Neapol', 'FK Bodø/Glimt'],
-    ['SSC Neapol', 'Viking'],
+    ['SSC Neapol', 'Viking FK'],
 
     ['FC Porto', 'Manchester City'],
     ['FC Porto', 'PSV Eindhoven'],
@@ -936,12 +936,12 @@ const LOS_PARY = [
     ['VfB Stuttgart', 'Atlético Madrid'],
     ['VfB Stuttgart', 'Club Brugge'],
     ['VfB Stuttgart', 'LOSC Lille'],
-    ['VfB Stuttgart', 'Viking'],
+    ['VfB Stuttgart', 'Viking FK'],
 
     ['Sporting CP', 'FC Barcelona'],
     ['Sporting CP', 'Manchester United'],
     ['Sporting CP', 'Galatasaray'],
-    ['Sporting CP', 'LASK'],
+    ['Sporting CP', 'LASK Linz'],
 
     ['Galatasaray', 'FC Barcelona'],
     ['Galatasaray', 'Aston Villa'],
@@ -966,7 +966,7 @@ const LOS_PARY = [
     ['LOSC Lille', 'Bayern Mnichov'],
     ['LOSC Lille', 'Real Betis'],
     ['LOSC Lille', 'Galatasaray'],
-    ['LOSC Lille', 'Slovan Bratislava'],
+    ['LOSC Lille', 'ŠK Slovan Bratislava'],
 
     ['Feyenoord', 'Inter Milán'],
     ['Feyenoord', 'FC Porto'],
@@ -980,8 +980,8 @@ const LOS_PARY = [
 
     ['Šachtar Doněck', 'Real Madrid'],
     ['Šachtar Doněck', 'Sporting CP'],
-    ['Šachtar Doněck', 'Fenerbahce'],
-    ['Šachtar Doněck', 'AEK'],
+    ['Šachtar Doněck', 'Fenerbahce SK'],
+    ['Šachtar Doněck', 'AEK Athény'],
 
     ['RC Lens', 'Manchester City'],
     ['RC Lens', 'Sporting CP'],
@@ -996,44 +996,44 @@ const LOS_PARY = [
     ['FK Bodø/Glimt', 'Atlético Madrid'],
     ['FK Bodø/Glimt', 'Borussia Dortmund'],
     ['FK Bodø/Glimt', 'LOSC Lille'],
-    ['FK Bodø/Glimt', 'LASK'],
+    ['FK Bodø/Glimt', 'LASK Linz'],
 
-    ['LASK', 'Liverpool FC'],
-    ['LASK', 'FC Porto'],
-    ['LASK', 'Fenerbahce'],
-    ['LASK', 'Slovan Bratislava'],
+    ['LASK Linz', 'Liverpool FC'],
+    ['LASK Linz', 'FC Porto'],
+    ['LASK Linz', 'Fenerbahce SK'],
+    ['LASK Linz', 'ŠK Slovan Bratislava'],
 
     ['Sabah FK', 'FC Barcelona'],
     ['Sabah FK', 'Borussia Dortmund'],
     ['Sabah FK', 'SSC Neapol'],
     ['Sabah FK', 'SK Slavia Praha'],
 
-    ['AEK', 'Real Madrid'],
-    ['AEK', 'AS Řím'],
-    ['AEK', 'Galatasaray'],
-    ['AEK', 'LASK'],
+    ['AEK Athény', 'Real Madrid'],
+    ['AEK Athény', 'AS Řím'],
+    ['AEK Athény', 'Galatasaray'],
+    ['AEK Athény', 'LASK Linz'],
 
-    ['Fenerbahce', 'Liverpool FC'],
-    ['Fenerbahce', 'AS Řím'],
-    ['Fenerbahce', 'Villarreal CF'],
-    ['Fenerbahce', 'SK Slavia Praha'],
+    ['Fenerbahce SK', 'Liverpool FC'],
+    ['Fenerbahce SK', 'AS Řím'],
+    ['Fenerbahce SK', 'Villarreal CF'],
+    ['Fenerbahce SK', 'SK Slavia Praha'],
 
-    ['Viking', 'Bayern Mnichov'],
-    ['Viking', 'PSV Eindhoven'],
-    ['Viking', 'Feyenoord'],
-    ['Viking', 'Sabah FK'],
+    ['Viking FK', 'Bayern Mnichov'],
+    ['Viking FK', 'PSV Eindhoven'],
+    ['Viking FK', 'Feyenoord'],
+    ['Viking FK', 'Sabah FK'],
 
-    ['Slovan Bratislava', 'Inter Milán'],
-    ['Slovan Bratislava', 'Real Betis'],
-    ['Slovan Bratislava', 'Šachtar Doněck'],
-    ['Slovan Bratislava', 'VfB Stuttgart'],
+    ['ŠK Slovan Bratislava', 'Inter Milán'],
+    ['ŠK Slovan Bratislava', 'Real Betis'],
+    ['ŠK Slovan Bratislava', 'Šachtar Doněck'],
+    ['ŠK Slovan Bratislava', 'VfB Stuttgart'],
 ];
 
 const POT = {
     'Paris Saint-Germain':1,'Real Madrid':1,'Manchester City':1,'Bayern Mnichov':1,'Liverpool FC':1,'Inter Milán':1,'Arsenal FC':1,'FC Barcelona':1,'Atlético Madrid':1,
     'Borussia Dortmund':2,'AS Řím':2,'Sporting CP':2,'Aston Villa':2,'FC Porto':2,'Manchester United':2,'Club Brugge':2,'Real Betis':2,'PSV Eindhoven':2,
-    'Feyenoord':3,'LOSC Lille':3,'FK Bodø/Glimt':3,'SSC Neapol':3,'RB Lipsko':3,'Villarreal CF':3,'Fenerbahce':3,'Šachtar Doněck':3,'Galatasaray':3,
-    'SK Slavia Praha':4,'Slovan Bratislava':4,'VfB Stuttgart':4,'AEK':4,'LASK':4,'Como 1907':4,'RC Lens':4,'Viking':4,'Sabah FK':4
+    'Feyenoord':3,'LOSC Lille':3,'FK Bodø/Glimt':3,'SSC Neapol':3,'RB Lipsko':3,'Villarreal CF':3,'Fenerbahce SK':3,'Šachtar Doněck':3,'Galatasaray':3,
+    'SK Slavia Praha':4,'ŠK Slovan Bratislava':4,'VfB Stuttgart':4,'AEK Athény':4,'LASK Linz':4,'Como 1907':4,'RC Lens':4,'Viking FK':4,'Sabah FK':4
 };
 
 function losMapa() {
