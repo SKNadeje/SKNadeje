@@ -239,10 +239,24 @@ html[data-theme="arsenal"] h1, html[data-theme="arsenal"] .zpet {
 
 /* ZÁPASY */
 .match-card {
-    background: linear-gradient(145deg, rgba(var(--fial-rgb),.08), rgba(var(--fial-rgb),.02)); border: 1px solid rgba(var(--gold-rgb, 212,175,55),.22);
-    border-radius: 20px; padding: 18px; margin-bottom: 14px;
-    text-align: left; cursor: pointer; transition: all .2s;
+    position: relative; overflow: hidden;
+    background: linear-gradient(100deg, rgba(var(--fial-rgb),.12), rgba(var(--fial-rgb),.02) 60%); border: 1px solid rgba(var(--gold-rgb, 212,175,55),.22);
+    border-radius: 14px; padding: 11px 14px 11px 17px; margin-bottom: 8px;
+    text-align: left; cursor: pointer; transition: border-color .2s, transform .1s;
 }
+.match-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--gold); }
+.match-card:active { transform: scale(.995); }
+.mr { display: flex; align-items: center; gap: 8px; }
+.mr-side { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mr-side.host { flex-direction: row-reverse; text-align: right; }
+.mr-name { font-weight: 800; font-size: .84em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mr-center { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 66px; }
+.mr-timer { background: rgba(var(--fial-rgb),.12); border: 1px solid rgba(var(--fial-rgb),.3); color: var(--fial); font-weight: 800; font-size: .72em; padding: 3px 10px; border-radius: 8px; }
+.mr-vysl { background: #27ae60; color: #fff; font-weight: 900; font-size: .92em; padding: 2px 12px; border-radius: 8px; }
+.mr-tip { font-size: .6em; font-weight: 800; color: var(--gold); }
+.mr-tip b { color: #2ecc71; }
+.mr-faze { font-size: .52em; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; opacity: .5; }
+.mr-outsider { text-align: center; margin-top: 8px; font-size: .7em; font-weight: 800; color: #f1c40f; }
 .match-card:hover { border-color: rgba(212,175,255,.4); }
 .timer-box { background: rgba(var(--fial-rgb),.08); border: 1px solid rgba(var(--fial-rgb),.3); color: var(--fial); font-weight: 800; font-size: .7em; padding: 4px 11px; border-radius: 8px; }
 .faze-badge { font-size: .58em; font-weight: 900; letter-spacing: 1.5px; background: rgba(var(--fial-rgb),.1); color: var(--fial); padding: 3px 10px; border-radius: 100px; text-transform: uppercase; opacity: .9; }
@@ -560,9 +574,9 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     <div class="zlata-linka"></div>
 
     <div class="nav">
-        <button class="tady" id="nav-tipy" onclick="prepni('tipy')">Tipy</button>
+        <button class="tady" id="nav-tipy" onclick="prepni('tipy')">Tipování</button>
         <button id="nav-los" onclick="prepni('los')">🗺️ Los</button>
-        <button id="nav-tabulka" onclick="prepni('tabulka')">📊 Tabulka</button>
+        <button id="nav-tabulka" onclick="prepni('tabulka')">📊 Tabulka LM</button>
         <a href="statistiky.html" style="text-decoration:none;"><button id="nav-zebricek">Žebříček</button></a>
         <a id="nav-admin" href="admin.html" style="display:none; text-decoration:none;"><button style="background:rgba(212,175,55,.15); border:1px solid rgba(212,175,55,.5); color:#d4af37;">⚙️ Admin</button></a>
     </div>
@@ -579,9 +593,9 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     <!-- ======= SEKCE TIPY ======= -->
     <div class="sekce on" id="sekce-tipy">
         <div class="zapasy-filtr">
-            <button class="zf-btn tady" id="zf-aktivni" onclick="prepniFiltrZapasu('aktivni')">📋 Vypsané</button>
+            <button class="zf-btn tady" id="zf-aktivni" onclick="prepniFiltrZapasu('aktivni')">⚽ Aktivní</button>
             <button class="zf-btn" id="zf-hotovo" onclick="prepniFiltrZapasu('hotovo')">✅ Vyhodnocené</button>
-            <button class="zf-btn" id="zf-dlouhodobe" onclick="prepniFiltrZapasu('dlouhodobe')">⭐ Dlouhodobé</button>
+            <button class="zf-btn" id="zf-dlouhodobe" onclick="prepniFiltrZapasu('dlouhodobe')">👟 Dlouhodobé</button>
         </div>
 
         <!-- Dlouhodobé tipy (jen ve filtru Dlouhodobé) -->
@@ -1156,21 +1170,22 @@ function renderZapasy() {
         card.className = 'match-card';
         card.onclick = () => document.getElementById('detail-' + m.id).classList.toggle('open');
         card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="faze-badge">${FAZE_TXT[m.faze] || m.faze}</span>
-                ${hotovo
-                    ? `<div class="vysledek-badge" style="background:#27ae60; color:#fff; padding:4px 14px; border-radius:100px; font-weight:900; font-size:.72em;">VÝSLEDEK ${m.vysledek_d}:${m.vysledek_h}</div>`
-                    : `<div class="timer-box" id="timer-${m.id}">--:--</div>`}
+            <div class="mr">
+                <div class="mr-side">${logoTymu(m.domaci, 26)}<span class="mr-name">${m.domaci}</span></div>
+                <div class="mr-center">
+                    ${hotovo
+                        ? `<div class="mr-vysl">${m.vysledek_d}:${m.vysledek_h}</div>`
+                        : `<div class="mr-timer" id="timer-${m.id}">--:--</div>`}
+                    ${mujTip
+                        ? `<div class="mr-tip">✓ ${mujTip.skore}${hotovo ? ` <b>+${mujTip.body}</b>` : ''}</div>`
+                        : `<div class="mr-faze">${FAZE_TXT[m.faze] || m.faze}</div>`}
+                </div>
+                <div class="mr-side host"><span class="mr-name">${m.hoste}</span>${logoTymu(m.hoste, 26)}</div>
             </div>
-            <div class="tymy-radek">
-                <span style="flex:1; display:flex; align-items:center; justify-content:flex-end; gap:8px;">${m.domaci} ${logoTymu(m.domaci)}</span>
-                <span class="vs">VS</span>
-                <span style="flex:1; display:flex; align-items:center; justify-content:flex-start; gap:8px;">${logoTymu(m.hoste)} ${m.hoste}</span>
-            </div>
-            ${m.outsider ? `<div style="text-align:center; margin:8px 0 2px;"><span style="display:inline-block; background:rgba(241,196,15,.15); border:1px solid rgba(241,196,15,.6); color:#f1c40f; font-size:.72em; font-weight:800; padding:3px 12px; border-radius:100px;">🎲 Outsider: ${m.outsider} · trend +3 b.</span></div>` : ''}
-            ${barSazek(tipy, m)}
-            <div style="text-align:center; font-size:.68em; opacity:.5;">tipů: ${tipy.length}${mujTip ? ' · tvůj tip: ' + mujTip.skore + (hotovo ? ` (+${mujTip.body} b.)` : '') : ''}</div>
+            ${m.outsider ? `<div class="mr-outsider">👤 Outsider: ${m.outsider} · trend +3 b.</div>` : ''}
             <div id="detail-${m.id}" class="details" onclick="event.stopPropagation()">
+                ${barSazek(tipy, m)}
+                <div style="text-align:center; font-size:.68em; opacity:.5; margin-bottom:10px;">tipů: ${tipy.length}</div>
                 ${(!zavreno && !hotovo && mojeId) ? `
                     <div class="score-row">
                         <input type="number" id="scD-${m.id}" class="score-input" placeholder="0" min="0" inputmode="numeric" value="${mujTip ? mujTip.skore.split(':')[0] : ''}">
