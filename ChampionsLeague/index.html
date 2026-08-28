@@ -467,6 +467,24 @@ body { animation: pageIn .35s ease both; }
 .los-modal-tym { display:flex; align-items:center; justify-content:center; gap:12px; padding:16px; background:rgba(47,107,255,.3); border-top:2px solid #2f6bff; }
 .los-modal-tym span { color:#fff; font-weight:900; text-transform:uppercase; letter-spacing:1px; font-size:1.12em; }
 .lm-empty { color:#c7d3f0; text-align:center; padding:28px 16px; opacity:.8; }
+.tab-legenda { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; font-size:.68rem; opacity:.85; margin-bottom:12px; }
+.tab-legenda .z-dot { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:middle; }
+.z-dot.z-r16 { background:#2ecc71; } .z-dot.z-po { background:#3aa0ff; } .z-dot.z-elim { background:#e0554f; }
+.tab-wrap { border-radius:14px; overflow:hidden; border:1px solid var(--card-border); }
+.tab-head, .tab-row { display:grid; grid-template-columns:28px 1fr 30px 42px 38px; align-items:center; gap:6px; padding:8px 10px; }
+.tab-head { background:rgba(255,255,255,.06); font-weight:800; font-size:.6rem; letter-spacing:1px; text-transform:uppercase; color:#9fb4dd; }
+.tab-row { border-top:1px solid rgba(255,255,255,.05); font-size:.82rem; }
+.tab-row .tc-pos { font-weight:800; opacity:.7; text-align:center; }
+.tab-head .tc-pos, .tab-head .tc-num, .tab-head .tc-pts { text-align:center; }
+.tab-row .tc-club { display:flex; align-items:center; gap:9px; min-width:0; }
+.tab-row .tc-name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700; }
+.tab-row .tc-num { text-align:center; opacity:.85; }
+.tab-row .tc-pts { text-align:center; font-weight:900; color:var(--gold); }
+.tab-row.z-r16 { box-shadow:inset 3px 0 0 #2ecc71; }
+.tab-row.z-po { box-shadow:inset 3px 0 0 #3aa0ff; }
+.tab-row.z-elim { box-shadow:inset 3px 0 0 #e0554f; }
+.tab-row.z-sep-r16 { border-bottom:2px solid rgba(46,204,113,.55); }
+.tab-row.z-sep-po { border-bottom:2px solid rgba(224,85,79,.55); }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -544,6 +562,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     <div class="nav">
         <button class="tady" id="nav-tipy" onclick="prepni('tipy')">Tipy</button>
         <button id="nav-los" onclick="prepni('los')">🗺️ Los</button>
+        <button id="nav-tabulka" onclick="prepni('tabulka')">📊 Tabulka</button>
         <a href="statistiky.html" style="text-decoration:none;"><button id="nav-zebricek">Žebříček</button></a>
         <a id="nav-admin" href="admin.html" style="display:none; text-decoration:none;"><button style="background:rgba(212,175,55,.15); border:1px solid rgba(212,175,55,.5); color:#d4af37;">⚙️ Admin</button></a>
     </div>
@@ -601,6 +620,8 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
 
     <!-- ======= SEKCE ŽEBŘÍČEK ======= -->
     <div class="sekce" id="sekce-los"></div>
+
+    <div class="sekce" id="sekce-tabulka"></div>
 
     <div class="sekce" id="sekce-zebricek">
         <div class="bank-info" id="bank-info">…</div>
@@ -793,6 +814,7 @@ async function nactiVse() {
     renderZebricek();
     nactiKralKola();
     renderLos();
+    renderTabulka();
 }
 
 /* ============================================================
@@ -986,6 +1008,13 @@ const LOS_PARY = [
     ['Slovan Bratislava', 'VfB Stuttgart'],
 ];
 
+const POT = {
+    'Paris Saint-Germain':1,'Real Madrid':1,'Manchester City':1,'Bayern Mnichov':1,'Liverpool FC':1,'Inter Milán':1,'Arsenal FC':1,'FC Barcelona':1,'Atlético Madrid':1,
+    'Borussia Dortmund':2,'AS Řím':2,'Sporting CP':2,'Aston Villa':2,'FC Porto':2,'Manchester United':2,'Club Brugge':2,'Real Betis':2,'PSV Eindhoven':2,
+    'Feyenoord':3,'LOSC Lille':3,'FK Bodø/Glimt':3,'SSC Neapol':3,'RB Lipsko':3,'Villarreal CF':3,'Fenerbahce':3,'Šachtar Doněck':3,'Galatasaray':3,
+    'SK Slavia Praha':4,'Slovan Bratislava':4,'VfB Stuttgart':4,'AEK':4,'LASK':4,'Como 1907':4,'RC Lens':4,'Viking':4,'Sabah FK':4
+};
+
 function losMapa() {
     const m = {};
     LOS_PARY.forEach(par => {
@@ -1011,7 +1040,7 @@ function renderLos() {
 
 function losOtevri(i) {
     const tym = (stav.tymy || [])[i]; if (!tym) return;
-    const souperi = losMapa()[tym] || [];
+    const souperi = (losMapa()[tym] || []).slice().sort((a, b) => ((POT[a.souper] || 9) - (POT[b.souper] || 9)) || (a.doma === b.doma ? 0 : (a.doma ? -1 : 1)));
     const logo = (n, v) => (typeof logoTymu === 'function') ? logoTymu(n, v) : '';
     const rows = souperi.length
         ? souperi.map(so => `<div class="los-modal-row"><span class="lm-logo">${logo(so.souper, 30)}</span><span class="lm-name">${so.souper}</span><span class="lm-ha ${so.doma ? 'h' : 'a'}">${so.doma ? 'H' : 'A'}</span></div>`).join('')
@@ -1025,6 +1054,36 @@ function losOtevri(i) {
         <div class="los-modal-tym">${logo(tym, 34)}<span>${tym}</span></div>
     </div>`;
     document.body.appendChild(modal);
+}
+
+function renderTabulka() {
+    const el = document.getElementById('sekce-tabulka');
+    if (!el) return;
+    const tymy = stav.tymy || [];
+    if (!tymy.length) { el.innerHTML = '<div class="prazdno">Seznam týmů zatím není zadán.</div>'; return; }
+    const T = {};
+    tymy.forEach(t => T[t] = { t, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 });
+    (zapasy || []).forEach(z => {
+        if (z.faze !== 'ZC' || z.status !== 'vyhodnoceno') return;
+        const d = T[z.domaci], h = T[z.hoste];
+        const gd = Number(z.vysledek_d), gh = Number(z.vysledek_h);
+        if (!d || !h || isNaN(gd) || isNaN(gh)) return;
+        d.p++; h.p++;
+        d.gf += gd; d.ga += gh; h.gf += gh; h.ga += gd;
+        if (gd > gh) { d.w++; h.l++; } else if (gd < gh) { h.w++; d.l++; } else { d.d++; h.d++; }
+    });
+    const rows = Object.values(T).map(x => ({ ...x, gdv: x.gf - x.ga, pts: x.w * 3 + x.d }));
+    rows.sort((a, b) => b.pts - a.pts || b.gdv - a.gdv || b.gf - a.gf || a.t.localeCompare(b.t, 'cs'));
+    const logo = (n, v) => (typeof logoTymu === 'function') ? logoTymu(n, v) : '';
+    const zona = i => i < 8 ? 'z-r16' : i < 24 ? 'z-po' : 'z-elim';
+    el.innerHTML =
+        `<div class="tab-legenda"><span><i class="z-dot z-r16"></i>1.–8. osmifinále</span><span><i class="z-dot z-po"></i>9.–24. play-off</span><span><i class="z-dot z-elim"></i>25.–36. konec</span></div>` +
+        `<div class="tab-wrap">` +
+        `<div class="tab-head"><span class="tc-pos">#</span><span class="tc-club">Klub</span><span class="tc-num">P</span><span class="tc-num">GD</span><span class="tc-pts">B</span></div>` +
+        rows.map((r, i) =>
+            `<div class="tab-row ${zona(i)}${i === 7 ? ' z-sep-r16' : ''}${i === 23 ? ' z-sep-po' : ''}"><span class="tc-pos">${i + 1}</span><span class="tc-club">${logo(r.t, 22)}<span class="tc-name">${r.t}</span></span><span class="tc-num">${r.p}</span><span class="tc-num">${r.gdv > 0 ? '+' + r.gdv : r.gdv}</span><span class="tc-pts">${r.pts}</span></div>`
+        ).join('') +
+        `</div>`;
 }
 
 function prepni(kam) {
@@ -1690,95 +1749,4 @@ function animujBody() {
         const iv = setInterval(() => {
             i++;
             el.innerHTML = Math.round(cil * i / kroku) + zbytek;
-            if (i >= kroku) clearInterval(iv);
-        }, 28);
-    });
-}
-
-/* ============================================================
-   START
-   ============================================================ */
-(async () => {
-    await initAuth();
-    await nactiVse();
-})();
-</script>
-
-<!-- 💳 PLATEBNÍ QR MODAL -->
-<div id="cl-payment-overlay">
-    <div class="cl-payment-modal">
-        <div style="font-size:2.5rem; margin-bottom:10px;">🎉</div>
-        <h2>Tip uložen!</h2>
-        <p>Pro zařazení do hry zbývá poslední krok:<br>zaplatit startovné.</p>
-        <div id="cl-qr-container"></div>
-        <button class="cl-close-payment-btn" onclick="zavriPlatbu()">MÁM ZAPLACENO / ZAVŘÍT</button>
-    </div>
-</div>
-
-<script>
-/* ============================================================
-   PLATEBNÍ QR MODAL (Champions League)
-   Uprav zde částku / účet / text zprávy, pokud bude potřeba:
-   ============================================================ */
-const CL_PLATBA = {
-    ucet: '305184832',
-    banka: '0300',
-    castka: '220.00',      // zobrazí se i v instrukcích jako castkaText
-    castkaText: '220 Kč',
-    zpravaPrefix: 'Liga mistrů',   // výsledek: "Liga mistrů Jméno"
-};
-
-function ukazPlatbu(jmenoHrace) {
-    const modal = document.getElementById('cl-payment-overlay');
-    const box = document.getElementById('cl-qr-container');
-    const cleanName = (jmenoHrace || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').substring(0, 15);
-    const zprava = `${CL_PLATBA.zpravaPrefix} ${cleanName}`.trim();
-    const qrUrl = `https://api.paylibo.com/paylibo/generator/czech/image?accountNumber=${CL_PLATBA.ucet}&bankCode=${CL_PLATBA.banka}&amount=${CL_PLATBA.castka}&currency=CZK&message=${encodeURIComponent(zprava)}&size=400`;
-
-    if (box) {
-        box.innerHTML = `
-            <div style="display:flex; flex-direction:column; align-items:center; width:100%;">
-                <div style="background:white; padding:34px; border-radius:20px; box-shadow:0 15px 45px rgba(0,0,0,.7); margin-bottom:22px;">
-                    <img src="${qrUrl}" alt="QR Platba" style="display:block; width:240px; height:240px; image-rendering:pixelated; border:1px solid #eee;">
-                    <div style="color:#000; font-family:sans-serif; font-weight:900; font-size:13px; margin-top:16px; text-align:center; letter-spacing:4px; opacity:.5;">QR PLATBA</div>
-                </div>
-                <div style="background:rgba(255,255,255,.05); padding:20px; border-radius:12px; width:100%; max-width:340px; border:1px solid rgba(255,255,255,.1); text-align:left; box-sizing:border-box;">
-                    <div style="color:#fbbf24; font-size:.75rem; font-weight:800; text-transform:uppercase; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,.1); padding-bottom:5px;">Platební instrukce</div>
-                    <div style="margin-bottom:10px; display:flex; justify-content:space-between; font-size:1rem;">
-                        <span style="opacity:.7;">Částka:</span>
-                        <b style="color:#22c55e;">${CL_PLATBA.castkaText}</b>
-                    </div>
-                    <div style="margin:-4px 0 12px; font-size:.72rem; opacity:.55; line-height:1.4;">
-                        200 Kč do banku soutěže · 20 Kč na provoz webu
-                    </div>
-                    <div style="margin-bottom:10px; display:flex; flex-direction:column;">
-                        <span style="opacity:.7; font-size:.8rem;">Číslo účtu:</span>
-                        <b style="font-family:monospace; letter-spacing:.5px;">${CL_PLATBA.ucet} / ${CL_PLATBA.banka}</b>
-                    </div>
-                    <div style="display:flex; flex-direction:column;">
-                        <span style="opacity:.7; font-size:.8rem;">Zpráva (Poznámka):</span>
-                        <b style="color:#fff; font-size:1.1rem; border-left:3px solid #fbbf24; padding-left:8px; margin-top:4px;">${zprava}</b>
-                    </div>
-                </div>
-            </div>`;
-    }
-    if (modal) modal.style.display = 'flex';
-}
-
-function zavriPlatbu() {
-    document.getElementById('cl-payment-overlay').style.display = 'none';
-}
-</script>
-
-<!-- 💬 CHAT (sdílený modul jako u hokeje) -->
-<script src="../chat.js?v=3"></script>
-<script>
-window.SB_KEY = SB_KEY;
-inicializujChat({ klient: sb, tabulka: 'cl_chat', soutez: 'cl', barva: 'var(--fial)' });
-</script>
-
-<script>
-// Načti viditelnost vodoznaku z cl_stav a aplikuj (nastavená adminem, platí všude)
-(async function(){
-    try {
-      
+            if (i >= kroku) clearInterval(iv
