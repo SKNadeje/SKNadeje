@@ -712,6 +712,13 @@ const LOGA = {
     'Feyenoord': 'https://crests.football-data.org/675.png',
     'Šachtar Doněck': 'https://crests.football-data.org/1887.png',
     'RC Lens': 'https://crests.football-data.org/546.png',
+    'Como 1907': 'https://crests.football-data.org/895.png',
+    'LASK': 'https://crests.football-data.org/1026.png',
+    'Sabah FK': 'https://crests.football-data.org/5496.png',
+    'AEK': 'https://crests.football-data.org/575.png',
+    'Viking': 'https://crests.football-data.org/759.png',
+    'Slovan Bratislava': 'https://crests.football-data.org/656.png',
+    'Fenerbahce': 'https://crests.football-data.org/611.png',
 };
 
 // Normalizace názvu pro robustní párování (bez diakritiky, malá písmena,
@@ -1738,15 +1745,3 @@ function renderZebricek() {
 function animujBody() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     document.querySelectorAll('#zebricek .pts, #zebricek .podium .b').forEach(el => {
-        const html = el.innerHTML;
-        const m = html.match(/^(\d+)/);
-        if (!m) return;
-        const cil = parseInt(m[1]);
-        if (cil <= 0) return;
-        const zbytek = html.slice(m[1].length);
-        const kroku = 22;
-        let i = 0;
-        const iv = setInterval(() => {
-            i++;
-            el.innerHTML = Math.round(cil * i / kroku) + zbytek;
-            if (i >= kroku) clearInterval(iv
