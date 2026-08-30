@@ -11,7 +11,10 @@
 html, body { height: 100%; }
 body {
     margin: 0;
-    background: radial-gradient(ellipse at top, #0d1022 0%, #05070f 70%);
+    background:
+        radial-gradient(60% 40% at 50% 0%, rgba(212,175,55,.18), rgba(212,175,55,0) 60%),
+        radial-gradient(ellipse at top, #10132b 0%, #05070f 68%),
+        #04050c;
     font-family: Inter, sans-serif;
     color: #f0e6c8;
     display: flex; align-items: center; justify-content: center;
@@ -23,22 +26,35 @@ body {
     animation: vstup .7s ease both;
 }
 @keyframes vstup { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .karta, .logo { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .karta, .logo, .logo::before, h1::after, .vstup::after, .jiskra { animation: none !important; } .jiskry { display: none; } }
+.jiskry { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.jiskra { position: absolute; bottom: -12px; width: 3px; height: 3px; border-radius: 50%; background: radial-gradient(circle, #ffe9a8, rgba(212,175,55,0) 70%); animation: stoup linear infinite; }
+@keyframes stoup { 0% { transform: translateY(0) scale(1); opacity: 0; } 12% { opacity: .8; } 88% { opacity: .4; } 100% { transform: translateY(-104vh) scale(.4); opacity: 0; } }
+.karta { position: relative; z-index: 1; }
 
 /* ===== LOGO ===== */
 .logo {
-    width: 130px; height: 130px; margin: 0 auto 20px;
+    position: relative;
+    width: 168px; height: 168px; margin: 0 auto 22px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(160deg, rgba(240,230,200,.14), rgba(212,175,55,.05));
-    border: 1px solid rgba(212,175,55,.4);
-    box-shadow: 0 0 40px rgba(212,175,55,.15);
-    padding: 16px;
+    background: radial-gradient(circle at 50% 35%, rgba(240,230,200,.16), rgba(212,175,55,.04) 70%);
+    border: 1px solid rgba(212,175,55,.45);
+    box-shadow: 0 0 50px rgba(212,175,55,.2), inset 0 0 24px rgba(212,175,55,.1);
+    padding: 20px;
     animation: dych 4s ease-in-out infinite;
 }
+.logo::before {
+    content: ''; position: absolute; inset: -5px; border-radius: 50%; z-index: -1;
+    background: conic-gradient(from 0deg, transparent, rgba(212,175,55,.85), transparent 25%, transparent 50%, rgba(240,230,200,.7), transparent 75%, transparent);
+    animation: tocit 7s linear infinite;
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+}
+@keyframes tocit { to { transform: rotate(360deg); } }
 @keyframes dych {
-    0%, 100% { box-shadow: 0 0 40px rgba(212,175,55,.15); }
-    50% { box-shadow: 0 0 60px rgba(212,175,55,.3); }
+    0%, 100% { box-shadow: 0 0 50px rgba(212,175,55,.2), inset 0 0 24px rgba(212,175,55,.1); }
+    50% { box-shadow: 0 0 74px rgba(212,175,55,.36), inset 0 0 24px rgba(212,175,55,.14); }
 }
 .logo img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 3px 8px rgba(0,0,0,.5)); }
 .logo .fallback { font-size: 3.2rem; }
@@ -51,7 +67,16 @@ h1 {
     background: linear-gradient(135deg, #f0e6c8, #d4af37 40%, #f0e6c8 70%, #b8901e);
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent; color: #d4af37;
+    position: relative;
 }
+h1::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.6) 50%, transparent 58%);
+    background-size: 250% 100%; background-position: 180% 0;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: h1lesk 5s ease-in-out 1s infinite;
+}
+@keyframes h1lesk { 0% { background-position: 180% 0; } 25%, 100% { background-position: -120% 0; } }
 .motto { font-size: .72rem; color: #5a6480; font-style: italic; margin-bottom: 22px; }
 .line { width: 110px; height: 1px; background: linear-gradient(90deg, transparent, #d4af37, transparent); margin: 0 auto 24px; }
 
@@ -76,6 +101,10 @@ h1 {
     box-shadow: 0 5px 20px rgba(212,175,55,.3);
     transition: transform .2s, box-shadow .2s;
 }
+.vstup { position: relative; overflow: hidden; }
+.vstup::after { content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%; background: linear-gradient(105deg, transparent, rgba(255,255,255,.5), transparent); transform: skewX(-18deg); animation: ctaLesk 4s ease-in-out 1.4s infinite; }
+@keyframes ctaLesk { 0% { left: -60%; } 30%, 100% { left: 160%; } }
+.vstup-ghost::after { display: none; }
 .vstup:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(212,175,55,.45); }
 .vstup:active { transform: translateY(0); }
 .vstup { border: none; cursor: pointer; font-family: Inter, sans-serif; }
@@ -103,6 +132,7 @@ h1 {
 </style>
 </head>
 <body>
+<div class="jiskry" id="jiskry" aria-hidden="true"></div>
 <div class="karta">
     <div class="logo">
         <img src="logo-nadeje.png" alt="Logo SK Naděje"
@@ -155,6 +185,7 @@ h1 {
 </div>
 
 <script>
+(function(){ var j=document.getElementById("jiskry"); if(j && !window.matchMedia("(prefers-reduced-motion: reduce)").matches){ for(var i=0;i<16;i++){ var e=document.createElement("div"); e.className="jiskra"; e.style.left=(Math.random()*100)+"%"; e.style.animationDuration=(7+Math.random()*8)+"s"; e.style.animationDelay=(-Math.random()*12)+"s"; j.appendChild(e);} } })();
 /* ============================================================
    VTIPNÉ HLÁŠKY – klidně přidávej vlastní. Točí se po 6 s
    a při každém načtení začne náhodnou.
