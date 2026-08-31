@@ -129,6 +129,13 @@ h1::after {
     h1 { font-size: 1.4rem; }
     .logo { width: 176px; height: 176px; }
 }
+#w-redir { position: fixed; inset: 0; z-index: 99999; background: rgba(4,5,12,.92); display: grid; place-items: center; padding: 20px; }
+.redir-box { text-align: center; color: #eaf1ff; font-size: .95rem; }
+.redir-box b { color: #d4af37; }
+.redir-sp { width: 34px; height: 34px; border: 3px solid rgba(212,175,55,.3); border-top-color: #d4af37; border-radius: 50%; margin: 0 auto 14px; animation: wspin .8s linear infinite; }
+@keyframes wspin { to { transform: rotate(360deg); } }
+.redir-box button { margin-top: 16px; background: none; border: 1px solid rgba(255,255,255,.25); color: #9fb4dd; padding: 8px 18px; border-radius: 100px; cursor: pointer; font-size: .8rem; font-family: inherit; }
+.redir-box button:hover { border-color: #d4af37; color: #fff; }
 </style>
 </head>
 <body>
@@ -258,11 +265,29 @@ async function wRefresh() {
         const jmeno = await wZjistiJmeno(session.user.id);
         document.getElementById('w-user').textContent = jmeno || session.user.email;
         authBox.style.display = 'none';
+        // Domovská stránka: přihlášený se rovnou přesměruje (pokud si ji zvolil a nechce výběr)
+        const domov = localStorage.getItem('nadeje_domov');
+        const chceVyber = new URLSearchParams(location.search).has('vyber');
+        if (domov && !chceVyber) { wPresmeruj(domov); return; }
         loggedBox.style.display = 'block';
     } else {
         authBox.style.display = 'block';
         loggedBox.style.display = 'none';
     }
+}
+
+function wPresmeruj(url) {
+    const nazev = url.includes('ChampionsLeague') ? 'Champions League' : (url.includes('hokej') ? 'MS v hokeji' : 'tvůj turnaj');
+    const ov = document.createElement('div');
+    ov.id = 'w-redir';
+    ov.innerHTML = `<div class="redir-box"><div class="redir-sp"></div><div>Přesměrovávám do <b>${nazev}</b>…</div><button onclick="wZrusPresmer()">Zůstat na výběru</button></div>`;
+    document.body.appendChild(ov);
+    window._wRedirT = setTimeout(() => { location.href = url; }, 1400);
+}
+function wZrusPresmer() {
+    clearTimeout(window._wRedirT);
+    const ov = document.getElementById('w-redir'); if (ov) ov.remove();
+    document.getElementById('logged-box').style.display = 'block';
 }
 
 async function wLogin() {
