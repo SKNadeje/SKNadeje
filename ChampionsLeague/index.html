@@ -499,6 +499,10 @@ body { animation: pageIn .35s ease both; }
 .tab-row.z-elim { box-shadow:inset 3px 0 0 #e0554f; }
 .tab-row.z-sep-r16 { border-bottom:2px solid rgba(46,204,113,.55); }
 .tab-row.z-sep-po { border-bottom:2px solid rgba(224,85,79,.55); }
+.los-modal-row.played { opacity: .5; }
+.los-modal-row.played .lm-ha { background: rgba(255,255,255,.05) !important; color: #7d8aa8 !important; }
+.lm-vysl { display: inline-block; margin-left: 8px; font-size: .72em; font-weight: 900; color: #2ecc71; background: rgba(46,204,113,.15); border: 1px solid rgba(46,204,113,.45); padding: 1px 8px; border-radius: 100px; vertical-align: middle; }
+.domov-on { background: rgba(212,175,55,.2) !important; border-color: #d4af37 !important; color: #d4af37 !important; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -564,6 +568,19 @@ function nastavTheme(t){ try{ localStorage.setItem('cl_theme',t); }catch(e){}
     document.getElementById('themePanel').style.display='none';
     zobrazKlubOdznak(t);
 }
+const DOMOV_URL = 'ChampionsLeague/index.html';
+function jeDomov(){ return localStorage.getItem('nadeje_domov') === DOMOV_URL; }
+function prepniDomov(){
+    if (jeDomov()) localStorage.removeItem('nadeje_domov');
+    else localStorage.setItem('nadeje_domov', DOMOV_URL);
+    obnovDomovBtn();
+}
+function obnovDomovBtn(){
+    const b = document.getElementById('nav-domov'); if(!b) return;
+    if (jeDomov()) { b.classList.add('domov-on'); b.textContent = '🏠 Domovská ✓'; b.title = 'Zrušit domovskou (přestane přesměrovávat)'; }
+    else { b.classList.remove('domov-on'); b.textContent = '🏠 Domů'; b.title = 'Nastavit CL jako domovskou (rovnou sem po přihlášení)'; }
+}
+document.addEventListener('DOMContentLoaded', obnovDomovBtn);
 function prepniThemePanel(){ var p=document.getElementById('themePanel'); p.style.display=p.style.display==='none'?'block':'none';
     var t=(function(){try{return localStorage.getItem('cl_theme')||'tmavy';}catch(e){return 'tmavy';}})();
     document.querySelectorAll('.theme-opt').forEach((b,i)=>b.classList.toggle('on', CL_THEMES[i]===t));
@@ -580,6 +597,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
         <button class="tady" id="nav-tipy" onclick="prepni('tipy')">Tipování</button>
         <button id="nav-los" onclick="prepni('los')">🗺️ Los</button>
         <button id="nav-tabulka" onclick="prepni('tabulka')">📊 Tabulka LM</button>
+        <button id="nav-domov" onclick="prepniDomov()" title="Nastavit tuto appku jako domovskou">🏠 Domů</button>
         <a href="statistiky.html" style="text-decoration:none;"><button id="nav-zebricek">Žebříček</button></a>
         <a id="nav-admin" href="admin.html" style="display:none; text-decoration:none;"><button style="background:rgba(212,175,55,.15); border:1px solid rgba(212,175,55,.5); color:#d4af37;">⚙️ Admin</button></a>
     </div>
@@ -1066,8 +1084,13 @@ function losOtevri(i) {
     const tym = (stav.tymy || [])[i]; if (!tym) return;
     const souperi = (losMapa()[tym] || []).slice().sort((a, b) => ((POT[a.souper] || 9) - (POT[b.souper] || 9)) || (a.doma === b.doma ? 0 : (a.doma ? -1 : 1)));
     const logo = (n, v) => (typeof logoTymu === 'function') ? logoTymu(n, v) : '';
+    const najdiVysl = (souper) => {
+        const z = (zapasy || []).find(x => x.faze === 'ZC' && x.status === 'vyhodnoceno' && ((x.domaci === tym && x.hoste === souper) || (x.domaci === souper && x.hoste === tym)));
+        if (!z) return null;
+        return (z.domaci === tym) ? `${z.vysledek_d}:${z.vysledek_h}` : `${z.vysledek_h}:${z.vysledek_d}`;
+    };
     const rows = souperi.length
-        ? souperi.map(so => `<div class="los-modal-row"><span class="lm-logo">${logo(so.souper, 30)}</span><span class="lm-name">${so.souper}</span><span class="lm-ha ${so.doma ? 'h' : 'a'}">${so.doma ? 'H' : 'A'}</span></div>`).join('')
+        ? souperi.map(so => { const v = najdiVysl(so.souper); return `<div class="los-modal-row ${v ? 'played' : ''}"><span class="lm-logo">${logo(so.souper, 30)}</span><span class="lm-name">${so.souper}${v ? `<span class="lm-vysl">${v}</span>` : ''}</span><span class="lm-ha ${so.doma ? 'h' : 'a'}">${so.doma ? 'H' : 'A'}</span></div>`; }).join('')
         : '<div class="lm-empty">Los tohoto týmu zatím nebyl zadán.</div>';
     const modal = document.createElement('div');
     modal.className = 'los-modal on';
@@ -1687,7 +1710,6 @@ async function nactiKralKola() {
         el.innerHTML = `<div class="kral-banner">👑 <b>Král ${count || ''}. kola:</b> ${jmena} <span class="kral-body">+${body} b.</span></div>`;
     } catch (e) { el.innerHTML = ''; }
 }
-
 
 function renderZebricek() {
     const body = {}; // user_id -> {jm, zap, dl, user_id, zaplaceno}
