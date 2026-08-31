@@ -503,6 +503,12 @@ body { animation: pageIn .35s ease both; }
 .los-modal-row.played .lm-ha { background: rgba(255,255,255,.05) !important; color: #7d8aa8 !important; }
 .lm-vysl { display: inline-block; margin-left: 8px; font-size: .72em; font-weight: 900; color: #2ecc71; background: rgba(46,204,113,.15); border: 1px solid rgba(46,204,113,.45); padding: 1px 8px; border-radius: 100px; vertical-align: middle; }
 .domov-on { background: rgba(212,175,55,.2) !important; border-color: #d4af37 !important; color: #d4af37 !important; }
+.kolo-blok { margin-bottom: 12px; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; }
+.kolo-hl { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: rgba(var(--fial-rgb),.1); cursor: pointer; font-weight: 800; user-select: none; }
+.kolo-pocet { opacity: .55; font-weight: 400; font-size: .85em; }
+.kolo-obsah { padding: 8px; }
+.kolo-blok.sbaleno .kolo-obsah { display: none; }
+.kolo-blok.sbaleno .kolo-hl { opacity: .7; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -1172,6 +1178,13 @@ function barSazek(tipy, m) {
         </div>`;
 }
 
+function prepniKoloSekce(hl, k) {
+    window._sbalenaKola = window._sbalenaKola || new Set();
+    const blok = hl.parentElement;
+    blok.classList.toggle('sbaleno');
+    if (blok.classList.contains('sbaleno')) window._sbalenaKola.add(k); else window._sbalenaKola.delete(k);
+}
+
 function renderZapasy() {
     const cont = document.getElementById('matches');
     cont.innerHTML = '';
@@ -1186,7 +1199,20 @@ function renderZapasy() {
             : prazdnoHtml('📭', 'Žádné zápasy k tipování. Klid před bouří – brzy bude co řešit.');
         return;
     }
-    zobrazit.forEach(m => {
+    // Seskupení po kolech (sbalovací)
+    window._sbalenaKola = window._sbalenaKola || new Set();
+    const skup = {};
+    zobrazit.forEach(m => { const k = m.kolo || 0; (skup[k] = skup[k] || []).push(m); });
+    let kola = Object.keys(skup).map(Number).sort((a, b) => a - b);
+    if (filtrZapasu === 'hotovo') kola.reverse();
+    if (kola.includes(0)) { kola = kola.filter(x => x !== 0); kola.push(0); }
+    kola.forEach(k => {
+        const sekce = document.createElement('div');
+        sekce.className = 'kolo-blok' + (window._sbalenaKola.has(k) ? ' sbaleno' : '');
+        const nazev = k === 0 ? 'Ostatní zápasy' : k + '. kolo';
+        sekce.innerHTML = `<div class="kolo-hl" onclick="prepniKoloSekce(this, ${k})"><span>${nazev}</span><span class="kolo-pocet">${skup[k].length} · ▾</span></div><div class="kolo-obsah"></div>`;
+        const telo = sekce.querySelector('.kolo-obsah');
+        skup[k].forEach(m => {
         const tipy = tipyMap[m.id] || [];
         const zavreno = Date.now() > new Date(m.deadline).getTime();
         const hotovo = m.status === 'vyhodnoceno';
@@ -1225,7 +1251,9 @@ function renderZapasy() {
                 <div style="margin-top:14px;">${(zavreno || hotovo) ? tipy.map(t => `
                     <div class="bet-row"><span class="kdo" onclick="location.href='profil.html?id=${t.user_id}'">${t.jmeno}${t.user_id === mojeId ? ' (ty)' : ''}</span><span>${t.skore}${hotovo ? ` · +${t.body} b.` : ''}</span></div>`).join('') : (tipy.length ? `<div style="font-size:.7em; opacity:.45; text-align:center;">Tipy ostatních se odkryjí po uzávěrce.</div>` : '')}</div>
             </div>`;
-        cont.appendChild(card);
+            telo.appendChild(card);
+        });
+        cont.appendChild(sekce);
     });
     obnovTimery();
 }
