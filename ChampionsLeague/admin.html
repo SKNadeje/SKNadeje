@@ -42,6 +42,11 @@ select.pole option { background:#14101f; color:#fff; }
 .karta h2.sbal.open .arrow { transform: rotate(180deg); }
 .karta-obsah { overflow: hidden; }
 .karta-obsah.zavreno { display: none; }
+.kolo-blok { margin-bottom: 12px; border: 1px solid rgba(167,139,250,.2); border-radius: 12px; overflow: hidden; }
+.kolo-hl { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: rgba(167,139,250,.13); cursor: pointer; font-weight: 800; user-select: none; }
+.kolo-obsah { padding: 8px; }
+.kolo-blok.sbaleno .kolo-obsah { display: none; }
+.kolo-blok.sbaleno .kolo-hl { opacity: .65; }
 </style>
 </head>
 <body>
@@ -94,6 +99,7 @@ async function init() {
                     <option value="FINALE">Finále</option>
                 </select>
                 <input class="pole" id="hr-deadline" type="datetime-local" title="Společný deadline">
+                <input class="pole" id="hr-kolo" type="number" min="1" placeholder="Kolo" title="Hrací kolo (1., 2., …) – platí pro celou dávku" style="max-width:100px;">
             </div>
             <button class="btn btn-mini" style="margin:6px 0;" onclick="hrPredvyplnit()">⬇️ Předvyplnit deadline+fázi do všech řádků</button>
 
@@ -389,6 +395,7 @@ async function hrUlozVse() {
     if (!radky.length) { m.innerHTML = '<span style="color:#ff5555;">Přidej aspoň jeden zápas.</span>'; return; }
 
     const zapasy = [];
+    const kolo = parseInt(document.getElementById('hr-kolo').value, 10) || null;
     for (const r of radky) {
         const domaci = r.querySelector('.hr-domaci').value.trim();
         const hoste = r.querySelector('.hr-hoste').value.trim();
@@ -403,7 +410,7 @@ async function hrUlozVse() {
             m.innerHTML = '<span style="color:#ff5555;">Domácí a hosté nemůžou být stejný tým.</span>';
             return;
         }
-        zapasy.push({ domaci, hoste, faze, deadline: new Date(dl).toISOString(), outsider });
+        zapasy.push({ domaci, hoste, faze, deadline: new Date(dl).toISOString(), outsider, kolo });
     }
 
     m.innerHTML = '<span style="opacity:.6;">Ukládám…</span>';
@@ -557,6 +564,19 @@ async function posliNotifikaciZapas(domaci, hoste, deadline) {
     } catch (e) { console.error('Notifikace selhala:', e); }
 }
 
+function kolaHtml(list, renderRow, desc) {
+    if (!list.length) return '';
+    const skup = {};
+    list.forEach(z => { const k = z.kolo || 0; (skup[k] = skup[k] || []).push(z); });
+    let kola = Object.keys(skup).map(Number).sort((a, b) => a - b);
+    if (desc) kola.reverse();
+    if (kola.includes(0)) { kola = kola.filter(x => x !== 0); kola.push(0); }
+    return kola.map(k => {
+        const nazev = k === 0 ? 'Bez kola' : k + '. kolo';
+        return `<div class="kolo-blok"><div class="kolo-hl" onclick="this.parentElement.classList.toggle('sbaleno')"><span>${nazev}</span><span style="opacity:.55; font-weight:400; font-size:.85em;">${skup[k].length} · ▾</span></div><div class="kolo-obsah">${skup[k].map(renderRow).join('')}</div></div>`;
+    }).join('');
+}
+
 async function nactiZapasy() {
     const [{ data: zapasy }, { data: tipy }] = await Promise.all([
         sb.from('cl_zapasy').select('*').order('deadline', { ascending: false }),
@@ -581,10 +601,10 @@ async function nactiZapasy() {
     const hotove = zapasyArr.filter(z => z.status === 'vyhodnoceno');
 
     // AKTIVNÍ zápasy – zadání výsledku a vyhodnocení
-    document.getElementById('seznamZapasuAktivni').innerHTML = aktivni.map(z => {
+    document.getElementById('seznamZapasuAktivni').innerHTML = kolaHtml(aktivni, z => {
         const tt = tMap[z.id] || [];
         return `<div class="zapas-row">
-            <b>${z.domaci} vs ${z.hoste}</b> · ${z.faze} · tipů: ${tt.length}
+            <b>${z.domaci} vs ${z.hoste}</b> · ${z.kolo ? z.kolo + '. kolo · ' : ''}${z.faze} · tipů: ${tt.length}
             <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
                 <input class="pole" style="width:52px; margin:0; text-align:center;" id="vd-${z.id}" placeholder="0" inputmode="numeric">
                 <b>:</b>
@@ -595,13 +615,13 @@ async function nactiZapasy() {
             ${outsiderBtny(z)}
             ${tipyHtml(tt, false)}
         </div>`;
-    }).join('') || '<div style="opacity:.5;">Žádné aktivní zápasy.</div>';
+    }, false) || '<div style="opacity:.5;">Žádné aktivní zápasy.</div>';
 
     // VYHODNOCENÉ zápasy – zobrazení + možnost opravy (přehodnocení)
-    document.getElementById('seznamZapasuHotove').innerHTML = hotove.map(z => {
+    document.getElementById('seznamZapasuHotove').innerHTML = kolaHtml(hotove, z => {
         const tt = tMap[z.id] || [];
         return `<div class="zapas-row">
-            <b>${z.domaci} vs ${z.hoste}</b> · ${z.faze} · tipů: ${tt.length} · <span style="color:var(--green); font-weight:900;">✔ ${z.vysledek_d}:${z.vysledek_h}</span>${z.outsider ? ` · 🎲 ${z.outsider}` : ''}
+            <b>${z.domaci} vs ${z.hoste}</b> · ${z.kolo ? z.kolo + '. kolo · ' : ''}${z.faze} · tipů: ${tt.length} · <span style="color:var(--green); font-weight:900;">✔ ${z.vysledek_d}:${z.vysledek_h}</span>${z.outsider ? ` · 🎲 ${z.outsider}` : ''}
             <button class="btn btn-mini" style="margin-left:8px; background:#2c3e50;" onclick="prepniOpravu(${z.id})">✏️ Opravit</button>
             <div id="oprava-${z.id}" style="display:none; margin-top:8px; padding:10px; border:1px dashed rgba(167,139,250,.35); border-radius:10px;">
                 <div style="font-size:.72em; opacity:.7; margin-bottom:6px;">Uprav výsledek a dej PŘEHODNOTIT – body všech hráčů u tohoto zápasu se přepočítají.</div>
@@ -616,7 +636,7 @@ async function nactiZapasy() {
             </div>
             ${tipyHtml(tt, true)}
         </div>`;
-    }).join('') || '<div style="opacity:.5;">Zatím žádné vyhodnocené zápasy.</div>';
+    }, true) || '<div style="opacity:.5;">Zatím žádné vyhodnocené zápasy.</div>';
 }
 
 function prepniOpravu(id) {
