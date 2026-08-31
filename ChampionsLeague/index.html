@@ -249,8 +249,8 @@ html[data-theme="arsenal"] h1, html[data-theme="arsenal"] .zpet {
 .mr { display: flex; align-items: center; gap: 8px; }
 .mr-side { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
 .mr-side.host { flex-direction: row-reverse; text-align: right; }
-.mr-name { font-weight: 800; font-size: .84em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mr-center { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 66px; }
+.mr-name { font-weight: 800; font-size: .8em; line-height: 1.12; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+.mr-center { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 52px; }
 .mr-timer { background: rgba(var(--fial-rgb),.12); border: 1px solid rgba(var(--fial-rgb),.3); color: var(--fial); font-weight: 800; font-size: .72em; padding: 3px 10px; border-radius: 8px; }
 .mr-vysl { background: #27ae60; color: #fff; font-weight: 900; font-size: .92em; padding: 2px 12px; border-radius: 8px; }
 .mr-tip { font-size: .6em; font-weight: 800; color: var(--gold); }
@@ -1174,7 +1174,7 @@ function renderZapasy() {
         card.onclick = () => document.getElementById('detail-' + m.id).classList.toggle('open');
         card.innerHTML = `
             <div class="mr">
-                <div class="mr-side">${logoTymu(m.domaci, 26)}<span class="mr-name">${m.domaci}</span></div>
+                <div class="mr-side">${logoTymu(m.domaci, 24)}<span class="mr-name">${m.domaci}</span></div>
                 <div class="mr-center">
                     ${hotovo
                         ? `<div class="mr-vysl">${m.vysledek_d}:${m.vysledek_h}</div>`
@@ -1183,11 +1183,11 @@ function renderZapasy() {
                         ? `<div class="mr-tip">✓ ${mujTip.skore}${hotovo ? ` <b>+${mujTip.body}</b>` : ''}</div>`
                         : `<div class="mr-faze">${FAZE_TXT[m.faze] || m.faze}</div>`}
                 </div>
-                <div class="mr-side host"><span class="mr-name">${m.hoste}</span>${logoTymu(m.hoste, 26)}</div>
+                <div class="mr-side host"><span class="mr-name">${m.hoste}</span>${logoTymu(m.hoste, 24)}</div>
             </div>
+            ${barSazek(tipy, m)}
             ${m.outsider ? `<div class="mr-outsider">👤 Outsider: ${m.outsider} · trend +3 b.</div>` : ''}
             <div id="detail-${m.id}" class="details" onclick="event.stopPropagation()">
-                ${barSazek(tipy, m)}
                 <div style="text-align:center; font-size:.68em; opacity:.5; margin-bottom:10px;">tipů: ${tipy.length}</div>
                 ${(!zavreno && !hotovo && mojeId) ? `
                     <div class="score-row">
@@ -1742,135 +1742,4 @@ function renderZebricek() {
         </div>
         ${zbytek.length ? `<div class="rozdelovac"><div class="cara"></div><div class="lbl">Ostatní hráči</div><div class="cara"></div></div>` : ''}` : '';
 
-    const radekHtml = zbytek.map((r, idx) => {
-        const poradi = ukazPodium ? idx + 4 : idx + 1;
-        const jePosledni = poradi === rows.length && rows.length > 3;
-        const jeMoje = r.user_id === mojeId;
-        const cls = jeMoje ? 'moje' : (jePosledni ? 'posledni' : '');
-        return `<div class="lb-row ${cls}">
-            <span class="poradi">${poradi}</span>
-            <span class="jm" onclick="location.href='profil.html?id=${r.user_id}'">${r.jm}${jeMoje ? ' <span class="ty-tag">TY</span>' : ''}${r.zaplaceno ? '' : ' <span style="opacity:.4; font-size:.75em;">(nezaplaceno)</span>'}</span>
-            <span class="det">zápasy ${r.zap} · dl. ${r.dl}</span>
-            <span class="pts">${r.celkem} b.</span>
-        </div>`;
-    }).join('');
-
-    document.getElementById('zebricek').innerHTML = podiumHtml + radekHtml;
-    animujBody();
-}
-
-// Efekt: body v žebříčku „naskočí" od nuly (pódium .b i řádky .pts)
-function animujBody() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    document.querySelectorAll('#zebricek .pts, #zebricek .podium .b').forEach(el => {
-        const html = el.innerHTML;
-        const m = html.match(/^(\d+)/);
-        if (!m) return;
-        const cil = parseInt(m[1]);
-        if (cil <= 0) return;
-        const zbytek = html.slice(m[1].length);
-        const kroku = 22;
-        let i = 0;
-        const iv = setInterval(() => {
-            i++;
-            el.innerHTML = Math.round(cil * i / kroku) + zbytek;
-            if (i >= kroku) clearInterval(iv);
-        }, 28);
-    });
-}
-
-/* ============================================================
-   START
-   ============================================================ */
-(async () => {
-    await initAuth();
-    await nactiVse();
-})();
-</script>
-
-<!-- 💳 PLATEBNÍ QR MODAL -->
-<div id="cl-payment-overlay">
-    <div class="cl-payment-modal">
-        <div style="font-size:2.5rem; margin-bottom:10px;">🎉</div>
-        <h2>Tip uložen!</h2>
-        <p>Pro zařazení do hry zbývá poslední krok:<br>zaplatit startovné.</p>
-        <div id="cl-qr-container"></div>
-        <button class="cl-close-payment-btn" onclick="zavriPlatbu()">MÁM ZAPLACENO / ZAVŘÍT</button>
-    </div>
-</div>
-
-<script>
-/* ============================================================
-   PLATEBNÍ QR MODAL (Champions League)
-   Uprav zde částku / účet / text zprávy, pokud bude potřeba:
-   ============================================================ */
-const CL_PLATBA = {
-    ucet: '305184832',
-    banka: '0300',
-    castka: '220.00',      // zobrazí se i v instrukcích jako castkaText
-    castkaText: '220 Kč',
-    zpravaPrefix: 'Liga mistrů',   // výsledek: "Liga mistrů Jméno"
-};
-
-function ukazPlatbu(jmenoHrace) {
-    const modal = document.getElementById('cl-payment-overlay');
-    const box = document.getElementById('cl-qr-container');
-    const cleanName = (jmenoHrace || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').substring(0, 15);
-    const zprava = `${CL_PLATBA.zpravaPrefix} ${cleanName}`.trim();
-    const qrUrl = `https://api.paylibo.com/paylibo/generator/czech/image?accountNumber=${CL_PLATBA.ucet}&bankCode=${CL_PLATBA.banka}&amount=${CL_PLATBA.castka}&currency=CZK&message=${encodeURIComponent(zprava)}&size=400`;
-
-    if (box) {
-        box.innerHTML = `
-            <div style="display:flex; flex-direction:column; align-items:center; width:100%;">
-                <div style="background:white; padding:34px; border-radius:20px; box-shadow:0 15px 45px rgba(0,0,0,.7); margin-bottom:22px;">
-                    <img src="${qrUrl}" alt="QR Platba" style="display:block; width:240px; height:240px; image-rendering:pixelated; border:1px solid #eee;">
-                    <div style="color:#000; font-family:sans-serif; font-weight:900; font-size:13px; margin-top:16px; text-align:center; letter-spacing:4px; opacity:.5;">QR PLATBA</div>
-                </div>
-                <div style="background:rgba(255,255,255,.05); padding:20px; border-radius:12px; width:100%; max-width:340px; border:1px solid rgba(255,255,255,.1); text-align:left; box-sizing:border-box;">
-                    <div style="color:#fbbf24; font-size:.75rem; font-weight:800; text-transform:uppercase; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,.1); padding-bottom:5px;">Platební instrukce</div>
-                    <div style="margin-bottom:10px; display:flex; justify-content:space-between; font-size:1rem;">
-                        <span style="opacity:.7;">Částka:</span>
-                        <b style="color:#22c55e;">${CL_PLATBA.castkaText}</b>
-                    </div>
-                    <div style="margin:-4px 0 12px; font-size:.72rem; opacity:.55; line-height:1.4;">
-                        200 Kč do banku soutěže · 20 Kč na provoz webu
-                    </div>
-                    <div style="margin-bottom:10px; display:flex; flex-direction:column;">
-                        <span style="opacity:.7; font-size:.8rem;">Číslo účtu:</span>
-                        <b style="font-family:monospace; letter-spacing:.5px;">${CL_PLATBA.ucet} / ${CL_PLATBA.banka}</b>
-                    </div>
-                    <div style="display:flex; flex-direction:column;">
-                        <span style="opacity:.7; font-size:.8rem;">Zpráva (Poznámka):</span>
-                        <b style="color:#fff; font-size:1.1rem; border-left:3px solid #fbbf24; padding-left:8px; margin-top:4px;">${zprava}</b>
-                    </div>
-                </div>
-            </div>`;
-    }
-    if (modal) modal.style.display = 'flex';
-}
-
-function zavriPlatbu() {
-    document.getElementById('cl-payment-overlay').style.display = 'none';
-}
-</script>
-
-<!-- 💬 CHAT (sdílený modul jako u hokeje) -->
-<script src="../chat.js?v=3"></script>
-<script>
-window.SB_KEY = SB_KEY;
-inicializujChat({ klient: sb, tabulka: 'cl_chat', soutez: 'cl', barva: 'var(--fial)' });
-</script>
-
-<script>
-// Načti viditelnost vodoznaku z cl_stav a aplikuj (nastavená adminem, platí všude)
-(async function(){
-    try {
-        const { data } = await sb.from('cl_stav').select('vodoznak_opacity').eq('id', 1).maybeSingle();
-        const op = (data && data.vodoznak_opacity != null) ? data.vodoznak_opacity : 0.10;
-        const vz = document.getElementById('klubVodoznak');
-        if (vz) vz.style.opacity = op;
-    } catch(e) { /* necháme výchozí opacity z CSS */ }
-})();
-</script>
-</body>
-</html>
+    const radekHtml = zbytek.
