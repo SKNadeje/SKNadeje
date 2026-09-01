@@ -265,7 +265,7 @@ html[data-theme="arsenal"] h1, html[data-theme="arsenal"] .zpet {
 .details { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(212,175,55,.12); }
 .details.open { display: block; }
 .score-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px; }
-.score-input { width: 66px; height: 66px; text-align: center; font-size: 1.8em; font-weight: 900; background: rgba(5,8,15,.6); color: var(--fial); border: 1px solid rgba(var(--fial-rgb),.4); border-radius: 14px; outline: none; color-scheme: dark; }
+.score-input { width: 66px; height: 66px; text-align: center; text-align-last: center; font-size: 1.8em; font-weight: 900; background: rgba(5,8,15,.6); color: var(--fial); border: 1px solid rgba(var(--fial-rgb),.4); border-radius: 14px; outline: none; color-scheme: dark; appearance: none; -webkit-appearance: none; -moz-appearance: none; cursor: pointer; padding: 0; font-family: inherit; }
 .score-input:focus { border-color: var(--fial); }
 .btn-tip {
     width: 100%; background: linear-gradient(135deg, var(--gold), #9a7b1e);
@@ -1240,9 +1240,9 @@ function renderZapasy() {
                 <div style="text-align:center; font-size:.68em; opacity:.5; margin-bottom:10px;">tipů: ${tipy.length}</div>
                 ${(!zavreno && !hotovo && mojeId) ? `
                     <div class="score-row">
-                        <input type="number" id="scD-${m.id}" class="score-input" placeholder="0" min="0" inputmode="numeric" value="${mujTip ? mujTip.skore.split(':')[0] : ''}">
+                        <select id="scD-${m.id}" class="score-input">${opceGolu(mujTip ? mujTip.skore.split(':')[0] : '')}</select>
                         <span style="font-size:1.7em; font-weight:900; color:var(--fial);">:</span>
-                        <input type="number" id="scH-${m.id}" class="score-input" placeholder="0" min="0" inputmode="numeric" value="${mujTip ? mujTip.skore.split(':')[1] : ''}">
+                        <select id="scH-${m.id}" class="score-input">${opceGolu(mujTip ? mujTip.skore.split(':')[1] : '')}</select>
                     </div>
                     <button class="btn-tip" onclick="ulozTip(${m.id})">${mujTip ? 'UPRAVIT TIP' : 'ULOŽIT TIP'}</button>
                 ` : ''}
@@ -1269,6 +1269,12 @@ function obnovTimery() {
     });
 }
 setInterval(obnovTimery, 30000);
+
+function opceGolu(sel) {
+    let o = `<option value="">–</option>`;
+    for (let i = 0; i <= 7; i++) o += `<option value="${i}"${String(sel) === String(i) ? ' selected' : ''}>${i}</option>`;
+    return o;
+}
 
 async function ulozTip(id) {
     const sD = document.getElementById('scD-' + id).value;
