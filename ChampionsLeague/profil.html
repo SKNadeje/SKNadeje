@@ -234,7 +234,7 @@ body { animation: pageIn .35s ease both; }
 .fk-bar { flex: 1; height: 8px; background: rgba(255,255,255,.07); border-radius: 100px; overflow: hidden; }
 .fk-bar i { display: block; height: 100%; border-radius: 100px; transition: width .4s ease; }
 .fk-pct { width: 42px; text-align: right; font-weight: 900; font-size: .85em; flex-shrink: 0; }
-.fk-detail { width: 44px; text-align: right; font-size: .7em; opacity: .5; flex-shrink: 0; }
+.fk-detail { width: 62px; text-align: right; font-size: .7em; opacity: .5; flex-shrink: 0; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -538,11 +538,16 @@ async function load() {
         const z = zapasMap[t.zapas_id];
         if (!z || z.status !== 'vyhodnoceno') return;
         const k = z.kolo || 0;
-        const [td, th] = t.skore.split(':').map(Number);
-        const smerTip = td > th ? 1 : (td === th ? 0 : 2);
-        const smerReal = z.vysledek_d > z.vysledek_h ? 1 : (z.vysledek_d === z.vysledek_h ? 0 : 2);
-        const m = koloMap[k] = koloMap[k] || { celkem: 0, trefeno: 0, body: 0 };
-        m.celkem++; if (smerTip === smerReal) m.trefeno++; m.body += (t.body || 0);
+        // Max možných bodů u zápasu = perfektní přesný tip (stejná logika jako v adminu)
+        const vitez = z.vysledek_d > z.vysledek_h ? z.domaci : (z.vysledek_h > z.vysledek_d ? z.hoste : null);
+        let trendMax = 1;
+        if (z.outsider) {
+            if (vitez && z.outsider === vitez) trendMax = 3;
+            else if (z.vysledek_d === z.vysledek_h) trendMax = 2;
+        }
+        const maxB = 5 + trendMax + 1 + 1; // přesné + trend + rozdíl + počet
+        const m = koloMap[k] = koloMap[k] || { body: 0, max: 0, celkem: 0 };
+        m.body += (t.body || 0); m.max += maxB; m.celkem++;
     });
     let kolaU = Object.keys(koloMap).map(Number).sort((a, b) => b - a);
     if (kolaU.includes(0)) { kolaU = kolaU.filter(x => x !== 0); kolaU.push(0); }
@@ -550,10 +555,10 @@ async function load() {
     if (fkEl) fkEl.innerHTML = kolaU.length
         ? kolaU.slice(0, 8).map(k => {
             const m = koloMap[k];
-            const pct = Math.round(m.trefeno / m.celkem * 100);
+            const pct = m.max ? Math.round(m.body / m.max * 100) : 0;
             const nazev = k === 0 ? 'Ostatní' : k + '. kolo';
             const barva = pct >= 67 ? '#2ecc71' : (pct >= 34 ? '#f0c359' : '#e0554f');
-            return `<div class="fk-row"><span class="fk-nazev">${nazev}</span><div class="fk-bar"><i style="width:${pct}%; background:${barva};"></i></div><span class="fk-pct" style="color:${barva};">${pct}%</span><span class="fk-detail">${m.trefeno}/${m.celkem}</span></div>`;
+            return `<div class="fk-row"><span class="fk-nazev">${nazev}</span><div class="fk-bar"><i style="width:${pct}%; background:${barva};"></i></div><span class="fk-pct" style="color:${barva};">${pct}%</span><span class="fk-detail">${m.body}/${m.max} b.</span></div>`;
         }).join('')
         : '<div class="prazdno">Zatím žádné vyhodnocené kolo.</div>';
 
