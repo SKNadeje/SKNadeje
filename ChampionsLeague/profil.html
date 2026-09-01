@@ -580,8 +580,20 @@ async function load() {
 
     // HISTORIE
     document.getElementById('histPocet').textContent = mojeTipy.length;
+    function kolaHtmlProfil(list, zapasMap, renderItem, desc) {
+        if (!list.length) return '';
+        const skup = {};
+        list.forEach(t => { const z = zapasMap[t.zapas_id]; const k = (z && z.kolo) || 0; (skup[k] = skup[k] || []).push(t); });
+        let kola = Object.keys(skup).map(Number).sort((a, b) => a - b);
+        if (desc) kola.reverse();
+        if (kola.includes(0)) { kola = kola.filter(x => x !== 0); kola.push(0); }
+        return kola.map(k => {
+            const nazev = k === 0 ? 'Ostatní' : k + '. kolo';
+            return `<div class="pk-blok"><div class="pk-hl" onclick="this.parentElement.classList.toggle('sbaleno')"><span>${nazev}</span><span class="pk-pocet">${skup[k].length} · ▾</span></div><div class="pk-obsah">${skup[k].map(renderItem).join('')}</div></div>`;
+        }).join('');
+    }
     document.getElementById('historie').innerHTML = mojeTipy.length
-        ? mojeTipy.map(t => {
+        ? kolaHtmlProfil(mojeTipy, zapasMap, t => {
             const z = zapasMap[t.zapas_id];
             const hotovo = z?.status === 'vyhodnoceno';
             const trefil = hotovo && `${z.vysledek_d}:${z.vysledek_h}` === t.skore;
@@ -615,7 +627,7 @@ async function load() {
                 </div>
                 <div class="b">${hotovo ? `+${t.body || 0} b.` : '–'}</div>
             </div>`;
-        }).join('')
+        }, true)
         : '<div class="prazdno">Zatím žádné tipy na zápasy.</div>';
 }
 
