@@ -223,6 +223,12 @@ html[data-theme="dortmund"] h1 { color: #fde100; -webkit-text-fill-color: #fde10
 body { animation: pageIn .35s ease both; }
 @keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { body { animation: none; } }
+.pk-blok { margin-bottom: 10px; border: 1px solid rgba(var(--gold-rgb),.18); border-radius: 12px; overflow: hidden; }
+.pk-hl { display: flex; justify-content: space-between; align-items: center; padding: 10px 13px; background: rgba(var(--gold-rgb),.08); cursor: pointer; font-weight: 800; user-select: none; }
+.pk-pocet { opacity: .55; font-weight: 400; font-size: .85em; }
+.pk-obsah { padding: 6px; }
+.pk-blok.sbaleno .pk-obsah { display: none; }
+.pk-blok.sbaleno .pk-hl { opacity: .7; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
