@@ -229,6 +229,12 @@ body { animation: pageIn .35s ease both; }
 .pk-obsah { padding: 6px; }
 .pk-blok.sbaleno .pk-obsah { display: none; }
 .pk-blok.sbaleno .pk-hl { opacity: .7; }
+.fk-row { display: flex; align-items: center; gap: 10px; padding: 6px 2px; }
+.fk-nazev { width: 60px; font-size: .8em; font-weight: 700; flex-shrink: 0; }
+.fk-bar { flex: 1; height: 8px; background: rgba(255,255,255,.07); border-radius: 100px; overflow: hidden; }
+.fk-bar i { display: block; height: 100%; border-radius: 100px; transition: width .4s ease; }
+.fk-pct { width: 42px; text-align: right; font-weight: 900; font-size: .85em; flex-shrink: 0; }
+.fk-detail { width: 44px; text-align: right; font-size: .7em; opacity: .5; flex-shrink: 0; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -323,6 +329,8 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     <div class="blok">
         <h2>⚡ Forma (posledních 5 zápasů)</h2>
         <div class="forma" id="forma"></div>
+        <h3 style="font-size:.78em; opacity:.7; margin:20px 0 10px; letter-spacing:.8px; font-weight:800;">📊 ÚSPĚŠNOST VÝSLEDKŮ PO KOLECH</h3>
+        <div id="formaKola"></div>
     </div>
 
     <div class="blok">
@@ -523,6 +531,31 @@ async function load() {
             return `<div class="f ${trida}">${ikona}<small>+${t.body || 0} b.</small></div>`;
         }).join('')
         : '<div class="prazdno" style="flex:1;">Zatím žádné vyhodnocené tipy.</div>';
+
+    // ===== ÚSPĚŠNOST VÝSLEDKŮ PO KOLECH =====
+    const koloMap = {};
+    mojeTipy.forEach(t => {
+        const z = zapasMap[t.zapas_id];
+        if (!z || z.status !== 'vyhodnoceno') return;
+        const k = z.kolo || 0;
+        const [td, th] = t.skore.split(':').map(Number);
+        const smerTip = td > th ? 1 : (td === th ? 0 : 2);
+        const smerReal = z.vysledek_d > z.vysledek_h ? 1 : (z.vysledek_d === z.vysledek_h ? 0 : 2);
+        const m = koloMap[k] = koloMap[k] || { celkem: 0, trefeno: 0, body: 0 };
+        m.celkem++; if (smerTip === smerReal) m.trefeno++; m.body += (t.body || 0);
+    });
+    let kolaU = Object.keys(koloMap).map(Number).sort((a, b) => b - a);
+    if (kolaU.includes(0)) { kolaU = kolaU.filter(x => x !== 0); kolaU.push(0); }
+    const fkEl = document.getElementById('formaKola');
+    if (fkEl) fkEl.innerHTML = kolaU.length
+        ? kolaU.slice(0, 8).map(k => {
+            const m = koloMap[k];
+            const pct = Math.round(m.trefeno / m.celkem * 100);
+            const nazev = k === 0 ? 'Ostatní' : k + '. kolo';
+            const barva = pct >= 67 ? '#2ecc71' : (pct >= 34 ? '#f0c359' : '#e0554f');
+            return `<div class="fk-row"><span class="fk-nazev">${nazev}</span><div class="fk-bar"><i style="width:${pct}%; background:${barva};"></i></div><span class="fk-pct" style="color:${barva};">${pct}%</span><span class="fk-detail">${m.trefeno}/${m.celkem}</span></div>`;
+        }).join('')
+        : '<div class="prazdno">Zatím žádné vyhodnocené kolo.</div>';
 
     // ===== ÚSPĚŠNOST =====
     const pocetVyhodnocenych = mojeTipy.filter(t => zapasMap[t.zapas_id]?.status === 'vyhodnoceno').length;
