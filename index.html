@@ -2,12 +2,21 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0; url=welcome.html">
 <title>SK Naděje – Tipovačky</title>
+<script>
+  // Přesměruj na welcome.html a ZACHOVEJ ?query i #hash (kvůli odkazu na obnovu hesla,
+  // který v adrese nese token: #access_token=...&type=recovery)
+  location.replace('welcome.html' + location.search + location.hash);
+</script>
+<noscript><meta http-equiv="refresh" content="0; url=welcome.html"></noscript>
 </head>
 <body>
 <p style="font-family:sans-serif; color:#888; text-align:center; margin-top:40px;">
-Přesměrovávám… <a href="wc2026.html">pokračuj ručně</a>
+Přesměrovávám… <a id="rucne" href="welcome.html">pokračuj ručně</a>
 </p>
+<script>
+  // i ruční odkaz s tokenem
+  document.getElementById('rucne').href = 'welcome.html' + location.search + location.hash;
+</script>
 </body>
 </html>
