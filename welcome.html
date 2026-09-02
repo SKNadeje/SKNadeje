@@ -236,6 +236,10 @@ setInterval(() => {
 const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
 const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
 const sb = supabase.createClient(SB_URL, SB_KEY);
+// Obnova hesla: token z e-mailu je v URL – zachyť to hned, ať to nepřebije přihlášení/přesměrování
+if (location.hash.indexOf('type=recovery') !== -1 || location.search.indexOf('type=recovery') !== -1) {
+    window.wRecoveryMode = true;
+}
 
 const wMsg = (t, ok) => {
     const m = document.getElementById('w-msg');
@@ -257,7 +261,12 @@ async function wZjistiJmeno(userId) {
 }
 
 async function wRefresh() {
-    if (window.wRecoveryMode) return; // v režimu obnovy hesla nech formulář na nové heslo
+    if (window.wRecoveryMode) {
+        document.getElementById('auth-box').style.display = 'none';
+        document.getElementById('logged-box').style.display = 'none';
+        document.getElementById('reset-box').style.display = 'block';
+        return;
+    }
     const { data: { session } } = await sb.auth.getSession();
     const authBox = document.getElementById('auth-box');
     const loggedBox = document.getElementById('logged-box');
