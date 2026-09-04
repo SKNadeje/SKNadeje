@@ -117,6 +117,10 @@ h1::after {
     font-size: .82rem; font-family: Inter, sans-serif; outline: none;
 }
 .w-input:focus { border-color: rgba(212,175,55,.6); }
+.pwd-wrap { position: relative; margin-top: 9px; }
+.pwd-wrap .w-input { margin-top: 0; padding-right: 44px; }
+.pwd-eye { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #c9b678; cursor: pointer; font-size: 1.05rem; line-height: 1; padding: 7px 9px; opacity: .7; }
+.pwd-eye:hover { opacity: 1; }
 
 /* ===== DROBNÝ TISK ===== */
 .tisk {
@@ -156,7 +160,10 @@ h1::after {
     <!-- AUTH: nepřihlášený vidí formulář, přihlášený tlačítko VSTOUPIT -->
     <div id="auth-box" style="display:none; max-width:300px; margin:0 auto;">
         <input type="email" id="w-email" placeholder="E-mail" class="w-input">
-        <input type="password" id="w-heslo" placeholder="Heslo" class="w-input">
+        <div class="pwd-wrap">
+            <input type="password" id="w-heslo" placeholder="Heslo" class="w-input">
+            <button type="button" class="pwd-eye" onclick="prepniHeslo('w-heslo', this)" aria-label="Zobrazit heslo">👁️</button>
+        </div>
         <input type="text" id="w-jmeno" placeholder="Herní jméno (jen při registraci)" class="w-input" style="display:none;">
         <div style="display:flex; gap:8px; margin-top:12px;">
             <button class="vstup" style="flex:1; padding:13px 8px; font-size:.75rem;" onclick="wLogin()">Přihlásit</button>
@@ -170,7 +177,10 @@ h1::after {
 
     <div id="reset-box" style="display:none; max-width:300px; margin:0 auto;">
         <div style="font-size:.8rem; color:#d4af37; margin-bottom:10px; font-weight:600;">🔑 Nastav si nové heslo</div>
-        <input type="password" id="w-nove-heslo" placeholder="Nové heslo (min. 6 znaků)" class="w-input">
+        <div class="pwd-wrap">
+            <input type="password" id="w-nove-heslo" placeholder="Nové heslo (min. 6 znaků)" class="w-input">
+            <button type="button" class="pwd-eye" onclick="prepniHeslo('w-nove-heslo', this)" aria-label="Zobrazit heslo">👁️</button>
+        </div>
         <button class="vstup" style="width:100%; padding:13px 8px; font-size:.75rem; margin-top:12px;" onclick="wNastavHeslo()">Uložit nové heslo</button>
         <div id="w-reset-msg" style="font-size:.7rem; color:#d97b3a; margin-top:10px; min-height:16px;"></div>
     </div>
@@ -258,6 +268,14 @@ async function wZjistiJmeno(userId) {
         return t.name;
     }
     return null;
+}
+
+function prepniHeslo(id, btn) {
+    const inp = document.getElementById(id);
+    const skryto = inp.type === 'password';
+    inp.type = skryto ? 'text' : 'password';
+    btn.textContent = skryto ? '🙈' : '👁️';
+    btn.setAttribute('aria-label', skryto ? 'Skrýt heslo' : 'Zobrazit heslo');
 }
 
 async function wRefresh() {
