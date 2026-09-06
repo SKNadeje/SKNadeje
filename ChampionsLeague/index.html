@@ -509,6 +509,15 @@ body { animation: pageIn .35s ease both; }
 .kolo-obsah { padding: 8px; }
 .kolo-blok.sbaleno .kolo-obsah { display: none; }
 .kolo-blok.sbaleno .kolo-hl { opacity: .7; }
+.dl-pripomenka { position:fixed; inset:0; z-index:99998; background:rgba(3,8,20,.8); backdrop-filter:blur(4px); display:grid; place-items:center; padding:20px; animation:dlpFade .2s ease; }
+@keyframes dlpFade { from{opacity:0;} to{opacity:1;} }
+.dlp-card { max-width:360px; width:100%; text-align:center; background:linear-gradient(160deg,#16307a,#0a1c44); border:1px solid rgba(240,195,89,.4); border-radius:18px; padding:26px 22px; box-shadow:0 20px 60px rgba(0,0,0,.6); }
+.dlp-ico { font-size:2.6rem; }
+.dlp-nadpis { font-size:1.15rem; font-weight:900; color:#f0c359; margin:8px 0 10px; }
+.dlp-text { font-size:.9rem; line-height:1.5; color:#dbe6ff; }
+.dlp-text b { color:#fff; }
+.dlp-btn { display:block; width:100%; margin-top:18px; background:linear-gradient(120deg,var(--fial),var(--magenta)); color:#fff; border:none; padding:13px; border-radius:12px; font-weight:800; font-size:.9rem; cursor:pointer; font-family:inherit; }
+.dlp-zavrit { display:block; width:100%; margin-top:10px; background:none; border:none; color:#9fb4dd; cursor:pointer; font-size:.82rem; padding:6px; font-family:inherit; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -1285,7 +1294,37 @@ async function ulozTip(id) {
         .upsert({ zapas_id: id, user_id: mojeId, jmeno: mojeJmeno, skore }, { onConflict: 'zapas_id,user_id' });
     if (error) return alert('Chyba: ' + error.message);
     razitko('✓ Tip uložen');
+    pripomenDlouhodobku();
     nactiVse();
+}
+
+function pripomenDlouhodobku() {
+    if (window._dlPripomenuto || !mojeId) return; // jen jednou za návštěvu
+    const maT1 = mujDl?.tip1 && Object.keys(mujDl.tip1).length;
+    const maT2 = mujDl?.tip2 && Object.keys(mujDl.tip2).length;
+    const maDl = !!(maT1 || maT2);
+    const zaplaceno = !!(mujDl?.zaplaceno);
+    if (maDl && zaplaceno) return; // vše v pořádku, nepřipomínej
+    window._dlPripomenuto = true;
+    let ikona, nadpis, text;
+    if (!maDl) {
+        ikona = '📋'; nadpis = 'Ještě ti chybí dlouhodobka!';
+        text = 'Tip na zápas máš, ale <b>nemáš vyplněnou dlouhodobku</b> (tip na tým a Cestu k titulu) ani zaplacené startovné. <b>Bez toho se nepočítáš do turnaje.</b>';
+    } else {
+        ikona = '💰'; nadpis = 'Nezapomeň na startovné!';
+        text = 'Dlouhodobku máš vyplněnou, ale <b>ještě není zaplacené startovné</b>. Zaplať ho, ať jsi zařazený do turnaje.';
+    }
+    const m = document.createElement('div');
+    m.className = 'dl-pripomenka';
+    m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+    m.innerHTML = `<div class="dlp-card">
+        <div class="dlp-ico">${ikona}</div>
+        <div class="dlp-nadpis">${nadpis}</div>
+        <div class="dlp-text">${text}</div>
+        <button class="dlp-btn" onclick="prepniFiltrZapasu('dlouhodobe'); this.closest('.dl-pripomenka').remove();">Vyplnit dlouhodobku →</button>
+        <button class="dlp-zavrit" onclick="this.closest('.dl-pripomenka').remove();">Později</button>
+    </div>`;
+    document.body.appendChild(m);
 }
 
 /* ============================================================
