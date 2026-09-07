@@ -518,6 +518,11 @@ body { animation: pageIn .35s ease both; }
 .dlp-text b { color:#fff; }
 .dlp-btn { display:block; width:100%; margin-top:18px; background:linear-gradient(120deg,var(--fial),var(--magenta)); color:#fff; border:none; padding:13px; border-radius:12px; font-weight:800; font-size:.9rem; cursor:pointer; font-family:inherit; }
 .dlp-zavrit { display:block; width:100%; margin-top:10px; background:none; border:none; color:#9fb4dd; cursor:pointer; font-size:.82rem; padding:6px; font-family:inherit; }
+.mr-timer.t-zel { background: rgba(46,204,113,.14) !important; border-color: rgba(46,204,113,.5) !important; color: #2ecc71 !important; }
+.mr-timer.t-ora { background: rgba(240,160,32,.16) !important; border-color: rgba(240,160,32,.55) !important; color: #f0a020 !important; }
+.mr-timer.t-cer { background: rgba(224,85,79,.18) !important; border-color: rgba(224,85,79,.6) !important; color: #e0554f !important; animation: timerPulse 1.2s ease-in-out infinite; }
+@keyframes timerPulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .mr-timer.t-cer { animation: none; } }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -1272,12 +1277,21 @@ function obnovTimery() {
         const el = document.getElementById('timer-' + m.id);
         if (!el) return;
         const diff = new Date(m.deadline).getTime() - Date.now();
-        if (diff <= 0) { el.textContent = 'UZAVŘENO'; return; }
-        const h = Math.floor(diff / 3600000), min = Math.floor(diff % 3600000 / 60000);
-        el.textContent = h > 48 ? Math.floor(h / 24) + ' dní' : `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+        el.classList.remove('t-zel', 't-ora', 't-cer');
+        if (diff <= 0) { el.textContent = 'UZAVŘENO'; el.classList.add('t-cer'); return; }
+        const h = Math.floor(diff / 3600000);
+        const min = Math.floor(diff % 3600000 / 60000);
+        const sec = Math.floor(diff % 60000 / 1000);
+        el.textContent = h > 48
+            ? Math.floor(h / 24) + ' dní'
+            : `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        // barva podle urgence
+        if (diff > 86400000) el.classList.add('t-zel');      // > 24 h
+        else if (diff > 3600000) el.classList.add('t-ora');  // 1–24 h
+        else el.classList.add('t-cer');                      // < 1 h
     });
 }
-setInterval(obnovTimery, 30000);
+setInterval(obnovTimery, 1000);
 
 function opceGolu(sel) {
     let o = `<option value="">–</option>`;
