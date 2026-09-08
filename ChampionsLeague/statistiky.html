@@ -212,6 +212,8 @@ html[data-theme="dortmund"] body {
 }
 html[data-theme="dortmund"] h1 { color: #fde100; -webkit-text-fill-color: #fde100; text-shadow: 0 0 14px rgba(253,225,0,.4), 0 2px 6px rgba(0,0,0,.6); }
 
+.legenda-tag { background:linear-gradient(135deg,#ffe9a8,#f0c359); color:#3a2a06; font-size:.6em; font-weight:900; padding:2px 8px; border-radius:100px; letter-spacing:.5px; vertical-align:middle; margin-left:5px; box-shadow:0 1px 6px rgba(240,195,89,.5); white-space:nowrap; }
+.radek.legenda { background: linear-gradient(90deg, rgba(240,195,89,.16), rgba(240,195,89,.02) 70%) !important; border-color: rgba(240,195,89,.55) !important; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -304,13 +306,14 @@ const DELENI = [0.5, 0.3, 0.2];     // dělení banku mezi top 3
 
 let stats = null, bank = 0, aktKat = 'celkem';
 
+const LEGENDA_JMENO = 'Jan Rathouský';
 function radek(h, poradiNum, rankLabel, hodnotaHtml, subHtml) {
-    const cls = poradiNum === 1 ? 'r1' : poradiNum === 2 ? 'r2' : poradiNum === 3 ? 'r3' : '';
+    const cls = (h.jmeno === LEGENDA_JMENO ? 'legenda ' : '') + (poradiNum === 1 ? 'r1' : poradiNum === 2 ? 'r2' : poradiNum === 3 ? 'r3' : '');
     const korunka = poradiNum === 1 ? ' 👑' : '';
     return `<div class="radek ${cls}">
         <span class="poradi">${rankLabel}</span>
         <div class="telo">
-            <span class="jmeno" onclick="location.href='profil.html?id=${h.user_id}'">${(window._avatary && window._avatary[h.user_id]) ? window._avatary[h.user_id] + ' ' : ''}${h.jmeno}${korunka}</span>
+            <span class="jmeno" onclick="location.href='profil.html?id=${h.user_id}'">${(window._avatary && window._avatary[h.user_id]) ? window._avatary[h.user_id] + ' ' : ''}${h.jmeno}${h.jmeno === LEGENDA_JMENO ? ' <span class="legenda-tag">🏆</span>' : ''}${korunka}</span>
             <div class="sub">${subHtml}</div>
         </div>
         <span class="hodnota">${hodnotaHtml}</span>
