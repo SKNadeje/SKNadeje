@@ -523,6 +523,11 @@ body { animation: pageIn .35s ease both; }
 .mr-timer.t-cer { background: rgba(224,85,79,.18) !important; border-color: rgba(224,85,79,.6) !important; color: #e0554f !important; animation: timerPulse 1.2s ease-in-out infinite; }
 @keyframes timerPulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
 @media (prefers-reduced-motion: reduce) { .mr-timer.t-cer { animation: none; } }
+.match-card.tipnuto::before { background: #2ecc71 !important; }
+.match-card.netipnuto::before { background: #f0a020 !important; }
+.mr-chybi { font-size: .6em; font-weight: 800; color: #f0a020; background: rgba(240,160,32,.15); border: 1px solid rgba(240,160,32,.45); padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+.nahodne-btn { display: block; width: 100%; margin-bottom: 12px; background: rgba(var(--fial-rgb),.14); border: 1px dashed rgba(var(--fial-rgb),.5); color: var(--fial); padding: 11px; border-radius: 12px; font-weight: 700; font-size: .85em; cursor: pointer; font-family: inherit; }
+.nahodne-btn:hover { background: rgba(var(--fial-rgb),.22); }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -670,6 +675,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
             </div>
         </div>
 
+        <button id="btn-nahodne" class="nahodne-btn" onclick="nahodneVsechny()">🎲 Náhodné tipy pro nevyplněné</button>
         <div id="matches"></div>
     </div>
 
@@ -820,6 +826,8 @@ function prepniFiltrZapasu(f) {
     const jeDl = f === 'dlouhodobe';
     document.getElementById('dlouhodobeWrap').style.display = jeDl ? 'block' : 'none';
     document.getElementById('matches').style.display = jeDl ? 'none' : 'block';
+    const bn = document.getElementById('btn-nahodne');
+    if (bn) bn.style.display = (f === 'aktivni') ? 'block' : 'none';
     if (!jeDl) renderZapasy();
 }
 
@@ -1233,7 +1241,8 @@ function renderZapasy() {
         const mujTip = tipy.find(t => t.user_id === mojeId);
 
         const card = document.createElement('div');
-        card.className = 'match-card';
+        const jeNetipnuto = !mujTip && !zavreno && !hotovo && mojeId;
+        card.className = 'match-card' + (mujTip ? ' tipnuto' : (jeNetipnuto ? ' netipnuto' : ''));
         card.onclick = () => document.getElementById('detail-' + m.id).classList.toggle('open');
         card.innerHTML = `
             <div class="mr">
@@ -1244,7 +1253,7 @@ function renderZapasy() {
                         : `<div class="mr-timer" id="timer-${m.id}">--:--</div>`}
                     ${mujTip
                         ? `<div class="mr-tip">✓ ${mujTip.skore}${hotovo ? ` <b>+${mujTip.body}</b>` : ''}</div>`
-                        : `<div class="mr-faze">${FAZE_TXT[m.faze] || m.faze}</div>`}
+                        : ((!zavreno && !hotovo && mojeId) ? `<div class="mr-chybi">⚠ Chybí tip</div>` : `<div class="mr-faze">${FAZE_TXT[m.faze] || m.faze}</div>`)}
                 </div>
                 <div class="mr-side host"><span class="mr-name">${m.hoste}</span>${logoTymu(m.hoste, 24)}</div>
             </div>
@@ -1308,6 +1317,22 @@ async function ulozTip(id) {
         .upsert({ zapas_id: id, user_id: mojeId, jmeno: mojeJmeno, skore }, { onConflict: 'zapas_id,user_id' });
     if (error) return alert('Chyba: ' + error.message);
     razitko('✓ Tip uložen');
+    pripomenDlouhodobku();
+    nactiVse();
+}
+
+async function nahodneVsechny() {
+    if (!mojeId) return alert('Nejdřív se přihlas.');
+    const otevrene = zapasy.filter(m => m.status !== 'vyhodnoceno'
+        && Date.now() < new Date(m.deadline).getTime()
+        && !(tipyMap[m.id] || []).some(t => t.user_id === mojeId));
+    if (!otevrene.length) return alert('Všechny otevřené zápasy už máš natipované. 👍');
+    if (!confirm(`Vygenerovat náhodné tipy pro ${otevrene.length} zápasů bez tipu?\n(Zápasy, co už tipnuté máš, zůstanou beze změny.)`)) return;
+    const g = () => [0,0,1,1,1,1,2,2,2,3,3,4][Math.floor(Math.random() * 12)];
+    const rows = otevrene.map(m => ({ zapas_id: m.id, user_id: mojeId, jmeno: mojeJmeno, skore: g() + ':' + g() }));
+    const { error } = await sb.from('cl_tipy_zapasy').upsert(rows, { onConflict: 'zapas_id,user_id' });
+    if (error) return alert('Chyba: ' + error.message);
+    razitko('🎲 ' + otevrene.length + ' tipů');
     pripomenDlouhodobku();
     nactiVse();
 }
