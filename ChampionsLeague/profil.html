@@ -235,6 +235,8 @@ body { animation: pageIn .35s ease both; }
 .fk-bar i { display: block; height: 100%; border-radius: 100px; transition: width .4s ease; }
 .fk-pct { width: 42px; text-align: right; font-weight: 900; font-size: .85em; flex-shrink: 0; }
 .fk-detail { width: 62px; text-align: right; font-size: .7em; opacity: .5; flex-shrink: 0; }
+.share-btn { margin-top: 16px; background: linear-gradient(120deg, #f0c359, #d4af37); color: #1a1206; border: none; padding: 12px 28px; border-radius: 100px; font-weight: 800; font-size: .9em; cursor: pointer; font-family: inherit; box-shadow: 0 4px 16px rgba(212,175,55,.3); }
+.share-btn:hover { transform: translateY(-1px); }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -250,6 +252,51 @@ const KLUB_LOGA = {
     chelsea: 'https://crests.football-data.org/61.png',
     dortmund: 'https://crests.football-data.org/4.png'
 };
+async function sdiletKartu() {
+    const jmeno = (document.getElementById('hJmeno').textContent || 'Hráč').trim();
+    const avatar = (document.getElementById('avatarDisplay').textContent || '⚽').trim() || '⚽';
+    const celkem = (document.getElementById('hCelkem').textContent || '0').trim();
+    const titul = (document.getElementById('hTitul').textContent || '').trim();
+    const kralTxt = ((document.getElementById('hKral') || {}).textContent || '').trim();
+    const odz = (window._kartaOdz || []).slice(0, 5);
+    const W = 1080, H = 1350;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d');
+    const F = 'Inter, Arial, sans-serif';
+    const g = x.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#0e2660'); g.addColorStop(.45, '#0a1c44'); g.addColorStop(1, '#03081a');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const rg = x.createRadialGradient(W/2, 0, 0, W/2, 0, 720);
+    rg.addColorStop(0, 'rgba(212,175,55,.28)'); rg.addColorStop(1, 'rgba(212,175,55,0)');
+    x.fillStyle = rg; x.fillRect(0, 0, W, 720);
+    x.strokeStyle = 'rgba(212,175,55,.5)'; x.lineWidth = 4;
+    if (x.roundRect) { x.beginPath(); x.roundRect(38, 38, W-76, H-76, 42); x.stroke(); }
+    x.textAlign = 'center';
+    x.fillStyle = '#f0c359'; x.font = '700 25px ' + F;
+    x.fillText('SÁZKOVÁ KANCELÁŘ NADĚJE · CHAMPIONS LEAGUE', W/2, 128);
+    x.beginPath(); x.arc(W/2, 315, 108, 0, 7); x.fillStyle = 'rgba(255,255,255,.06)'; x.fill();
+    x.strokeStyle = 'rgba(212,175,55,.6)'; x.lineWidth = 4; x.stroke();
+    x.font = '118px sans-serif'; x.fillStyle = '#fff'; x.fillText(avatar, W/2, 358);
+    x.fillStyle = '#fff'; x.font = '900 72px ' + F; x.fillText(jmeno, W/2, 512);
+    if (titul) { x.fillStyle = '#c9b678'; x.font = '600 30px ' + F; x.fillText(titul, W/2, 562); }
+    if (kralTxt) { x.fillStyle = '#f0c359'; x.font = '800 34px ' + F; x.fillText(kralTxt, W/2, 640); }
+    x.fillStyle = '#f0c359'; x.font = '900 190px ' + F; x.fillText(celkem, W/2, 900);
+    x.fillStyle = '#9fb4dd'; x.font = '700 40px ' + F; x.fillText('BODŮ', W/2, 962);
+    if (odz.length) { x.font = '68px sans-serif'; const step = 92, sx = W/2 - (odz.length-1)*step/2; odz.forEach((o, i) => x.fillText(o.ic, sx + i*step, 1130)); }
+    x.fillStyle = '#fff'; x.font = '800 46px ' + F; x.fillText('sknadeje.cz', W/2, 1250);
+    x.fillStyle = '#9fb4dd'; x.font = '600 28px ' + F; x.fillText('Přidej se do hry! 🏆', W/2, 1296);
+    c.toBlob(async (blob) => {
+        if (!blob) return;
+        const file = new File([blob], 'sknadeje-karta.png', { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try { await navigator.share({ files: [file], title: 'Moje karta – SK Naděje', text: jmeno + ' · ' + celkem + ' bodů · Champions League tipovačka' }); return; } catch (e) {}
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'sknadeje-karta.png'; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
+}
+
 function zobrazKlubOdznak(t) {
     var vz = document.getElementById('klubVodoznak');
     if (vz) { if (KLUB_LOGA[t]) { vz.src = KLUB_LOGA[t]; vz.style.display = 'block'; } else if (t === 'tmavy' || t === 'svetly') { vz.src = 'trophy.png'; vz.style.display = 'block'; } else { vz.style.display = 'none'; } }
@@ -312,6 +359,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
             <div class="stat"><div class="v" id="hZapasy">–</div><div class="l">Body ze zápasů</div></div>
             <div class="stat"><div class="v" id="hDlouhodobe">–</div><div class="l">Body dlouhodobky</div></div>
         </div>
+        <button class="share-btn" onclick="sdiletKartu()">📤 Sdílet kartu</button>
     </div>
 
     <!-- ⚽ VÝBĚR AVATARU (jen vlastní profil) -->
@@ -607,6 +655,7 @@ async function load() {
         </div>`).join('');
     const _pocOdz = document.getElementById('odznakyPocet');
     if (_pocOdz) _pocOdz.textContent = odz.filter(o => o.on).length + '/' + odz.length;
+    window._kartaOdz = odz.filter(o => o.on);
 
     // DLOUHODOBKA PŘEHLED
     const dlHtml = [];
