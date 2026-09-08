@@ -528,6 +528,8 @@ body { animation: pageIn .35s ease both; }
 .mr-chybi { font-size: .6em; font-weight: 800; color: #f0a020; background: rgba(240,160,32,.15); border: 1px solid rgba(240,160,32,.45); padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
 .nahodne-btn { display: block; width: 100%; margin-bottom: 12px; background: rgba(var(--fial-rgb),.14); border: 1px dashed rgba(var(--fial-rgb),.5); color: var(--fial); padding: 11px; border-radius: 12px; font-weight: 700; font-size: .85em; cursor: pointer; font-family: inherit; }
 .nahodne-btn:hover { background: rgba(var(--fial-rgb),.22); }
+.legenda-tag { background:linear-gradient(135deg,#ffe9a8,#f0c359); color:#3a2a06; font-size:.6em; font-weight:900; padding:2px 8px; border-radius:100px; letter-spacing:.5px; vertical-align:middle; margin-left:5px; box-shadow:0 1px 6px rgba(240,195,89,.5); white-space:nowrap; }
+.lb-row.legenda { background: linear-gradient(90deg, rgba(240,195,89,.16), rgba(240,195,89,.02) 70%) !important; border-color: rgba(240,195,89,.55) !important; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -1823,6 +1825,7 @@ async function nactiKralKola() {
     } catch (e) { el.innerHTML = ''; }
 }
 
+const LEGENDA_JMENO = 'Jan Rathouský';
 function renderZebricek() {
     const body = {}; // user_id -> {jm, zap, dl, user_id, zaplaceno}
     function zajisti(user_id, jmeno) {
@@ -1864,7 +1867,7 @@ function renderZebricek() {
         if (!r) return '<div class="p"></div>';
         return `<div class="p ${mid ? 'mid' : ''}">
             <div class="medal">${medal}</div>
-            <div class="jm" onclick="location.href='profil.html?id=${r.user_id}'">${r.jm}</div>
+            <div class="jm" onclick="location.href='profil.html?id=${r.user_id}'">${r.jm}${r.jm === LEGENDA_JMENO ? ' 🏆' : ''}</div>
             <div class="b" style="color:${barva};">${r.celkem}<small> b.</small></div>
             <div class="schod" style="height:${vyska}px; background:linear-gradient(180deg, ${barva}33, ${barva}0a); border:1px solid ${barva}55;"></div>
         </div>`;
@@ -1881,10 +1884,10 @@ function renderZebricek() {
         const poradi = ukazPodium ? idx + 4 : idx + 1;
         const jePosledni = poradi === rows.length && rows.length > 3;
         const jeMoje = r.user_id === mojeId;
-        const cls = jeMoje ? 'moje' : (jePosledni ? 'posledni' : '');
+        const cls = (r.jm === LEGENDA_JMENO ? 'legenda ' : '') + (jeMoje ? 'moje' : (jePosledni ? 'posledni' : ''));
         return `<div class="lb-row ${cls}">
             <span class="poradi">${poradi}</span>
-            <span class="jm" onclick="location.href='profil.html?id=${r.user_id}'">${r.jm}${jeMoje ? ' <span class="ty-tag">TY</span>' : ''}${r.zaplaceno ? '' : ' <span style="opacity:.4; font-size:.75em;">(nezaplaceno)</span>'}</span>
+            <span class="jm" onclick="location.href='profil.html?id=${r.user_id}'">${r.jm}${r.jm === LEGENDA_JMENO ? ' <span class="legenda-tag">🏆 LEGENDA</span>' : ''}${jeMoje ? ' <span class="ty-tag">TY</span>' : ''}${r.zaplaceno ? '' : ' <span style="opacity:.4; font-size:.75em;">(nezaplaceno)</span>'}</span>
             <span class="det">zápasy ${r.zap} · dl. ${r.dl}</span>
             <span class="pts">${r.celkem} b.</span>
         </div>`;
