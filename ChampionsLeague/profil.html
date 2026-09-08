@@ -450,8 +450,6 @@ async function load() {
     const jeAktualniKral = posledniKolo && (posledniKolo.kral || []).some(x => x.user_id === uid);
     const hKralEl = document.getElementById('hKral');
     if (hKralEl) hKralEl.innerHTML = jeAktualniKral ? `<span class="kral-ribbon">👑 Král ${kola.length}. kola</span>` : '';
-    const hLeg = document.getElementById('hLegenda');
-    if (hLeg) hLeg.innerHTML = (jmeno === 'Jan Rathouský') ? '<span class="legenda-ribbon">🏆 Úřadující legenda Naděje</span>' : '';
     const zapasMap = {}; zapasy.forEach(z => zapasMap[z.id] = z);
 
     const mojeTipy = tipy.filter(t => t.user_id === uid).sort((a, b) =>
@@ -464,6 +462,8 @@ async function load() {
     if (!mojeTipy.length && !mujDl) { document.getElementById('hJmeno').textContent = 'Hráč zatím netipoval'; return; }
 
     const jmeno = mojeTipy[0]?.jmeno || mujDl?.jmeno || '?';
+    const hLeg = document.getElementById('hLegenda');
+    if (hLeg) hLeg.innerHTML = (jmeno === 'Jan Rathouský') ? '<span class="legenda-ribbon">🏆 Úřadující legenda Naděje</span>' : '';
     const bodyZap = mojeTipy.reduce((s, t) => s + (t.body || 0), 0);
     const bodyDl = (mujDl?.body1 || 0) + (mujDl?.body2 || 0);
     const celkem = bodyZap + bodyDl;
