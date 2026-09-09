@@ -238,6 +238,10 @@ body { animation: pageIn .35s ease both; }
 .share-btn { margin-top: 16px; background: linear-gradient(120deg, #f0c359, #d4af37); color: #1a1206; border: none; padding: 12px 28px; border-radius: 100px; font-weight: 800; font-size: .9em; cursor: pointer; font-family: inherit; box-shadow: 0 4px 16px rgba(212,175,55,.3); }
 .share-btn:hover { transform: translateY(-1px); }
 .legenda-ribbon { display:inline-block; margin-top:8px; background:linear-gradient(135deg,#ffe9a8,#f0c359,#d4af37); color:#3a2a06; font-weight:900; font-size:.85em; letter-spacing:1px; padding:6px 16px; border-radius:100px; box-shadow:0 3px 14px rgba(240,195,89,.5); }
+.kral-ribbon, .legenda-ribbon { position:relative; overflow:hidden; }
+.kral-ribbon::after, .legenda-ribbon::after { content:''; position:absolute; top:0; left:-60%; width:45%; height:100%; background:linear-gradient(105deg,transparent,rgba(255,255,255,.65),transparent); transform:skewX(-18deg); animation:ribShine 3.2s ease-in-out infinite; }
+@keyframes ribShine { 0%{left:-60%;} 35%,100%{left:170%;} }
+@media (prefers-reduced-motion: reduce) { .kral-ribbon::after, .legenda-ribbon::after { display:none; } }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -253,6 +257,19 @@ const KLUB_LOGA = {
     chelsea: 'https://crests.football-data.org/61.png',
     dortmund: 'https://crests.football-data.org/4.png'
 };
+function animCislo(el, cil) {
+    if (!el) return;
+    cil = Number(cil) || 0;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = cil; return; }
+    const t0 = performance.now(), dur = 900, z = 0;
+    (function krok(t) {
+        const p = Math.min(1, (t - t0) / dur);
+        const e = 1 - Math.pow(1 - p, 3); // ease-out
+        el.textContent = Math.round(z + (cil - z) * e);
+        if (p < 1) requestAnimationFrame(krok); else el.textContent = cil;
+    })(t0);
+}
+
 async function sdiletKartu() {
     const d = window._kartaData || {};
     const jmeno = d.jmeno || (document.getElementById('hJmeno').textContent || 'Hráč').trim();
@@ -507,7 +524,7 @@ async function load() {
 
     // HERO
     document.getElementById('hJmeno').textContent = jmeno;
-    document.getElementById('hCelkem').textContent = celkem;
+    animCislo(document.getElementById('hCelkem'), celkem);
     document.getElementById('hZapasy').textContent = bodyZap;
     document.getElementById('hDlouhodobe').textContent = bodyDl;
 
