@@ -530,6 +530,14 @@ body { animation: pageIn .35s ease both; }
 .nahodne-btn:hover { background: rgba(var(--fial-rgb),.22); }
 .legenda-tag { background:linear-gradient(135deg,#ffe9a8,#f0c359); color:#3a2a06; font-size:.6em; font-weight:900; padding:2px 8px; border-radius:100px; letter-spacing:.5px; vertical-align:middle; margin-left:5px; box-shadow:0 1px 6px rgba(240,195,89,.5); white-space:nowrap; }
 .lb-row.legenda { background: linear-gradient(90deg, rgba(240,195,89,.16), rgba(240,195,89,.02) 70%) !important; border-color: rgba(240,195,89,.55) !important; }
+.final-cd { text-align:center; font-size:.8em; color:#c9b678; background:rgba(var(--gold-rgb,212,175,55),.1); border:1px solid rgba(var(--gold-rgb,212,175,55),.3); border-radius:12px; padding:9px 12px; margin-bottom:12px; }
+.final-cd b { color:var(--gold); font-weight:900; }
+.oslava-toast { position:fixed; top:22%; left:50%; transform:translateX(-50%); z-index:100001; background:linear-gradient(120deg,var(--gold),#e0a63e); color:#1a1206; font-weight:900; font-size:1.05rem; padding:14px 26px; border-radius:100px; box-shadow:0 10px 40px rgba(0,0,0,.5); transition:opacity .5s, transform .5s; white-space:nowrap; }
+.oslava-toast.pryc { opacity:0; transform:translateX(-50%) translateY(-16px); }
+.lb-row.legenda { position:relative; overflow:hidden; }
+.lb-row.legenda::after { content:''; position:absolute; top:0; left:-60%; width:45%; height:100%; background:linear-gradient(105deg,transparent,rgba(255,236,170,.5),transparent); transform:skewX(-18deg); animation:legShine 3.5s ease-in-out infinite; pointer-events:none; }
+@keyframes legShine { 0%{left:-60%;} 35%,100%{left:160%;} }
+@media (prefers-reduced-motion: reduce) { .lb-row.legenda::after { display:none; } }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -640,6 +648,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
 
     <!-- ======= SEKCE TIPY ======= -->
     <div class="sekce on" id="sekce-tipy">
+        <div id="final-cd" class="final-cd"></div>
         <div class="zapasy-filtr">
             <button class="zf-btn tady" id="zf-aktivni" onclick="prepniFiltrZapasu('aktivni')">⚽ Aktivní</button>
             <button class="zf-btn" id="zf-hotovo" onclick="prepniFiltrZapasu('hotovo')">✅ Vyhodnocené</button>
@@ -887,6 +896,7 @@ async function nactiVse() {
     nactiKralKola();
     renderLos();
     renderTabulka();
+    zkontrolujTrefy();
 }
 
 /* ============================================================
@@ -1283,6 +1293,61 @@ function renderZapasy() {
     obnovTimery();
 }
 
+function temaBarvy() {
+    const cs = getComputedStyle(document.documentElement);
+    const f = cs.getPropertyValue('--fial').trim() || '#5b8cff';
+    const g = cs.getPropertyValue('--gold').trim() || '#f0c359';
+    const m = cs.getPropertyValue('--magenta').trim() || f;
+    return [g, '#ffffff', f, m];
+}
+function konfety(barvy) {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    barvy = (barvy && barvy.length) ? barvy : ['#f0c359', '#ffffff', '#5b8cff'];
+    const cv = document.createElement('canvas');
+    cv.style.cssText = 'position:fixed;inset:0;z-index:100000;pointer-events:none;';
+    cv.width = innerWidth; cv.height = innerHeight;
+    document.body.appendChild(cv);
+    const x = cv.getContext('2d'), P = [];
+    for (let i = 0; i < 150; i++) P.push({ x: innerWidth/2 + (Math.random()-.5)*180, y: innerHeight*0.34, vx: (Math.random()-.5)*15, vy: Math.random()*-17 - 4, s: 6 + Math.random()*9, r: Math.random()*6, vr: (Math.random()-.5)*.4, c: barvy[Math.floor(Math.random()*barvy.length)], a: 1 });
+    let t0 = null;
+    (function frame(t) {
+        if (!t0) t0 = t;
+        x.clearRect(0, 0, cv.width, cv.height);
+        let ziv = false;
+        P.forEach(p => {
+            p.vy += 0.5; p.x += p.vx; p.y += p.vy; p.vx *= 0.99; p.r += p.vr;
+            if (t - t0 > 1600) p.a -= 0.035;
+            if (p.a > 0 && p.y < cv.height + 30) { ziv = true; x.save(); x.globalAlpha = Math.max(0, p.a); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; x.fillRect(-p.s/2, -p.s/2, p.s, p.s*0.6); x.restore(); }
+        });
+        if (ziv) requestAnimationFrame(frame); else cv.remove();
+    })();
+}
+function oslavaToast(txt) {
+    const d = document.createElement('div'); d.className = 'oslava-toast'; d.textContent = txt;
+    document.body.appendChild(d);
+    setTimeout(() => d.classList.add('pryc'), 2200);
+    setTimeout(() => d.remove(), 2900);
+}
+function zkontrolujTrefy() {
+    if (!mojeId) return;
+    const trefy = [];
+    Object.values(tipyMap).flat().forEach(t => { if (t.user_id === mojeId && t.hit_skore) trefy.push(String(t.zapas_id)); });
+    const key = 'osl_trefy_cl';
+    const raw = localStorage.getItem(key);
+    const stare = new Set(JSON.parse(raw || '[]'));
+    localStorage.setItem(key, JSON.stringify(trefy));
+    if (raw === null) return; // první návštěva – jen zapamatuj, neoslavuj minulé
+    if (trefy.some(id => !stare.has(id))) { konfety(temaBarvy()); oslavaToast('🎯 Přesný zásah!'); }
+}
+const FINALE = new Date('2027-06-05T21:00:00+02:00').getTime();
+function obnovFinale() {
+    const el = document.getElementById('final-cd'); if (!el) return;
+    const diff = FINALE - Date.now();
+    if (diff <= 0) { el.innerHTML = '🏆 <b>Finále právě dnes!</b> Madrid 2027'; return; }
+    const d = Math.floor(diff / 86400000), h = Math.floor(diff % 86400000 / 3600000), mi = Math.floor(diff % 3600000 / 60000);
+    el.innerHTML = `🏆 Do finále v Madridu zbývá <b>${d} dní ${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}</b>`;
+}
+
 function obnovTimery() {
     zapasy.forEach(m => {
         const el = document.getElementById('timer-' + m.id);
@@ -1302,7 +1367,9 @@ function obnovTimery() {
         else el.classList.add('t-cer');                      // < 1 h
     });
 }
+obnovFinale();
 setInterval(obnovTimery, 1000);
+setInterval(obnovFinale, 30000);
 
 function opceGolu(sel) {
     let o = `<option value="">–</option>`;
@@ -1822,6 +1889,10 @@ async function nactiKralKola() {
         const jmena = (k.kral || []).map(x => x.jmeno).join(', ');
         const body = (k.kral && k.kral[0]) ? k.kral[0].body : 0;
         el.innerHTML = `<div class="kral-banner">👑 <b>Král ${count || ''}. kola:</b> ${jmena} <span class="kral-body">+${body} b.</span></div>`;
+        if (mojeId && (k.kral || []).some(u => u.user_id === mojeId)) {
+            const kk = 'osl_kral_cl';
+            if (localStorage.getItem(kk) !== String(count)) { localStorage.setItem(kk, String(count)); konfety(temaBarvy()); oslavaToast('👑 Jsi Král ' + (count || '') + '. kola!'); }
+        }
     } catch (e) { el.innerHTML = ''; }
 }
 
