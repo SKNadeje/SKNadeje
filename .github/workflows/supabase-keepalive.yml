@@ -1,0 +1,33 @@
+# ============================================================
+#  SK Naděje – Keepalive pro Supabase (free tier se uspí po 7 dnech nečinnosti)
+#  Umístění v repu:  .github/workflows/supabase-keepalive.yml
+#  Co dělá: každé 3 dny (a lze i ručně) pošle lehký dotaz do DB → projekt zůstane "živý".
+# ============================================================
+name: Supabase keepalive
+
+on:
+  schedule:
+    - cron: '17 6 */3 * *'   # každé 3 dny v 6:17 UTC
+  workflow_dispatch: {}       # + ruční spuštění tlačítkem v záložce Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST
+        run: |
+          echo "Pinguji Supabase…"
+          # Lehký dotaz: 1 řádek z cl_stav (veřejně čitelná tabulka). Použije anon/publishable klíč z GitHub Secrets.
+          code=$(curl -s -o /dev/null -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/cl_stav?select=id&limit=1" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY")
+          echo "HTTP $code"
+          # 200 nebo 206 = OK; cokoli jiného = chyba (spadne, ať vidíš v Actions)
+          if [ "$code" != "200" ] && [ "$code" != "206" ]; then
+            echo "❌ Neočekávaný stav $code"; exit 1
+          fi
+          echo "✅ Supabase žije."
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
