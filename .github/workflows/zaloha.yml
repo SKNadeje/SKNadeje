@@ -1,0 +1,43 @@
+# ============================================================
+#  SK Naděje – Týdenní záloha Supabase (do soukromého artifactu)
+#  Umístění v repu:  .github/workflows/zaloha.yml
+#  Data se NEUKLÁDAJÍ do repa (kvůli úniku u veřejného repa),
+#  ale jako Actions artifact – stáhneš ho z běhu v záložce Actions.
+# ============================================================
+name: Záloha Supabase (týdně)
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'      # každé pondělí 04:00 UTC
+  workflow_dispatch: {}        # + ruční spuštění
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stáhni tabulky do JSON
+        run: |
+          DATE=$(date +%F)
+          DIR="zaloha-$DATE"
+          mkdir -p "$DIR"
+          TABULKY="hraci cl_tipy_zapasy cl_dlouhodobe cl_zapasy cl_stav cl_kola notif_preference hokej27_sazky hokej27_zapasy hokej27_stav"
+          for T in $TABULKY; do
+            echo "Zálohuji $T…"
+            code=$(curl -s -w "%{http_code}" \
+              "$SUPABASE_URL/rest/v1/$T?select=*" \
+              -H "apikey: $SUPABASE_KEY" \
+              -H "Authorization: Bearer $SUPABASE_KEY" \
+              -o "$DIR/$T.json")
+            echo "  $T -> HTTP $code"
+          done
+          echo "DIR=$DIR" >> "$GITHUB_ENV"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      - name: Ulož jako artifact (soukromé)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.DIR }}
+          path: ${{ env.DIR }}
+          retention-days: 90
