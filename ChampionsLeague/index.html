@@ -541,6 +541,10 @@ body { animation: pageIn .35s ease both; }
 .lb-row.legenda::after { content:''; position:absolute; top:0; left:-60%; width:45%; height:100%; background:linear-gradient(105deg,transparent,rgba(255,236,170,.5),transparent); transform:skewX(-18deg); animation:legShine 3.5s ease-in-out infinite; pointer-events:none; }
 @keyframes legShine { 0%{left:-60%;} 35%,100%{left:160%;} }
 @media (prefers-reduced-motion: reduce) { .lb-row.legenda::after { display:none; } }
+".lm-termin { display: inline-block; margin-left: 8px; font-size: .66em; font-weight: 700; color: #9fb4dd; background: rgba(159,180,221,.14); padding: 1px 8px; border-radius: 100px; vertical-align: middle; white-space: nowrap; }
+.tc-los { font-size: .78em; opacity: .45; }
+.tab-row .tc-club:active { opacity: .6; }
+.klub-mini { width: 16px; height: 16px; object-fit: contain; vertical-align: middle; margin-right: 5px; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -601,6 +605,7 @@ function zobrazKlubOdznak(t) {
 <script>
 const CL_THEMES = ['tmavy','svetly','zlaty','real','barca','city','psg','arsenal','slavia','chelsea','dortmund'];
 function nastavTheme(t){ try{ localStorage.setItem('cl_theme',t); }catch(e){}
+    try { if (mojeId) sb.from('hraci').update({ tema: t }).eq('user_id', mojeId); } catch(e){}
     if(t==='tmavy') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme',t);
     document.querySelectorAll('.theme-opt').forEach((b,i)=>b.classList.toggle('on', CL_THEMES[i]===t));
     document.getElementById('themePanel').style.display='none';
@@ -822,7 +827,7 @@ function logoTymu(nazev, velikost = 36) {
     return `<span class="logo-ph" style="width:${velikost}px; height:${velikost}px; font-size:${Math.round(velikost * .5)}px;">${pismeno}</span>`;
 }
 
-let mojeId = null, mojeJmeno = null;
+let mojeId = null, mojeJmeno = null, temaMap = {};
 let zapasy = [], tipyMap = {}, stav = {}, dlouhodobe = [], mujDl = null;
 let dlFaze = 1, vyber = { top8: [], propadlici: [], qf: [], sf: [], finale: [] };
 let filtrZapasu = 'aktivni';
@@ -881,12 +886,14 @@ async function nactiVse() {
     const _zeb = document.getElementById('zebricek'), _mat = document.getElementById('matches');
     if (_zeb && !_zeb.innerHTML.trim()) _zeb.innerHTML = skeletonRows(6);
     if (_mat && !_mat.innerHTML.trim()) _mat.innerHTML = skeletonRows(3, true);
-    const [zR, tR, sR, dR] = await Promise.all([
+    const [zR, tR, sR, dR, hR] = await Promise.all([
         sb.from('cl_zapasy').select('*').order('deadline', { ascending: true }),
         sb.from('cl_tipy_zapasy').select('*'),
         sb.from('cl_stav').select('*').eq('id', 1).maybeSingle(),
-        sb.from('cl_dlouhodobe').select('*')
+        sb.from('cl_dlouhodobe').select('*'),
+        sb.from('hraci').select('user_id, tema')
     ]);
+    temaMap = {}; (hR.data || []).forEach(h => { if (h.tema) temaMap[h.user_id] = h.tema; });
     zapasy = zR.data || [];
     stav = sR.data || {};
     dlouhodobe = dR.data || [];
@@ -1123,20 +1130,27 @@ function renderLos() {
         ).join('')}</div>`;
 }
 
-function losOtevri(i) {
-    const tym = (stav.tymy || [])[i]; if (!tym) return;
+function losOtevri(i) { const tym = (stav.tymy || [])[i]; if (tym) losOtevriTym(tym); }
+function losOtevriTym(tym) {
+    if (!tym) return;
     const souperi = (losMapa()[tym] || []).slice().sort((a, b) => ((POT[a.souper] || 9) - (POT[b.souper] || 9)) || (a.doma === b.doma ? 0 : (a.doma ? -1 : 1)));
     const logo = (n, v) => (typeof logoTymu === 'function') ? logoTymu(n, v) : '';
-    const najdiVysl = (souper) => {
-        const z = (zapasy || []).find(x => x.faze === 'ZC' && x.status === 'vyhodnoceno' && ((x.domaci === tym && x.hoste === souper) || (x.domaci === souper && x.hoste === tym)));
-        if (!z) return null;
-        const tymG = (z.domaci === tym) ? z.vysledek_d : z.vysledek_h;
-        const soupG = (z.domaci === tym) ? z.vysledek_h : z.vysledek_d;
-        const cls = tymG > soupG ? 'v-vyhra' : (tymG < soupG ? 'v-prohra' : 'v-remiza');
-        return { txt: `${tymG}:${soupG}`, cls };
-    };
+    const najdiZapas = (souper) => (zapasy || []).find(x => x.faze === 'ZC' && ((x.domaci === tym && x.hoste === souper) || (x.domaci === souper && x.hoste === tym)));
     const rows = souperi.length
-        ? souperi.map(so => { const v = najdiVysl(so.souper); return `<div class="los-modal-row ${v ? 'played' : ''}"><span class="lm-logo">${logo(so.souper, 30)}</span><span class="lm-name">${so.souper}${v ? `<span class="lm-vysl ${v.cls}">${v.txt}</span>` : ''}</span><span class="lm-ha ${so.doma ? 'h' : 'a'}">${so.doma ? 'H' : 'A'}</span></div>`; }).join('')
+        ? souperi.map(so => {
+            const z = najdiZapas(so.souper);
+            let extra = '', pl = '';
+            if (z && z.status === 'vyhodnoceno') {
+                const tg = (z.domaci === tym) ? z.vysledek_d : z.vysledek_h;
+                const sg = (z.domaci === tym) ? z.vysledek_h : z.vysledek_d;
+                const cls = tg > sg ? 'v-vyhra' : (tg < sg ? 'v-prohra' : 'v-remiza');
+                extra = ` <span class="lm-vysl ${cls}">${tg}:${sg}</span>`; pl = 'played';
+            } else if (z && z.deadline) {
+                const dt = new Date(z.deadline);
+                extra = ` <span class="lm-termin">${dt.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' })} ${dt.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}</span>`;
+            }
+            return `<div class="los-modal-row ${pl}"><span class="lm-logo">${logo(so.souper, 30)}</span><span class="lm-name">${so.souper}${extra}</span><span class="lm-ha ${so.doma ? 'h' : 'a'}">${so.doma ? 'H' : 'A'}</span></div>`;
+        }).join('')
         : '<div class="lm-empty">Los tohoto týmu zatím nebyl zadán.</div>';
     const modal = document.createElement('div');
     modal.className = 'los-modal on';
@@ -1174,7 +1188,7 @@ function renderTabulka() {
         `<div class="tab-wrap">` +
         `<div class="tab-head"><span class="tc-pos">#</span><span class="tc-club">Klub</span><span class="tc-num">P</span><span class="tc-num">GD</span><span class="tc-pts">B</span></div>` +
         rows.map((r, i) =>
-            `<div class="tab-row ${zona(i)}${i === 7 ? ' z-sep-r16' : ''}${i === 23 ? ' z-sep-po' : ''}"><span class="tc-pos">${i + 1}</span><span class="tc-club">${logo(r.t, 22)}<span class="tc-name">${r.t}</span></span><span class="tc-num">${r.p}</span><span class="tc-num">${r.gdv > 0 ? '+' + r.gdv : r.gdv}</span><span class="tc-pts">${r.pts}</span></div>`
+            `<div class="tab-row ${zona(i)}${i === 7 ? ' z-sep-r16' : ''}${i === 23 ? ' z-sep-po' : ''}"><span class="tc-pos">${i + 1}</span><span class="tc-club" onclick="losOtevriTym('${r.t.replace(/'/g, "\\'")}')" style="cursor:pointer;">${logo(r.t, 22)}<span class="tc-name">${r.t}</span> <span class="tc-los">🗺️</span></span><span class="tc-num">${r.p}</span><span class="tc-num">${r.gdv > 0 ? '+' + r.gdv : r.gdv}</span><span class="tc-pts">${r.pts}</span></div>`
         ).join('') +
         `</div>`;
 }
@@ -1903,6 +1917,7 @@ async function nactiKralKola() {
 }
 
 const LEGENDA_JMENO = 'Jan Rathouský';
+function klubOdznakHtml(uid) { const t = temaMap[uid]; return (t && typeof KLUB_LOGA !== 'undefined' && KLUB_LOGA[t]) ? `<img class="klub-mini" src="${KLUB_LOGA[t]}" alt="">` : ''; }
 function renderZebricek() {
     const body = {}; // user_id -> {jm, zap, dl, user_id, zaplaceno}
     function zajisti(user_id, jmeno) {
@@ -1944,7 +1959,7 @@ function renderZebricek() {
         if (!r) return '<div class="p"></div>';
         return `<div class="p ${mid ? 'mid' : ''}">
             <div class="medal">${medal}</div>
-            <div class="jm" onclick="location.href='profil.html?id=${r.user_id}'">${r.jm}${r.jm === LEGENDA_JMENO ? ' 🏆' : ''}</div>
+            <div class="jm" onclick="location.href='profil.html?id=${r.user_id}'">${klubOdznakHtml(r.user_id)}${r.jm}${r.jm === LEGENDA_JMENO ? ' 🏆' : ''}</div>
             <div class="b" style="color:${barva};">${r.celkem}<small> b.</small></div>
             <div class="schod" style="height:${vyska}px; background:linear-gradient(180deg, ${barva}33, ${barva}0a); border:1px solid ${barva}55;"></div>
         </div>`;
@@ -1964,7 +1979,7 @@ function renderZebricek() {
         const cls = (r.jm === LEGENDA_JMENO ? 'legenda ' : '') + (jeMoje ? 'moje' : (jePosledni ? 'posledni' : ''));
         return `<div class="lb-row ${cls}">
             <span class="poradi">${poradi}</span>
-            <span class="jm" onclick="location.href='profil.html?id=${r.user_id}'">${r.jm}${r.jm === LEGENDA_JMENO ? ' <span class="legenda-tag">🏆 LEGENDA</span>' : ''}${jeMoje ? ' <span class="ty-tag">TY</span>' : ''}${r.zaplaceno ? '' : ' <span style="opacity:.4; font-size:.75em;">(nezaplaceno)</span>'}</span>
+            <span class="jm" onclick="location.href='profil.html?id=${r.user_id}'">${klubOdznakHtml(r.user_id)}${r.jm}${r.jm === LEGENDA_JMENO ? ' <span class="legenda-tag">🏆 LEGENDA</span>' : ''}${jeMoje ? ' <span class="ty-tag">TY</span>' : ''}${r.zaplaceno ? '' : ' <span style="opacity:.4; font-size:.75em;">(nezaplaceno)</span>'}</span>
             <span class="det">zápasy ${r.zap} · dl. ${r.dl}</span>
             <span class="pts">${r.celkem} b.</span>
         </div>`;
