@@ -501,7 +501,10 @@ body { animation: pageIn .35s ease both; }
 .tab-row.z-sep-po { border-bottom:2px solid rgba(224,85,79,.55); }
 .los-modal-row.played { opacity: .5; }
 .los-modal-row.played .lm-ha { background: rgba(255,255,255,.05) !important; color: #7d8aa8 !important; }
-.lm-vysl { display: inline-block; margin-left: 8px; font-size: .72em; font-weight: 900; color: #2ecc71; background: rgba(46,204,113,.15); border: 1px solid rgba(46,204,113,.45); padding: 1px 8px; border-radius: 100px; vertical-align: middle; }
+.lm-vysl { display: inline-block; margin-left: 8px; font-size: .72em; font-weight: 900; padding: 1px 8px; border-radius: 100px; vertical-align: middle; border: 1px solid; }
+.lm-vysl.v-vyhra { color: #2ecc71; background: rgba(46,204,113,.15); border-color: rgba(46,204,113,.5); }
+.lm-vysl.v-prohra { color: #e0554f; background: rgba(224,85,79,.15); border-color: rgba(224,85,79,.5); }
+.lm-vysl.v-remiza { color: #f0c040; background: rgba(240,192,64,.15); border-color: rgba(240,192,64,.5); }
 .domov-on { background: rgba(212,175,55,.2) !important; border-color: #d4af37 !important; color: #d4af37 !important; }
 .kolo-blok { margin-bottom: 12px; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; }
 .kolo-hl { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: rgba(var(--fial-rgb),.1); cursor: pointer; font-weight: 800; user-select: none; }
@@ -1127,10 +1130,13 @@ function losOtevri(i) {
     const najdiVysl = (souper) => {
         const z = (zapasy || []).find(x => x.faze === 'ZC' && x.status === 'vyhodnoceno' && ((x.domaci === tym && x.hoste === souper) || (x.domaci === souper && x.hoste === tym)));
         if (!z) return null;
-        return (z.domaci === tym) ? `${z.vysledek_d}:${z.vysledek_h}` : `${z.vysledek_h}:${z.vysledek_d}`;
+        const tymG = (z.domaci === tym) ? z.vysledek_d : z.vysledek_h;
+        const soupG = (z.domaci === tym) ? z.vysledek_h : z.vysledek_d;
+        const cls = tymG > soupG ? 'v-vyhra' : (tymG < soupG ? 'v-prohra' : 'v-remiza');
+        return { txt: `${tymG}:${soupG}`, cls };
     };
     const rows = souperi.length
-        ? souperi.map(so => { const v = najdiVysl(so.souper); return `<div class="los-modal-row ${v ? 'played' : ''}"><span class="lm-logo">${logo(so.souper, 30)}</span><span class="lm-name">${so.souper}${v ? `<span class="lm-vysl">${v}</span>` : ''}</span><span class="lm-ha ${so.doma ? 'h' : 'a'}">${so.doma ? 'H' : 'A'}</span></div>`; }).join('')
+        ? souperi.map(so => { const v = najdiVysl(so.souper); return `<div class="los-modal-row ${v ? 'played' : ''}"><span class="lm-logo">${logo(so.souper, 30)}</span><span class="lm-name">${so.souper}${v ? `<span class="lm-vysl ${v.cls}">${v.txt}</span>` : ''}</span><span class="lm-ha ${so.doma ? 'h' : 'a'}">${so.doma ? 'H' : 'A'}</span></div>`; }).join('')
         : '<div class="lm-empty">Los tohoto týmu zatím nebyl zadán.</div>';
     const modal = document.createElement('div');
     modal.className = 'los-modal on';
