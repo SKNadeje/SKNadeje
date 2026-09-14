@@ -545,6 +545,10 @@ body { animation: pageIn .35s ease both; }
 .tc-los { font-size: .78em; opacity: .45; }
 .tab-row .tc-club:active { opacity: .6; }
 .klub-mini { width: 16px; height: 16px; object-fit: contain; vertical-align: middle; margin-right: 5px; }
+.joker-lbl { display:flex; align-items:center; gap:8px; justify-content:center; font-size:.8em; font-weight:700; margin:4px 0 12px; cursor:pointer; color:var(--text); }
+.joker-lbl input { width:18px; height:18px; accent-color:var(--gold); cursor:pointer; }
+.joker-lbl b { color:var(--gold); }
+.joker-zbyva { font-size:.85em; opacity:.55; font-weight:600; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -1299,6 +1303,7 @@ function renderZapasy() {
                         <span style="font-size:1.7em; font-weight:900; color:var(--fial);">:</span>
                         <select id="scH-${m.id}" class="score-input">${opceGolu(mujTip ? mujTip.skore.split(':')[1] : '')}</select>
                     </div>
+                    <label class="joker-lbl"><input type="checkbox" id="jok-${m.id}" ${mujTip && mujTip.joker ? 'checked' : ''}> 🃏 Joker <b>2× body</b> <span class="joker-zbyva">zbývá ${jokerVolno()}/5</span></label>
                     <button class="btn-tip" onclick="ulozTip(${m.id})">${mujTip ? 'UPRAVIT TIP' : 'ULOŽIT TIP'}</button>
                 ` : ''}
                 ${zavreno && !hotovo ? '<div style="text-align:center; color:var(--fial); font-weight:900; font-size:.8em; margin-bottom:10px;">TIPY UZAVŘENY</div>' : ''}
@@ -1397,13 +1402,23 @@ function opceGolu(sel) {
     return o;
 }
 
+function jokerVolno() {
+    let u = 0;
+    Object.values(tipyMap).flat().forEach(t => { if (mojeId && t.user_id === mojeId && t.joker) u++; });
+    return Math.max(0, 5 - u);
+}
+
 async function ulozTip(id) {
     const sD = document.getElementById('scD-' + id).value;
     const sH = document.getElementById('scH-' + id).value;
     if (sD === '' || sH === '') return alert('Vyplň obě čísla.');
+    const jokEl = document.getElementById('jok-' + id);
+    const joker = !!(jokEl && jokEl.checked);
+    const jinde = Object.values(tipyMap).flat().filter(t => t.user_id === mojeId && t.joker && String(t.zapas_id) !== String(id)).length;
+    if (joker && jinde >= 5) return alert('Máš vyčerpaných všech 5 jokerů na celou hru. 🃏');
     const skore = `${parseInt(sD)}:${parseInt(sH)}`;
     const { error } = await sb.from('cl_tipy_zapasy')
-        .upsert({ zapas_id: id, user_id: mojeId, jmeno: mojeJmeno, skore }, { onConflict: 'zapas_id,user_id' });
+        .upsert({ zapas_id: id, user_id: mojeId, jmeno: mojeJmeno, skore, joker }, { onConflict: 'zapas_id,user_id' });
     if (error) return alert('Chyba: ' + error.message);
     razitko('✓ Tip uložen');
     pripomenDlouhodobku();
