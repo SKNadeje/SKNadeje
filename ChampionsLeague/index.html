@@ -599,6 +599,7 @@ function zobrazKlubOdznak(t) {
 <div id="themeSwitch" style="position:fixed; top:12px; right:12px; z-index:10000;">
     <button onclick="prepniThemePanel()" style="background:rgba(var(--fial-rgb),.12); border:1px solid rgba(var(--fial-rgb),.45); color:var(--text); width:42px; height:42px; border-radius:50%; cursor:pointer; font-size:1.2em; backdrop-filter:blur(6px);" title="Změnit vzhled">🎨</button>
     <div id="themePanel" style="display:none; position:absolute; top:50px; right:0; background:var(--dark); border:1px solid rgba(var(--fial-rgb),.45); border-radius:14px; padding:8px; min-width:180px; max-height:60vh; overflow-y:auto; box-shadow:0 12px 40px rgba(0,0,0,.5);">
+        <label style="display:flex; align-items:center; gap:8px; padding:6px 8px; font-size:.82em; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:6px; color:var(--text);"><input type="checkbox" id="zvukToggle" onchange="prepniZvuk(this)" style="width:16px; height:16px; accent-color:var(--gold);"> 🔊 Zvuky &amp; vibrace</label>
         <button class="theme-opt" onclick="nastavTheme('tmavy')">🌙 Tmavý</button>
         <button class="theme-opt" onclick="nastavTheme('svetly')">☀️ Světlý</button>
         <button class="theme-opt" onclick="nastavTheme('zlaty')">🏆 Zlatý</button>
@@ -642,7 +643,9 @@ document.addEventListener('DOMContentLoaded', obnovDomovBtn);
 function prepniThemePanel(){ var p=document.getElementById('themePanel'); p.style.display=p.style.display==='none'?'block':'none';
     var t=(function(){try{return localStorage.getItem('cl_theme')||'tmavy';}catch(e){return 'tmavy';}})();
     document.querySelectorAll('.theme-opt').forEach((b,i)=>b.classList.toggle('on', CL_THEMES[i]===t));
+    var zt=document.getElementById('zvukToggle'); if(zt){ try{ zt.checked = localStorage.getItem('konfety_ticho')!=='1'; }catch(e){ zt.checked=true; } }
 }
+function prepniZvuk(el){ try{ localStorage.setItem('konfety_ticho', el.checked ? '0' : '1'); }catch(e){} }
 document.addEventListener('DOMContentLoaded',function(){ var t=(function(){try{return localStorage.getItem('cl_theme')||'tmavy';}catch(e){return 'tmavy';}})(); zobrazKlubOdznak(t); });
 document.addEventListener('click',function(e){ var sw=document.getElementById('themeSwitch'); if(sw&&!sw.contains(e.target)){ var p=document.getElementById('themePanel'); if(p) p.style.display='none'; } });
 </script>
@@ -1336,8 +1339,25 @@ function temaBarvy() {
     const m = cs.getPropertyValue('--magenta').trim() || f;
     return [g, '#ffffff', f, m];
 }
+function prehrajDing() {
+    try {
+        const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+        const ac = new AC();
+        [660, 880, 1175].forEach((f, i) => {
+            const o = ac.createOscillator(), g = ac.createGain();
+            o.type = 'triangle'; o.frequency.value = f; o.connect(g); g.connect(ac.destination);
+            const t = ac.currentTime + i * 0.09;
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(0.15, t + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+            o.start(t); o.stop(t + 0.27);
+        });
+        setTimeout(() => { try { ac.close(); } catch (e) {} }, 700);
+    } catch (e) {}
+}
 function konfety(barvy) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    try { if (localStorage.getItem('konfety_ticho') !== '1') { if (navigator.vibrate) navigator.vibrate([40, 30, 70]); prehrajDing(); } } catch (e) {}
     barvy = (barvy && barvy.length) ? barvy : ['#f0c359', '#ffffff', '#5b8cff'];
     const cv = document.createElement('canvas');
     cv.style.cssText = 'position:fixed;inset:0;z-index:100000;pointer-events:none;';
