@@ -242,6 +242,7 @@ body { animation: pageIn .35s ease both; }
 .kral-ribbon::after, .legenda-ribbon::after { content:''; position:absolute; top:0; left:-60%; width:45%; height:100%; background:linear-gradient(105deg,transparent,rgba(255,255,255,.65),transparent); transform:skewX(-18deg); animation:ribShine 3.2s ease-in-out infinite; }
 @keyframes ribShine { 0%{left:-60%;} 35%,100%{left:170%;} }
 @media (prefers-reduced-motion: reduce) { .kral-ribbon::after, .legenda-ribbon::after { display:none; } }
+.hero-prumer { text-align:center; font-size:.82em; margin:12px 0 2px; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -402,6 +403,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
             <div class="stat"><div class="v" id="hDlouhodobe">–</div><div class="l">Body dlouhodobky</div></div>
             <div class="stat"><div class="v" id="hJokery">–</div><div class="l">🃏 Jokery</div></div>
         </div>
+        <div id="hPrumer" class="hero-prumer"></div>
         <button class="share-btn" onclick="sdiletKartu()">📤 Sdílet kartu</button>
     </div>
 
@@ -530,6 +532,19 @@ async function load() {
     document.getElementById('hDlouhodobe').textContent = bodyDl;
     const jokPouzito = mojeTipy.filter(t => t.joker).length;
     document.getElementById('hJokery').textContent = Math.max(0, 5 - jokPouzito) + '/5';
+    // bilance proti průměru (celkové body všech hráčů)
+    const hraciBody = {};
+    tipy.forEach(t => { hraciBody[t.user_id] = (hraciBody[t.user_id] || 0) + (t.body || 0); });
+    dlouhodobe.forEach(dd => { hraciBody[dd.user_id] = (hraciBody[dd.user_id] || 0) + (dd.body1 || 0) + (dd.body2 || 0); });
+    const vsichniB = Object.values(hraciBody).filter(v => v > 0);
+    const elP = document.getElementById('hPrumer');
+    if (elP && vsichniB.length > 1) {
+        const prumer = vsichniB.reduce((a, b) => a + b, 0) / vsichniB.length;
+        const rozdil = Math.round(celkem - prumer);
+        if (rozdil > 0) elP.innerHTML = `📊 <b style="color:#2ecc71;">+${rozdil} b. nad průměrem</b> <span style="opacity:.5;">(Ø ${Math.round(prumer)})</span>`;
+        else if (rozdil < 0) elP.innerHTML = `📊 <b style="color:#e0554f;">${rozdil} b. pod průměrem</b> <span style="opacity:.5;">(Ø ${Math.round(prumer)})</span>`;
+        else elP.innerHTML = `📊 <b>přesně na průměru</b> <span style="opacity:.5;">(Ø ${Math.round(prumer)})</span>`;
+    }
 
     const titulyKandidati = [
         { podm: pozice === 1 && celkem > 0, titul: 'VLÁDCE LIGY', hlasky: ['Pohár ještě nezvedl, ale žebříček mu leží u nohou.', 'Zatím vede – tabulka ho poslouchá.'] },
