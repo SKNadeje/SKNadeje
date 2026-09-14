@@ -549,6 +549,17 @@ body { animation: pageIn .35s ease both; }
 .joker-lbl input { width:18px; height:18px; accent-color:var(--gold); cursor:pointer; }
 .joker-lbl b { color:var(--gold); }
 .joker-zbyva { font-size:.85em; opacity:.55; font-weight:600; }
+.jk-modal { position:fixed; inset:0; z-index:100002; background:rgba(3,8,20,.85); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; padding:20px; }
+.jk-modal.on { display:flex; animation:jkFade .25s ease; }
+@keyframes jkFade { from { opacity:0; } to { opacity:1; } }
+.jk-card { max-width:400px; width:100%; background:linear-gradient(160deg,#16307a,#0a1c44); border:1px solid rgba(240,195,89,.45); border-radius:20px; padding:26px 24px; box-shadow:0 24px 70px rgba(0,0,0,.6); text-align:center; }
+.jk-ico { font-size:3rem; }
+.jk-titul { font-size:1.15rem; font-weight:900; color:#f0c359; margin:6px 0 14px; }
+.jk-text { font-size:.9rem; line-height:1.6; color:#dbe6ff; text-align:left; }
+.jk-text b { color:#fff; }
+.jk-check { display:flex; align-items:center; gap:9px; justify-content:center; margin:18px 0 4px; font-size:.85rem; color:#9fb4dd; cursor:pointer; }
+.jk-check input { width:18px; height:18px; accent-color:#f0c359; cursor:pointer; }
+.jk-btn { display:block; width:100%; margin-top:14px; background:linear-gradient(120deg,#f0c359,#e0a63e); color:#1a1206; border:none; padding:14px; border-radius:12px; font-weight:900; font-size:.95rem; cursor:pointer; font-family:inherit; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -1373,6 +1384,17 @@ function obnovFinale() {
     el.innerHTML = `🏆 Do finále v Madridu zbývá <b>${d} dní ${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}</b>`;
 }
 
+function zobrazJokerOznameni() {
+    try { if (localStorage.getItem('joker_oznameni_skryt') === '1') return; } catch (e) {}
+    var m = document.getElementById('joker-modal'); if (m) m.classList.add('on');
+}
+function zavriJokerOznameni() {
+    var ch = document.getElementById('jk-nezobraz');
+    if (ch && ch.checked) { try { localStorage.setItem('joker_oznameni_skryt', '1'); } catch (e) {} }
+    var m = document.getElementById('joker-modal'); if (m) m.classList.remove('on');
+}
+document.addEventListener('DOMContentLoaded', function () { setTimeout(zobrazJokerOznameni, 600); });
+
 function obnovTimery() {
     zapasy.forEach(m => {
         const el = document.getElementById('timer-' + m.id);
@@ -2117,5 +2139,21 @@ inicializujChat({ klient: sb, tabulka: 'cl_chat', soutez: 'cl', barva: 'var(--fi
     } catch(e) { /* necháme výchozí opacity z CSS */ }
 })();
 </script>
+<div id="joker-modal" class="jk-modal">
+  <div class="jk-card">
+    <div class="jk-ico">🃏</div>
+    <div class="jk-titul">NOVINKA: JOKER – dvojnásobek bodů!</div>
+    <div class="jk-text">
+      Přidali jsme do hry jokera:<br><br>
+      • Máš <b>5 jokerů na celou hru</b> (podzim + jaro).<br>
+      • Při zadávání tipu zaškrtneš <b>„🃏 Joker (2× body)"</b> – body z toho zápasu se ti <b>zdvojnásobí</b>.<br>
+      • Jde zapnout jen <b>před uzávěrkou</b> zápasu (a před uzávěrkou ho i zrušit).<br>
+      • Kolik ti <b>zbývá</b>, vidíš ve svém <b>profilu</b>.<br><br>
+      Schovej si je na zápasy, kde si věříš. Jeden dobře načasovaný joker může rozhodnout kolo! 🔥
+    </div>
+    <label class="jk-check"><input type="checkbox" id="jk-nezobraz"> Už mi to nezobrazovat</label>
+    <button class="jk-btn" onclick="zavriJokerOznameni()">Rozumím 👍</button>
+  </div>
+</div>
 </body>
 </html>
