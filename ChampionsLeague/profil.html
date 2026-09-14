@@ -400,6 +400,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
             <div class="stat"><div class="v" id="hCelkem">–</div><div class="l">Celkem bodů</div></div>
             <div class="stat"><div class="v" id="hZapasy">–</div><div class="l">Body ze zápasů</div></div>
             <div class="stat"><div class="v" id="hDlouhodobe">–</div><div class="l">Body dlouhodobky</div></div>
+            <div class="stat"><div class="v" id="hJokery">–</div><div class="l">🃏 Jokery</div></div>
         </div>
         <button class="share-btn" onclick="sdiletKartu()">📤 Sdílet kartu</button>
     </div>
@@ -527,6 +528,8 @@ async function load() {
     animCislo(document.getElementById('hCelkem'), celkem);
     document.getElementById('hZapasy').textContent = bodyZap;
     document.getElementById('hDlouhodobe').textContent = bodyDl;
+    const jokPouzito = mojeTipy.filter(t => t.joker).length;
+    document.getElementById('hJokery').textContent = Math.max(0, 5 - jokPouzito) + '/5';
 
     const titulyKandidati = [
         { podm: pozice === 1 && celkem > 0, titul: 'VLÁDCE LIGY', hlasky: ['Pohár ještě nezvedl, ale žebříček mu leží u nohou.', 'Zatím vede – tabulka ho poslouchá.'] },
@@ -639,7 +642,7 @@ async function load() {
         }
         const maxB = 5 + trendMax + 1 + 1; // přesné + trend + rozdíl + počet
         const m = koloMap[k] = koloMap[k] || { body: 0, max: 0, celkem: 0 };
-        m.body += (t.body || 0); m.max += maxB; m.celkem++;
+        m.body += (t.joker ? (t.body || 0) / 2 : (t.body || 0)); m.max += maxB; m.celkem++;
     });
     let kolaU = Object.keys(koloMap).map(Number).sort((a, b) => b - a);
     if (kolaU.includes(0)) { kolaU = kolaU.filter(x => x !== 0); kolaU.push(0); }
