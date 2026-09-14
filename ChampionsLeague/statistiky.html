@@ -233,6 +233,8 @@ html[data-theme="dortmund"] h1 { color: #fde100; -webkit-text-fill-color: #fde10
 .jok-row { border-top: 1px solid rgba(255,255,255,.05); }
 .jok-jm { font-weight: 700; }
 .jok-b { color: var(--gold); font-weight: 900; }
+.karta-kola-btn { display:block; margin:4px auto 16px; background:linear-gradient(120deg,var(--gold),#e0a63e); color:#1a1206; border:none; padding:11px 24px; border-radius:100px; font-weight:800; font-size:.88em; cursor:pointer; font-family:inherit; box-shadow:0 4px 16px rgba(240,195,89,.3); }
+.karta-kola-btn:hover { transform:translateY(-1px); }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -302,6 +304,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
 <div class="wrap">
     <a class="back" href="index.html">← Zpět na tipy</a>
     <h1>📊 Žebříčky Champions League</h1>
+    <button class="karta-kola-btn" onclick="kartaKola()">📸 Karta kola ke sdílení</button>
     <div class="podtitul">Sázková kancelář Naděje</div>
 
     <div class="zalozky">
@@ -372,6 +375,78 @@ function vykresliPodium() {
             ${schod(prvni, '🥇', 75, '#d4af37', true)}
             ${schod(treti, '🥉', 40, '#d97b3a', false)}
         </div>`;
+}
+
+function kartaKola() {
+    const zapasy = window._zapasyRaw || [], tipy = window._tipyRaw || [];
+    const koloSet = {}; zapasy.forEach(z => { if (z.faze === 'ZC' && z.status === 'vyhodnoceno' && z.kolo) koloSet[z.kolo] = true; });
+    const kola = Object.keys(koloSet).map(Number).sort((a, b) => a - b);
+    if (!kola.length) { alert('Karta půjde vytvořit až po vyhodnocení kola. 🙂'); return; }
+    const K = kola[kola.length - 1];
+    const idsK = new Set(zapasy.filter(z => z.faze === 'ZC' && z.status === 'vyhodnoceno' && z.kolo === K).map(z => z.id));
+    const H = {};
+    let presnychCelkem = 0;
+    tipy.forEach(t => { if (!idsK.has(t.zapas_id)) return; const h = H[t.user_id] = H[t.user_id] || { jmeno: t.jmeno, uid: t.user_id, body: 0, presne: 0, joker: false }; h.jmeno = t.jmeno; h.body += (t.body || 0); if (t.hit_skore) { h.presne++; presnychCelkem++; } if (t.joker) h.joker = true; });
+    const list = Object.values(H);
+    if (!list.length) { alert('V tomhle kole nikdo netipoval.'); return; }
+    const kral = list.reduce((a, b) => b.body > a.body ? b : a);
+    const pruser = list.reduce((a, b) => b.body < a.body ? b : a);
+    const ostro = list.filter(h => h.presne > 0).sort((a, b) => b.presne - a.presne)[0];
+    const riskeri = list.filter(h => h.joker).sort((a, b) => b.body - a.body);
+    const risker = riskeri[0];
+    const av = uid => (window._avatary && window._avatary[uid]) ? window._avatary[uid] + ' ' : '';
+
+    const cs = getComputedStyle(document.documentElement);
+    const gv = (n, f) => (cs.getPropertyValue(n).trim() || f);
+    const cGold = gv('--gold', '#f0c359'), cBgTop = gv('--bg-top', '#0e2660'), cDark = gv('--dark', '#03081a'), cText = gv('--text', '#ffffff');
+    const hx = h => { h = (h || '').replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h || 'ffffff', 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+    const [tr, tg, tb] = hx(cText[0] === '#' ? cText : '#ffffff');
+    const [gr, gg, gb] = hx(cGold[0] === '#' ? cGold : '#f0c359');
+    const box = `rgba(${tr},${tg},${tb},.06)`, dim = `rgba(${tr},${tg},${tb},.6)`;
+    const W = 1080, Ht = 1350, c = document.createElement('canvas'); c.width = W; c.height = Ht;
+    const x = c.getContext('2d'), F = 'Inter, Arial, sans-serif';
+    const bg = x.createLinearGradient(0, 0, 0, Ht); bg.addColorStop(0, cBgTop); bg.addColorStop(1, cDark);
+    x.fillStyle = bg; x.fillRect(0, 0, W, Ht);
+    const rg = x.createRadialGradient(W / 2, 10, 0, W / 2, 10, 740); rg.addColorStop(0, `rgba(${gr},${gg},${gb},.28)`); rg.addColorStop(1, `rgba(${gr},${gg},${gb},0)`);
+    x.fillStyle = rg; x.fillRect(0, 0, W, 740);
+    x.save(); x.globalAlpha = .05; x.textAlign = 'center'; x.font = '600px sans-serif'; x.fillText('🏆', W / 2, 1000); x.restore();
+    x.strokeStyle = `rgba(${gr},${gg},${gb},.5)`; x.lineWidth = 4; if (x.roundRect) { x.beginPath(); x.roundRect(38, 38, W - 76, Ht - 76, 42); x.stroke(); }
+    x.textAlign = 'center';
+    x.fillStyle = cGold; x.font = '700 25px ' + F; x.fillText('SÁZKOVÁ KANCELÁŘ NADĚJE · CHAMPIONS LEAGUE', W / 2, 120);
+    x.fillStyle = cText; x.font = '900 130px ' + F; x.fillText(K + '. KOLO', W / 2, 260);
+    let y = 380;
+    function cena(ikona, label, jmeno, hodnota, zvyrazni) {
+        const bx = 90, bw = W - 180, bh = 150;
+        x.fillStyle = zvyrazni ? `rgba(${gr},${gg},${gb},.16)` : box;
+        if (x.roundRect) { x.beginPath(); x.roundRect(bx, y, bw, bh, 22); x.fill(); }
+        if (zvyrazni) { x.strokeStyle = cGold; x.lineWidth = 2; x.stroke(); }
+        x.textAlign = 'left';
+        x.font = '68px sans-serif'; x.fillText(ikona, bx + 34, y + 96);
+        x.fillStyle = zvyrazni ? cGold : dim; x.font = '800 26px ' + F; x.fillText(label, bx + 130, y + 56);
+        x.fillStyle = cText; x.font = '900 46px ' + F;
+        let jm = jmeno; while (x.measureText(jm).width > bw - 320 && jm.length > 4) jm = jm.slice(0, -2);
+        if (jm !== jmeno) jm += '…';
+        x.fillText(jm, bx + 130, y + 108);
+        x.textAlign = 'right'; x.fillStyle = cGold; x.font = '900 50px ' + F; x.fillText(hodnota, bx + bw - 34, y + 96);
+        x.textAlign = 'center';
+        y += bh + 26;
+    }
+    cena('👑', 'KRÁL KOLA', av(kral.uid) + kral.jmeno, '+' + kral.body + ' b.', true);
+    cena('💩', 'PRŮŠVIH KOLA', av(pruser.uid) + pruser.jmeno, '+' + pruser.body + ' b.', false);
+    if (ostro) cena('🎯', 'OSTROSTŘELEC', av(ostro.uid) + ostro.jmeno, ostro.presne + '× přesně', false);
+    if (risker) cena('🃏', 'VSADIL JOKERA', av(risker.uid) + risker.jmeno, '+' + risker.body + ' b.', false);
+    x.fillStyle = dim; x.font = '600 30px ' + F; x.fillText(idsK.size + ' zápasů · ' + presnychCelkem + ' přesných tipů · ' + list.length + ' hráčů', W / 2, y + 40);
+    x.fillStyle = cText; x.font = '800 46px ' + F; x.fillText('sknadeje.cz', W / 2, Ht - 96);
+    x.fillStyle = dim; x.font = '600 27px ' + F; x.fillText('Champions League tipovačka 🏆', W / 2, Ht - 54);
+
+    c.toBlob(async (blob) => {
+        if (!blob) return;
+        const file = new File([blob], 'karta-' + K + '-kola.png', { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try { await navigator.share({ files: [file], title: K + '. kolo – SK Naděje', text: 'Král ' + K + '. kola: ' + kral.jmeno + ' (+' + kral.body + ' b.)' }); return; } catch (e) {}
+        }
+        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'karta-' + K + '-kola.png'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
 }
 
 function vyvojInner() {
