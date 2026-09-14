@@ -220,6 +220,12 @@ html[data-theme="dortmund"] h1 { color: #fde100; -webkit-text-fill-color: #fde10
 .vyvoj-leg { font-size: .74em; display: flex; align-items: center; gap: 5px; color: var(--text); }
 .vyvoj-leg i { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
 .vyvoj-leg b { color: var(--gold); }
+.vyvoj-leg { cursor: pointer; user-select: none; padding: 2px 4px; border-radius: 6px; }
+.vyvoj-leg:hover { background: rgba(255,255,255,.06); }
+.vyvoj-leg.off { opacity: .38; text-decoration: line-through; }
+.vyvoj-ovladace { display: flex; gap: 8px; justify-content: center; margin-bottom: 8px; }
+.vyvoj-ovladace button { font-size: .72em; padding: 5px 14px; border-radius: 100px; border: 1px solid var(--card-border); background: rgba(255,255,255,.05); color: var(--text); cursor: pointer; font-family: inherit; }
+.vyvoj-ovladace button:hover { border-color: var(--gold); }
 .jok-tab { border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; }
 .jok-head, .jok-row { display: grid; grid-template-columns: 1fr 64px 56px 90px; align-items: center; padding: 9px 12px; font-size: .85em; }
 .jok-head { background: rgba(255,255,255,.06); font-weight: 800; font-size: .62rem; letter-spacing: 1px; text-transform: uppercase; color: #9fb4dd; }
@@ -368,6 +374,25 @@ function vykresliPodium() {
         </div>`;
 }
 
+function vyvojInner() {
+    const serie = window._vyvojSerie || [], kola = window._vyvojKola || [], skryti = window._vyvojSkryti || {};
+    const vid = serie.filter((_, i) => !skryti[i]);
+    const W = 340, H = 250, padL = 30, padB = 24, padT = 10, padR = 8;
+    const maxY = Math.max(1, ...vid.map(s => s.konec));
+    const nX = kola.length;
+    const px = i => padL + (nX === 1 ? (W - padL - padR) / 2 : (i / (nX - 1)) * (W - padL - padR));
+    const py = v => padT + (1 - v / maxY) * (H - padT - padB);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" class="vyvoj-svg">`;
+    for (let g = 0; g <= 4; g++) { const v = maxY * g / 4, y = py(v); svg += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,.08)"/><text x="${padL - 3}" y="${y + 3}" text-anchor="end" font-size="8" fill="#9fb4dd">${Math.round(v)}</text>`; }
+    kola.forEach((k, i) => { svg += `<text x="${px(i)}" y="${H - padB + 14}" text-anchor="middle" font-size="8" fill="#9fb4dd">${k}.</text>`; });
+    serie.forEach((sr, si) => { if (skryti[si]) return; const c = sr.barva; svg += `<polyline points="${sr.body.map((v, i) => px(i) + ',' + py(v)).join(' ')}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>`; sr.body.forEach((v, i) => { svg += `<circle cx="${px(i)}" cy="${py(v)}" r="2.4" fill="${c}"/>`; }); });
+    svg += '</svg>';
+    const leg = serie.map((sr, si) => `<span class="vyvoj-leg ${skryti[si] ? 'off' : ''}" onclick="vyvojToggle(${si})"><i style="background:${sr.barva}"></i>${sr.jmeno} <b>${sr.konec}</b></span>`).join('');
+    return `<div style="font-size:.72em; opacity:.6; text-align:center; margin-bottom:6px;">Kumulativní body ze zápasů po kolech — klikni na jméno pro skrytí/zobrazení</div><div class="vyvoj-ovladace"><button onclick="vyvojVse(true)">✓ Vše</button><button onclick="vyvojVse(false)">✕ Nic</button></div>${svg}<div class="vyvoj-legenda">${leg}</div>`;
+}
+function vyvojToggle(i) { window._vyvojSkryti = window._vyvojSkryti || {}; window._vyvojSkryti[i] = !window._vyvojSkryti[i]; const b = document.getElementById('vyvoj-box'); if (b) b.innerHTML = vyvojInner(); }
+function vyvojVse(zobraz) { const se = window._vyvojSerie || []; window._vyvojSkryti = {}; if (!zobraz) se.forEach((_, i) => window._vyvojSkryti[i] = true); const b = document.getElementById('vyvoj-box'); if (b) b.innerHTML = vyvojInner(); }
+
 const POHLEDY = {
     vyvoj: () => {
         const zapasy = window._zapasyRaw || [], tipy = window._tipyRaw || [];
@@ -377,21 +402,12 @@ const POHLEDY = {
         if (!kola.length) return '<div class="prazdno">Graf se objeví po vyhodnocení prvního kola. 📈</div>';
         const hraci = {};
         tipy.forEach(t => { const k = zapKolo[t.zapas_id]; if (!k) return; const h = hraci[t.user_id] = hraci[t.user_id] || { jmeno: t.jmeno, per: {} }; h.jmeno = t.jmeno; h.per[k] = (h.per[k] || 0) + (t.body || 0); });
-        let serie = Object.values(hraci).map(h => { let sum = 0; const body = kola.map(k => { sum += (h.per[k] || 0); return sum; }); return { jmeno: h.jmeno, body, konec: sum }; }).sort((a, b) => b.konec - a.konec).slice(0, 10);
+        let serie = Object.values(hraci).map(h => { let sum = 0; const body = kola.map(k => { sum += (h.per[k] || 0); return sum; }); return { jmeno: h.jmeno, body, konec: sum }; }).sort((a, b) => b.konec - a.konec);
         if (!serie.length) return '<div class="prazdno">Zatím žádná data.</div>';
-        const W = 340, H = 250, padL = 30, padB = 24, padT = 10, padR = 8;
-        const maxY = Math.max(1, ...serie.map(s => s.konec));
-        const nX = kola.length;
-        const px = i => padL + (nX === 1 ? (W - padL - padR) / 2 : (i / (nX - 1)) * (W - padL - padR));
-        const py = v => padT + (1 - v / maxY) * (H - padT - padB);
-        const barvy = ['#f0c359', '#5b8cff', '#2ecc71', '#e0554f', '#c084fc', '#4dd0e1', '#ff8a65', '#f06292', '#a1887f', '#90a4ae'];
-        let svg = `<svg viewBox="0 0 ${W} ${H}" class="vyvoj-svg">`;
-        for (let g = 0; g <= 4; g++) { const v = maxY * g / 4, y = py(v); svg += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,.08)"/><text x="${padL - 3}" y="${y + 3}" text-anchor="end" font-size="8" fill="#9fb4dd">${Math.round(v)}</text>`; }
-        kola.forEach((k, i) => { svg += `<text x="${px(i)}" y="${H - padB + 14}" text-anchor="middle" font-size="8" fill="#9fb4dd">${k}.</text>`; });
-        serie.forEach((sr, si) => { const c = barvy[si % barvy.length]; svg += `<polyline points="${sr.body.map((v, i) => px(i) + ',' + py(v)).join(' ')}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>`; sr.body.forEach((v, i) => { svg += `<circle cx="${px(i)}" cy="${py(v)}" r="2.4" fill="${c}"/>`; }); });
-        svg += '</svg>';
-        const leg = serie.map((sr, si) => `<span class="vyvoj-leg"><i style="background:${barvy[si % barvy.length]}"></i>${sr.jmeno} <b>${sr.konec}</b></span>`).join('');
-        return `<div class="vyvoj-wrap"><div style="font-size:.72em; opacity:.6; text-align:center; margin-bottom:8px;">Kumulativní body ze zápasů po kolech (top 10)</div>${svg}<div class="vyvoj-legenda">${leg}</div></div>`;
+        const n = serie.length;
+        serie.forEach((sr, i) => sr.barva = `hsl(${Math.round(i * 360 / n)},68%,62%)`);
+        window._vyvojSerie = serie; window._vyvojKola = kola; window._vyvojSkryti = {};
+        return `<div id="vyvoj-box">${vyvojInner()}</div>`;
     },
     jokery: () => {
         const tipy = window._tipyRaw || [];
