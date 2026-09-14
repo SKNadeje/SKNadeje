@@ -594,7 +594,7 @@ async function nactiZapasy() {
                     <button class="btn btn-mini" style="${z.outsider === z.hoste ? 'background:var(--fial); color:#fff;' : 'background:#333; color:#fff;'}" onclick="nastavOutsidera(${z.id}, '${esc(z.hoste)}')">${z.hoste}</button>
                 </div>`;
     // Výpis tipů hráčů pod zápasem
-    const tipyHtml = (tt, hotovo) => `<div style="font-size:.85em; opacity:.65; margin-top:5px;">${tt.map(t => `• ${t.jmeno}: ${t.skore}${hotovo ? ` (+${t.body})` : ''}`).join('<br>')}</div>`;
+    const tipyHtml = (tt, hotovo) => `<div style="font-size:.85em; opacity:.65; margin-top:5px;">${tt.map(t => `• ${t.jmeno}: ${t.skore}${t.joker ? ' 🃏' : ''}${hotovo ? ` (+${t.body})` : ''}`).join('<br>')}</div>`;
 
     const zapasyArr = zapasy || [];
     const aktivni = zapasyArr.filter(z => z.status !== 'vyhodnoceno');
@@ -685,7 +685,8 @@ async function vyhodnotZapas(id) {
         const hitPocet = (td + th) === (d + h);
 
         // Body se sčítají (jako u hokeje): přesné skóre + trend + rozdíl + počet
-        const b = (presne ? BODY.presne : 0) + trendBody + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
+        const zaklad = (presne ? BODY.presne : 0) + trendBody + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
+        const b = zaklad * (t.joker ? 2 : 1); // 🃏 joker = dvojnásobek
         await sb.from('cl_tipy_zapasy').update({
             body: b, hit_skore: presne, hit_trend: trend,
             hit_rozdil: hitRozdil, hit_pocet: hitPocet
