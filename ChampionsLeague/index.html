@@ -1156,16 +1156,44 @@ function losMapa() {
 }
 
 const MESTA = {
-    'Paris Saint-Germain':[2.35,43.86],'Real Madrid':[-3.70,40.42],'Arsenal FC':[-0.13,51.51],'Manchester City':[-2.24,53.48],
-    'FC Barcelona':[2.17,41.39],'Bayern Mnichov':[11.58,48.14],'Liverpool FC':[-2.99,53.41],'Manchester United':[-2.29,53.55],
-    'Inter Milán':[9.19,45.46],'Atlético Madrid':[-3.55,40.36],'Borussia Dortmund':[7.47,51.51],'AS Řím':[12.50,41.90],
-    'Aston Villa':[-1.89,52.49],'RB Lipsko':[12.37,51.34],'Como 1907':[9.09,45.81],'SSC Neapol':[14.27,40.85],
-    'FC Porto':[-8.61,41.15],'VfB Stuttgart':[9.18,48.78],'Sporting CP':[-9.14,38.72],'Galatasaray':[28.98,41.01],
-    'Villarreal CF':[-0.10,39.94],'PSV Eindhoven':[5.47,51.44],'Real Betis':[-5.98,37.39],'LOSC Lille':[3.06,50.63],
-    'Feyenoord':[4.48,51.92],'Club Brugge':[3.22,51.21],'Šachtar Doněck':[37.80,48.00],'RC Lens':[2.83,50.43],
-    'SK Slavia Praha':[14.42,50.08],'FK Bodø/Glimt':[14.40,67.28],'LASK':[14.29,48.31],'Sabah FK':[49.87,40.41],
-    'AEK':[23.73,37.98],'Fenerbahce':[29.03,41.00],'Viking':[5.73,58.97],'Slovan Bratislava':[17.11,48.15]
+    'Paris Saint-Germain': [2.35, 44.30],
+    'Real Madrid': [-3.70, 35.86],
+    'Arsenal FC': [-0.13, 46.95],
+    'Manchester City': [-2.24, 48.92],
+    'FC Barcelona': [2.17, 36.83],
+    'Bayern Mnichov': [11.58, 43.58],
+    'Liverpool FC': [-2.99, 48.85],
+    'Manchester United': [-2.29, 48.99],
+    'Inter Milán': [9.19, 40.90],
+    'Atlético Madrid': [-3.55, 35.80],
+    'Borussia Dortmund': [7.47, 46.95],
+    'AS Řím': [12.50, 37.34],
+    'Aston Villa': [-1.89, 47.93],
+    'RB Lipsko': [12.37, 46.78],
+    'Como 1907': [9.09, 41.25],
+    'SSC Neapol': [14.27, 36.29],
+    'FC Porto': [-8.61, 36.59],
+    'VfB Stuttgart': [9.18, 44.22],
+    'Sporting CP': [-9.14, 34.16],
+    'Galatasaray': [28.98, 36.45],
+    'Villarreal CF': [-0.10, 35.38],
+    'PSV Eindhoven': [5.47, 46.88],
+    'Real Betis': [-5.98, 32.83],
+    'LOSC Lille': [3.06, 46.07],
+    'Feyenoord': [4.48, 47.36],
+    'Club Brugge': [3.22, 46.65],
+    'Šachtar Doněck': [37.80, 43.44],
+    'RC Lens': [2.83, 45.87],
+    'SK Slavia Praha': [14.42, 45.52],
+    'FK Bodø/Glimt': [14.40, 62.72],
+    'LASK': [14.29, 43.75],
+    'Sabah FK': [49.87, 35.85],
+    'AEK': [23.73, 33.42],
+    'Fenerbahce': [29.03, 36.44],
+    'Viking': [5.73, 54.41],
+    'Slovan Bratislava': [17.11, 43.59]
 };
+    
 let mapaVybrany = null;
 function mapaKlik(t) { mapaVybrany = (mapaVybrany === t) ? null : t; renderMapa(); }
 function renderMapa() {
