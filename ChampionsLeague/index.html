@@ -1168,21 +1168,26 @@ const MESTA = {
 };
 let mapaVybrany = null;
 function mapaKlik(t) { mapaVybrany = (mapaVybrany === t) ? null : t; renderMapa(); }
+const EVROPA = [
+  [[-9.3,43.5],[-9.5,38.7],[-8.9,37.0],[-6.3,36.0],[-2.1,36.7],[-0.5,37.6],[0.6,38.9],[3.2,41.9],[3.0,43.3],[5.4,43.3],[7.6,43.7],[10.3,42.9],[12.4,41.5],[15.6,38.1],[16.5,39.0],[18.4,40.1],[17.0,41.0],[13.5,45.7],[15.2,44.2],[18.5,42.4],[19.9,40.3],[23.7,38.0],[26.1,38.3],[26.6,40.4],[28.9,41.0],[33.0,42.1],[38.0,41.3],[41.0,41.3],[47.0,41.5],[49.9,42.0],[49.5,45.5],[47.0,47.0],[42.0,48.0],[38.0,49.0],[33.0,48.0],[31.0,46.5],[28.0,45.5],[28.0,47.5],[26.0,49.0],[24.0,51.0],[22.0,54.0],[19.0,54.7],[14.0,54.3],[11.0,54.5],[8.5,54.5],[7.0,53.6],[4.2,52.0],[2.5,51.1],[1.6,50.9],[-1.6,49.2],[-4.7,48.4],[-2.0,47.0],[-1.2,45.5],[-1.4,44.0],[-1.8,43.4]],
+  [[-5.7,50.1],[-3.5,51.4],[-4.8,54.0],[-5.0,55.0],[-5.8,57.3],[-3.0,58.6],[-2.0,57.5],[-1.3,54.5],[0.4,52.9],[1.7,52.5],[1.4,51.1],[-0.8,50.7],[-3.5,50.6]],
+  [[-10.2,51.5],[-10.5,54.3],[-8.0,55.3],[-5.9,55.2],[-6.0,52.2],[-9.9,51.4]],
+  [[5.5,58.3],[4.9,61.5],[7.0,63.0],[11.0,64.5],[14.0,67.0],[16.0,68.5],[21.0,70.0],[24.0,71.0],[28.0,71.0],[28.0,69.0],[24.0,66.0],[20.0,65.0],[18.0,63.0],[17.0,61.0],[19.0,59.0],[16.5,57.0],[12.5,56.0],[11.0,58.0],[10.0,59.9],[7.0,58.9]]
+];
 function renderMapa() {
     const el = document.getElementById('sekce-mapa'); if (!el) return;
     const tymy = (stav.tymy || []).filter(t => MESTA[t]);
     if (!tymy.length) { el.innerHTML = '<div class="prazdno">Mapa se zobrazí po zadání týmů.</div>'; return; }
-    const lons = tymy.map(t => MESTA[t][0]), lats = tymy.map(t => MESTA[t][1]);
-    const loMin = Math.min(...lons), loMax = Math.max(...lons), laMin = Math.min(...lats), laMax = Math.max(...lats);
-    const W = 340, H = 360, pad = 20;
-    const px = lo => pad + (lo - loMin) / (loMax - loMin) * (W - 2 * pad);
-    const py = la => pad + (laMax - la) / (laMax - laMin) * (H - 2 * pad);
+    const W = 340, H = 370, pad = 10;
+    const LO0 = -11, LO1 = 51, LA0 = 35, LA1 = 71;
+    const px = lo => pad + (lo - LO0) / (LO1 - LO0) * (W - 2 * pad);
+    const py = la => pad + (LA1 - la) / (LA1 - LA0) * (H - 2 * pad);
+    const logoUrl = t => LOGA[t] || (typeof LOGA_NORM !== 'undefined' && LOGA_NORM[normTym(t)]) || null;
     const pos = {}; tymy.forEach(t => pos[t] = { x: px(MESTA[t][0]), y: py(MESTA[t][1]) });
-    const minD = 21;
-    for (let it = 0; it < 90; it++) {
+    const minD = 15;
+    for (let it = 0; it < 35; it++) {
         for (let i = 0; i < tymy.length; i++) for (let j = i + 1; j < tymy.length; j++) {
-            const a = pos[tymy[i]], b = pos[tymy[j]];
-            let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 0.01;
+            const a = pos[tymy[i]], b = pos[tymy[j]]; let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || .01;
             if (d < minD) { const p = (minD - d) / 2 / d; a.x -= dx * p; a.y -= dy * p; b.x += dx * p; b.y += dy * p; }
         }
         tymy.forEach(t => { pos[t].x = Math.max(pad, Math.min(W - pad, pos[t].x)); pos[t].y = Math.max(pad, Math.min(H - pad, pos[t].y)); });
@@ -1190,19 +1195,14 @@ function renderMapa() {
     const mapa = mapaVybrany ? (losMapa()[mapaVybrany] || []) : [];
     const jeSoupeř = t => mapa.some(o => o.souper === t);
     let svg = `<svg viewBox="0 0 ${W} ${H}" class="mapa-svg">`;
-    svg += `<rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14" fill="rgba(4,10,26,.62)" stroke="rgba(255,255,255,.08)"/>`;
-    for (let i = 1; i < 5; i++) { const gx = pad + i / 5 * (W - 2 * pad), gy = pad + i / 5 * (H - 2 * pad); svg += `<line x1="${gx}" y1="${pad}" x2="${gx}" y2="${H - pad}" stroke="rgba(255,255,255,.045)"/><line x1="${pad}" y1="${gy}" x2="${W - pad}" y2="${gy}" stroke="rgba(255,255,255,.045)"/>`; }
-    if (mapaVybrany && pos[mapaVybrany]) { const sc = pos[mapaVybrany]; mapa.forEach(o => { if (!pos[o.souper]) return; svg += `<line x1="${sc.x}" y1="${sc.y}" x2="${pos[o.souper].x}" y2="${pos[o.souper].y}" stroke="${o.doma ? '#2ecc71' : '#4db8ff'}" stroke-width="1.7" opacity=".9"/>`; }); }
+    svg += `<rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14" fill="rgba(4,10,26,.72)" stroke="rgba(255,255,255,.08)"/>`;
+    EVROPA.forEach(poly => { svg += `<polygon points="${poly.map(p => px(p[0]).toFixed(1) + ',' + py(p[1]).toFixed(1)).join(' ')}" fill="rgba(120,160,230,.07)" stroke="rgba(150,180,240,.2)" stroke-width="1"/>`; });
+    if (mapaVybrany && pos[mapaVybrany]) { const sc = pos[mapaVybrany]; mapa.forEach(o => { if (!pos[o.souper]) return; svg += `<line x1="${sc.x}" y1="${sc.y}" x2="${pos[o.souper].x}" y2="${pos[o.souper].y}" stroke="${o.doma ? '#2ecc71' : '#4db8ff'}" stroke-width="1.7" opacity=".95"/>`; }); }
     tymy.forEach(t => {
-        const p = pos[t], sel = t === mapaVybrany, opp = jeSoupeř(t);
-        const r = sel ? 11 : 8, op = (mapaVybrany && !sel && !opp) ? .25 : 1;
-        svg += `<g onclick="mapaKlik('${t.replace(/'/g, "\\'")}')" opacity="${op}" style="cursor:pointer;">`;
-        svg += `<circle cx="${p.x}" cy="${p.y}" r="${r + 2}" fill="${sel ? '#f0c359' : (opp ? '#fff' : 'rgba(255,255,255,.5)')}"/>`;
-        if (typeof LOGA !== 'undefined' && LOGA[t]) svg += `<image href="${LOGA[t]}" x="${p.x - r}" y="${p.y - r}" width="${r * 2}" height="${r * 2}" preserveAspectRatio="xMidYMid meet"/>`;
-        else svg += `<text x="${p.x}" y="${p.y + r * .35}" text-anchor="middle" font-size="${r}" font-weight="900" fill="#0a1c44">${t[0]}</text>`;
-        svg += `</g>`;
+        const p = pos[t], sel = t === mapaVybrany, opp = jeSoupeř(t), r = sel ? 11 : 7.5, op = (mapaVybrany && !sel && !opp) ? .3 : 1, u = logoUrl(t);
+        svg += `<g onclick="mapaKlik('${t.replace(/'/g, "\\'")}')" opacity="${op}" style="cursor:pointer;"><circle cx="${p.x}" cy="${p.y}" r="${r + 1.5}" fill="${sel ? '#f0c359' : (opp ? '#fff' : 'rgba(255,255,255,.9)')}"/>` + (u ? `<image href="${u}" x="${p.x - r}" y="${p.y - r}" width="${r * 2}" height="${r * 2}" preserveAspectRatio="xMidYMid meet"/>` : `<text x="${p.x}" y="${p.y + r * .35}" text-anchor="middle" font-size="${r}" font-weight="900" fill="#0a1c44">${t[0]}</text>`) + `</g>`;
     });
-    if (mapaVybrany && pos[mapaVybrany]) { const sc = pos[mapaVybrany]; svg += `<text x="${sc.x}" y="${sc.y - 15}" text-anchor="middle" font-size="10" font-weight="900" fill="#f0c359" paint-order="stroke" stroke="#03081a" stroke-width="3">${mapaVybrany}</text>`; }
+    if (mapaVybrany && pos[mapaVybrany]) { const sc = pos[mapaVybrany]; svg += `<text x="${sc.x}" y="${sc.y - 14}" text-anchor="middle" font-size="10" font-weight="900" fill="#f0c359" paint-order="stroke" stroke="#03081a" stroke-width="3">${mapaVybrany}</text>`; }
     svg += `</svg>`;
     const info = mapaVybrany ? `<b>${mapaVybrany}</b> — klik znovu zruší` : 'Klikni na klub a rozsvítí se čáry k jeho soupeřům.';
     el.innerHTML = `<div class="mapa-info">${info}</div><div class="mapa-wrap">${svg}</div><div class="mapa-legenda"><span><i style="background:#2ecc71"></i>doma</span><span><i style="background:#4db8ff"></i>venku</span></div>`;
