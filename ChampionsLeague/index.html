@@ -560,6 +560,23 @@ body { animation: pageIn .35s ease both; }
 .jk-check { display:flex; align-items:center; gap:9px; justify-content:center; margin:18px 0 4px; font-size:.85rem; color:#9fb4dd; cursor:pointer; }
 .jk-check input { width:18px; height:18px; accent-color:#f0c359; cursor:pointer; }
 .jk-btn { display:block; width:100%; margin-top:14px; background:linear-gradient(120deg,#f0c359,#e0a63e); color:#1a1206; border:none; padding:14px; border-radius:12px; font-weight:900; font-size:.95rem; cursor:pointer; font-family:inherit; }
+.mapa-info { text-align:center; font-size:.78em; opacity:.8; margin-bottom:10px; }
+.mapa-info b { color:var(--gold); }
+.mapa-wrap { border-radius:14px; overflow:hidden; }
+.mapa-svg { width:100%; height:auto; display:block; }
+.mapa-legenda { display:flex; gap:18px; justify-content:center; margin-top:10px; font-size:.75em; opacity:.85; }
+.mapa-legenda span { display:flex; align-items:center; gap:6px; }
+.mapa-legenda i { width:14px; height:3px; border-radius:2px; display:inline-block; }
+.bet-top { display:flex; justify-content:space-between; }
+.bet-reakce { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:7px; }
+.rk-count { font-size:.92em; background:rgba(255,255,255,.06); border:1px solid transparent; padding:2px 8px; border-radius:100px; cursor:pointer; }
+.rk-count.mine { border-color:var(--gold); background:rgba(var(--gold-rgb,212,175,55),.15); }
+.rk-add { font-size:.9em; opacity:.6; cursor:pointer; padding:2px 8px; border:1px solid rgba(255,255,255,.15); border-radius:100px; }
+.rk-add:hover { opacity:1; }
+.rk-paleta { display:none; gap:4px; }
+.rk-paleta.open { display:inline-flex; }
+.rk-paleta span { cursor:pointer; font-size:1.15em; padding:1px 3px; border-radius:6px; }
+.rk-paleta span:hover { background:rgba(255,255,255,.12); }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -656,7 +673,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
 
     <div class="nav">
         <button class="tady" id="nav-tipy" onclick="prepni('tipy')">Tipování</button>
-        <button id="nav-los" onclick="prepni('los')">🗺️ Los</button>
+        <button id="nav-mapa" onclick="prepni('mapa')">🗺️ Mapa</button>
         <button id="nav-tabulka" onclick="prepni('tabulka')">📊 Tabulka LM</button>
         <button id="nav-domov" onclick="prepniDomov()" title="Nastavit tuto appku jako domovskou">🏠 Domů</button>
         <a href="statistiky.html" style="text-decoration:none;"><button id="nav-zebricek">Žebříček</button></a>
@@ -717,7 +734,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     </div>
 
     <!-- ======= SEKCE ŽEBŘÍČEK ======= -->
-    <div class="sekce" id="sekce-los"></div>
+    <div class="sekce" id="sekce-mapa"></div>
 
     <div class="sekce" id="sekce-tabulka"></div>
 
@@ -904,14 +921,17 @@ async function nactiVse() {
     const _zeb = document.getElementById('zebricek'), _mat = document.getElementById('matches');
     if (_zeb && !_zeb.innerHTML.trim()) _zeb.innerHTML = skeletonRows(6);
     if (_mat && !_mat.innerHTML.trim()) _mat.innerHTML = skeletonRows(3, true);
-    const [zR, tR, sR, dR, hR] = await Promise.all([
+    const [zR, tR, sR, dR, hR, rkR] = await Promise.all([
         sb.from('cl_zapasy').select('*').order('deadline', { ascending: true }),
         sb.from('cl_tipy_zapasy').select('*'),
         sb.from('cl_stav').select('*').eq('id', 1).maybeSingle(),
         sb.from('cl_dlouhodobe').select('*'),
-        sb.from('hraci').select('user_id, tema')
+        sb.from('hraci').select('user_id, tema'),
+        sb.from('cl_reakce').select('*')
     ]);
     temaMap = {}; (hR.data || []).forEach(h => { if (h.tema) temaMap[h.user_id] = h.tema; });
+    window._reakce = {};
+    (rkR && rkR.data || []).forEach(r => { const k = r.zapas_id + '|' + r.cil_user_id; (window._reakce[k] = window._reakce[k] || []).push({ od_user_id: r.od_user_id, emoji: r.emoji }); });
     zapasy = zR.data || [];
     stav = sR.data || {};
     dlouhodobe = dR.data || [];
@@ -922,7 +942,7 @@ async function nactiVse() {
     renderZapasy();
     renderZebricek();
     nactiKralKola();
-    renderLos();
+    renderMapa();
     renderTabulka();
     zkontrolujTrefy();
 }
@@ -1135,17 +1155,47 @@ function losMapa() {
     return m;
 }
 
-function renderLos() {
-    const el = document.getElementById('sekce-los');
-    if (!el) return;
-    const tymy = stav.tymy || [];
-    if (!tymy.length) { el.innerHTML = '<div class="prazdno">Seznam týmů zatím není zadán (dlouhodobka 1 v adminu).</div>'; return; }
-    const logo = (n, v) => (typeof logoTymu === 'function') ? logoTymu(n, v) : '';
-    el.innerHTML =
-        `<div class="los-info">Klikni na tým a uvidíš jeho 8 soupeřů — <b class="h">H</b> = doma, <b class="a">A</b> = venku.</div>` +
-        `<div class="los-grid">${tymy.map((t, i) =>
-            `<button class="los-tym" onclick="losOtevri(${i})">${logo(t, 30)}<span>${t}</span></button>`
-        ).join('')}</div>`;
+const MESTA = {
+    'Paris Saint-Germain':[2.35,48.86],'Real Madrid':[-3.70,40.42],'Arsenal FC':[-0.13,51.51],'Manchester City':[-2.24,53.48],
+    'FC Barcelona':[2.17,41.39],'Bayern Mnichov':[11.58,48.14],'Liverpool FC':[-2.99,53.41],'Manchester United':[-2.29,53.55],
+    'Inter Milán':[9.19,45.46],'Atlético Madrid':[-3.55,40.36],'Borussia Dortmund':[7.47,51.51],'AS Řím':[12.50,41.90],
+    'Aston Villa':[-1.89,52.49],'RB Lipsko':[12.37,51.34],'Como 1907':[9.09,45.81],'SSC Neapol':[14.27,40.85],
+    'FC Porto':[-8.61,41.15],'VfB Stuttgart':[9.18,48.78],'Sporting CP':[-9.14,38.72],'Galatasaray':[28.98,41.01],
+    'Villarreal CF':[-0.10,39.94],'PSV Eindhoven':[5.47,51.44],'Real Betis':[-5.98,37.39],'LOSC Lille':[3.06,50.63],
+    'Feyenoord':[4.48,51.92],'Club Brugge':[3.22,51.21],'Šachtar Doněck':[37.80,48.00],'RC Lens':[2.83,50.43],
+    'SK Slavia Praha':[14.42,50.08],'FK Bodø/Glimt':[14.40,67.28],'LASK':[14.29,48.31],'Sabah FK':[49.87,40.41],
+    'AEK':[23.73,37.98],'Fenerbahce':[29.03,41.00],'Viking':[5.73,58.97],'Slovan Bratislava':[17.11,48.15]
+};
+let mapaVybrany = null;
+function mapaKlik(t) { mapaVybrany = (mapaVybrany === t) ? null : t; renderMapa(); }
+function renderMapa() {
+    const el = document.getElementById('sekce-mapa'); if (!el) return;
+    const tymy = (stav.tymy || []).filter(t => MESTA[t]);
+    if (!tymy.length) { el.innerHTML = '<div class="prazdno">Mapa se zobrazí po zadání týmů.</div>'; return; }
+    const lons = tymy.map(t => MESTA[t][0]), lats = tymy.map(t => MESTA[t][1]);
+    const loMin = Math.min(...lons), loMax = Math.max(...lons), laMin = Math.min(...lats), laMax = Math.max(...lats);
+    const W = 340, H = 330, pad = 22;
+    const px = lo => pad + (lo - loMin) / (loMax - loMin) * (W - 2 * pad);
+    const py = la => pad + (laMax - la) / (laMax - laMin) * (H - 2 * pad);
+    const mapa = mapaVybrany ? (losMapa()[mapaVybrany] || []) : [];
+    const jeSoupeř = t => mapa.some(o => o.souper === t);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" class="mapa-svg">`;
+    svg += `<rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.06)"/>`;
+    for (let i = 1; i < 5; i++) { const gx = pad + i / 5 * (W - 2 * pad), gy = pad + i / 5 * (H - 2 * pad); svg += `<line x1="${gx}" y1="${pad}" x2="${gx}" y2="${H - pad}" stroke="rgba(255,255,255,.035)"/><line x1="${pad}" y1="${gy}" x2="${W - pad}" y2="${gy}" stroke="rgba(255,255,255,.035)"/>`; }
+    if (mapaVybrany) { const sx = px(MESTA[mapaVybrany][0]), sy = py(MESTA[mapaVybrany][1]); mapa.forEach(o => { if (!MESTA[o.souper]) return; svg += `<line x1="${sx}" y1="${sy}" x2="${px(MESTA[o.souper][0])}" y2="${py(MESTA[o.souper][1])}" stroke="${o.doma ? '#2ecc71' : '#4db8ff'}" stroke-width="1.5" opacity=".85"/>`; }); }
+    tymy.forEach(t => {
+        const cx = px(MESTA[t][0]), cy = py(MESTA[t][1]), sel = t === mapaVybrany, opp = jeSoupeř(t);
+        const r = sel ? 12 : 8.5, op = (mapaVybrany && !sel && !opp) ? .28 : 1;
+        svg += `<g onclick="mapaKlik('${t.replace(/'/g, "\\'")}')" opacity="${op}" style="cursor:pointer;">`;
+        svg += `<circle cx="${cx}" cy="${cy}" r="${r + 2}" fill="${sel ? '#f0c359' : (opp ? '#fff' : 'rgba(255,255,255,.55)')}"/>`;
+        if (typeof LOGA !== 'undefined' && LOGA[t]) svg += `<image href="${LOGA[t]}" x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" preserveAspectRatio="xMidYMid meet"/>`;
+        else svg += `<text x="${cx}" y="${cy + r * .35}" text-anchor="middle" font-size="${r}" font-weight="900" fill="#0a1c44">${t[0]}</text>`;
+        svg += `</g>`;
+    });
+    if (mapaVybrany) { const sx = px(MESTA[mapaVybrany][0]), sy = py(MESTA[mapaVybrany][1]); svg += `<text x="${sx}" y="${sy - 17}" text-anchor="middle" font-size="10" font-weight="900" fill="#f0c359" paint-order="stroke" stroke="#03081a" stroke-width="3">${mapaVybrany}</text>`; }
+    svg += `</svg>`;
+    const info = mapaVybrany ? `<b>${mapaVybrany}</b> — klik znovu zruší` : 'Klikni na klub a rozsvítí se čáry k jeho soupeřům.';
+    el.innerHTML = `<div class="mapa-info">${info}</div><div class="mapa-wrap">${svg}</div><div class="mapa-legenda"><span><i style="background:#2ecc71"></i>doma</span><span><i style="background:#4db8ff"></i>venku</span></div>`;
 }
 
 function losOtevri(i) { const tym = (stav.tymy || [])[i]; if (tym) losOtevriTym(tym); }
@@ -1257,6 +1307,31 @@ function prepniKoloSekce(hl, k) {
     if (blok.classList.contains('sbaleno')) window._sbalenaKola.add(k); else window._sbalenaKola.delete(k);
 }
 
+const REAKCE_EMOJI = ['😂', '👏', '🔥', '🤡', '😮', '💩'];
+function reakceHtml(zapasId, cilId) {
+    const r = (window._reakce && window._reakce[zapasId + '|' + cilId]) || [];
+    const pocty = {}; r.forEach(x => pocty[x.emoji] = (pocty[x.emoji] || 0) + 1);
+    const moje = mojeId ? r.find(x => x.od_user_id === mojeId) : null;
+    const counts = Object.keys(pocty).map(e => `<span class="rk-count ${moje && moje.emoji === e ? 'mine' : ''}" onclick="reagovat(${zapasId},'${cilId}','${e}')">${e} ${pocty[e]}</span>`).join('');
+    const paleta = (mojeId && cilId !== mojeId)
+        ? `<span class="rk-add" onclick="rkPaleta(this)">＋</span><span class="rk-paleta">${REAKCE_EMOJI.map(e => `<span onclick="reagovat(${zapasId},'${cilId}','${e}')">${e}</span>`).join('')}</span>`
+        : '';
+    return (counts || paleta) ? `<div class="bet-reakce">${counts}${paleta}</div>` : '';
+}
+function rkPaleta(el) { const p = el.nextElementSibling; if (p) p.classList.toggle('open'); }
+async function reagovat(zapasId, cilId, emoji) {
+    if (!mojeId) return alert('Přihlas se pro reakci.');
+    if (cilId === mojeId) return;
+    const r = (window._reakce && window._reakce[zapasId + '|' + cilId]) || [];
+    const moje = r.find(x => x.od_user_id === mojeId);
+    if (moje && moje.emoji === emoji) {
+        await sb.from('cl_reakce').delete().eq('zapas_id', zapasId).eq('cil_user_id', cilId).eq('od_user_id', mojeId);
+    } else {
+        await sb.from('cl_reakce').upsert({ zapas_id: zapasId, cil_user_id: cilId, od_user_id: mojeId, emoji, updated_at: new Date().toISOString() }, { onConflict: 'zapas_id,cil_user_id,od_user_id' });
+    }
+    nactiVse();
+}
+
 function renderZapasy() {
     const cont = document.getElementById('matches');
     cont.innerHTML = '';
@@ -1323,7 +1398,7 @@ function renderZapasy() {
                 ${zavreno && !hotovo ? '<div style="text-align:center; color:var(--fial); font-weight:900; font-size:.8em; margin-bottom:10px;">TIPY UZAVŘENY</div>' : ''}
                 ${!mojeId && !hotovo ? '<div style="text-align:center; font-size:.78em; opacity:.6;">Přihlas se pro tipování.</div>' : ''}
                 <div style="margin-top:14px;">${(zavreno || hotovo) ? tipy.map(t => `
-                    <div class="bet-row"><span class="kdo" onclick="location.href='profil.html?id=${t.user_id}'">${t.jmeno}${t.user_id === mojeId ? ' (ty)' : ''}</span><span>${t.skore}${hotovo ? ` · +${t.body} b.` : ''}</span></div>`).join('') : (tipy.length ? `<div style="font-size:.7em; opacity:.45; text-align:center;">Tipy ostatních se odkryjí po uzávěrce.</div>` : '')}</div>
+                    <div class="bet-row"><div class="bet-top"><span class="kdo" onclick="location.href='profil.html?id=${t.user_id}'">${t.jmeno}${t.user_id === mojeId ? ' (ty)' : ''}</span><span>${t.skore}${hotovo ? ` · +${t.body} b.` : ''}</span></div>${reakceHtml(m.id, t.user_id)}</div>`).join('') : (tipy.length ? `<div style="font-size:.7em; opacity:.45; text-align:center;">Tipy ostatních se odkryjí po uzávěrce.</div>` : '')}</div>
             </div>`;
             telo.appendChild(card);
         });
