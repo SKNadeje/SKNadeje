@@ -1174,7 +1174,7 @@ function renderMapa() {
     if (!tymy.length) { el.innerHTML = '<div class="prazdno">Mapa se zobrazí po zadání týmů.</div>'; return; }
     // Rám odpovídá nahrané mapě Evropy (kalibrace – dá se doladit)
     const W = 340, H = 396, m = 6, IW = W - 2 * m, IH = H - 2 * m;
-    const LO0 = -10.5, LO1 = 45, LA0 = 34, LA1 = 71;
+    const LO0 = -10.5, LO1 = 45, LA0 = 34, LA1 = 75;
     const px = lo => m + (lo - LO0) / (LO1 - LO0) * IW;
     const py = la => m + (LA1 - la) / (LA1 - LA0) * IH;
     const logoUrl = t => LOGA[t] || (typeof LOGA_NORM !== 'undefined' && LOGA_NORM[normTym(t)]) || null;
