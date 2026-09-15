@@ -1174,25 +1174,35 @@ function renderMapa() {
     if (!tymy.length) { el.innerHTML = '<div class="prazdno">Mapa se zobrazí po zadání týmů.</div>'; return; }
     const lons = tymy.map(t => MESTA[t][0]), lats = tymy.map(t => MESTA[t][1]);
     const loMin = Math.min(...lons), loMax = Math.max(...lons), laMin = Math.min(...lats), laMax = Math.max(...lats);
-    const W = 340, H = 330, pad = 22;
+    const W = 340, H = 360, pad = 20;
     const px = lo => pad + (lo - loMin) / (loMax - loMin) * (W - 2 * pad);
     const py = la => pad + (laMax - la) / (laMax - laMin) * (H - 2 * pad);
+    const pos = {}; tymy.forEach(t => pos[t] = { x: px(MESTA[t][0]), y: py(MESTA[t][1]) });
+    const minD = 21;
+    for (let it = 0; it < 90; it++) {
+        for (let i = 0; i < tymy.length; i++) for (let j = i + 1; j < tymy.length; j++) {
+            const a = pos[tymy[i]], b = pos[tymy[j]];
+            let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 0.01;
+            if (d < minD) { const p = (minD - d) / 2 / d; a.x -= dx * p; a.y -= dy * p; b.x += dx * p; b.y += dy * p; }
+        }
+        tymy.forEach(t => { pos[t].x = Math.max(pad, Math.min(W - pad, pos[t].x)); pos[t].y = Math.max(pad, Math.min(H - pad, pos[t].y)); });
+    }
     const mapa = mapaVybrany ? (losMapa()[mapaVybrany] || []) : [];
     const jeSoupeř = t => mapa.some(o => o.souper === t);
     let svg = `<svg viewBox="0 0 ${W} ${H}" class="mapa-svg">`;
-    svg += `<rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.06)"/>`;
-    for (let i = 1; i < 5; i++) { const gx = pad + i / 5 * (W - 2 * pad), gy = pad + i / 5 * (H - 2 * pad); svg += `<line x1="${gx}" y1="${pad}" x2="${gx}" y2="${H - pad}" stroke="rgba(255,255,255,.035)"/><line x1="${pad}" y1="${gy}" x2="${W - pad}" y2="${gy}" stroke="rgba(255,255,255,.035)"/>`; }
-    if (mapaVybrany) { const sx = px(MESTA[mapaVybrany][0]), sy = py(MESTA[mapaVybrany][1]); mapa.forEach(o => { if (!MESTA[o.souper]) return; svg += `<line x1="${sx}" y1="${sy}" x2="${px(MESTA[o.souper][0])}" y2="${py(MESTA[o.souper][1])}" stroke="${o.doma ? '#2ecc71' : '#4db8ff'}" stroke-width="1.5" opacity=".85"/>`; }); }
+    svg += `<rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14" fill="rgba(4,10,26,.62)" stroke="rgba(255,255,255,.08)"/>`;
+    for (let i = 1; i < 5; i++) { const gx = pad + i / 5 * (W - 2 * pad), gy = pad + i / 5 * (H - 2 * pad); svg += `<line x1="${gx}" y1="${pad}" x2="${gx}" y2="${H - pad}" stroke="rgba(255,255,255,.045)"/><line x1="${pad}" y1="${gy}" x2="${W - pad}" y2="${gy}" stroke="rgba(255,255,255,.045)"/>`; }
+    if (mapaVybrany && pos[mapaVybrany]) { const sc = pos[mapaVybrany]; mapa.forEach(o => { if (!pos[o.souper]) return; svg += `<line x1="${sc.x}" y1="${sc.y}" x2="${pos[o.souper].x}" y2="${pos[o.souper].y}" stroke="${o.doma ? '#2ecc71' : '#4db8ff'}" stroke-width="1.7" opacity=".9"/>`; }); }
     tymy.forEach(t => {
-        const cx = px(MESTA[t][0]), cy = py(MESTA[t][1]), sel = t === mapaVybrany, opp = jeSoupeř(t);
-        const r = sel ? 12 : 8.5, op = (mapaVybrany && !sel && !opp) ? .28 : 1;
+        const p = pos[t], sel = t === mapaVybrany, opp = jeSoupeř(t);
+        const r = sel ? 11 : 8, op = (mapaVybrany && !sel && !opp) ? .25 : 1;
         svg += `<g onclick="mapaKlik('${t.replace(/'/g, "\\'")}')" opacity="${op}" style="cursor:pointer;">`;
-        svg += `<circle cx="${cx}" cy="${cy}" r="${r + 2}" fill="${sel ? '#f0c359' : (opp ? '#fff' : 'rgba(255,255,255,.55)')}"/>`;
-        if (typeof LOGA !== 'undefined' && LOGA[t]) svg += `<image href="${LOGA[t]}" x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" preserveAspectRatio="xMidYMid meet"/>`;
-        else svg += `<text x="${cx}" y="${cy + r * .35}" text-anchor="middle" font-size="${r}" font-weight="900" fill="#0a1c44">${t[0]}</text>`;
+        svg += `<circle cx="${p.x}" cy="${p.y}" r="${r + 2}" fill="${sel ? '#f0c359' : (opp ? '#fff' : 'rgba(255,255,255,.5)')}"/>`;
+        if (typeof LOGA !== 'undefined' && LOGA[t]) svg += `<image href="${LOGA[t]}" x="${p.x - r}" y="${p.y - r}" width="${r * 2}" height="${r * 2}" preserveAspectRatio="xMidYMid meet"/>`;
+        else svg += `<text x="${p.x}" y="${p.y + r * .35}" text-anchor="middle" font-size="${r}" font-weight="900" fill="#0a1c44">${t[0]}</text>`;
         svg += `</g>`;
     });
-    if (mapaVybrany) { const sx = px(MESTA[mapaVybrany][0]), sy = py(MESTA[mapaVybrany][1]); svg += `<text x="${sx}" y="${sy - 17}" text-anchor="middle" font-size="10" font-weight="900" fill="#f0c359" paint-order="stroke" stroke="#03081a" stroke-width="3">${mapaVybrany}</text>`; }
+    if (mapaVybrany && pos[mapaVybrany]) { const sc = pos[mapaVybrany]; svg += `<text x="${sc.x}" y="${sc.y - 15}" text-anchor="middle" font-size="10" font-weight="900" fill="#f0c359" paint-order="stroke" stroke="#03081a" stroke-width="3">${mapaVybrany}</text>`; }
     svg += `</svg>`;
     const info = mapaVybrany ? `<b>${mapaVybrany}</b> — klik znovu zruší` : 'Klikni na klub a rozsvítí se čáry k jeho soupeřům.';
     el.innerHTML = `<div class="mapa-info">${info}</div><div class="mapa-wrap">${svg}</div><div class="mapa-legenda"><span><i style="background:#2ecc71"></i>doma</span><span><i style="background:#4db8ff"></i>venku</span></div>`;
