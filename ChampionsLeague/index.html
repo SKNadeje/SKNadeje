@@ -958,6 +958,7 @@ async function nactiVse() {
     (rkR && rkR.data || []).forEach(r => { const k = r.zapas_id + '|' + r.cil_user_id; (window._reakce[k] = window._reakce[k] || []).push({ od_user_id: r.od_user_id, emoji: r.emoji }); });
     zapasy = zR.data || [];
     stav = sR.data || {};
+    sezonniOzdoby(stav.sezona_override);
     dlouhodobe = dR.data || [];
     mujDl = dlouhodobe.find(d => d.user_id === mojeId) || null;
     tipyMap = {};
@@ -1570,13 +1571,29 @@ function zavriJokerOznameni() {
     var m = document.getElementById('joker-modal'); if (m) m.classList.remove('on');
 }
 document.addEventListener('DOMContentLoaded', function () { setTimeout(zobrazJokerOznameni, 600); sezonniOzdoby(); });
-function sezonniOzdoby() {
+const SEZONY = {
+    vanoce: ['🎁', '🎄', '⭐', '🎅'],
+    silvestr: ['🎆', '🎇', '🥂', '✨'],
+    zima: ['❄️', '❄️', '🌨️'],
+    velikonoce: ['🐰', '🥚', '🌷', '🌸'],
+    leto: ['☀️', '⚽', '🍦', '🌻'],
+    podzim: ['🍂', '🍁', '🍂', '🍁', '🌰']
+};
+function sezonaKlic(override) {
+    if (override && override !== 'auto') return override; // vynuceno adminem ('zadne' = vypnuto)
+    const d = new Date(), md = (d.getMonth() + 1) * 100 + d.getDate();
+    if (md >= 1210 && md <= 1227) return 'vanoce';
+    if (md >= 1228 || md <= 102) return 'silvestr';
+    if (md >= 103 && md <= 229) return 'zima';
+    if (md >= 301 && md <= 514) return 'velikonoce';
+    if (md >= 515 && md <= 831) return 'leto';
+    return 'podzim'; // 901–1209
+}
+function sezonniOzdoby(override) {
+    const old = document.querySelector('.sezona-snih'); if (old) old.remove();
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const m = new Date().getMonth(); // 8=zář,9=říj,10=lis | 11=pro,0=led,1=úno
-    let sada = null;
-    if (m === 8 || m === 9 || m === 10) sada = ['🍂', '🍁', '🍂', '🍁', '🌰'];      // podzim
-    else if (m === 11 || m === 0 || m === 1) sada = ['❄️'];                          // zima
-    if (!sada) return;
+    const sada = SEZONY[sezonaKlic(override)];
+    if (!sada) return; // 'zadne' = vypnuto
     const box = document.createElement('div'); box.className = 'sezona-snih';
     let h = '';
     for (let i = 0; i < 18; i++) { const e = sada[Math.floor(Math.random() * sada.length)]; h += `<span class="snih-vlocka" style="left:${Math.random()*100}%;font-size:${10+Math.random()*14}px;animation-duration:${7+Math.random()*8}s;animation-delay:${-Math.random()*10}s;">${e}</span>`; }
