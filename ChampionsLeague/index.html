@@ -1572,11 +1572,14 @@ function zavriJokerOznameni() {
 document.addEventListener('DOMContentLoaded', function () { setTimeout(zobrazJokerOznameni, 600); sezonniOzdoby(); });
 function sezonniOzdoby() {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const m = new Date().getMonth(); // 11=pro, 0=led, 1=úno
-    if (m !== 11 && m !== 0 && m !== 1) return;
+    const m = new Date().getMonth(); // 8=zář,9=říj,10=lis | 11=pro,0=led,1=úno
+    let sada = null;
+    if (m === 8 || m === 9 || m === 10) sada = ['🍂', '🍁', '🍂', '🍁', '🌰'];      // podzim
+    else if (m === 11 || m === 0 || m === 1) sada = ['❄️'];                          // zima
+    if (!sada) return;
     const box = document.createElement('div'); box.className = 'sezona-snih';
     let h = '';
-    for (let i = 0; i < 18; i++) h += `<span class="snih-vlocka" style="left:${Math.random()*100}%;font-size:${8+Math.random()*12}px;animation-duration:${7+Math.random()*8}s;animation-delay:${-Math.random()*10}s;">❄️</span>`;
+    for (let i = 0; i < 18; i++) { const e = sada[Math.floor(Math.random() * sada.length)]; h += `<span class="snih-vlocka" style="left:${Math.random()*100}%;font-size:${10+Math.random()*14}px;animation-duration:${7+Math.random()*8}s;animation-delay:${-Math.random()*10}s;">${e}</span>`; }
     box.innerHTML = h; document.body.appendChild(box);
 }
 
