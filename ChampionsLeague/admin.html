@@ -192,6 +192,23 @@ async function init() {
         </div>
 
         <div class="karta">
+            <h2>🎄 Sezónní téma appky</h2>
+            <div style="font-size:.8em; opacity:.7; margin-bottom:10px;">Ozdoby na pozadí (listí, sníh, dárečky…). „Automat" je mění podle data automaticky.</div>
+            <select class="pole" id="sezonaSelect" style="width:100%;">
+                <option value="auto">🔄 Automat (podle data)</option>
+                <option value="vanoce">🎄 Vánoce (dárečky)</option>
+                <option value="silvestr">🎆 Silvestr</option>
+                <option value="zima">❄️ Zima (sníh)</option>
+                <option value="velikonoce">🐰 Velikonoce</option>
+                <option value="leto">☀️ Léto</option>
+                <option value="podzim">🍂 Podzim (listí)</option>
+                <option value="zadne">🚫 Vypnuto</option>
+            </select>
+            <button class="btn btn-gold" style="width:100%; margin-top:10px;" onclick="ulozSezonu()">💾 ULOŽIT TÉMA</button>
+            <div id="sezonaMsg" style="margin-top:8px; font-size:.85em;"></div>
+        </div>
+
+        <div class="karta">
             <h2>👑 Král kola</h2>
             <div style="font-size:.82em; opacity:.75; margin-bottom:10px;">Spočítá, kdo od <b>minulého vyhlášení</b> získal nejvíc bodů za zápasy. První vyhlášení bere body od začátku (základ 0). Nejdřív ukáže návrh, teprve po potvrzení odejde push.</div>
             <button class="btn btn-gold" onclick="vyhodnotKolo()" style="width:100%;">🧮 Vyhodnotit kolo</button>
@@ -301,6 +318,8 @@ async function nactiStav() {
     renderR16Pary();
     initVysl1();
     initVysl2();
+    const ss = document.getElementById('sezonaSelect');
+    if (ss) ss.value = stav.sezona_override || 'auto';
     // vodoznak posuvník
     const vr = document.getElementById('vodoznakRange');
     if (vr) {
@@ -308,6 +327,15 @@ async function nactiStav() {
         vr.value = pct;
         document.getElementById('vodoznakVal').textContent = pct + ' %';
     }
+}
+
+async function ulozSezonu() {
+    const v = document.getElementById('sezonaSelect').value;
+    const m = document.getElementById('sezonaMsg');
+    m.innerHTML = '<span style="opacity:.6;">Ukládám…</span>';
+    const { error } = await sb.from('cl_stav').update({ sezona_override: v }).eq('id', 1);
+    if (error) { m.innerHTML = '<span style="color:#ff5555;">Chyba: ' + error.message + '</span>'; return; }
+    m.innerHTML = '<span style="color:#2ecc71;">✅ Uloženo! Projeví se hráčům při načtení stránky.</span>';
 }
 
 async function ulozVodoznak() {
