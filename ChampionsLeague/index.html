@@ -1251,16 +1251,16 @@ function renderMapa() {
     svg += `<rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14" fill="rgba(4,10,26,.72)" stroke="rgba(255,255,255,.08)"/>`;
     svg += `<image href="mapa-evropa.png" x="${m}" y="${m}" width="${IW}" height="${IH}" preserveAspectRatio="none"/>`;
     if (mapaRezim === 'los' && mapaVybrany && pos[mapaVybrany]) { const sc = pos[mapaVybrany]; mapa.forEach(o => { if (!pos[o.souper]) return; svg += `<line class="mapa-cara" x1="${sc.x}" y1="${sc.y}" x2="${pos[o.souper].x}" y2="${pos[o.souper].y}" stroke="${o.doma ? '#2ecc71' : '#4db8ff'}" stroke-width="1.7"/>`; }); }
-    if (mapaRezim === 'vzdalenost' && mapaVzd.length === 2 && pos[mapaVzd[0]] && pos[mapaVzd[1]]) { const a = pos[mapaVzd[0]], b = pos[mapaVzd[1]]; svg += `<line class="mapa-cara" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#f0c359" stroke-width="2"/><text x="${(a.x + b.x) / 2}" y="${(a.y + b.y) / 2 - 4}" text-anchor="middle" font-size="11" font-weight="900" fill="#f0c359" paint-order="stroke" stroke="#03081a" stroke-width="3">${vzdalenostKm(mapaVzd[0], mapaVzd[1])} km</text>`; }
+    if (mapaRezim === 'vzdalenost' && mapaVzd.length === 2 && pos[mapaVzd[0]] && pos[mapaVzd[1]]) { const a = pos[mapaVzd[0]], b = pos[mapaVzd[1]]; svg += `<line class="mapa-cara" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#f0c359" stroke-width="2.4"/>`; }
     tymy.forEach(t => {
         const vzd = mapaRezim === 'vzdalenost'; const sel = vzd ? mapaVzd.includes(t) : t === mapaVybrany; const opp = !vzd && jeSoupeř(t); const aktivni = vzd ? mapaVzd.length > 0 : !!mapaVybrany; const p = pos[t], r = sel ? 10 : 6.5, op = (aktivni && !sel && !opp) ? .3 : 1, u = logoUrl(t);
         svg += `<g onclick="mapaKlik('${t.replace(/'/g, "\\'")}')" opacity="${op}" style="cursor:pointer;"><circle cx="${p.x}" cy="${p.y}" r="${r + 1.4}" fill="${sel ? '#f0c359' : (opp ? '#fff' : 'rgba(255,255,255,.9)')}"/>` + (u ? `<image href="${u}" x="${p.x - r}" y="${p.y - r}" width="${r * 2}" height="${r * 2}" preserveAspectRatio="xMidYMid meet"/>` : `<text x="${p.x}" y="${p.y + r * .35}" text-anchor="middle" font-size="${r}" font-weight="900" fill="#0a1c44">${t[0]}</text>`) + `</g>`;
     });
-    const oznaceni = mapaRezim === 'vzdalenost' ? mapaVzd : (mapaVybrany ? [mapaVybrany] : []);
+    const oznaceni = (mapaRezim === 'los' && mapaVybrany) ? [mapaVybrany] : [];
     oznaceni.forEach(nm => { if (!pos[nm]) return; const sc = pos[nm]; svg += `<text x="${sc.x}" y="${sc.y - 13}" text-anchor="middle" font-size="10" font-weight="900" fill="#f0c359" paint-order="stroke" stroke="#03081a" stroke-width="3">${nm}</text>`; });
     svg += `</svg>`;
     const info = mapaRezim === 'vzdalenost'
-        ? (mapaVzd.length < 2 ? `Cestovní režim — vyber <b>2 kluby</b> a ukáže se vzdálenost.` : `<b>${mapaVzd[0]}</b> ↔ <b>${mapaVzd[1]}</b>`)
+        ? (mapaVzd.length < 2 ? `Cestovní režim — vyber <b>2 kluby</b> a ukáže se vzdálenost.` : `<b>${mapaVzd[0]}</b> ↔ <b>${mapaVzd[1]}</b> · <b style="color:var(--gold);">${vzdalenostKm(mapaVzd[0], mapaVzd[1])} km</b>`)
         : (mapaVybrany ? `<b>${mapaVybrany}</b> — klik znovu zruší` : 'Klikni na klub a rozsvítí se čáry k jeho soupeřům.');
     const prep = `<div class="mapa-rezim"><button class="${mapaRezim === 'los' ? 'on' : ''}" onclick="if(mapaRezim!=='los')mapaPrepniRezim()">🗺️ Los</button><button class="${mapaRezim === 'vzdalenost' ? 'on' : ''}" onclick="if(mapaRezim!=='vzdalenost')mapaPrepniRezim()">📏 Vzdálenosti</button></div>`;
     const leg = mapaRezim === 'los' ? `<div class="mapa-legenda"><span><i style="background:#2ecc71"></i>doma</span><span><i style="background:#4db8ff"></i>venku</span></div>` : '';
