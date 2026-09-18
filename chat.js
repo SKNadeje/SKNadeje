@@ -22,6 +22,7 @@ let _chat = {
 function inicializujChat(config) {
     Object.assign(_chat, config);
     vlozChatHTML();
+    nastavTazeniChatu();
     zjistiUzivatele();
     nactiZpravy();
     nastavRealtime();
@@ -39,17 +40,17 @@ function vlozChatHTML() {
     const b = _chat.barva;
     const el = document.createElement('div');
     el.innerHTML = `
-    <button id="chat-fab" onclick="prepniChat()" style="
+    <button id="chat-fab" title="Klikni pro chat · přetáhni pro přesun" style="
         position:fixed; bottom:20px; right:20px; z-index:900;
-        width:60px; height:60px; border-radius:50%; cursor:pointer;
+        width:48px; height:48px; border-radius:50%; cursor:grab;
         background:var(--neon, ${b}); color:#05121a;
         border:2px solid rgba(255,255,255,.85);
-        font-size:1.5em; box-shadow:0 6px 26px rgba(0,0,0,.45), 0 0 22px ${b}88;
+        font-size:1.2em; box-shadow:0 5px 20px rgba(0,0,0,.45), 0 0 18px ${b}88;
         display:flex; align-items:center; justify-content:center; font-family:inherit;
-        transition:transform .2s ease;
-    " onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">💬<span id="chat-badge" style="
+        touch-action:none; user-select:none;
+    ">💬<span id="chat-badge" style="
         position:absolute; top:-4px; right:-4px; background:#e74c3c; color:#fff;
-        font-size:.42em; font-weight:900; min-width:22px; height:22px; border-radius:11px;
+        font-size:.5em; font-weight:900; min-width:19px; height:19px; border-radius:10px;
         display:none; align-items:center; justify-content:center; padding:0 5px; border:2px solid #fff;
     ">0</span></button>
 
@@ -107,11 +108,63 @@ function vlozEmoji(e) {
     input.focus();
 }
 
+function nastavTazeniChatu() {
+    const fab = document.getElementById('chat-fab');
+    if (!fab) return;
+    try {
+        const p = JSON.parse(localStorage.getItem('chat_fab_pos') || 'null');
+        if (p && typeof p.left === 'number') {
+            fab.style.left = Math.min(p.left, innerWidth - 52) + 'px';
+            fab.style.top = Math.min(p.top, innerHeight - 52) + 'px';
+            fab.style.right = 'auto'; fab.style.bottom = 'auto';
+        }
+    } catch (e) {}
+    let drag = false, moved = false, sx = 0, sy = 0, ox = 0, oy = 0;
+    fab.addEventListener('pointerdown', e => {
+        drag = true; moved = false;
+        const r = fab.getBoundingClientRect();
+        ox = r.left; oy = r.top; sx = e.clientX; sy = e.clientY;
+        fab.style.cursor = 'grabbing';
+        try { fab.setPointerCapture(e.pointerId); } catch (er) {}
+    });
+    fab.addEventListener('pointermove', e => {
+        if (!drag) return;
+        const dx = e.clientX - sx, dy = e.clientY - sy;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
+        if (moved) {
+            let nx = Math.max(4, Math.min(innerWidth - fab.offsetWidth - 4, ox + dx));
+            let ny = Math.max(4, Math.min(innerHeight - fab.offsetHeight - 4, oy + dy));
+            fab.style.left = nx + 'px'; fab.style.top = ny + 'px'; fab.style.right = 'auto'; fab.style.bottom = 'auto';
+        }
+    });
+    fab.addEventListener('pointerup', () => {
+        drag = false; fab.style.cursor = 'grab';
+        if (moved) { const r = fab.getBoundingClientRect(); try { localStorage.setItem('chat_fab_pos', JSON.stringify({ left: r.left, top: r.top })); } catch (e) {} }
+        else { prepniChat(); }
+    });
+    // dvojklik = vrátit do rohu
+    fab.addEventListener('dblclick', () => {
+        try { localStorage.removeItem('chat_fab_pos'); } catch (e) {}
+        fab.style.left = 'auto'; fab.style.top = 'auto'; fab.style.right = '20px'; fab.style.bottom = '20px';
+    });
+}
+function umistiPanel() {
+    const fab = document.getElementById('chat-fab'), p = document.getElementById('chat-panel');
+    if (!fab || !p) return;
+    const r = fab.getBoundingClientRect();
+    const pw = p.offsetWidth || 340, ph = p.offsetHeight || 460;
+    let left = Math.max(8, Math.min(r.right - pw, innerWidth - pw - 8));
+    let top = (r.top > innerHeight / 2) ? r.top - ph - 10 : r.bottom + 10;
+    top = Math.max(8, Math.min(innerHeight - ph - 8, top));
+    p.style.left = left + 'px'; p.style.top = top + 'px'; p.style.right = 'auto'; p.style.bottom = 'auto';
+}
+
 function prepniChat() {
     _chat.otevreno = !_chat.otevreno;
     const p = document.getElementById('chat-panel');
     p.style.display = _chat.otevreno ? 'flex' : 'none';
     if (_chat.otevreno) {
+        umistiPanel();
         _chat.neprectene = 0;
         obnovBadge();
         vykresliZpravy();
