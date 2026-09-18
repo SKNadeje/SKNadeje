@@ -1,8 +1,9 @@
 // OneSignal push notifikace
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-// WC2026 Tipovačka - Service Worker
-const CACHE_NAME = 'wc2026-v4';
+// SK Naděje Tipovačka - Service Worker
+// v5: HTML se vždy tahá čerstvě (žádná stará verze stránek po nasazení)
+const CACHE_NAME = 'sknadeje-v5';
 const URLS_TO_CACHE = [
     './',
     './index.html',
@@ -25,30 +26,35 @@ self.addEventListener('install', event => {
 // Aktivace - smaž starou cache
 self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys().then(keys => 
+        caches.keys().then(keys =>
             Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
         )
     );
     self.clients.claim();
 });
 
-// Fetch - network first, fallback na cache
+// Fetch - network first; HTML stránky VŽDY čerstvé (bypass HTTP cache)
 self.addEventListener('fetch', event => {
-    // Supabase requesty NEPACHUJ (musí být live)
+    // Supabase requesty necháváme projít (musí být live)
     if (event.request.url.includes('supabase.co') || event.request.url.includes('supabase.io')) {
         return;
     }
-    
+
+    // HTML dokument? (navigace nebo *.html) -> nikdy neservírovat starou verzi
+    const jeHTML = event.request.mode === 'navigate'
+        || event.request.destination === 'document'
+        || event.request.url.split('?')[0].endsWith('.html');
+
     event.respondWith(
-        fetch(event.request)
+        fetch(event.request, jeHTML ? { cache: 'no-store' } : {})
             .then(response => {
-                // Cache jen úspěšné odpovědi
+                // Cachuj jen úspěšné GET (pro offline fallback)
                 if (response && response.status === 200 && event.request.method === 'GET') {
                     const responseClone = response.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
                 }
                 return response;
             })
-            .catch(() => caches.match(event.request))
+            .catch(() => caches.match(event.request))  // offline -> z cache
     );
 });
