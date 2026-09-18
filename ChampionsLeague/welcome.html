@@ -346,6 +346,21 @@ html[data-theme="dortmund"] body {
 }
 html[data-theme="dortmund"] h1 { color: #fde100; -webkit-text-fill-color: #fde100; text-shadow: 0 0 14px rgba(253,225,0,.4), 0 2px 6px rgba(0,0,0,.6); }
 
+.sezona-snih { position: fixed; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+.snih-vlocka { position: absolute; top: -14px; color: #fff; opacity: .55; animation: padej linear infinite; }
+@keyframes padej { to { transform: translateY(105vh) rotate(360deg); } }
+.vanocni-stromek { position: fixed; bottom: 16px; left: 14px; font-size: 2.4rem; z-index: 4; pointer-events: none; animation: stromekBlik 1.1s ease-in-out infinite; }
+@keyframes stromekBlik { 0%,100% { opacity: 1; filter: drop-shadow(0 0 5px #f0c359); } 50% { opacity: .72; filter: drop-shadow(0 0 15px #ff3b3f); } }
+.side-ozdoba { display: none; }
+.side-ozdoba .side-mini { font-size: .42em; margin-top: -.06em; }
+@media (min-width: 1000px) {
+  .side-ozdoba { display: block; position: fixed; bottom: 18px; z-index: 1; font-size: 11rem; line-height: 1; pointer-events: none; text-align: center; opacity: .9; filter: drop-shadow(0 6px 20px rgba(0,0,0,.5)); animation: sideSway 4.5s ease-in-out infinite; }
+  .side-ozdoba.left { left: 30px; }
+  .side-ozdoba.right { right: 30px; animation-delay: -2s; }
+  body.sez-vanoce .vanocni-stromek { display: none; }
+}
+@keyframes sideSway { 0%,100%{transform:rotate(-2.5deg)} 50%{transform:rotate(2.5deg)} }
+@media (prefers-reduced-motion: reduce) { .snih-vlocka, .vanocni-stromek, .side-ozdoba { animation: none !important; } .sezona-snih { display: none; } }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -625,19 +640,28 @@ setInterval(() => {
 </script>
 
 <script>
+/* ===== SEZÓNNÍ OZDOBY (stejné jako index) ===== */
+const SEZONY = { vanoce:['🎁','🎄','⭐','🎅'], zima:['❄️','❄️','🌨️'], velikonoce:['🐰','🥚','🌷','🌸'], leto:['☀️','⚽','🍦','🌻'], podzim:['🍂','🍁','🍂','🍁','🌰'], halloween:['🎃','👻','🦇','🕷️'] };
+const SIDE_OZDOBY = { vanoce:{l:'🎄<div class="side-mini">🎁🎁🎁</div>',r:'🎅'}, halloween:{l:'💀',r:'🎃<div class="side-mini">🦇</div>'}, zima:{l:'⛄',r:'❄️'}, velikonoce:{l:'🐰',r:'🥚<div class="side-mini">🌷🌷</div>'}, leto:{l:'☀️',r:'⚽'}, podzim:{l:'🍁',r:'🍂'} };
+function sezonaKlic(override){ if(override&&override!=='auto')return override; const d=new Date(),md=(d.getMonth()+1)*100+d.getDate(); if(md>=1210&&md<=1227)return'vanoce'; if(md>=1228||md<=102)return'silvestr'; if(md>=103&&md<=229)return'zima'; if(md>=301&&md<=514)return'velikonoce'; if(md>=515&&md<=831)return'leto'; if(md>=1025&&md<=1101)return'halloween'; return'podzim'; }
+function spustRachejtle(){ const cv=document.createElement('canvas'); cv.className='silvestr-canvas'; cv.style.cssText='position:fixed;inset:0;z-index:3;pointer-events:none;'; const size=()=>{cv.width=innerWidth;cv.height=innerHeight;}; size(); addEventListener('resize',size); document.body.appendChild(cv); const x=cv.getContext('2d'),barvy=['#f0c359','#ff5b6e','#5b8cff','#2ecc71','#c084fc','#ffffff','#4dd0e1']; let rak=[],jis=[],t=0; const frame=()=>{ x.clearRect(0,0,cv.width,cv.height); if(t++%42===0)rak.push({x:cv.width*(0.12+Math.random()*0.76),y:cv.height,vy:-(6.5+Math.random()*3),cil:cv.height*(0.18+Math.random()*0.3),c:barvy[Math.floor(Math.random()*barvy.length)]}); rak=rak.filter(r=>{r.y+=r.vy;r.vy+=0.05;x.fillStyle=r.c;x.fillRect(r.x-1.5,r.y-7,3,9); if(r.y<=r.cil||r.vy>=0){for(let i=0;i<28;i++){const a=(i/28)*Math.PI*2,sp=2+Math.random()*3.2;jis.push({x:r.x,y:r.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,c:r.c});}return false;}return true;}); jis=jis.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.06;p.vx*=0.98;p.life-=0.014; if(p.life>0){x.globalAlpha=Math.max(0,p.life);x.fillStyle=p.c;x.beginPath();x.arc(p.x,p.y,2.3,0,7);x.fill();x.globalAlpha=1;return true;}return false;}); cv._raf=requestAnimationFrame(frame); }; frame(); cv._stop=()=>{cancelAnimationFrame(cv._raf);removeEventListener('resize',size);}; }
+function sezonniOzdoby(override){ document.querySelectorAll('.sezona-snih,.vanocni-stromek,.side-ozdoba').forEach(e=>e.remove()); const oc=document.querySelector('.silvestr-canvas'); if(oc){if(oc._stop)oc._stop();oc.remove();} const klic=sezonaKlic(override); const bocni=SIDE_OZDOBY[klic]; if(bocni){ if(bocni.l){const e=document.createElement('div');e.className='side-ozdoba left';e.innerHTML=bocni.l;document.body.appendChild(e);} if(bocni.r){const e=document.createElement('div');e.className='side-ozdoba right';e.innerHTML=bocni.r;document.body.appendChild(e);} } if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return; if(klic==='silvestr'){spustRachejtle();return;} if(klic==='vanoce'){const st=document.createElement('div');st.className='vanocni-stromek';st.textContent='🎄';document.body.appendChild(st);} const sada=SEZONY[klic]; if(!sada)return; const box=document.createElement('div');box.className='sezona-snih'; let h=''; const pocet=Math.max(18,Math.min(48,Math.round(innerWidth/44))); for(let i=0;i<pocet;i++){const e=sada[Math.floor(Math.random()*sada.length)];h+='<span class="snih-vlocka" style="left:'+(Math.random()*100)+'%;font-size:'+(10+Math.random()*14)+'px;animation-duration:'+(7+Math.random()*8)+'s;animation-delay:'+(-Math.random()*10)+'s;">'+e+'</span>';} box.innerHTML=h; document.body.appendChild(box); }
+</script>
+<script>
 // Načti viditelnost vodoznaku z cl_stav přes REST API (welcome nemá SDK klienta)
 (async function(){
     try {
         const SB_URL = 'https://vlabocwezmpwnxrwxihs.supabase.co';
         const SB_KEY = 'sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X';
-        const r = await fetch(SB_URL + '/rest/v1/cl_stav?id=eq.1&select=vodoznak_opacity', {
+        const r = await fetch(SB_URL + '/rest/v1/cl_stav?id=eq.1&select=vodoznak_opacity,sezona_override', {
             headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY }
         });
         const rows = await r.json();
         const op = (rows && rows[0] && rows[0].vodoznak_opacity != null) ? rows[0].vodoznak_opacity : 0.10;
         const vz = document.getElementById('klubVodoznak');
         if (vz) vz.style.opacity = op;
-    } catch(e) { /* necháme výchozí opacity z CSS */ }
+        sezonniOzdoby(rows && rows[0] ? rows[0].sezona_override : null);
+    } catch(e) { sezonniOzdoby(); }
 })();
 </script>
 <script>
