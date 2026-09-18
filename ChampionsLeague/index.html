@@ -1470,6 +1470,7 @@ function renderZapasy() {
                 <div style="text-align:center; font-size:.68em; opacity:.5; margin-bottom:10px;">tipů: ${tipy.length}</div>
                 ${(!zavreno && !hotovo && mojeId) ? `
                     <div class="score-row">
+                        <button type="button" class="kostka-btn" style="visibility:hidden;" tabindex="-1" aria-hidden="true">🎲</button>
                         <select id="scD-${m.id}" class="score-input">${opceGolu(mujTip ? mujTip.skore.split(':')[0] : '')}</select>
                         <span style="font-size:1.7em; font-weight:900; color:var(--fial);">:</span>
                         <select id="scH-${m.id}" class="score-input">${opceGolu(mujTip ? mujTip.skore.split(':')[1] : '')}</select>
@@ -1553,8 +1554,7 @@ function oslavaToast(txt) {
     setTimeout(() => d.classList.add('pryc'), 2200);
     setTimeout(() => d.remove(), 2900);
 }
-
-    function zkontrolujTrefy() {
+function zkontrolujTrefy() {
     if (!mojeId) return;
     const trefy = [];
     Object.values(tipyMap).flat().forEach(t => { if (t.user_id === mojeId && t.hit_skore) trefy.push(String(t.zapas_id)); });
@@ -1633,7 +1633,8 @@ function sezonniOzdoby(override) {
     if (!sada) return; // 'zadne'
     const box = document.createElement('div'); box.className = 'sezona-snih';
     let h = '';
-    for (let i = 0; i < 18; i++) { const e = sada[Math.floor(Math.random() * sada.length)]; h += `<span class="snih-vlocka" style="left:${Math.random()*100}%;font-size:${10+Math.random()*14}px;animation-duration:${7+Math.random()*8}s;animation-delay:${-Math.random()*10}s;">${e}</span>`; }
+    const pocet = Math.max(18, Math.min(48, Math.round(innerWidth / 44)));
+    for (let i = 0; i < pocet; i++) { const e = sada[Math.floor(Math.random() * sada.length)]; h += `<span class="snih-vlocka" style="left:${Math.random()*100}%;font-size:${10+Math.random()*14}px;animation-duration:${7+Math.random()*8}s;animation-delay:${-Math.random()*10}s;">${e}</span>`; }
     box.innerHTML = h; document.body.appendChild(box);
 }
 
