@@ -1541,7 +1541,7 @@ function prehrajDing() {
         setTimeout(() => { try { ac.close(); } catch (e) {} }, 700);
     } catch (e) {}
 }
-    function konfety(barvy) {
+function konfety(barvy) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     try { if (localStorage.getItem('konfety_ticho') !== '1') { if (navigator.vibrate) navigator.vibrate([40, 30, 70]); prehrajDing(); } } catch (e) {}
     barvy = (barvy && barvy.length) ? barvy : ['#f0c359', '#ffffff', '#5b8cff'];
@@ -1755,6 +1755,8 @@ function pripomenDlouhodobku() {
     if (maDl && zaplaceno) return;            // vše hotové
     if (dl1Zavreno && zaplaceno) return;       // nováček, co už zaplatil (je v turnaji)
     window._dlPripomenuto = true;
+    // Nováček bez dlouhodobky (uzávěrka prošla) -> rovnou QR platba (jako u dlouhodobky)
+    if (!maDl && dl1Zavreno) { ukazPlatbu(mojeJmeno); return; }
     let ikona, nadpis, text, btn;
     if (!maDl && dl1Zavreno) {
         // Nováček, co naskočil pozdě – dlouhodobka už nejde, stačí zaplatit startovné
@@ -2154,7 +2156,7 @@ function otevriDl(faze) {
     if (faze === 1) {
         if ((stav.tymy || []).length < 36) return;
         const d1 = stav.deadline_tip1 ? new Date(stav.deadline_tip1) : null;
-        if (d1 && Date.now() > d1.getTime()) { zobrazDlTip1(ob); return; }
+        if (d1 && Date.now() > d1.getTime()) { zobrazDlTip1(ob); document.getElementById('dlModal').style.display = 'block'; return; }
         const t = mujDl?.tip1 || {};
         vyber.top8 = [...(t.top8 || [])];
         vyber.propadlici = [...(t.propadlici || [])];
@@ -2187,7 +2189,7 @@ function otevriDl(faze) {
     } else {
         if ((stav.bracket_r16 || []).length < 8) return;
         const d2 = stav.deadline_tip2 ? new Date(stav.deadline_tip2) : null;
-        if (d2 && Date.now() > d2.getTime()) { zobrazDlTip2(ob); return; }
+        if (d2 && Date.now() > d2.getTime()) { zobrazDlTip2(ob); document.getElementById('dlModal').style.display = 'block'; return; }
         // Rekonstrukce pavouka z uloženého tipu (pokud existuje a sedí na aktuální páry)
         const t = mujDl?.tip2 || {};
         const r16 = stav.bracket_r16 || [];
