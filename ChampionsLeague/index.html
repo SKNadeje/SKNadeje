@@ -623,6 +623,12 @@ body.sez-zima .nav button::after, body.sez-vanoce .nav button::after, body.sez-s
 }
 @keyframes sideSway { 0%,100%{transform:rotate(-2.5deg)} 50%{transform:rotate(2.5deg)} }
 @media (prefers-reduced-motion: reduce) { .side-ozdoba { animation: none; } }
+.dl-karta.zamceno.ma-tip { cursor: pointer; opacity: .82; }
+.dl-view-wrap { display:flex; flex-wrap:wrap; gap:6px; }
+.dl-view-chip { background:rgba(255,255,255,.08); border:1px solid var(--card-border); border-radius:100px; padding:5px 12px; font-size:.85em; font-weight:600; }
+.dl-view-chip.vitez { background:rgba(var(--gold-rgb,212,175,55),.22); border-color:var(--gold); color:var(--gold); font-weight:900; }
+.dl-view-radek { padding:4px 0; font-size:.9em; opacity:.95; }
+.dl-prazdno { text-align:center; opacity:.6; padding:24px; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -1284,7 +1290,7 @@ function renderMapa() {
     svg += `</svg>`;
     const info = mapaRezim === 'vzdalenost'
         ? (mapaVzd.length < 2 ? `Cestovní režim — vyber <b>2 kluby</b> a ukáže se vzdálenost.` : `<b>${mapaVzd[0]}</b> ↔ <b>${mapaVzd[1]}</b> · <b style="color:var(--gold);">${vzdalenostKm(mapaVzd[0], mapaVzd[1])} km</b>`)
-        : (mapaVybrany ? `<b>${mapaVybrany}</b> — klik znovu zruší` : 'Klikni na klub a rozsvítí se čáry k jeho soupeřům.');
+        : (mapaVybrany ? `<b>${mapaVybrany}</b> · ✈️ venku nalétáno: <b style="color:var(--gold);">${mapa.filter(o => !o.doma && MESTA[o.souper]).reduce((sum, o) => sum + vzdalenostKm(mapaVybrany, o.souper), 0).toLocaleString("cs-CZ")} km</b>` : 'Klikni na klub a rozsvítí se čáry k jeho soupeřům.');
     const prep = `<div class="mapa-rezim"><button class="${mapaRezim === 'los' ? 'on' : ''}" onclick="if(mapaRezim!=='los')mapaPrepniRezim()">🗺️ Los</button><button class="${mapaRezim === 'vzdalenost' ? 'on' : ''}" onclick="if(mapaRezim!=='vzdalenost')mapaPrepniRezim()">📏 Vzdálenosti</button></div>`;
     const leg = mapaRezim === 'los' ? `<div class="mapa-legenda"><span><i style="background:#2ecc71"></i>doma</span><span><i style="background:#4db8ff"></i>venku</span></div>` : '';
     el.innerHTML = `${prep}<div class="mapa-info">${info}</div><div class="mapa-wrap">${svg}</div>${leg}`;
@@ -1535,7 +1541,7 @@ function prehrajDing() {
         setTimeout(() => { try { ac.close(); } catch (e) {} }, 700);
     } catch (e) {}
 }
-function konfety(barvy) {
+    function konfety(barvy) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     try { if (localStorage.getItem('konfety_ticho') !== '1') { if (navigator.vibrate) navigator.vibrate([40, 30, 70]); prehrajDing(); } } catch (e) {}
     barvy = (barvy && barvy.length) ? barvy : ['#f0c359', '#ffffff', '#5b8cff'];
@@ -1793,7 +1799,7 @@ function renderDlKarty() {
     const s1 = document.getElementById('dl1-stav');
     const k1 = document.getElementById('dl1-karta');
     if (!tymyOk) { s1.innerHTML = '<span style="opacity:.6;">Čeká na vylosování účastníků.</span>'; k1.classList.add('zamceno'); }
-    else if (po1) { s1.innerHTML = t1 ? '<span style="color:#2ecc71;">✔ Tip uložen · uzavřeno</span>' : '<span style="color:#e74c3c;">Uzávěrka proběhla.</span>'; k1.classList.add('zamceno'); }
+    else if (po1) { s1.innerHTML = t1 ? '<span style="color:#2ecc71;">✔ Tip uložen · uzavřeno</span> <span style="opacity:.75;">👁 klikni pro zobrazení</span>' : '<span style="color:#e74c3c;">Uzávěrka proběhla.</span>'; k1.classList.add('zamceno'); k1.classList.toggle('ma-tip', !!t1); }
     else {
         s1.innerHTML = (t1 ? '<span style="color:#2ecc71;">✔ Uloženo – do uzávěrky můžeš upravit</span>' : '<span style="color:var(--fial);">→ Klikni a tipni</span>')
             + odpocetHtml(d1);
@@ -1803,7 +1809,7 @@ function renderDlKarty() {
     const s2 = document.getElementById('dl2-stav');
     const k2 = document.getElementById('dl2-karta');
     if (!osmOk) { s2.innerHTML = '<span style="opacity:.6;">Otevře se, až bude znám pavouk osmifinále.</span>'; k2.classList.add('zamceno'); }
-    else if (po2) { s2.innerHTML = t2 ? '<span style="color:#2ecc71;">✔ Tip uložen · uzavřeno</span>' : '<span style="color:#e74c3c;">Uzávěrka proběhla.</span>'; k2.classList.add('zamceno'); }
+    else if (po2) { s2.innerHTML = t2 ? '<span style="color:#2ecc71;">✔ Tip uložen · uzavřeno</span> <span style="opacity:.75;">👁 klikni pro zobrazení</span>' : '<span style="color:#e74c3c;">Uzávěrka proběhla.</span>'; k2.classList.add('zamceno'); k2.classList.toggle('ma-tip', !!t2); }
     else {
         s2.innerHTML = (t2 ? '<span style="color:#2ecc71;">✔ Uloženo – do uzávěrky můžeš upravit</span>' : '<span style="color:var(--fial);">→ Klikni a tipni cestu k titulu</span>')
             + odpocetHtml(d2);
@@ -2108,6 +2114,37 @@ function renderBracket() {
         <button class="br-reset" onclick="bracketResetVse()" style="margin-top:12px;">↺ začít pavouka znovu od osmifinále</button>`;
 }
 
+function zobrazDlTip1(ob) {
+    const t = mujDl?.tip1 || {};
+    if (!Object.keys(t).length) { ob.innerHTML = '<div class="dl-prazdno">📋 Základní část — dlouhodobku sis nevyplnil.</div>'; return; }
+    const chip = x => `<span class="dl-view-chip">${x}</span>`;
+    const seznam = arr => (arr && arr.length) ? arr.map(chip).join('') : '<i style="opacity:.5;">–</i>';
+    ob.innerHTML = `
+        <h2 style="color:var(--gold); margin-top:0;">📋 Základní část <span style="font-size:.55em; opacity:.6; font-weight:600;">jen zobrazení</span></h2>
+        <div class="dl-sekce"><h3>Top 8 tabulky</h3><div class="dl-view-wrap">${seznam(t.top8)}</div></div>
+        <div class="dl-sekce"><h3>👑 Vítěz základní části</h3><div class="dl-view-wrap">${t.vitezZC ? chip(t.vitezZC) : '<i style="opacity:.5;">–</i>'}</div></div>
+        <div class="dl-sekce"><h3>📉 Propadlíci (25–36)</h3><div class="dl-view-wrap">${seznam(t.propadlici)}</div></div>
+        <div class="dl-cesko-blok">
+            <div class="dl-cesko-hlava">🇨🇿 České otázky · SK Slavia Praha</div>
+            <div class="dl-view-radek">Kam Slavia dojde: <b>${t.cech || '–'}</b></div>
+            <div class="dl-view-radek">Umístění v tabulce: <b>${t.slavia_misto ?? '–'}</b></div>
+            <div class="dl-view-radek">Počet bodů: <b>${t.slavia_body ?? '–'}</b></div>
+            <div class="dl-view-radek">Vstřelené góly: <b>${t.slavia_goly ?? '–'}</b></div>
+        </div>`;
+}
+function zobrazDlTip2(ob) {
+    const t = mujDl?.tip2 || {};
+    if (!Object.keys(t).length) { ob.innerHTML = '<div class="dl-prazdno">🏆 Cesta k titulu — dlouhodobku sis nevyplnil.</div>'; return; }
+    const chip = x => `<span class="dl-view-chip">${x}</span>`;
+    const seznam = arr => (arr && arr.length) ? arr.map(chip).join('') : '<i style="opacity:.5;">–</i>';
+    ob.innerHTML = `
+        <h2 style="color:var(--gold); margin-top:0;">🏆 Cesta k titulu <span style="font-size:.55em; opacity:.6; font-weight:600;">jen zobrazení</span></h2>
+        <div class="dl-sekce"><h3>Čtvrtfinalisté</h3><div class="dl-view-wrap">${seznam(t.qf)}</div></div>
+        <div class="dl-sekce"><h3>Semifinalisté</h3><div class="dl-view-wrap">${seznam(t.sf)}</div></div>
+        <div class="dl-sekce"><h3>Finalisté</h3><div class="dl-view-wrap">${seznam(t.finale)}</div></div>
+        <div class="dl-sekce"><h3>🏆 Vítěz</h3><div class="dl-view-wrap">${t.vitez ? `<span class="dl-view-chip vitez">${t.vitez}</span>` : '<i style="opacity:.5;">–</i>'}</div></div>`;
+}
+
 function otevriDl(faze) {
     if (!mojeId) return alert('Nejdřív se přihlas na hlavní stránce.');
     // Schovej klubový odznak v rohu – překrýval by nadpis dlouhodobky
@@ -2117,7 +2154,7 @@ function otevriDl(faze) {
     if (faze === 1) {
         if ((stav.tymy || []).length < 36) return;
         const d1 = stav.deadline_tip1 ? new Date(stav.deadline_tip1) : null;
-        if (d1 && Date.now() > d1.getTime()) return;
+        if (d1 && Date.now() > d1.getTime()) { zobrazDlTip1(ob); return; }
         const t = mujDl?.tip1 || {};
         vyber.top8 = [...(t.top8 || [])];
         vyber.propadlici = [...(t.propadlici || [])];
@@ -2150,7 +2187,7 @@ function otevriDl(faze) {
     } else {
         if ((stav.bracket_r16 || []).length < 8) return;
         const d2 = stav.deadline_tip2 ? new Date(stav.deadline_tip2) : null;
-        if (d2 && Date.now() > d2.getTime()) return;
+        if (d2 && Date.now() > d2.getTime()) { zobrazDlTip2(ob); return; }
         // Rekonstrukce pavouka z uloženého tipu (pokud existuje a sedí na aktuální páry)
         const t = mujDl?.tip2 || {};
         const r16 = stav.bracket_r16 || [];
