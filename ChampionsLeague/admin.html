@@ -178,6 +178,9 @@ async function init() {
         <div class="karta">
             <h2>💰 Startovné (200 Kč)</h2>
             <div id="seznamDl">Načítám…</div>
+            <h3 style="margin:18px 0 8px; font-size:.95em; opacity:.85;">🎟️ Hráči bez dlouhodobky (nováčci)</h3>
+            <div style="font-size:.78em; opacity:.6; margin-bottom:8px;">Kdo tipuje zápasy, ale nemá dlouhodobku (naskočil po uzávěrce). Označením zaplaceno je zařadíš do turnaje.</div>
+            <div id="seznamBezDl">—</div>
         </div>
 
         <div class="karta">
@@ -918,6 +921,31 @@ async function nactiDlouhodobe() {
             <button class="btn btn-mini" style="background:${r.zaplaceno ? 'var(--green)' : 'var(--red)'}; color:#fff; margin-left:10px;"
                 onclick="togglePaid('${r.user_id}', ${r.zaplaceno})">${r.zaplaceno ? '✅ zaplaceno' : '❌ nezaplaceno'}</button>
         </div>`).join('') || '<div style="opacity:.5;">Zatím nikdo nepodal dlouhodobý tip.</div>';
+
+    // Hráči bez dlouhodobky, kteří ale tipují (nováčci po uzávěrce)
+    const box = document.getElementById('seznamBezDl');
+    if (box) {
+        const [hR, tR] = await Promise.all([
+            sb.from('hraci').select('user_id, jmeno'),
+            sb.from('cl_tipy_zapasy').select('user_id')
+        ]);
+        const maDl = new Set((dl || []).map(r => r.user_id));
+        const tipoval = new Set((tR.data || []).map(t => t.user_id));
+        const bezDl = (hR.data || []).filter(h => tipoval.has(h.user_id) && !maDl.has(h.user_id)).sort((a, b) => (a.jmeno || '').localeCompare(b.jmeno || ''));
+        box.innerHTML = bezDl.length ? bezDl.map(h => `
+            <div class="dl-radek">
+                <b>${h.jmeno || '(bez jména)'}</b> <span style="opacity:.55; font-size:.85em;">bez dlouhodobky</span>
+                <button class="btn btn-mini" style="background:var(--green); color:#fff; margin-left:10px;"
+                    onclick="pridejZaplaceno('${h.user_id}', '${(h.jmeno || '').replace(/'/g, "\\'")}')">💰 Označit zaplaceno</button>
+            </div>`).join('') : '<div style="opacity:.5;">Nikdo takový – všichni hrající mají dlouhodobku.</div>';
+    }
+}
+
+async function pridejZaplaceno(uid, jmeno) {
+    if (!confirm('Přidat hráče „' + jmeno + '" do turnaje jako ZAPLACENO (bez dlouhodobky)?')) return;
+    const { error } = await sb.from('cl_dlouhodobe').insert({ user_id: uid, jmeno: jmeno, zaplaceno: true, tip1: {}, tip2: {}, body1: 0, body2: 0 });
+    if (error) { alert('Chyba: ' + error.message); return; }
+    nactiDlouhodobe();
 }
 
 async function togglePaid(uid, curr) {
