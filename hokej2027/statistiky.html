@@ -241,12 +241,14 @@ function vykresli(elId, list, klic, fmt, sub, korunka = true) {
 }
 
 async function load() {
-    const [zR, sR, stR, dlR, avR] = await Promise.all([
+    const [zR, sR, stR, dlR, avR, bR, btR] = await Promise.all([
         sb.from('hokej27_zapasy').select('*'),
         sb.from('hokej27_sazky').select('*'),
         sb.from('hokej27_stav').select('fond_korekce').eq('id', 1).maybeSingle(),
         sb.from('hokej27_dlouhodobe').select('user_id', { count: 'exact', head: true }).eq('zaplaceno', true),
-        sb.from('hraci').select('user_id, avatar')
+        sb.from('hraci').select('user_id, avatar'),
+        sb.from('hokej27_bonus').select('*'),
+        sb.from('hokej27_bonus_tipy').select('*')
     ]);
     const fondKorekce = Number(stR?.data?.fond_korekce || 0);
     const zaplaceneDlouhodobky = dlR?.count || 0;
@@ -254,6 +256,13 @@ async function load() {
     window._avatary = {};
     (avR?.data || []).forEach(h => { if (h.avatar) window._avatary[h.user_id] = h.avatar; });
     const stats = spocitejStatistiky(zR.data || [], sR.data || [], fondKorekce, zaplaceneDlouhodobky);
+
+    // 🎯 Bonus dne – přičti body do Indexu (jen vyhodnocené bonusy, kdo trefil správnou odpověď)
+    const bSpravna = {};
+    (bR?.data || []).forEach(b => { if (b.vyhodnoceno && b.spravna != null) bSpravna[b.id] = { spravna: b.spravna, body: b.body }; });
+    const bonusMap = {};
+    (btR?.data || []).forEach(t => { const b = bSpravna[t.bonus_id]; if (b && t.odpoved === b.spravna) bonusMap[t.user_id] = (bonusMap[t.user_id] || 0) + b.body; });
+    stats.hraci.forEach(h => { if (bonusMap[h.user_id]) { h.nb = (h.nb || 0) + bonusMap[h.user_id]; h.bonusBody = bonusMap[h.user_id]; } });
 
     // Fond + medaile 50/30/20
     document.getElementById('fondCastka').textContent = stats.fond + ' Kč';
