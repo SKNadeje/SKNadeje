@@ -330,6 +330,17 @@ async function load() {
     const stats = spocitejStatistiky(zR.data || [], sR.data || []);
     const h = stats.hraci.find(x => x.user_id === uid);
 
+    // 🎯 Bonus dne – přičti body i na profilu (ať sedí s Indexem)
+    try {
+        const [_bR, _btR] = await Promise.all([
+            sb.from('hokej27_bonus').select('id, spravna, body, vyhodnoceno'),
+            sb.from('hokej27_bonus_tipy').select('bonus_id, odpoved').eq('user_id', uid)
+        ]);
+        const _bSpr = {}; (_bR.data || []).forEach(b => { if (b.vyhodnoceno && b.spravna != null) _bSpr[b.id] = { spravna: b.spravna, body: b.body }; });
+        let _bonusBody = 0; (_btR.data || []).forEach(t => { const b = _bSpr[t.bonus_id]; if (b && t.odpoved === b.spravna) _bonusBody += b.body; });
+        if (h && _bonusBody) { h.nb = (h.nb || 0) + _bonusBody; h.bonusBody = _bonusBody; }
+    } catch (e) {}
+
     // 👛 Peněženka a 🏒 avatar – načti VŽDY (i před začátkem turnaje, když hráč ještě nesázel)
     if (mojeId && uid === mojeId) {
         const { data: mujHrac } = await sb.from('hraci').select('penezenka').eq('user_id', uid).maybeSingle();
