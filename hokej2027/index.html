@@ -801,6 +801,8 @@
 .bonus-vysl { width:100%; margin-top:10px; font-weight:900; }
 .bonus-vysl.ok { color:#2ecc71; }
 .bonus-vysl.ne { color:#e74c3c; }
+.zolik-toggle { display:flex; align-items:center; gap:8px; justify-content:center; margin:12px 0; font-weight:800; color:var(--gold); cursor:pointer; font-size:.88em; }
+.zolik-toggle input { width:18px; height:18px; accent-color:var(--gold); cursor:pointer; }
 </style>
 <script>
 // 🎨 MOTIVY – aplikuj uložený motiv co nejdřív (před vykreslením)
@@ -1291,7 +1293,7 @@ function renderDlouhodoby(now) {
 
     if (mujDlouhodoby) {
         const t = mujDlouhodoby.tip || {};
-        stavEl.innerHTML = `<div style="background:rgba(var(--gold-rgb), 0.08); border:1px solid rgba(var(--gold-rgb), 0.25); border-radius:12px; padding:12px; text-align:left; line-height:1.7;">
+        stavEl.innerHTML = `<div style="background:rgba(var(--gold-rgb), 0.08); border:1px solid rgba(var(--gold-rgb), 0.25); border-radius:12px; padding:12px; text-align:left; line-height:1.7;">${zavreno ? '<div style="color:var(--neon); font-weight:800; margin-bottom:8px; letter-spacing:.5px;">🔒 Tvůj uzamčený tip (jen zobrazení)</div>' : ''}
             🅰️ ${t.vitezA || '–'} &nbsp; 🅱️ ${t.vitezB || '–'} &nbsp; 🏆 <b>${t.vitezTurnaje || '–'}</b><br>
             🎯 ${t.vitezKB || '–'} &nbsp;·&nbsp; 🥅 ${t.allstar?.g || '–'} · 🛡️ ${t.allstar?.d1 || '–'}, ${t.allstar?.d2 || '–'}<br>
             ⚔️ ${t.allstar?.u1 || '–'}, ${t.allstar?.u2 || '–'}, ${t.allstar?.u3 || '–'}
@@ -1421,7 +1423,7 @@ function renderZapasy(now) {
             <div id="detail-${m.id}" class="details" onclick="event.stopPropagation()">
                 ${isEvaluated && (m.strelci||[]).length ? `<div style="font-size:0.8em; opacity:0.6; margin-bottom:15px; text-align:center;">Střelci zápasu: ${(m.strelci||[]).join(', ')}</div>` : ''}
                ${(!isClosed && !isEvaluated) ? (mojeSazka ? `
-                    <div style="text-align:center; color:#27ae60; font-weight:900; margin-bottom:15px;">✅ Tvůj tip: ${mojeSazka.skore} + ${mojeSazka.strelec || 'bez střelce'}</div>
+                    <div style="text-align:center; color:#27ae60; font-weight:900; margin-bottom:15px;">✅ Tvůj tip: ${mojeSazka.skore} + ${mojeSazka.strelec || 'bez střelce'}${mojeSazka.joker ? ' <span style="color:var(--gold);">🃏 ŽOLÍK</span>' : ''}</div>
                     <label class="input-label" style="text-align:center;">Uprav tip (do začátku zápasu)</label>
                     <div class="score-row">
                         <div class="score-input-container"><input type="number" id="scD-${m.id}" class="score-input" value="${mojeSazka.skore.split(':')[0]}" min="0"></div>
@@ -1433,6 +1435,7 @@ function renderZapasy(now) {
                         <label class="input-label">Střelec gólu</label>
                         <input type="text" id="striker-${m.id}" class="input-field" value="${mojeSazka.strelec || ''}" placeholder="Klikni a vyber střelce" readonly onclick="vyberStrelce(${m.id})" style="cursor:pointer;">
                     </div>
+                    <label class="zolik-toggle"><input type="checkbox" id="joker-${m.id}" ${mojeSazka && mojeSazka.joker ? 'checked' : ''} onchange="toggleZolik(${m.id})"> 🃏 Žolík <span style="opacity:.7; font-weight:600;">(2× body · max 3 za turnaj)</span></label>
                     <button class="btn-add-ticket" onclick="actionUpdateBet(${m.id})">💾 ULOŽIT ZMĚNU TIPU</button>
                 ` : `
                     <label class="input-label" style="text-align:center;">Přesný výsledek (po 60 min.)</label>
@@ -1447,6 +1450,7 @@ function renderZapasy(now) {
                         <input type="text" id="striker-${m.id}" class="input-field" placeholder="Klikni a vyber střelce" readonly onclick="vyberStrelce(${m.id})" style="cursor:pointer;">
                     </div>
                     <div style="text-align:center; font-size:0.8em; opacity:0.6; margin:12px 0;">🙈 Tipy jsou před ostatními skryté až do začátku zápasu.</div>
+                    <label class="zolik-toggle"><input type="checkbox" id="joker-${m.id}" onchange="toggleZolik(${m.id})"> 🃏 Žolík <span style="opacity:.7; font-weight:600;">(2× body · max 3 za turnaj)</span></label>
                     <button class="btn-add-ticket" onclick="actionAddToTicket(${m.id}, '${m.domaci} vs ${m.hoste}')">PŘIDAT NA TIKET (${VKLAD_ZAPAS} Kč)</button>
                 `) : (!isEvaluated ? `<div style="text-align:center; color:var(--neon); font-weight:900; letter-spacing:1px; margin-bottom:20px;">SÁZKY UZAVŘENY</div>` : '')}
                 <div id="bets-list-${m.id}" style="margin-top:30px;"></div>
@@ -1515,8 +1519,9 @@ async function actionUpdateBet(id) {
         const co = [dupSkore ? 'tento výsledek' : null, dupStrelec ? 'tohoto střelce' : null].filter(Boolean).join(' i ');
         if (!confirm(`⚠️ Pozor: ${co} už někdo tipuje. Při výhře byste se o bank dělili. Opravdu pokračovat?`)) return;
     }
+    const joker = document.getElementById(`joker-${id}`)?.checked || false;
     const { error } = await sb.from('hokej27_sazky')
-        .update({ skore, strelec, skryt })
+        .update({ skore, strelec, skryt, joker })
         .eq('zapas_id', id).eq('user_id', currentUserId);
     if (error) return alert('Změna se nepovedla (zápas už možná začal): ' + error.message);
     alert('Tip upraven! ✅');
@@ -1526,6 +1531,21 @@ async function actionUpdateBet(id) {
 function uiToggleMatch(id) {
     const el = document.getElementById(`detail-${id}`);
     if (el) el.classList.toggle('open');
+}
+
+// ---------- ŽOLÍK ----------
+const MAX_ZOLIK = 3;
+function pocetZoliku(krome) {
+    const vSazkach = sazkyCache.filter(s => s.user_id === currentUserId && s.joker && s.zapas_id !== krome).length;
+    const vKosiku = Object.entries(localCart).filter(([id, c]) => c.joker && +id !== krome).length;
+    return vSazkach + vKosiku;
+}
+function toggleZolik(id) {
+    const cb = document.getElementById('joker-' + id);
+    if (cb && cb.checked && pocetZoliku(id) >= MAX_ZOLIK) {
+        cb.checked = false;
+        alert('🃏 Máš vyčerpané všechny ' + MAX_ZOLIK + ' žolíky za turnaj.\nNejdřív žolíka odeber u jiného tipu.');
+    }
 }
 
 // ---------- KOŠÍK ----------
@@ -1543,7 +1563,8 @@ function actionAddToTicket(id, nazev) {
         const co = [dupSkore ? 'tento výsledek' : null, dupStrelec ? 'tohoto střelce' : null].filter(Boolean).join(' i ');
         if (!confirm(`⚠️ Pozor: ${co} už někdo tipuje. Při výhře byste se o bank dělili. Opravdu pokračovat?`)) return;
     }
-    localCart[id] = { nazev, skore, strelec, skryt };
+    const joker = document.getElementById(`joker-${id}`)?.checked || false;
+    localCart[id] = { nazev, skore, strelec, skryt, joker };
     uiUpdateFab();
     uiToggleMatch(id);
 }
@@ -1555,7 +1576,7 @@ function uiUpdateFab() {
     document.getElementById('slipCount').textContent = n + '×';
     document.getElementById('slipItems').innerHTML = Object.entries(localCart).map(([id, c]) => `
         <div class="slip-item">
-            <div><b>${c.nazev}</b><br><span style="opacity:.6;">${c.skore}${c.strelec ? ' + ' + c.strelec : ''}</span></div>
+            <div><b>${c.nazev}</b><br><span style="opacity:.6;">${c.skore}${c.strelec ? ' + ' + c.strelec : ''}${c.joker ? ' 🃏' : ''}</span></div>
             <span class="slip-del" onclick="delete localCart[${id}]; uiUpdateFab();">🗑</span>
         </div>`).join('');
     document.getElementById('slipTotal').textContent = (n * VKLAD_ZAPAS) + ' Kč';
@@ -1721,7 +1742,7 @@ async function actionSendTicket() {
     const jeZPenezenky = (metoda === 'penezenka');
     const rows = items.map(([id, c]) => ({
         zapas_id: +id, user_id: currentUserId, jmeno: currentUser,
-        skore: c.skore, strelec: c.strelec, skryt: c.skryt,
+        skore: c.skore, strelec: c.strelec, skryt: c.skryt, joker: c.joker || false,
         zaplaceno: jeZPenezenky
     }));
     const { error } = await sb.from('hokej27_sazky').insert(rows);
