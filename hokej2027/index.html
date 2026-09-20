@@ -789,6 +789,18 @@
 .kostka-btn:hover { border-color:var(--neon); }
 .kostka-roll { animation: kostkaRoll .5s ease; }
 @keyframes kostkaRoll { 0%{transform:rotate(0)} 50%{transform:rotate(200deg) scale(1.25)} 100%{transform:rotate(360deg)} }
+.bonus-blok { background:var(--card-bg, rgba(255,255,255,.04)); border:1px solid var(--card-border, rgba(255,255,255,.12)); border-left:4px solid var(--gold); border-radius:14px; padding:16px; margin-bottom:14px; }
+.bonus-otazka { font-weight:900; font-size:1.05em; margin-bottom:4px; }
+.bonus-body-info { font-size:.78em; opacity:.65; margin-bottom:12px; }
+.bonus-opts { display:flex; flex-wrap:wrap; gap:8px; }
+.bonus-opt { padding:9px 16px; border-radius:100px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.05); font-size:.9em; font-weight:700; }
+.bonus-opt.klik { cursor:pointer; font-family:inherit; color:var(--text); transition:all .15s; }
+.bonus-opt.klik:hover { border-color:var(--neon); }
+.bonus-opt.moje { background:rgba(39,174,96,.2); border-color:#27ae60; color:#2ecc71; }
+.bonus-opt.spravna { background:rgba(39,174,96,.25); border-color:#27ae60; color:#2ecc71; }
+.bonus-vysl { width:100%; margin-top:10px; font-weight:900; }
+.bonus-vysl.ok { color:#2ecc71; }
+.bonus-vysl.ne { color:#e74c3c; }
 </style>
 <script>
 // 🎨 MOTIVY – aplikuj uložený motiv co nejdřív (před vykreslením)
@@ -901,6 +913,7 @@ document.addEventListener('click', function(e) {
         <button id="fltr-aktivni" class="zapas-fltr on" onclick="prepniZapasy('aktivni')">🟢 Aktivní</button>
         <button id="fltr-vyhodnocene" class="zapas-fltr" onclick="prepniZapasy('vyhodnocene')">✅ Vyhodnocené</button>
         <button id="fltr-dlouhodobe" class="zapas-fltr" onclick="prepniZapasy('dlouhodobe')">⭐ Dlouhodobé</button>
+        <button id="fltr-bonus" class="zapas-fltr" onclick="prepniZapasy('bonus')">🎯 Bonus dne</button>
     </div>
 
     <!-- DLOUHODOBÝ TIP (zobrazuje se jen ve filtru Dlouhodobé) -->
@@ -916,6 +929,7 @@ document.addEventListener('click', function(e) {
         <button class="btn-add-ticket" style="background:linear-gradient(135deg,var(--gold),#b8901e); margin-top:15px;" onclick="uiOpenDlouhodoby()" id="btnDlouhodoby">VYPLNIT DLOUHODOBÝ TIP</button>
     </div>
 
+    <div id="bonusCard" style="display:none;"></div>
     <div id="matchList"></div>
 
   <div id="miniSlip">
@@ -1297,13 +1311,57 @@ function prepniZapasy(rezim) {
     document.getElementById('fltr-aktivni').classList.toggle('on', rezim === 'aktivni');
     document.getElementById('fltr-vyhodnocene').classList.toggle('on', rezim === 'vyhodnocene');
     document.getElementById('fltr-dlouhodobe').classList.toggle('on', rezim === 'dlouhodobe');
+    const fb = document.getElementById('fltr-bonus'); if (fb) fb.classList.toggle('on', rezim === 'bonus');
 
-    // Dlouhodobá karta jen ve svém režimu, seznam zápasů jen v ostatních
     const jeDlouhodobe = rezim === 'dlouhodobe';
+    const jeBonus = rezim === 'bonus';
     document.getElementById('dlouhodobyCard').style.display = jeDlouhodobe ? 'block' : 'none';
-    document.getElementById('matchList').style.display = jeDlouhodobe ? 'none' : 'block';
+    document.getElementById('bonusCard').style.display = jeBonus ? 'block' : 'none';
+    document.getElementById('matchList').style.display = (jeDlouhodobe || jeBonus) ? 'none' : 'block';
 
-    if (!jeDlouhodobe) renderZapasy(Date.now());
+    if (jeBonus) renderBonus();
+    else if (!jeDlouhodobe) renderZapasy(Date.now());
+}
+
+async function renderBonus() {
+    const box = document.getElementById('bonusCard');
+    box.innerHTML = '<div style="opacity:.5; padding:20px; text-align:center;">Načítám bonusy…</div>';
+    const [{ data: bonusy }, { data: mojeTipy }] = await Promise.all([
+        sb.from('hokej27_bonus').select('*').order('id', { ascending: false }),
+        sb.from('hokej27_bonus_tipy').select('*').eq('user_id', currentUserId)
+    ]);
+    if (!bonusy || !bonusy.length) { box.innerHTML = '<div style="opacity:.5; padding:26px; text-align:center;">🎯 Zatím žádný bonus. Admin ho brzy vypíše!</div>'; return; }
+    const tipMap = {}; (mojeTipy || []).forEach(t => tipMap[t.bonus_id] = t.odpoved);
+    const now = Date.now();
+    box.innerHTML = bonusy.map(b => {
+        const muj = tipMap[b.id];
+        const poUzaverce = b.deadline && now > new Date(b.deadline).getTime();
+        const moznosti = b.moznosti || [];
+        let telo;
+        if (b.vyhodnoceno) {
+            telo = moznosti.map(m => {
+                const spr = m === b.spravna, mjM = m === muj;
+                return `<div class="bonus-opt ${spr ? 'spravna' : ''} ${mjM ? 'moje' : ''}">${m}${spr ? ' ✅' : ''}${mjM && !spr ? ' ← tvůj' : ''}</div>`;
+            }).join('');
+            const ok = muj && muj === b.spravna;
+            telo += `<div class="bonus-vysl ${ok ? 'ok' : 'ne'}">${muj ? (ok ? '🎉 Trefa! +' + b.body + ' b.' : '❌ Netrefeno') : '— netipoval jsi'}</div>`;
+        } else if (poUzaverce || !b.aktivni) {
+            telo = moznosti.map(m => `<div class="bonus-opt ${m === muj ? 'moje' : ''}">${m}${m === muj ? ' ✔' : ''}</div>`).join('');
+            telo += `<div style="font-size:.8em; opacity:.6; margin-top:8px;">⏳ Tipování uzavřeno${muj ? '' : ' — netipoval jsi'}. Čeká se na vyhodnocení.</div>`;
+        } else {
+            telo = moznosti.map(m => `<button class="bonus-opt klik ${m === muj ? 'moje' : ''}" data-m="${m.replace(/"/g,'&quot;')}" onclick="ulozBonusTip(${b.id}, this.dataset.m)">${m}${m === muj ? ' ✔' : ''}</button>`).join('');
+            if (muj) telo += `<div style="font-size:.8em; color:#27ae60; margin-top:8px;">✅ Tvůj tip: ${muj} — můžeš změnit do uzávěrky</div>`;
+        }
+        const uzav = b.deadline && !b.vyhodnoceno ? ' · uzávěrka ' + new Date(b.deadline).toLocaleString('cs-CZ', {day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+        return `<div class="bonus-blok"><div class="bonus-otazka">🎯 ${b.otazka}</div><div class="bonus-body-info">${b.body} bodů do turnaje${uzav}</div><div class="bonus-opts">${telo}</div></div>`;
+    }).join('');
+}
+
+async function ulozBonusTip(bonusId, odpoved) {
+    if (!currentUserId) { alert('Nejdřív se přihlas.'); return; }
+    const { error } = await sb.from('hokej27_bonus_tipy').upsert({ bonus_id: bonusId, user_id: currentUserId, jmeno: currentUser, odpoved }, { onConflict: 'bonus_id,user_id' });
+    if (error) { alert('Chyba: ' + error.message); return; }
+    renderBonus();
 }
 
 function renderZapasy(now) {
