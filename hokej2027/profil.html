@@ -242,6 +242,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
             <div class="stat"><div class="v" id="hNB">–</div><div class="l">NB bodů</div></div>
             <div class="stat"><div class="v" id="hVyhry">–</div><div class="l">Výhry</div></div>
             <div class="stat"><div class="v" id="hUcast">–</div><div class="l">Účast</div></div>
+            <div class="stat"><div class="v" id="hZolik">–</div><div class="l">🃏 Zbývá žolíků</div></div>
         </div>
     </div>
 
@@ -364,6 +365,9 @@ async function load() {
     document.getElementById('hHlaska').textContent = `„${hlaska}"`;
     document.getElementById('hCislo').textContent = h.tipu;
     document.getElementById('hNB').textContent = h.nb;
+    const _mojeSazky = (sR.data || []).filter(x => x.user_id === uid);
+    const _zolikUsed = _mojeSazky.filter(x => x.joker).length;
+    const _zEl = document.getElementById('hZolik'); if (_zEl) _zEl.textContent = Math.max(0, 3 - _zolikUsed) + '/3';
     document.getElementById('hVyhry').textContent = h.vyhry + ' Kč';
     document.getElementById('hUcast').textContent = h.ucast + '%';
 
@@ -436,36 +440,52 @@ async function load() {
         pKarta(pozice.trendy, 'Experti<br>trendů', h.trendy + ' pts');
 
     // HISTORIE
-    document.getElementById('histPocet').textContent = h.historie.length;
-    document.getElementById('historie').innerHTML = h.historie.length
-        ? h.historie.map((x, i) => {
-            const s = hSloz(x);
-            const bSkore = x.hit_skore ? 5 : 0;
-            const bStrelec = x.hit_strelec ? 3 : 0;
-            const bRozdil = s.rozdil ? 1 : 0;
-            const bPocet = s.pocet ? 1 : 0;
-            const bTrend = Math.max(0, (x.nb || 0) - bSkore - bStrelec - bRozdil - bPocet);
-            const rr = (naz, z) => `<div class="rr"><span>${naz}</span><b class="${z ? 'ok' : 'no'}">${z ? '+' + z + ' NB' : '—'}</b></div>`;
-            const ik = formaIkona(x, s).ik;
+    // Historie z vlastních sázek: vyhodnocené (s rozpadem) i čekající, nejnovější první
+    const _zMap = {}; (zR.data || []).forEach(z => _zMap[z.id] = z);
+    const mojeHistorie = (sR.data || []).filter(x => x.user_id === uid)
+        .map(x => ({ s: x, z: _zMap[x.zapas_id] })).filter(o => o.z)
+        .sort((a, b) => new Date(b.z.deadline || 0) - new Date(a.z.deadline || 0));
+    document.getElementById('histPocet').textContent = mojeHistorie.length;
+    document.getElementById('historie').innerHTML = mojeHistorie.length
+        ? mojeHistorie.map((o, i) => {
+            const s = o.s, z = o.z, nazev = `${z.domaci} vs ${z.hoste}`;
+            if (z.status !== 'vyhodnoceno') {
+                return `<div class="hist">
+                    <span class="ikona">⏳</span>
+                    <div class="telo">
+                        <div class="z">${nazev}</div>
+                        <div class="t">Tip: ${s.skore}${s.joker ? ' 🃏' : ''} <span style="opacity:.5; font-weight:600;">· čeká na vyhodnocení</span></div>
+                        ${s.strelec ? `<div class="s">🎯 ${s.strelec}</div>` : ''}
+                    </div>
+                    <div class="nb" style="opacity:.4;">?</div>
+                </div>`;
+            }
+            const base = s.joker ? (s.nb || 0) / 2 : (s.nb || 0);
+            const bSkore = s.hit_skore ? 5 : 0, bStrelec = s.hit_strelec ? 3 : 0;
+            const bRozdil = s.hit_rozdil ? 1 : 0, bPocet = s.hit_pocet ? 1 : 0;
+            const bTrend = Math.max(0, base - bSkore - bStrelec - bRozdil - bPocet);
+            const rr = (naz, v) => `<div class="rr"><span>${naz}</span><b class="${v ? 'ok' : 'no'}">${v ? '+' + v + ' NB' : '—'}</b></div>`;
+            const ik = (s.nb || 0) === 0 ? '❌' : (s.hit_skore ? '🏆' : (s.hit_strelec ? '🎯' : (s.hit_trend ? '✅' : '🟡')));
             return `<div class="hist klik" onclick="prepniRozpad(${i})">
                 <span class="ikona">${ik}</span>
                 <div class="telo">
-                    <div class="z">${x.zapas}</div>
-                    <div class="t">Tip: ${x.tip} | Výsledek: ${x.vysledek} <span class="sipka">▾</span></div>
-                    ${x.strelec ? `<div class="s">🎯 ${x.strelec}${x.hit_strelec ? ' <span class="trefil">(TREFIL!)</span>' : ''}</div>` : ''}
+                    <div class="z">${nazev}</div>
+                    <div class="t">Tip: ${s.skore} | Výsledek: ${z.vysledek_d}:${z.vysledek_h}${s.joker ? ' 🃏' : ''} <span class="sipka">▾</span></div>
+                    ${s.strelec ? `<div class="s">🎯 ${s.strelec}${s.hit_strelec ? ' <span class="trefil">(TREFIL!)</span>' : ''}</div>` : ''}
                     <div class="rozpad" id="rozpad-${i}">
                         ${rr('🏆 Přesné skóre', bSkore)}
-                        ${x.strelec ? rr('🎯 Střelec', bStrelec) : ''}
+                        ${s.strelec ? rr('🎯 Střelec', bStrelec) : ''}
                         ${rr('↗️ Trend', bTrend)}
                         ${rr('➖ Rozdíl skóre', bRozdil)}
                         ${rr('🔢 Počet branek', bPocet)}
-                        <div class="rr celkem"><span>Celkem</span><b>${x.nb || 0} NB</b></div>
+                        ${s.joker ? `<div class="rr"><span>🃏 Žolík</span><b class="ok">× 2</b></div>` : ''}
+                        <div class="rr celkem"><span>Celkem</span><b>${s.nb || 0} NB</b></div>
                     </div>
                 </div>
-                <div class="nb">${x.nb > 0 ? '+' : ''}${x.nb} NB${x.vyhra > 0 ? `<small>💰 ${x.vyhra} Kč</small>` : ''}</div>
+                <div class="nb">${s.nb > 0 ? '+' : ''}${s.nb || 0} NB${s.vyhra_kc > 0 ? `<small>💰 ${s.vyhra_kc} Kč</small>` : ''}</div>
             </div>`;
         }).join('')
-        : '<div class="prazdno">Zatím žádné vyhodnocené tipy.</div>';
+        : '<div class="prazdno">Zatím žádné tipy.</div>';
 
     // ===== ODZNAKY (hokej) =====
     const odz = [
