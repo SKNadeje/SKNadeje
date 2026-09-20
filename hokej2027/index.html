@@ -785,6 +785,10 @@
 #miniSlip .slip-send { background: linear-gradient(135deg, var(--neon), #0090aa); color: #05121a; border: none; border-radius: 10px; padding: 10px 18px; font-weight: 900; font-size: .75em; letter-spacing: 1px; cursor: pointer; font-family: inherit; text-transform: uppercase; box-shadow: 0 4px 14px rgba(var(--neon-rgb), .35); }
 /* pojistka: modal skrytý, dokud ho JS neotevře */
 #cartModal { display: none; }
+.kostka-btn { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); border-radius:12px; font-size:1.5em; cursor:pointer; padding:2px 12px; line-height:1; align-self:center; }
+.kostka-btn:hover { border-color:var(--neon); }
+.kostka-roll { animation: kostkaRoll .5s ease; }
+@keyframes kostkaRoll { 0%{transform:rotate(0)} 50%{transform:rotate(200deg) scale(1.25)} 100%{transform:rotate(360deg)} }
 </style>
 <script>
 // 🎨 MOTIVY – aplikuj uložený motiv co nejdřív (před vykreslením)
@@ -1365,6 +1369,7 @@ function renderZapasy(now) {
                         <div class="score-input-container"><input type="number" id="scD-${m.id}" class="score-input" value="${mojeSazka.skore.split(':')[0]}" min="0"></div>
                         <span style="font-size:2.5em; font-weight:900; color:var(--neon); margin-top:-5px;">:</span>
                         <div class="score-input-container"><input type="number" id="scH-${m.id}" class="score-input" value="${mojeSazka.skore.split(':')[1]}" min="0"></div>
+                        <button type="button" class="kostka-btn" onclick="hodKostkou(${m.id})" title="Náhodné skóre">🎲</button>
                     </div>
                     <div class="input-group">
                         <label class="input-label">Střelec gólu</label>
@@ -1377,6 +1382,7 @@ function renderZapasy(now) {
                         <div class="score-input-container"><input type="number" id="scD-${m.id}" class="score-input" placeholder="0" min="0"></div>
                         <span style="font-size:2.5em; font-weight:900; color:var(--neon); margin-top:-5px;">:</span>
                         <div class="score-input-container"><input type="number" id="scH-${m.id}" class="score-input" placeholder="0" min="0"></div>
+                        <button type="button" class="kostka-btn" onclick="hodKostkou(${m.id})" title="Náhodné skóre">🎲</button>
                     </div>
                     <div class="input-group">
                         <label class="input-label">Střelec gólu</label>
@@ -1610,6 +1616,16 @@ function zavriVyberHrace() {
 }
 
 // Otevře výběr střelce u ZÁPASU – jen 2 týmy zápasu
+function hodKostkou(id) {
+    const D = document.getElementById('scD-' + id), H = document.getElementById('scH-' + id); if (!D || !H) return;
+    const btn = (typeof event !== 'undefined' && event && event.currentTarget) ? event.currentTarget : null;
+    if (btn) btn.classList.add('kostka-roll');
+    let n = 0; const timer = setInterval(() => {
+        D.value = Math.floor(Math.random() * 7); H.value = Math.floor(Math.random() * 7);
+        if (++n >= 8) { clearInterval(timer); const w = [1,2,2,3,3,3,4,4,5]; D.value = w[Math.floor(Math.random()*w.length)]; H.value = w[Math.floor(Math.random()*w.length)]; if (btn) setTimeout(() => btn.classList.remove('kostka-roll'), 220); }
+    }, 55);
+}
+
 function vyberStrelce(matchId) {
     const m = zapasyCache.find(x => x.id === matchId);
     if (!m) return;
