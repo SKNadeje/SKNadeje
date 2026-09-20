@@ -123,6 +123,8 @@ h1 { text-align:center; font-size:1.15em; letter-spacing:3px; color:var(--neon);
 .radek.r3 .poradi { color:#e8965a; }
 .mini { display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,.08); border-radius:6px; padding:1px 7px; margin-right:6px; font-family:'Segoe UI',sans-serif; }
 .prazdno { text-align:center; opacity:.45; padding:18px 0; font-size:.85em; }
+.vyvoj-b { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); color:var(--text); border-radius:8px; padding:5px 12px; font-size:.78em; cursor:pointer; font-family:inherit; }
+.vyvoj-b:hover { border-color:var(--neon); }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('hokej_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -201,6 +203,16 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
         <h2>🧠 Experti (trendy)</h2>
         <div id="lbTrendy"></div>
     </div>
+
+    <div class="blok">
+        <h2>📈 Vývoj bodů</h2>
+        <div id="lbVyvoj"></div>
+    </div>
+
+    <div class="blok">
+        <h2>🎯 Bonus dne</h2>
+        <div id="lbBonus"></div>
+    </div>
 </div>
 
 <script>
@@ -264,6 +276,19 @@ async function load() {
     (btR?.data || []).forEach(t => { const b = bSpravna[t.bonus_id]; if (b && t.odpoved === b.spravna) bonusMap[t.user_id] = (bonusMap[t.user_id] || 0) + b.body; });
     stats.hraci.forEach(h => { if (bonusMap[h.user_id]) { h.nb = (h.nb || 0) + bonusMap[h.user_id]; h.bonusBody = bonusMap[h.user_id]; } });
 
+    // 🎯 Bonus dne sekce (vyhodnocené bonusy + žebříček bonusových bodů)
+    const _bonusBox = document.getElementById('lbBonus');
+    if (_bonusBox) {
+        const _jm = {}; (btR?.data || []).forEach(t => { if (t.jmeno) _jm[t.user_id] = t.jmeno; });
+        const _rady = Object.keys(bonusMap).map(uid => ({ uid, jmeno: _jm[uid] || 'Hráč', body: bonusMap[uid] })).sort((a, b) => b.body - a.body);
+        const _vyh = (bR?.data || []).filter(b => b.vyhodnoceno);
+        let html = '';
+        if (_vyh.length) html += '<div style="margin-bottom:14px;">' + _vyh.map(b => `<div style="font-size:.82em; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.07);"><b>🎯 ${b.otazka}</b><br><span style="opacity:.7;">Správně: <b style="color:#2ecc71;">${b.spravna}</b> &nbsp;·&nbsp; ${b.body} b.</span></div>`).join('') + '</div>';
+        if (_rady.length) html += _rady.map((r, i) => `<div class="radek"><span class="poradi">${i + 1}</span><span class="jmeno" onclick="location.href='profil.html?id=${r.uid}'">${(window._avatary && window._avatary[r.uid]) ? window._avatary[r.uid] + ' ' : ''}${r.jmeno}</span><span style="font-weight:900; color:var(--gold); text-align:right; flex:1;">+${r.body} b.</span></div>`).join('');
+        else html += '<div class="prazdno">Zatím žádné bonusové body. Bonus musí admin vyhodnotit.</div>';
+        _bonusBox.innerHTML = html;
+    }
+
     // Fond + medaile 50/30/20
     document.getElementById('fondCastka').textContent = stats.fond + ' Kč';
     document.getElementById('fondMedaile').innerHTML =
@@ -291,9 +316,44 @@ async function load() {
         h => `${h.trendy} <small>pts</small>`,
         h => `Úspěšnost: ${h.uspTrendy}%  Účast: ${h.ucast}%`);
 
+    // 📈 Vývoj bodů (kumulativní nb po dnech)
+    renderVyvoj(zR.data || [], sR.data || []);
+
     // ⚔️ Rivalové
     await nactiRivaly(stats.hraci);
 }
+
+let _vyvojData = null, _vyvojSkryte = new Set();
+function renderVyvoj(zapasy, sazky) {
+    const box = document.getElementById('lbVyvoj'); if (!box) return;
+    const hotove = zapasy.filter(z => z.status === 'vyhodnoceno' && z.deadline);
+    if (!hotove.length) { box.innerHTML = '<div class="prazdno">Graf se ukáže po prvních vyhodnocených zápasech.</div>'; return; }
+    const denZ = {}; hotove.forEach(z => denZ[z.id] = (z.deadline || '').slice(0, 10));
+    const dny = [...new Set(Object.values(denZ))].sort();
+    const jmena = {}; sazky.forEach(s => { if (denZ[s.zapas_id]) jmena[s.user_id] = s.jmeno; });
+    const bodyDen = {};
+    sazky.forEach(s => { const d = denZ[s.zapas_id]; if (!d) return; if (!bodyDen[s.user_id]) bodyDen[s.user_id] = {}; bodyDen[s.user_id][d] = (bodyDen[s.user_id][d] || 0) + (s.nb || 0); });
+    const keys = Object.keys(jmena);
+    const rady = keys.map((uid, i) => { let sum = 0; const b = dny.map(d => { sum += (bodyDen[uid] && bodyDen[uid][d] || 0); return sum; }); return { uid, jmeno: jmena[uid], b, konec: sum, barva: `hsl(${Math.round(i * 360 / keys.length)},70%,60%)` }; }).sort((a, b) => b.konec - a.konec);
+    _vyvojData = { dny, rady }; _vyvojSkryte = new Set();
+    prekresliVyvoj();
+}
+function prekresliVyvoj() {
+    if (!_vyvojData) return;
+    const box = document.getElementById('lbVyvoj'), { dny, rady } = _vyvojData;
+    const W = 620, H = 300, pl = 38, pr = 12, pt = 14, pb = 24, n = dny.length;
+    const maxB = Math.max(1, ...rady.map(r => r.konec));
+    const px = i => pl + (n <= 1 ? 0 : i / (n - 1)) * (W - pl - pr);
+    const py = v => H - pb - (v / maxB) * (H - pt - pb);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; min-width:440px;">`;
+    for (let g = 0; g <= 4; g++) { const v = maxB * g / 4, y = py(v); svg += `<line x1="${pl}" y1="${y}" x2="${W - pr}" y2="${y}" stroke="rgba(255,255,255,.08)"/><text x="${pl - 5}" y="${y + 3}" text-anchor="end" font-size="9" fill="rgba(255,255,255,.4)">${Math.round(v)}</text>`; }
+    rady.forEach(r => { if (_vyvojSkryte.has(r.uid)) return; const pts = r.b.map((v, i) => `${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(' '); svg += `<polyline points="${pts}" fill="none" stroke="${r.barva}" stroke-width="2" stroke-linejoin="round"/><circle cx="${px(n - 1)}" cy="${py(r.konec)}" r="2.6" fill="${r.barva}"/>`; });
+    svg += '</svg>';
+    const leg = rady.map(r => `<span onclick="vyvojToggle('${r.uid}')" style="cursor:pointer; display:inline-flex; align-items:center; gap:5px; font-size:.78em; padding:3px 8px; border-radius:8px; opacity:${_vyvojSkryte.has(r.uid) ? .35 : 1};"><i style="width:10px;height:10px;border-radius:2px;background:${r.barva};display:inline-block;"></i>${r.jmeno} <b>${r.konec}</b></span>`).join('');
+    box.innerHTML = `<div style="display:flex; gap:6px; margin-bottom:8px;"><button class="vyvoj-b" onclick="vyvojVse(true)">✓ Vše</button><button class="vyvoj-b" onclick="vyvojVse(false)">✕ Nic</button></div><div style="overflow-x:auto;">${svg}</div><div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:10px;">${leg}</div>`;
+}
+function vyvojToggle(uid) { if (_vyvojSkryte.has(uid)) _vyvojSkryte.delete(uid); else _vyvojSkryte.add(uid); prekresliVyvoj(); }
+function vyvojVse(zobraz) { _vyvojSkryte = new Set(zobraz ? [] : (_vyvojData ? _vyvojData.rady.map(r => r.uid) : [])); prekresliVyvoj(); }
 
 let _vsichniHraci = [];
 async function nactiRivaly(hraci) {
