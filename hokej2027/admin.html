@@ -490,7 +490,7 @@ async function loadMatches() {
         div.style.cssText = 'display:block; padding:14px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left;';
         const betRows = ms.map(s => `<div style="font-size:0.85em; opacity:0.9; padding:3px 0; display:flex; align-items:center; gap:6px;">
             <span onclick="toggleZaplaceno(${s.id}, ${s.zaplaceno ? 'true' : 'false'})" style="cursor:pointer;" title="${s.zaplaceno ? 'Zaplaceno – klikni pro zrušení' : 'Nezaplaceno – klikni pro označení'}">${s.zaplaceno ? '✅' : '⏳'}</span>
-            <span style="flex:1;">${s.jmeno}: ${s.skore}${s.strelec ? ' + ' + s.strelec : ''}${s.skryt ? ' 🙈' : ''}${m.status === 'vyhodnoceno' ? ` → +${s.nb} NB${s.vyhra_kc > 0 ? ` 💰${s.vyhra_kc}` : ''}` : ''}</span>
+            <span style="flex:1;">${s.jmeno}: ${s.skore}${s.strelec ? ' + ' + s.strelec : ''}${s.joker ? ' 🃏' : ''}${s.skryt ? ' 🙈' : ''}${m.status === 'vyhodnoceno' ? ` → +${s.nb} NB${s.vyhra_kc > 0 ? ` 💰${s.vyhra_kc}` : ''}` : ''}</span>
             <span onclick="editTip(${s.id}, '${(s.skore || '').replace(/'/g, '')}', '${(s.strelec || '').replace(/'/g, '')}', '${(s.jmeno || '').replace(/'/g, '')}')" style="cursor:pointer; opacity:.6;" title="Upravit tip">✏️</span>
             <span onclick="delTip(${s.id}, '${(s.jmeno || '').replace(/'/g, '')}')" style="cursor:pointer; opacity:.6;" title="Smazat tip">🗑️</span>
         </div>`).join('');
@@ -848,8 +848,9 @@ async function finishEval(mid) {
         const hitRozdil = Math.abs(sD - sH) === Math.abs(finalD - finalH);   // stejný ROZDÍL skóre (ABSOLUTNÍ – i na druhou stranu, jako CL)
         const hitPocet = (sD + sH) === (finalD + finalH);         // stejný počet branek
 
-        const nb = (hitSkore ? 5 : 0) + (hitStrelec ? 3 : 0) + trendNB
+        const zakladNb = (hitSkore ? 5 : 0) + (hitStrelec ? 3 : 0) + trendNB
                  + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
+        const nb = zakladNb * (s.joker ? 2 : 1);   // 🃏 žolík zdvojnásobuje body
         return { ...s, hitSkore, hitStrelec, hitTrend, hitRozdil, hitPocet, trendNB, nb };
     });
 
