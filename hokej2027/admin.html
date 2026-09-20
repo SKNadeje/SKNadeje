@@ -257,6 +257,31 @@ input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { fil
         <div class="collapsible-body" id="secHist"><div id="historyMatches"></div></div>
     </div>
 
+    <!-- 🎯 BONUS DNE -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secBonus')">🎯 BONUS DNE <span class="collapse-arrow">▼</span></div>
+        <div class="collapsible-body" id="secBonus">
+            <h3 style="color:#f1c40f;">Nový bonus</h3>
+            <input type="text" id="bonus-otazka" class="auth-input" placeholder="Otázka (např. Padne v zápase víc než 2,5 branky?)">
+            <div style="font-size:.8em; opacity:.7; margin:6px 0;">Možnosti odpovědí (2–6, prázdné se ignorují):</div>
+            <input type="text" id="bonus-m1" class="auth-input" placeholder="Možnost 1 (např. Ano)">
+            <input type="text" id="bonus-m2" class="auth-input" placeholder="Možnost 2 (např. Ne)">
+            <input type="text" id="bonus-m3" class="auth-input" placeholder="Možnost 3">
+            <input type="text" id="bonus-m4" class="auth-input" placeholder="Možnost 4">
+            <input type="text" id="bonus-m5" class="auth-input" placeholder="Možnost 5">
+            <input type="text" id="bonus-m6" class="auth-input" placeholder="Možnost 6">
+            <input type="number" id="bonus-body" class="auth-input" placeholder="Body za správnou odpověď" value="5" min="1">
+            <label style="display:block; font-size:.8em; opacity:.7; margin:6px 0 2px;">Uzávěrka tipování:</label>
+            <input type="datetime-local" id="bonus-deadline" class="auth-input">
+            <label style="display:flex; align-items:center; gap:8px; margin:10px 0;"><input type="checkbox" id="bonus-notif" checked> Poslat push notifikaci všem hráčům</label>
+            <button class="btn" onclick="zalozBonus()">➕ ZALOŽIT BONUS</button>
+            <div id="bonusMsg" style="margin-top:8px; font-size:.85em;"></div>
+            <hr style="opacity:0.15; margin:20px 0;">
+            <h3 style="color:#f1c40f;">Bonusy & vyhodnocení</h3>
+            <div id="bonusList">Načítám…</div>
+        </div>
+    </div>
+
     <!-- DLOUHODOBÉ TIPY -->
     <div class="card">
         <div class="collapsible-header" onclick="toggleSection('secDl')">⭐ DLOUHODOBÉ TIPY <span class="collapse-arrow">▼</span></div>
@@ -345,6 +370,7 @@ function toggleSection(id) {
     const el = document.getElementById(id);
     el.style.display = '';           // zruš případný starý inline display
     el.classList.toggle('open');
+    if (id === 'secBonus' && el.classList.contains('open')) nactiBonusy();
 }
 
 function ukazVybranyCas() {
@@ -1006,6 +1032,70 @@ async function vyhodnotDlouhodobe() {
     }
     msg('DLOUHODOBÉ TIPY PŘEPOČÍTÁNY! ⭐');
     loadDlouhodobe();
+}
+
+async function zalozBonus() {
+    const msg = document.getElementById('bonusMsg');
+    const otazka = document.getElementById('bonus-otazka').value.trim();
+    const moznosti = [1,2,3,4,5,6].map(i => document.getElementById('bonus-m' + i).value.trim()).filter(Boolean);
+    const body = parseInt(document.getElementById('bonus-body').value) || 0;
+    const deadlineRaw = document.getElementById('bonus-deadline').value;
+    if (!otazka || moznosti.length < 2 || !body) { msg.innerHTML = '<span style="color:#ff4444;">Vyplň otázku, aspoň 2 možnosti a body.</span>'; return; }
+    const deadline = deadlineRaw ? new Date(deadlineRaw).toISOString() : null;
+    msg.innerHTML = '<span style="opacity:.6;">Zakládám…</span>';
+    const { data, error } = await sb.from('hokej27_bonus').insert({ otazka, moznosti, body, deadline, aktivni: true }).select().single();
+    if (error) { msg.innerHTML = '<span style="color:#ff4444;">Chyba: ' + error.message + '</span>'; return; }
+    let notifTxt = '';
+    if (document.getElementById('bonus-notif').checked) {
+        try {
+            const res = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/posli-oznameni', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
+                body: JSON.stringify({ titulek: '🎯 Nový bonus dne!', text: otazka + ' — ' + body + ' bodů do turnaje', url: 'https://sknadeje.cz/hokej2027/index.html', komu: 'vsichni', user_ids: [] })
+            });
+            const d = await res.json(); notifTxt = d.ok ? ' + notifikace odeslána' : ' (notifikace se neodeslala)';
+        } catch (e) { notifTxt = ' (notifikace selhala)'; }
+    }
+    msg.innerHTML = '<span style="color:#27ae60;">✅ Bonus založen' + notifTxt + '!</span>';
+    ['bonus-otazka','bonus-m1','bonus-m2','bonus-m3','bonus-m4','bonus-m5','bonus-m6','bonus-deadline'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('bonus-body').value = '5';
+    nactiBonusy();
+}
+
+async function nactiBonusy() {
+    const box = document.getElementById('bonusList'); if (!box) return;
+    const [{ data: bonusy }, { data: tipy }] = await Promise.all([
+        sb.from('hokej27_bonus').select('*').order('id', { ascending: false }),
+        sb.from('hokej27_bonus_tipy').select('bonus_id, odpoved')
+    ]);
+    if (!bonusy || !bonusy.length) { box.innerHTML = '<div style="opacity:.5;">Zatím žádný bonus.</div>'; return; }
+    box.innerHTML = bonusy.map(b => {
+        const bt = (tipy || []).filter(t => t.bonus_id === b.id);
+        const opce = (b.moznosti || []).map(m => `<option value="${m.replace(/"/g,'&quot;')}" ${b.spravna === m ? 'selected' : ''}>${m}</option>`).join('');
+        return `<div style="border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:12px; margin-bottom:10px;">
+            <div style="font-weight:800;">${b.otazka} <span style="opacity:.6; font-weight:400;">(${b.body} b.)</span></div>
+            <div style="font-size:.8em; opacity:.6; margin:4px 0;">Možnosti: ${(b.moznosti||[]).join(' · ')} · Tipů: ${bt.length}${b.vyhodnoceno ? ' · ✅ vyhodnoceno (správně: ' + b.spravna + ')' : ''}</div>
+            ${!b.vyhodnoceno ? `<div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+                <select id="bonus-spravna-${b.id}" class="auth-input" style="margin:0; flex:1;">${opce}</select>
+                <button class="btn" style="padding:8px 14px; font-size:.85em; white-space:nowrap;" onclick="vyhodnotBonus(${b.id})">Vyhodnotit</button>
+            </div>` : ''}
+            <button class="btn" style="background:#c0392b; padding:6px 12px; font-size:.8em; margin-top:8px;" onclick="smazBonus(${b.id})">🗑 Smazat</button>
+        </div>`;
+    }).join('');
+}
+
+async function vyhodnotBonus(id) {
+    const spravna = document.getElementById('bonus-spravna-' + id).value;
+    if (!confirm('Vyhodnotit se správnou odpovědí „' + spravna + '"? Body se přičtou hráčům do turnaje.')) return;
+    const { error } = await sb.from('hokej27_bonus').update({ spravna, vyhodnoceno: true, aktivni: false }).eq('id', id);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    nactiBonusy();
+}
+
+async function smazBonus(id) {
+    if (!confirm('Smazat bonus i s tipy hráčů?')) return;
+    const { error } = await sb.from('hokej27_bonus').delete().eq('id', id);
+    if (error) { alert('Chyba: ' + error.message); return; }
+    nactiBonusy();
 }
 
 window.addEventListener('DOMContentLoaded', init);
