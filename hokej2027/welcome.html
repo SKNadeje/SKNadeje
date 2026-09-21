@@ -225,8 +225,19 @@ h1 {
 .tisk b { color: #6b5f8a; }
 
 @media (max-width: 420px) {
-    h1 { font-size: 1.45rem; }
+    h1 { font-size: 1.35rem; }
+    .logo-inner { width: min(300px, 62vw); height: min(300px, 62vw); }
+    .info-pasek { gap: 6px; }
+    .info-pasek span { font-size: .62rem; padding: 5px 9px; }
+    .vstup { font-size: .78rem; padding: 13px 26px; letter-spacing: 1px; }
+    body { padding: 18px 12px 42px; }
 }
+.notif-callout {
+    margin: 16px auto 2px; max-width: 380px;
+    background: rgba(255,180,0,.1); border: 1px solid rgba(255,180,0,.45);
+    border-radius: 12px; padding: 11px 14px; font-size: .8rem; line-height: 1.5; color: #ffd98a;
+}
+.notif-callout b { color: #ffb400; }
 
 /* ===== TLAČÍTKO PRAVIDEL ===== */
 .pravidla-btn {
@@ -344,6 +355,8 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
         <span>🌍 16 TÝMŮ</span>
     </div>
 
+    <div class="notif-callout">🔔 <b>Zapni si notifikace!</b> Admin občas vypíše <b>Bonus dne</b> za extra body 🎯 – bez upozornění ho snadno prošvihneš.</div>
+
     <div class="hlaska" id="hlaska"></div>
 
     <a class="vstup" href="index.html">Vstoupit 🏒</a>
@@ -403,8 +416,9 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
         </div>
 
         <div class="pr-sekce">
-            <h3>🔔 Notifikace a chat</h3>
-            <p>Zapni si push notifikace (nový zápas, uzávěrky, zprávy) v centru Naděje 🔔. Když ti <b>vyjde tip a vyhraješ peníze</b>, přijde ti o tom notifikace. V appce je i <b>chat</b> pro celou soutěž (bublina 💬 vpravo dole).</p>
+            <h3>🔔 Notifikace – ZAPNI SI JE!</h3>
+            <div class="pr-varovani" style="margin:8px 0 12px;">🔔 <b>Bez notifikací přicházíš o body!</b> Admin občas vypíše <b>Bonus dne</b> (otázka za extra body do turnaje) – kdo nemá zapnutá upozornění, snadno ho prošvihne a <b>přijde o body navíc</b>.</div>
+            <p>Zapni si push notifikace (nový zápas, uzávěrky, <b>bonus dne</b>, zprávy) v centru Naděje 🔔. Když ti <b>vyjde tip a vyhraješ peníze</b>, přijde ti o tom notifikace. V appce je i <b>chat</b> pro celou soutěž (bublina 💬 vpravo dole).</p>
         </div>
 
         <div class="pr-sekce">
@@ -418,6 +432,14 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
                 <li><b>🎨 Barevné motivy</b> – vpravo nahoře (paleta) si přepneš vzhled celé appky: tmavý, světlý, nebo v barvách <b>Česka či Německa</b>.</li>
                 <li><b>🏒 Avatar</b> – na svém profilu si vybereš ikonu, která tě bude reprezentovat v žebříčku.</li>
                 <li><b>⚔️ Rivalové</b> – v žebříčku si vybereš soupeře a appka vás postaví proti sobě – uvidíš, kdo z vás vede v bodech, výhrách i úspěšnosti. Rivala můžeš kdykoliv změnit.</li>
+            </ul>
+        </div>
+
+        <div class="pr-sekce">
+            <h3>🎯 Bonus dne &amp; 🃏 Žolík</h3>
+            <ul>
+                <li><b>🎯 Bonus dne</b> – admin občas vypíše bonusovou otázku (např. „Padne v zápase víc než 2,5 branky?") za <b>extra body do turnaje</b>. Najdeš ji v záložce 🎯 Bonus dne, vybereš odpověď do uzávěrky. <b>Přijde na ni notifikace – proto si je zapni!</b></li>
+                <li><b>🃏 Žolík</b> – na <b>3 zápasy za celý turnaj</b> si můžeš dát žolíka (přepínač 🃏 u tipu). Body za daný zápas se ti pak <b>zdvojnásobí (2×)</b>. Schovej si ho na zápas, kde si věříš!</li>
             </ul>
         </div>
 
