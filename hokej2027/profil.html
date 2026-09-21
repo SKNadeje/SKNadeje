@@ -338,8 +338,9 @@ async function load() {
             sb.from('hokej27_bonus_tipy').select('bonus_id, odpoved').eq('user_id', uid)
         ]);
         const _bSpr = {}; (_bR.data || []).forEach(b => { if (b.vyhodnoceno && b.spravna != null) _bSpr[b.id] = { spravna: b.spravna, body: b.body }; });
-        let _bonusBody = 0; (_btR.data || []).forEach(t => { const b = _bSpr[t.bonus_id]; if (b && t.odpoved === b.spravna) _bonusBody += b.body; });
-        if (h && _bonusBody) { h.nb = (h.nb || 0) + _bonusBody; h.bonusBody = _bonusBody; }
+        let _bonusBody = 0, _bSpravne = 0, _bTipnutych = 0;
+        (_btR.data || []).forEach(t => { const b = _bSpr[t.bonus_id]; if (b) { _bTipnutych++; if (t.odpoved === b.spravna) { _bSpravne++; _bonusBody += b.body; } } });
+        if (h) { if (_bonusBody) { h.nb = (h.nb || 0) + _bonusBody; h.bonusBody = _bonusBody; } h._bonusSpravne = _bSpravne; h._bonusTipnutych = _bTipnutych; }
     } catch (e) {}
 
     // 👛 Peněženka a 🏒 avatar – načti VŽDY (i před začátkem turnaje, když hráč ještě nesázel)
@@ -423,7 +424,8 @@ async function load() {
         bar('Střelci', '🎯', h.strelci, h.uspStrelci, 'linear-gradient(90deg,#ffd75e,var(--gold))') +
         bar('Trendy', '📈', h.trendy, h.uspTrendy, 'linear-gradient(90deg,#ff00ea,#a0009a)') +
         bar('Rozdíly ve skóre', '➖', hRozdil, pctH(hRozdil), 'linear-gradient(90deg,#2fbf71,#1c8f52)') +
-        bar('Počet branek', '🔢', hPocet, pctH(hPocet), 'linear-gradient(90deg,#ff9f2e,#c9791a)');
+        bar('Počet branek', '🔢', hPocet, pctH(hPocet), 'linear-gradient(90deg,#ff9f2e,#c9791a)') +
+        (h._bonusTipnutych ? bar('Bonus dne', '🎯', h._bonusSpravne || 0, Math.round((h._bonusSpravne || 0) / h._bonusTipnutych * 100), 'linear-gradient(90deg,#f0c359,#c9971a)') : '');
 
     // POZICE
     const pKarta = (rank, nazev, hodnota) => {
