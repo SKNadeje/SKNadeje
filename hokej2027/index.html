@@ -803,6 +803,15 @@
 .bonus-vysl.ne { color:#e74c3c; }
 .zolik-toggle { display:flex; align-items:center; gap:8px; justify-content:center; margin:12px 0; font-weight:800; color:var(--gold); cursor:pointer; font-size:.88em; }
 .zolik-toggle input { width:18px; height:18px; accent-color:var(--gold); cursor:pointer; }
+.turnaj-vyzva { display:flex; align-items:center; gap:12px; background:linear-gradient(135deg, rgba(var(--gold-rgb),.16), rgba(var(--neon-rgb),.1)); border:1px solid rgba(var(--gold-rgb),.55); border-radius:16px; padding:14px 16px; margin-bottom:16px; cursor:pointer; transition:transform .15s, box-shadow .15s; animation: tvPulse 2.6s ease-in-out infinite; }
+.turnaj-vyzva:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(var(--gold-rgb),.22); }
+.tv-ikona { font-size:2em; line-height:1; }
+.tv-text { flex:1; text-align:left; display:flex; flex-direction:column; gap:2px; }
+.tv-text b { color:var(--gold); font-size:1.02em; }
+.tv-text span { font-size:.78em; opacity:.8; }
+.tv-sipka { font-size:1.9em; color:var(--gold); opacity:.7; }
+@keyframes tvPulse { 0%,100%{border-color:rgba(var(--gold-rgb),.5);} 50%{border-color:rgba(var(--gold-rgb),.9);} }
+@media (prefers-reduced-motion: reduce) { .turnaj-vyzva { animation:none; } }
 </style>
 <script>
 // 🎨 MOTIVY – aplikuj uložený motiv co nejdřív (před vykreslením)
@@ -1396,8 +1405,21 @@ async function ulozBonusTip(bonusId, odpoved) {
 function renderZapasy(now) {
     const container = document.getElementById('matchList');
     container.innerHTML = '';
+
+    // 🏆 Výzva vyplnit turnajový (dlouhodobý) tip – jen v Aktivní, dokud není vyplněný a uzávěrka neprošla
+    const dlZavreno = now > new Date(DEADLINE_DLOUHODOBY).getTime();
+    const maDlTip = mujDlouhodoby && mujDlouhodoby.tip && Object.keys(mujDlouhodoby.tip).length > 0;
+    if (zapasyRezim === 'aktivni' && !maDlTip && !dlZavreno) {
+        container.insertAdjacentHTML('beforeend', `
+            <div class="turnaj-vyzva" onclick="prepniZapasy('dlouhodobe')">
+                <div class="tv-ikona">🏆</div>
+                <div class="tv-text"><b>Vyplň si turnajový tip!</b><span>Vítězové skupin, šampion, král bodování &amp; All-Star. Ťukni sem →</span></div>
+                <div class="tv-sipka">›</div>
+            </div>`);
+    }
+
     if (zapasyCache.length === 0) {
-        container.innerHTML = '<div style="opacity:0.5; margin-top:30px;">Zatím žádné vypsané zápasy. Turnaj startuje 14. 5. 2027! 🏒</div>';
+        container.insertAdjacentHTML('beforeend', '<div style="opacity:0.5; margin-top:30px;">Zatím žádné vypsané zápasy. Turnaj startuje 14. 5. 2027! 🏒</div>');
         return;
     }
 
@@ -1406,7 +1428,7 @@ function renderZapasy(now) {
         zapasyRezim === 'vyhodnocene' ? m.status === 'vyhodnoceno' : m.status !== 'vyhodnoceno'
     );
     if (zapasy.length === 0) {
-        container.innerHTML = `<div style="opacity:0.5; margin-top:30px;">${zapasyRezim === 'vyhodnocene' ? 'Zatím žádné vyhodnocené zápasy.' : 'Žádné aktivní zápasy k tipování.'}</div>`;
+        container.insertAdjacentHTML('beforeend', `<div style="opacity:0.5; margin-top:30px;">${zapasyRezim === 'vyhodnocene' ? 'Zatím žádné vyhodnocené zápasy.' : 'Žádné aktivní zápasy k tipování.'}</div>`);
         return;
     }
 
@@ -1932,4 +1954,13 @@ inicializujChat({ klient: sb, tabulka: 'hokej27_chat', soutez: 'hokej', barva: '
 </script>
 <!-- 🎉 POP-UP VÝHER K VYZVEDNUTÍ -->
 <div id="vyhryModal" style="display:none; position:fixed; inset:0; background:rgba(5,10,25,0.92); backdrop-filter:blur(6px); z-index:10010; overflow-y:auto; padding:24px 14px; align-items:center; justify-content:center;">
-    <div style="max-width:440px; margin:0 auto; background:linear-gradient(160deg,#0d1a2a,#081018); border:2px solid var(--gold); borde
+    <div style="max-width:440px; margin:0 auto; background:linear-gradient(160deg,#0d1a2a,#081018); border:2px solid var(--gold); border-radius:24px; padding:26px 22px; box-shadow:0 20px 60px rgba(0,0,0,.6);">
+        <div style="text-align:center; font-size:2.2em; margin-bottom:6px;">🎉</div>
+        <div style="text-align:center; font-weight:900; font-size:1.3em; color:var(--gold); margin-bottom:4px;">Gratulace, vyhrál jsi!</div>
+        <div style="text-align:center; font-size:.8em; opacity:.6; margin-bottom:20px;">Vyber, jak chceš každou výhru vyřídit.</div>
+        <div id="vyhrySeznam"></div>
+        <button onclick="zavriVyhry()" style="width:100%; margin-top:16px; background:none; border:1px solid rgba(255,255,255,.2); color:#fff; opacity:.6; padding:10px; border-radius:12px; cursor:pointer; font-size:.85em;">Zavřít (vyřídím později)</button>
+    </div>
+</div>
+</body>
+</html>
