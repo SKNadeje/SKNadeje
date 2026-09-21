@@ -68,14 +68,17 @@ html[data-theme="kanada"] {
     --bg-kanada: radial-gradient(circle at 88% 5%, rgba(255,255,255,.55), rgba(255,255,255,0) 28%), radial-gradient(circle at 6% 96%, rgba(255,255,255,.4), rgba(255,255,255,0) 28%), linear-gradient(160deg, #e40b26 0%, #b30820 40%, #6e0514 72%, #300309 100%);
 }
 * { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
 html { height: 100%; }
 body { min-height: 100%; overflow-x: hidden; max-width: 100%; }
 body {
     margin: 0;
-    background:
+    background-color: var(--dark);
+    background-image:
         radial-gradient(ellipse 900px 500px at 15% 0%, rgba(var(--magenta-rgb),.14), transparent 55%),
         radial-gradient(ellipse 900px 600px at 85% 15%, rgba(var(--fial-rgb),.22), transparent 55%),
         radial-gradient(ellipse at top, var(--bg-top) 0%, var(--dark) 70%);
+    background-attachment: fixed;
     font-family: Inter, sans-serif;
     color: var(--text);
     display: flex;
@@ -87,12 +90,10 @@ body {
     overflow-x: hidden;
 }
 /* Trikolóra pro Česko (jako index) */
-html[data-theme="cesko"] body {
-    background: var(--bg-cesko);
-}
-html[data-theme="svedsko"] body { background: var(--bg-svedsko); }
-html[data-theme="finsko"] body { background: var(--bg-finsko); }
-html[data-theme="kanada"] body { background: var(--bg-kanada); }
+html[data-theme="cesko"] body { background: var(--bg-cesko); background-attachment: fixed; }
+html[data-theme="svedsko"] body { background: var(--bg-svedsko); background-attachment: fixed; }
+html[data-theme="finsko"] body { background: var(--bg-finsko); background-attachment: fixed; }
+html[data-theme="kanada"] body { background: var(--bg-kanada); background-attachment: fixed; }
 /* VODOZNAK – PNG ve složce hokej2027/ */
 #vodoznak { position:fixed; inset:0; z-index:-1; pointer-events:none; background-repeat:no-repeat; background-position:center 42%; background-size:min(74vw,420px); opacity:0; }
 html[data-theme="cesko"] #vodoznak { background-image:url('cesko.png'); opacity:.14; }
@@ -157,8 +158,8 @@ html[data-theme="cesko"] .zalozeno {
 @media (prefers-reduced-motion: reduce) { .logo, .logo::before { animation: none; } }
 .logo-inner {
     /* Přesná velikost oblasti s logem */
-    width: min(420px, 78vw);
-    height: min(420px, 78vw);
+    width: min(320px, 64vw);
+    height: min(320px, 64vw);
     position: relative; z-index: 1;
     display: flex; align-items: center; justify-content: center;
 }
@@ -224,7 +225,7 @@ h1 {
 
 @media (max-width: 420px) {
     h1 { font-size: 1.35rem; }
-    .logo-inner { width: min(300px, 62vw); height: min(300px, 62vw); }
+    .logo-inner { width: min(240px, 56vw); height: min(240px, 56vw); }
     .info-pasek { gap: 6px; }
     .info-pasek span { font-size: .62rem; padding: 5px 9px; }
     .vstup { font-size: .78rem; padding: 13px 26px; letter-spacing: 1px; }
