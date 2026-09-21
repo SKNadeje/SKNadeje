@@ -68,7 +68,8 @@ html[data-theme="kanada"] {
     --bg-kanada: radial-gradient(circle at 88% 5%, rgba(255,255,255,.55), rgba(255,255,255,0) 28%), radial-gradient(circle at 6% 96%, rgba(255,255,255,.4), rgba(255,255,255,0) 28%), linear-gradient(160deg, #e40b26 0%, #b30820 40%, #6e0514 72%, #300309 100%);
 }
 * { box-sizing: border-box; }
-html, body { height: 100%; overflow-x: hidden; max-width: 100%; }
+html { height: 100%; }
+body { min-height: 100%; overflow-x: hidden; max-width: 100%; }
 body {
     margin: 0;
     background:
@@ -77,10 +78,11 @@ body {
         radial-gradient(ellipse at top, var(--bg-top) 0%, var(--dark) 70%);
     font-family: Inter, sans-serif;
     color: var(--text);
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    min-height: 100vh;
     padding: 24px 16px;
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 /* Trikolóra pro Česko (jako index) */
 html[data-theme="cesko"] body {
@@ -118,6 +120,7 @@ html[data-theme="cesko"] .zalozeno {
 
 .karta {
     max-width: 480px; width: 100%;
+    margin: auto;
     text-align: center;
     position: relative; z-index: 2;
     animation: vstup .7s ease both;
