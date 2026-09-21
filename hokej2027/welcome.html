@@ -73,9 +73,9 @@ html, body { height: 100%; }
 body {
     margin: 0;
     background:
-        radial-gradient(ellipse 900px 500px at 15% 0%, rgba(var(--magenta-rgb),.14), transparent 55%),
-        radial-gradient(ellipse 900px 600px at 85% 15%, rgba(var(--fial-rgb),.22), transparent 55%),
-        radial-gradient(ellipse at top, var(--bg-top) 0%, var(--dark) 70%);
+        radial-gradient(ellipse 900px 500px at 15% 0%, rgba(var(--magenta-rgb),.05), transparent 55%),
+        radial-gradient(ellipse 900px 600px at 85% 15%, rgba(var(--fial-rgb),.06), transparent 55%),
+        radial-gradient(ellipse at top, var(--bg-top) 0%, var(--dark) 60%);
     font-family: Inter, sans-serif;
     color: var(--text);
     display: flex; align-items: center; justify-content: center;
@@ -131,16 +131,9 @@ html[data-theme="cesko"] .zalozeno {
     margin: 0 auto 4px;
     display: flex; align-items: center; justify-content: center;
     position: relative;
-    animation: dych 4s ease-in-out infinite;
 }
 /* Jemná pulzující záře za logem */
-.logo::before {
-    content: ''; position: absolute; inset: -8%; z-index: 0;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(var(--fial-rgb),.45), rgba(var(--fial-rgb),.12) 45%, transparent 70%);
-    animation: zare 4s ease-in-out infinite;
-    pointer-events: none;
-}
+.logo::before { content: none; }
 @keyframes zare {
     0%, 100% { opacity: .5; transform: scale(1); }
     50% { opacity: .9; transform: scale(1.08); }
