@@ -125,6 +125,13 @@ h1 { text-align:center; font-size:1.15em; letter-spacing:3px; color:var(--neon);
 .prazdno { text-align:center; opacity:.45; padding:18px 0; font-size:.85em; }
 .vyvoj-b { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); color:var(--text); border-radius:8px; padding:5px 12px; font-size:.78em; cursor:pointer; font-family:inherit; }
 .vyvoj-b:hover { border-color:var(--neon); }
+.stat-taby { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:22px; }
+.stat-tab { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); color:var(--text); border-radius:100px; padding:8px 15px; font-size:.82em; font-weight:800; cursor:pointer; font-family:inherit; transition:all .15s; }
+.stat-tab:hover { border-color:var(--neon); }
+.stat-tab.on { background:var(--neon); color:#05121a; border-color:var(--neon); }
+.stat-obsah { display:none; }
+.stat-obsah.on { display:block; animation: statFade .3s ease; }
+@keyframes statFade { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('hokej_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -167,51 +174,69 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     <a class="back" href="index.html">← Zpět na tiket</a>
     <h1>📊 Žebříčky a statistiky</h1>
 
-    <div class="blok fond">
-        <h2>💎 Fond Naděje</h2>
-        <div class="fond-castka" id="fondCastka">–</div>
-        <div class="fond-pozn">(Kumulováno 5 Kč z každé podané sázky)</div>
-        <div class="fond-medaile" id="fondMedaile"></div>
+    <div class="stat-taby">
+        <button class="stat-tab on" onclick="prepniStatTab('index', this)">⭐ Index</button>
+        <button class="stat-tab" onclick="prepniStatTab('vysledky', this)">🥅 Výsledky</button>
+        <button class="stat-tab" onclick="prepniStatTab('vyhry', this)">💰 Výhry</button>
+        <button class="stat-tab" onclick="prepniStatTab('vyvoj', this)">📈 Vývoj</button>
+        <button class="stat-tab" onclick="prepniStatTab('bonus', this)">🎯 Bonus</button>
+        <button class="stat-tab" onclick="prepniStatTab('rivalove', this)">⚔️ Rivalové</button>
     </div>
 
-    <div class="blok" id="rivalBox" style="border-color:rgba(231,76,60,.45);">
-        <h2>⚔️ Rivalové</h2>
-        <div id="rivalObsah"><div class="prazdno">Načítám…</div></div>
+    <div class="stat-obsah on" id="tab-index">
+        <div class="blok fond">
+            <h2>💎 Fond Naděje</h2>
+            <div class="fond-castka" id="fondCastka">–</div>
+            <div class="fond-pozn">(Kumulováno 5 Kč z každé podané sázky)</div>
+            <div class="fond-medaile" id="fondMedaile"></div>
+        </div>
+        <div class="blok index">
+            <h2>⭐ Index Naděje (celkem)</h2>
+            <div id="lbIndex"></div>
+        </div>
     </div>
 
-    <div class="blok index">
-        <h2>⭐ Index Naděje (celkem)</h2>
-        <div id="lbIndex"></div>
+    <div class="stat-obsah" id="tab-vysledky">
+        <div class="blok">
+            <h2>🥅 Mistři výsledků</h2>
+            <div id="lbSkore"></div>
+        </div>
+        <div class="blok">
+            <h2>🎯 Králové střelců</h2>
+            <div id="lbStrelci"></div>
+        </div>
+        <div class="blok">
+            <h2>🧠 Experti (trendy)</h2>
+            <div id="lbTrendy"></div>
+        </div>
     </div>
 
-    <div class="blok">
-        <h2>💰 Bankovní lupiči</h2>
-        <div id="lbVyhry"></div>
+    <div class="stat-obsah" id="tab-vyhry">
+        <div class="blok">
+            <h2>💰 Bankovní lupiči</h2>
+            <div id="lbVyhry"></div>
+        </div>
     </div>
 
-    <div class="blok">
-        <h2>🥅 Mistři výsledků</h2>
-        <div id="lbSkore"></div>
+    <div class="stat-obsah" id="tab-vyvoj">
+        <div class="blok">
+            <h2>📈 Vývoj bodů</h2>
+            <div id="lbVyvoj"></div>
+        </div>
     </div>
 
-    <div class="blok">
-        <h2>🎯 Králové střelců</h2>
-        <div id="lbStrelci"></div>
+    <div class="stat-obsah" id="tab-bonus">
+        <div class="blok">
+            <h2>🎯 Bonus dne</h2>
+            <div id="lbBonus"></div>
+        </div>
     </div>
 
-    <div class="blok">
-        <h2>🧠 Experti (trendy)</h2>
-        <div id="lbTrendy"></div>
-    </div>
-
-    <div class="blok">
-        <h2>📈 Vývoj bodů</h2>
-        <div id="lbVyvoj"></div>
-    </div>
-
-    <div class="blok">
-        <h2>🎯 Bonus dne</h2>
-        <div id="lbBonus"></div>
+    <div class="stat-obsah" id="tab-rivalove">
+        <div class="blok" id="rivalBox" style="border-color:rgba(231,76,60,.45);">
+            <h2>⚔️ Rivalové</h2>
+            <div id="rivalObsah"><div class="prazdno">Načítám…</div></div>
+        </div>
     </div>
 </div>
 
@@ -449,6 +474,14 @@ async function zmenRivala() {
     await nactiRivaly(_vsichniHraci);
 }
 load();
+
+function prepniStatTab(id, btn) {
+    document.querySelectorAll('.stat-obsah').forEach(e => e.classList.remove('on'));
+    const t = document.getElementById('tab-' + id); if (t) t.classList.add('on');
+    document.querySelectorAll('.stat-tab').forEach(b => b.classList.remove('on'));
+    if (btn) btn.classList.add('on');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 </script>
 </body>
 </html>
