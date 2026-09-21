@@ -1049,11 +1049,16 @@ async function zalozBonus() {
     let notifTxt = '';
     if (document.getElementById('bonus-notif').checked) {
         try {
-            const res = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/posli-oznameni', {
+            const res = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/posli-notifikaci', {
                 method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY },
-                body: JSON.stringify({ titulek: '🎯 Nový bonus dne!', text: otazka + ' — ' + body + ' bodů do turnaje', url: 'https://sknadeje.cz/hokej2027/index.html', komu: 'vsichni', user_ids: [] })
+                body: JSON.stringify({
+                    soutez: 'hokej',
+                    titulek: '🎯 Nový bonus dne!',
+                    zprava: otazka + ' — ' + body + ' bodů do turnaje',
+                    url: 'https://sknadeje.cz/hokej2027/index.html'
+                })
             });
-            const d = await res.json(); notifTxt = d.ok ? ' + notifikace odeslána' : ' (notifikace se neodeslala)';
+            const d = await res.json(); notifTxt = d.ok ? ' + notifikace odeslána 🔔' : ' (notifikace se neodeslala)';
         } catch (e) { notifTxt = ' (notifikace selhala)'; }
     }
     msg.innerHTML = '<span style="color:#27ae60;">✅ Bonus založen' + notifTxt + '!</span>';
