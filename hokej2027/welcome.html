@@ -79,6 +79,8 @@ body {
     font-family: Inter, sans-serif;
     color: var(--text);
     display: flex;
+    flex-direction: column;
+    align-items: center;
     min-height: 100vh;
     padding: 24px 16px;
     position: relative;
@@ -131,11 +133,7 @@ html[data-theme="cesko"] .zalozeno {
 /* ===== ODZNAK/EMBLÉM ===== */
 .logo {
     width: 100%;
-    max-width: 800px;
     margin: 0 auto 4px;
-    margin-left: 50%;
-    /* Centrování je -50%. Vyšší číslo = víc doleva (např. -53% posune víc). */
-    transform: translateX(-53%);
     display: flex; align-items: center; justify-content: center;
     position: relative;
     animation: dych 4s ease-in-out infinite;
