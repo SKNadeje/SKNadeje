@@ -1123,8 +1123,13 @@ async function init() {
             currentUser = t.name;
             await sb.from('hraci').insert({ user_id: currentUserId, jmeno: t.name });
         } else {
-            window.location.href = '../welcome.html';
-            return;
+            // Nový účet bez jména – místo vyhození na hub nabídni registraci přezdívky
+            let jmeno = prompt('Vítej ve hře! 🏒\nZadej svou přezdívku (uvidí ji ostatní):', (session.user.email || '').split('@')[0] || '');
+            jmeno = (jmeno || '').trim();
+            if (!jmeno) { window.location.href = '../welcome.html'; return; }
+            const { error: insErr } = await sb.from('hraci').insert({ user_id: currentUserId, jmeno });
+            if (insErr) { alert('Přezdívku se nepodařilo uložit: ' + insErr.message); window.location.href = '../welcome.html'; return; }
+            currentUser = jmeno;
         }
     }
     document.getElementById('userBadge').style.display = 'inline-flex';
