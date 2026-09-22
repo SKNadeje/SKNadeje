@@ -69,25 +69,29 @@ html[data-theme="kanada"] {
 }
 * { box-sizing: border-box; }
 *, *::before, *::after { box-sizing: border-box; }
-html, body { height: 100%; }
+html { height: 100%; }
 body {
     margin: 0;
     background:
-        radial-gradient(ellipse 900px 500px at 15% 0%, rgba(var(--magenta-rgb),.05), transparent 55%),
-        radial-gradient(ellipse 900px 600px at 85% 15%, rgba(var(--fial-rgb),.06), transparent 55%),
-        radial-gradient(ellipse at top, var(--bg-top) 0%, var(--dark) 60%);
+        radial-gradient(ellipse 900px 520px at 15% 0%, rgba(var(--magenta-rgb),.09), transparent 55%),
+        radial-gradient(ellipse 900px 600px at 85% 10%, rgba(var(--fial-rgb),.13), transparent 55%),
+        radial-gradient(ellipse at top, var(--bg-top) 0%, var(--dark) 62%);
+    background-attachment: fixed;
     font-family: Inter, sans-serif;
     color: var(--text);
-    display: flex; align-items: center; justify-content: center;
-    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) 16px calc(34px + env(safe-area-inset-bottom, 0px));
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 /* Trikolóra pro Česko (jako index) */
-html[data-theme="cesko"] body { background: var(--bg-cesko); }
-html[data-theme="svedsko"] body { background: var(--bg-svedsko); }
-html[data-theme="finsko"] body { background: var(--bg-finsko); }
-html[data-theme="kanada"] body { background: var(--bg-kanada); }
+html[data-theme="cesko"] body { background: var(--bg-cesko); background-attachment: fixed; }
+html[data-theme="svedsko"] body { background: var(--bg-svedsko); background-attachment: fixed; }
+html[data-theme="finsko"] body { background: var(--bg-finsko); background-attachment: fixed; }
+html[data-theme="kanada"] body { background: var(--bg-kanada); background-attachment: fixed; }
 /* VODOZNAK – PNG ve složce hokej2027/ */
 #vodoznak { position:fixed; inset:0; z-index:-1; pointer-events:none; background-repeat:no-repeat; background-position:center 42%; background-size:min(74vw,420px); opacity:0; }
 html[data-theme="cesko"] #vodoznak { background-image:url('cesko.png'); opacity:.14; }
@@ -117,6 +121,7 @@ html[data-theme="cesko"] .zalozeno {
 
 .karta {
     max-width: 480px; width: 100%; min-width: 0;
+    margin: auto 0;
     text-align: center;
     overflow-wrap: break-word;
     position: relative; z-index: 2;
