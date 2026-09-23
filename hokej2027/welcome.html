@@ -69,7 +69,7 @@ html[data-theme="kanada"] {
 }
 * { box-sizing: border-box; }
 *, *::before, *::after { box-sizing: border-box; }
-html { height: 100%; scrollbar-gutter: stable both-edges; }
+html { height: 100%; }
 body {
     margin: 0;
     background:
@@ -155,6 +155,7 @@ html[data-theme="cesko"] .zalozeno {
     max-width: 100%;
     position: relative; z-index: 1;
     display: flex; align-items: center; justify-content: center;
+    transform: translateX(-4%);   /* kompenzace nevycentrované grafiky v PNG */
 }
 .logo-inner::before {
     content: ''; position: absolute; inset: -8%; z-index: -1;
