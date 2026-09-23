@@ -155,7 +155,7 @@ html[data-theme="cesko"] .zalozeno {
     max-width: 100%;
     position: relative; z-index: 1;
     display: flex; align-items: center; justify-content: center;
-    transform: translateX(-12%);   /* kompenzace nevycentrované grafiky v PNG */
+    transform: translateX(-10%);   /* kompenzace nevycentrované grafiky v PNG */
 }
 .logo-inner::before {
     content: ''; position: absolute; inset: -8%; z-index: -1;
@@ -523,6 +523,17 @@ setInterval(() => {
         if (el && data) {
             if (data.vodoznak_x != null && data.vodoznak_y != null) el.style.backgroundPosition = data.vodoznak_x + '% ' + data.vodoznak_y + '%';
             if (data.vodoznak_opacity != null) el.style.opacity = data.vodoznak_opacity;
+        }
+    } catch (e) {}
+})();
+</script>
+<script>
+// Callout o notifikacích ukázat jen tomu, kdo je NEMÁ povolené
+(function () {
+    try {
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            var c = document.querySelector('.notif-callout');
+            if (c) c.style.display = 'none';
         }
     } catch (e) {}
 })();
