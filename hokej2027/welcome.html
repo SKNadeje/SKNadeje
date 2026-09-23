@@ -69,7 +69,7 @@ html[data-theme="kanada"] {
 }
 * { box-sizing: border-box; }
 *, *::before, *::after { box-sizing: border-box; }
-html { height: 100%; }
+html { height: 100%; scrollbar-gutter: stable both-edges; }
 body {
     margin: 0;
     background:
@@ -156,6 +156,11 @@ html[data-theme="cesko"] .zalozeno {
     position: relative; z-index: 1;
     display: flex; align-items: center; justify-content: center;
 }
+.logo-inner::before {
+    content: ''; position: absolute; inset: -8%; z-index: -1;
+    border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, rgba(var(--fial-rgb),.30), rgba(var(--fial-rgb),.10) 46%, transparent 70%);
+}
 
 .zalozeno { font-size: 10px; letter-spacing: 4px; color: var(--gold); opacity: .8; text-transform: uppercase; font-weight: 700; }
 h1 {
@@ -165,6 +170,7 @@ h1 {
     background-size: 220% auto;
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent; color: var(--fial);
+    filter: drop-shadow(0 0 14px rgba(var(--fial-rgb),.45));
     animation: h1shine 5s linear infinite;
 }
 @keyframes h1shine { 0% { background-position: 0% center; } 100% { background-position: 220% center; } }
