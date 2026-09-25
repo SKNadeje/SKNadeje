@@ -2507,11 +2507,11 @@ inicializujChat({ klient: sb, tabulka: 'cl_chat', soutez: 'cl', barva: 'var(--fi
 (function () {
     const REKLAMY = [
         { nazev: 'SereMed', tag: 'Poctivý med od včelaře Richarda 🐝', emoji: '🍯', grad: 'linear-gradient(135deg,#f7b733,#d98a0b)', txt: '#3d2600', link: '' },
-        { nazev: 'CakesbyDT', tag: 'Domácí dorty a sladkosti na míru 🧁', emoji: '🎂', grad: 'linear-gradient(135deg,#ff9ec7,#c86dd7)', txt: '#4a0d33', link: 'https://www.instagram.com/_cakesbydt_?stkn=MXA0NGhpOWs4dWo1bA==' },
+        { nazev: 'CakesbyDT', tag: 'Domácí dorty a sladkosti na míru', emoji: '🎂', grad: 'linear-gradient(135deg,#ff9ec7,#c86dd7)', txt: '#4a0d33', link: 'https://www.instagram.com/_cakesbydt_?stkn=MXA0NGhpOWs4dWo1bA==' },
         { nazev: 'Grilované kuře & kebab', tag: 'Od Kachlů – šťavnaté a poctivé 🔥', emoji: '🍗', grad: 'linear-gradient(135deg,#e8562a,#a01f0f)', txt: '#2a0800', link: 'https://www.facebook.com/profile.php?id=61585360757317' },
-        { nazev: 'Mistr Zelí – 3D tisk', tag: '3D tisk na míru vám zařídí mistr Zelí 🖨️', emoji: '🧩', grad: 'linear-gradient(135deg,#4fce6b,#1f8f3e)', txt: '#08300f', link: '' },
-        { nazev: 'Mňam budka', tag: 'Rychlé občerstvení u Penny 🍔', emoji: '🌭', grad: 'linear-gradient(135deg,#ffc04d,#ff7a1a)', txt: '#3a1600', link: 'https://www.facebook.com/RychleobcerstveniuPenny' },
-        { nazev: 'FinMap', tag: 'Přátelské a profesionální finanční poradenství 💼', emoji: '📊', grad: 'linear-gradient(135deg,#42a5f5,#1565c0)', txt: '#ffffff', link: 'https://www.finmap.cz/' }
+        { nazev: 'Mistr Zelí – 3D tisk', tag: '3D tisk na míru vám zařídí mistr Zelí', emoji: '🖨️', grad: 'linear-gradient(135deg,#4fce6b,#1f8f3e)', txt: '#08300f', link: '' },
+        { nazev: 'Mňam budka', tag: 'Rychlé občerstvení u Penny 🌭', emoji: '🍔', grad: 'linear-gradient(135deg,#ffc04d,#ff7a1a)', txt: '#3a1600', link: 'https://www.facebook.com/RychleobcerstveniuPenny' },
+        { nazev: 'FinMap', tag: 'Přátelské a profesionální finanční poradenství', emoji: '📊', grad: 'linear-gradient(135deg,#42a5f5,#1565c0)', txt: '#ffffff', link: 'https://www.finmap.cz/' }
     ];
     const box = document.getElementById('reklamaBanner');
     if (!box) return;
@@ -2525,7 +2525,7 @@ inicializujChat({ klient: sb, tabulka: 'cl_chat', soutez: 'cl', barva: 'var(--fi
         i = (i + 1) % REKLAMY.length;
     }
     ukaz();
-    setInterval(ukaz, 5000);
+    setInterval(ukaz, 2500);
 })();
 </script>
 </body>
