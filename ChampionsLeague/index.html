@@ -638,6 +638,13 @@ body.sez-zima .nav button::after, body.sez-vanoce .nav button::after, body.sez-s
 .rek-sipka { font-size: 1.15em; opacity: .75; flex-shrink: 0; }
 .rek-badge { font-size: .55em; text-transform: uppercase; letter-spacing: 1px; opacity: .55; font-weight: 800; border: 1px solid currentColor; border-radius: 6px; padding: 2px 6px; flex-shrink: 0; }
 @keyframes rekFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.tc-forma { display: flex; gap: 3px; align-items: center; justify-content: flex-end; min-width: 60px; flex-shrink: 0; }
+.tab-head .tc-forma { font-size: .7em; opacity: .7; }
+.f-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.f-W { background: #2ecc71; }
+.f-D { background: #f0c359; }
+.f-L { background: #e74c3c; }
+.f-none { opacity: .3; font-size: .8em; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -1346,6 +1353,7 @@ function renderTabulka() {
     if (!tymy.length) { el.innerHTML = '<div class="prazdno">Seznam týmů zatím není zadán.</div>'; return; }
     const T = {};
     tymy.forEach(t => T[t] = { t, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 });
+    const F = {}; tymy.forEach(t => F[t] = []);
     (zapasy || []).forEach(z => {
         if (z.faze !== 'ZC' || z.status !== 'vyhodnoceno') return;
         const d = T[z.domaci], h = T[z.hoste];
@@ -1354,7 +1362,11 @@ function renderTabulka() {
         d.p++; h.p++;
         d.gf += gd; d.ga += gh; h.gf += gh; h.ga += gd;
         if (gd > gh) { d.w++; h.l++; } else if (gd < gh) { h.w++; d.l++; } else { d.d++; h.d++; }
+        const vd = gd > gh ? 'W' : (gd < gh ? 'L' : 'D'), vh = gd > gh ? 'L' : (gd < gh ? 'W' : 'D');
+        if (F[z.domaci]) F[z.domaci].push({ v: vd, k: z.kolo || 0 });
+        if (F[z.hoste]) F[z.hoste].push({ v: vh, k: z.kolo || 0 });
     });
+    Object.keys(F).forEach(t => F[t].sort((a, b) => a.k - b.k));
     const rows = Object.values(T).map(x => ({ ...x, gdv: x.gf - x.ga, pts: x.w * 3 + x.d }));
     rows.sort((a, b) => b.pts - a.pts || b.gdv - a.gdv || b.gf - a.gf || a.t.localeCompare(b.t, 'cs'));
     const logo = (n, v) => (typeof logoTymu === 'function') ? logoTymu(n, v) : '';
@@ -1362,9 +1374,9 @@ function renderTabulka() {
     el.innerHTML =
         `<div class="tab-legenda"><span><i class="z-dot z-r16"></i>1.–8. osmifinále</span><span><i class="z-dot z-po"></i>9.–24. play-off</span><span><i class="z-dot z-elim"></i>25.–36. konec</span></div>` +
         `<div class="tab-wrap">` +
-        `<div class="tab-head"><span class="tc-pos">#</span><span class="tc-club">Klub</span><span class="tc-num">P</span><span class="tc-num">GD</span><span class="tc-pts">B</span></div>` +
+        `<div class="tab-head"><span class="tc-pos">#</span><span class="tc-club">Klub</span><span class="tc-num">P</span><span class="tc-num">GD</span><span class="tc-pts">B</span><span class="tc-forma">Forma</span></div>` +
         rows.map((r, i) =>
-            `<div class="tab-row ${zona(i)}${i === 7 ? ' z-sep-r16' : ''}${i === 23 ? ' z-sep-po' : ''}"><span class="tc-pos">${i + 1}</span><span class="tc-club" onclick="losOtevriTym('${r.t.replace(/'/g, "\\'")}')" style="cursor:pointer;">${logo(r.t, 22)}<span class="tc-name">${r.t}</span></span><span class="tc-num">${r.p}</span><span class="tc-num">${r.gdv > 0 ? '+' + r.gdv : r.gdv}</span><span class="tc-pts">${r.pts}</span></div>`
+            `<div class="tab-row ${zona(i)}${i === 7 ? ' z-sep-r16' : ''}${i === 23 ? ' z-sep-po' : ''}"><span class="tc-pos">${i + 1}</span><span class="tc-club" onclick="losOtevriTym('${r.t.replace(/'/g, "\\'")}')" style="cursor:pointer;">${logo(r.t, 22)}<span class="tc-name">${r.t}</span></span><span class="tc-num">${r.p}</span><span class="tc-num">${r.gdv > 0 ? '+' + r.gdv : r.gdv}</span><span class="tc-pts">${r.pts}</span><span class="tc-forma">${(F[r.t] || []).slice(-5).map(f => '<i class="f-dot f-' + f.v + '"></i>').join('') || '<span class="f-none">–</span>'}</span></div>`
         ).join('') +
         `</div>`;
 }
