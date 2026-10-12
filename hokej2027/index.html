@@ -812,15 +812,15 @@
 .tv-sipka { font-size:1.9em; color:var(--gold); opacity:.7; }
 @keyframes tvPulse { 0%,100%{border-color:rgba(var(--gold-rgb),.5);} 50%{border-color:rgba(var(--gold-rgb),.9);} }
 @media (prefers-reduced-motion: reduce) { .turnaj-vyzva { animation:none; } }
-.reklama-banner { max-width: 650px; width: 100%; margin: 6px auto 0; }
-.rek-obsah { display: flex; align-items: center; gap: 12px; border-radius: 14px; padding: 11px 15px; box-shadow: 0 4px 16px rgba(0,0,0,.28); animation: rekFade .5s ease; }
-.rek-emoji { font-size: 1.9em; line-height: 1; flex-shrink: 0; }
-.rek-text { flex: 1; display: flex; flex-direction: column; line-height: 1.3; text-align: left; }
-.rek-text b { font-size: 1.02em; font-weight: 900; }
-.rek-text span { font-size: .8em; opacity: .92; }
-.rek-sipka { font-size: 1.15em; opacity: .75; flex-shrink: 0; }
-.rek-badge { font-size: .55em; text-transform: uppercase; letter-spacing: 1px; opacity: .55; font-weight: 800; border: 1px solid currentColor; border-radius: 6px; padding: 2px 6px; flex-shrink: 0; }
-@keyframes rekFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.reklama-banner { max-width: 560px; width: 100%; margin: 0 auto 12px; }
+.rek-obsah { display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-radius: 10px; background: rgba(255,255,255,.035); border: 1px solid var(--card-border, rgba(255,255,255,.08)); border-left: 2px solid var(--neon, #00e5ff); color: var(--text, #e8edf5); animation: rekFade .4s ease; }
+.rek-emoji { font-size: 1.05em; line-height: 1; flex-shrink: 0; opacity: .9; }
+.rek-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; line-height: 1.25; text-align: left; }
+.rek-text b { font-size: .8em; font-weight: 700; letter-spacing: .2px; }
+.rek-text span { font-size: .72em; opacity: .55; line-height: 1.3; }
+.rek-sipka { font-size: .9em; opacity: .5; flex-shrink: 0; }
+.rek-badge { font-size: .5em; text-transform: uppercase; letter-spacing: 1.2px; opacity: .4; flex-shrink: 0; }
+@keyframes rekFade { from { opacity: 0; } to { opacity: 1; } }
 </style>
 <script>
 // 🎨 MOTIVY – aplikuj uložený motiv co nejdřív (před vykreslením)
@@ -1991,7 +1991,7 @@ inicializujChat({ klient: sb, tabulka: 'hokej27_chat', soutez: 'hokej', barva: '
         const onclick = r.link ? ' onclick="window.open(\'' + r.link + '\',\'_blank\',\'noopener\')"' : '';
         const kurzor = r.link ? 'cursor:pointer;' : '';
         const sipka = r.link ? '<span class="rek-sipka">↗</span>' : '';
-        box.innerHTML = '<div class="rek-obsah"' + onclick + ' style="background:' + r.grad + '; color:' + r.txt + ';' + kurzor + '"><span class="rek-emoji">' + r.emoji + '</span><div class="rek-text"><b>' + r.nazev + '</b><span>' + r.tag + '</span></div>' + sipka + '<span class="rek-badge">reklama</span></div>';
+        box.innerHTML = '<div class="rek-obsah"' + onclick + ' style="' + kurzor + '"><span class="rek-emoji">' + r.emoji + '</span><div class="rek-text"><b>' + r.nazev + '</b><span>' + r.tag + '</span></div>' + sipka + '<span class="rek-badge">reklama</span></div>';
         i = (i + 1) % REKLAMY.length;
     }
     ukaz();
