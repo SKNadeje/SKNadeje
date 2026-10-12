@@ -759,7 +759,7 @@ async function load() {
         if (kola.includes(0)) { kola = kola.filter(x => x !== 0); kola.push(0); }
         return kola.map(k => {
             const nazev = k === 0 ? 'Ostatní' : k + '. kolo';
-            return `<div class="pk-blok"><div class="pk-hl" onclick="this.parentElement.classList.toggle('sbaleno')"><span>${nazev}</span><span class="pk-pocet">${skup[k].length} · ▾</span></div><div class="pk-obsah">${skup[k].map(renderItem).join('')}</div></div>`;
+            return `<div class="pk-blok sbaleno"><div class="pk-hl" onclick="this.parentElement.classList.toggle('sbaleno')"><span>${nazev}</span><span class="pk-pocet">${skup[k].length} · ▾</span></div><div class="pk-obsah">${skup[k].map(renderItem).join('')}</div></div>`;
         }).join('');
     }
     document.getElementById('historie').innerHTML = mojeTipy.length
