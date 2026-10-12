@@ -821,6 +821,39 @@
 .rek-sipka { font-size: .9em; opacity: .5; flex-shrink: 0; }
 .rek-badge { font-size: .5em; text-transform: uppercase; letter-spacing: 1.2px; opacity: .4; flex-shrink: 0; }
 @keyframes rekFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* === dlouhodobka – nový vzhled === */
+.dl-karta { background: linear-gradient(160deg, rgba(var(--gold-rgb),.12), rgba(255,255,255,.02)) !important; border: 1px solid rgba(var(--gold-rgb),.45) !important; border-radius: 20px !important; box-shadow: 0 10px 34px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); }
+.dl-souhrn { display:flex; flex-direction:column; gap:9px; background: rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:14px; text-align:left; }
+.dl-lock { font-size:.7em; letter-spacing:1px; text-transform:uppercase; color: var(--neon); font-weight:800; }
+.dl-rad { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding-bottom:9px; border-bottom:1px dashed rgba(255,255,255,.08); }
+.dl-rad:last-of-type { border-bottom:none; padding-bottom:0; }
+.dl-lbl { font-size:.7em; text-transform:uppercase; letter-spacing:.8px; opacity:.6; font-weight:700; }
+.dl-chips { display:flex; flex-wrap:wrap; gap:5px; justify-content:flex-end; }
+.dl-chips i, .dl-chip { font-style:normal; font-size:.82em; font-weight:700; padding:4px 10px; border-radius:100px; background: rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); white-space:nowrap; }
+.dl-chip.vitez { background: rgba(var(--gold-rgb),.2); border-color: var(--gold); color: var(--gold); font-weight:900; }
+.dl-stav { text-align:center; font-weight:900; font-size:.85em; padding:8px; border-radius:10px; letter-spacing:.3px; }
+.dl-stav.ok { background: rgba(39,174,96,.16); color:#2ecc71; border:1px solid rgba(39,174,96,.4); }
+.dl-stav.wait { background: rgba(var(--gold-rgb),.12); color: var(--gold); border:1px dashed rgba(var(--gold-rgb),.5); }
+
+/* === bonus dne – nový vzhled === */
+.bonus-blok { background: linear-gradient(160deg, rgba(var(--neon-rgb),.08), rgba(255,255,255,.02)) !important; border:1px solid rgba(var(--neon-rgb),.22) !important; border-radius:18px !important; padding:16px !important; box-shadow: 0 8px 26px rgba(0,0,0,.3); position:relative; overflow:hidden; }
+.bonus-blok::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background: linear-gradient(90deg, var(--gold), var(--neon)); }
+.bonus-otazka { font-weight:900; font-size:1.02em; margin-bottom:6px; letter-spacing:.2px; }
+.bonus-body-info { display:inline-block; font-size:.7em; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:var(--gold); background: rgba(var(--gold-rgb),.12); border:1px solid rgba(var(--gold-rgb),.35); padding:3px 10px; border-radius:100px; margin-bottom:12px; }
+.bonus-opts { display:flex; flex-wrap:wrap; gap:8px; }
+.bonus-opt { padding:9px 16px; border-radius:12px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.05); font-size:.9em; font-weight:700; }
+.bonus-opt.klik:hover { transform: translateY(-1px); box-shadow:0 4px 14px rgba(var(--neon-rgb),.22); }
+.bonus-opt.moje { box-shadow:0 0 14px rgba(39,174,96,.35); }
+.bonus-opt.spravna { box-shadow:0 0 14px rgba(39,174,96,.35); }
+.bonus-vysl { width:100%; margin-top:12px; font-weight:900; text-align:center; padding:8px; border-radius:10px; background: rgba(255,255,255,.04); }
+.bonus-vysl.ok { background: rgba(39,174,96,.14); border:1px solid rgba(39,174,96,.35); }
+.bonus-vysl.ne { background: rgba(231,76,60,.12); border:1px solid rgba(231,76,60,.3); }
+
+/* === upozornění: aktivní bonus, který hráč nevyplnil === */
+.zapas-fltr.bonus-alert { border-color:#ff8c1a !important; color:#ffa64d !important; animation: bonusBlik 1.3s ease-in-out infinite; }
+@keyframes bonusBlik { 0%,100% { box-shadow: 0 0 0 rgba(255,140,26,0); } 50% { box-shadow: 0 0 16px rgba(255,140,26,.85); } }
+@media (prefers-reduced-motion: reduce) { .zapas-fltr.bonus-alert { animation:none; box-shadow:0 0 10px rgba(255,140,26,.5); } }
 </style>
 <script>
 // 🎨 MOTIVY – aplikuj uložený motiv co nejdřív (před vykreslením)
@@ -950,7 +983,7 @@ document.addEventListener('click', function(e) {
     </div>
 
     <!-- DLOUHODOBÝ TIP (zobrazuje se jen ve filtru Dlouhodobé) -->
-    <div class="match-card" id="dlouhodobyCard" style="border-color:var(--gold); display:none;">
+    <div class="match-card dl-karta" id="dlouhodobyCard" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="text-align:left;">
                 <div style="color:var(--gold); font-weight:900; letter-spacing:1px;">⭐ DLOUHODOBÝ TIP (70 Kč)</div>
@@ -1139,6 +1172,8 @@ async function init() {
         return;
     }
     currentUserId = session.user.id;
+    aktualizujBonusUpozorneni();
+    setInterval(aktualizujBonusUpozorneni, 60000);
     if (currentUserId === ADMIN_ID) {
         document.getElementById('adminLock').style.display = 'flex';
         // Admin má zámek nahoře → posuň paletu pod něj
@@ -1339,11 +1374,14 @@ function renderDlouhodoby(now) {
 
     if (mujDlouhodoby) {
         const t = mujDlouhodoby.tip || {};
-        stavEl.innerHTML = `<div style="background:rgba(var(--gold-rgb), 0.08); border:1px solid rgba(var(--gold-rgb), 0.25); border-radius:12px; padding:12px; text-align:left; line-height:1.7;">${zavreno ? '<div style="color:var(--neon); font-weight:800; margin-bottom:8px; letter-spacing:.5px;">🔒 Tvůj uzamčený tip (jen zobrazení)</div>' : ''}
-            🅰️ ${t.vitezA || '–'} &nbsp; 🅱️ ${t.vitezB || '–'} &nbsp; 🏆 <b>${t.vitezTurnaje || '–'}</b><br>
-            🎯 ${t.vitezKB || '–'} &nbsp;·&nbsp; 🥅 ${t.allstar?.g || '–'} · 🛡️ ${t.allstar?.d1 || '–'}, ${t.allstar?.d2 || '–'}<br>
-            ⚔️ ${t.allstar?.u1 || '–'}, ${t.allstar?.u2 || '–'}, ${t.allstar?.u3 || '–'}
-            ${mujDlouhodoby.zaplaceno ? '<div style="color:#27ae60; font-weight:900; margin-top:6px;">✅ ZAPLACENO</div>' : '<div style="color:var(--gold); margin-top:6px;">⏳ čeká na platbu 70 Kč</div>'}
+        const ch = v => v ? v : '–';
+        stavEl.innerHTML = `<div class="dl-souhrn">
+            ${zavreno ? '<div class="dl-lock">🔒 Tvůj uzamčený tip · jen zobrazení</div>' : ''}
+            <div class="dl-rad"><span class="dl-lbl">Vítězové skupin</span><span class="dl-chips"><i>🅰️ ${ch(t.vitezA)}</i><i>🅱️ ${ch(t.vitezB)}</i></span></div>
+            <div class="dl-rad"><span class="dl-lbl">🏆 Šampion</span><span class="dl-chip vitez">${ch(t.vitezTurnaje)}</span></div>
+            <div class="dl-rad"><span class="dl-lbl">🎯 Kanadské bodování</span><span class="dl-chip">${ch(t.vitezKB)}</span></div>
+            <div class="dl-rad"><span class="dl-lbl">All-Star</span><span class="dl-chips"><i>🥅 ${ch(t.allstar?.g)}</i><i>🛡️ ${ch(t.allstar?.d1)}</i><i>🛡️ ${ch(t.allstar?.d2)}</i><i>⚔️ ${ch(t.allstar?.u1)}</i><i>⚔️ ${ch(t.allstar?.u2)}</i><i>⚔️ ${ch(t.allstar?.u3)}</i></span></div>
+            ${mujDlouhodoby.zaplaceno ? '<div class="dl-stav ok">✅ Zaplaceno</div>' : '<div class="dl-stav wait">⏳ Čeká na platbu 70 Kč</div>'}
         </div>`;
         btn.innerText = zavreno ? 'UZÁVĚRKA PROBĚHLA' : 'UPRAVIT DLOUHODOBÝ TIP';
     } else {
@@ -1369,6 +1407,19 @@ function prepniZapasy(rezim) {
 
     if (jeBonus) renderBonus();
     else if (!jeDlouhodobe) renderZapasy(Date.now());
+}
+
+async function aktualizujBonusUpozorneni() {
+    const fb = document.getElementById('fltr-bonus');
+    if (!fb || !currentUserId) return;
+    const now = Date.now();
+    const [{ data: bonusy }, { data: mojeTipy }] = await Promise.all([
+        sb.from('hokej27_bonus').select('id, aktivni, vyhodnoceno, deadline'),
+        sb.from('hokej27_bonus_tipy').select('bonus_id').eq('user_id', currentUserId)
+    ]);
+    const tipnute = new Set((mojeTipy || []).map(t => t.bonus_id));
+    const ceka = (bonusy || []).some(b => b.aktivni && !b.vyhodnoceno && (!b.deadline || now < new Date(b.deadline).getTime()) && !tipnute.has(b.id));
+    fb.classList.toggle('bonus-alert', ceka);
 }
 
 async function renderBonus() {
@@ -1410,6 +1461,7 @@ async function ulozBonusTip(bonusId, odpoved) {
     const { error } = await sb.from('hokej27_bonus_tipy').upsert({ bonus_id: bonusId, user_id: currentUserId, jmeno: currentUser, odpoved }, { onConflict: 'bonus_id,user_id' });
     if (error) { alert('Chyba: ' + error.message); return; }
     renderBonus();
+    aktualizujBonusUpozorneni();
 }
 
 function renderZapasy(now) {
@@ -1996,6 +2048,28 @@ inicializujChat({ klient: sb, tabulka: 'hokej27_chat', soutez: 'hokej', barva: '
     }
     ukaz();
     setInterval(ukaz, 5000);
+})();
+</script>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+(function () {
+    const SOUTEZ = 'hokej';
+    async function syncPush(OneSignal) {
+        try {
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session) { setTimeout(() => syncPush(OneSignal), 3000); return; }
+            const povoleno = !!(OneSignal.Notifications.permission && OneSignal.User.PushSubscription.optedIn);
+            await sb.from('push_stav').upsert({ user_id: session.user.id, soutez: SOUTEZ, povoleno: povoleno, updated_at: new Date().toISOString() }, { onConflict: 'user_id,soutez' });
+        } catch (e) { console.warn('push sync', e); }
+    }
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function (OneSignal) {
+        try {
+            await OneSignal.init({ appId: 'e4db4056-c4db-422c-b7f4-8943a720d548', serviceWorkerPath: '/service-worker.js', serviceWorkerParam: { scope: '/' } });
+        } catch (e) { console.warn('OneSignal init', e); return; }
+        OneSignal.User.PushSubscription.addEventListener('change', () => syncPush(OneSignal));
+        syncPush(OneSignal);
+    });
 })();
 </script>
 </body>
