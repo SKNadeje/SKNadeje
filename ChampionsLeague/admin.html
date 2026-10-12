@@ -183,6 +183,13 @@ async function init() {
             <div id="seznamBezDl">—</div>
         </div>
 
+<div class="karta">
+    <h2 style="margin-top:0;">🔔 Stav notifikací (CL)</h2>
+    <div style="font-size:.8em; opacity:.7; margin-bottom:10px;">✅ zapnuto · ❌ vypnuto · ❔ neznámo (hráč ještě neotevřel appku po nasazení)</div>
+    <button class="btn" onclick="nactiStavNotifikaci()">🔄 Načíst stav</button>
+    <div id="notifStavList" style="margin-top:12px;"></div>
+</div>
+
         <div class="karta">
             <h2>🎨 Viditelnost vodoznaku (loga na pozadí)</h2>
             <div style="font-size:.8em; opacity:.7; margin-bottom:10px;">Platí pro všechny stránky CL. 0 % = vypnuto.</div>
@@ -1065,6 +1072,30 @@ async function potvrdKrale() {
 }
 
 init();
+</script>
+<script>
+async function nactiStavNotifikaci() {
+    const box = document.getElementById('notifStavList');
+    box.innerHTML = '<span style="opacity:.6;">Načítám…</span>';
+    const [{ data: hraci }, { data: ps }] = await Promise.all([
+        sb.from('hraci').select('user_id, jmeno').order('jmeno'),
+        sb.from('push_stav').select('user_id, soutez, povoleno, updated_at').eq('soutez', 'cl')
+    ]);
+    const m = {}; (ps || []).forEach(p => { m[p.user_id] = p; });
+    if (!hraci || !hraci.length) { box.innerHTML = 'Žádní hráči.'; return; }
+    const pocty = { ano: 0, ne: 0, nezn: 0 };
+    box.innerHTML = hraci.map(h => {
+        const p = m[h.user_id];
+        let stav;
+        if (!p) { pocty.nezn++; stav = '<span style="opacity:.55;">❔ neznámo</span>'; }
+        else if (p.povoleno) { pocty.ano++; stav = '<span style="color:#2ecc71; font-weight:800;">✅ zapnuto</span>'; }
+        else { pocty.ne++; stav = '<span style="color:#e74c3c; font-weight:800;">❌ vypnuto</span>'; }
+        const kdy = p && p.updated_at ? new Date(p.updated_at).toLocaleDateString('cs-CZ') : '';
+        return '<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.08);">'
+             + '<b>' + (h.jmeno || '(bez jména)') + '</b>'
+             + '<span style="text-align:right;">' + stav + (kdy ? ' <span style="opacity:.45; font-size:.8em;">' + kdy + '</span>' : '') + '</span></div>';
+    }).join('') + '<div style="margin-top:10px; font-size:.82em; opacity:.8;">✅ ' + pocty.ano + ' zapnuto · ❌ ' + pocty.ne + ' vypnuto · ❔ ' + pocty.nezn + ' neznámo</div>';
+}
 </script>
 </body>
 </html>
