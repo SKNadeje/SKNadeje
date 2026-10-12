@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs"> 
+<html lang="cs">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -256,6 +256,13 @@ input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { fil
         <div class="collapsible-header" onclick="toggleSection('secHist')">📜 VYHODNOCENÉ <span class="collapse-arrow">▼</span></div>
         <div class="collapsible-body" id="secHist"><div id="historyMatches"></div></div>
     </div>
+
+    <div class="card">
+    <h2 style="margin-top:0;">🔔 Stav notifikací (hokej)</h2>
+    <div style="font-size:.8em; opacity:.7; margin-bottom:10px;">✅ zapnuto · ❌ vypnuto · ❔ neznámo (hráč ještě neotevřel appku po nasazení)</div>
+    <button class="btn" onclick="nactiStavNotifikaci()">🔄 Načíst stav</button>
+    <div id="notifStavList" style="margin-top:12px;"></div>
+</div>
 
     <!-- 🎯 BONUS DNE -->
     <div class="card">
@@ -1041,7 +1048,7 @@ async function zalozBonus() {
     const moznosti = [1,2,3,4,5,6].map(i => document.getElementById('bonus-m' + i).value.trim()).filter(Boolean);
     const body = parseInt(document.getElementById('bonus-body').value) || 0;
     const deadlineRaw = document.getElementById('bonus-deadline').value;
-    if (!otazka || moznosti.length < 2 || !body) { msg.innerHTML = '<span style="color:#ff4444;">Vyplň otázku, aspoň 2 možnosti a body.</span>'; return; }
+    if (!otazka || moznosti.length < 2 || !body || !deadlineRaw) { msg.innerHTML = '<span style="color:#ff4444;">Vyplň otázku, aspoň 2 možnosti, body a <b>uzávěrku</b>.</span>'; return; }
     const deadline = deadlineRaw ? new Date(deadlineRaw).toISOString() : null;
     msg.innerHTML = '<span style="opacity:.6;">Zakládám…</span>';
     const { data, error } = await sb.from('hokej27_bonus').insert({ otazka, moznosti, body, deadline, aktivni: true }).select().single();
@@ -1058,8 +1065,8 @@ async function zalozBonus() {
                     url: 'https://sknadeje.cz/hokej2027/index.html'
                 })
             });
-            const d = await res.json(); notifTxt = d.ok ? ' + notifikace odeslána 🔔' : ' (notifikace se neodeslala)';
-        } catch (e) { notifTxt = ' (notifikace selhala)'; }
+            const d = await res.json(); notifTxt = d.ok ? ' + 🔔 notifikace odeslána' : ' ⚠️ notifikace NEodeslána: ' + (d.detail || d.error || d.message || JSON.stringify(d));
+        } catch (e) { notifTxt = ' ⚠️ notifikace selhala: ' + e.message; }
     }
     msg.innerHTML = '<span style="color:#27ae60;">✅ Bonus založen' + notifTxt + '!</span>';
     ['bonus-otazka','bonus-m1','bonus-m2','bonus-m3','bonus-m4','bonus-m5','bonus-m6','bonus-deadline'].forEach(id => document.getElementById(id).value = '');
@@ -1105,6 +1112,30 @@ async function smazBonus(id) {
 }
 
 window.addEventListener('DOMContentLoaded', init);
+</script>
+<script>
+async function nactiStavNotifikaci() {
+    const box = document.getElementById('notifStavList');
+    box.innerHTML = '<span style="opacity:.6;">Načítám…</span>';
+    const [{ data: hraci }, { data: ps }] = await Promise.all([
+        sb.from('hraci').select('user_id, jmeno').order('jmeno'),
+        sb.from('push_stav').select('user_id, soutez, povoleno, updated_at').eq('soutez', 'hokej')
+    ]);
+    const m = {}; (ps || []).forEach(p => { m[p.user_id] = p; });
+    if (!hraci || !hraci.length) { box.innerHTML = 'Žádní hráči.'; return; }
+    const pocty = { ano: 0, ne: 0, nezn: 0 };
+    box.innerHTML = hraci.map(h => {
+        const p = m[h.user_id];
+        let stav;
+        if (!p) { pocty.nezn++; stav = '<span style="opacity:.55;">❔ neznámo</span>'; }
+        else if (p.povoleno) { pocty.ano++; stav = '<span style="color:#2ecc71; font-weight:800;">✅ zapnuto</span>'; }
+        else { pocty.ne++; stav = '<span style="color:#e74c3c; font-weight:800;">❌ vypnuto</span>'; }
+        const kdy = p && p.updated_at ? new Date(p.updated_at).toLocaleDateString('cs-CZ') : '';
+        return '<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.08);">'
+             + '<b>' + (h.jmeno || '(bez jména)') + '</b>'
+             + '<span style="text-align:right;">' + stav + (kdy ? ' <span style="opacity:.45; font-size:.8em;">' + kdy + '</span>' : '') + '</span></div>';
+    }).join('') + '<div style="margin-top:10px; font-size:.82em; opacity:.8;">✅ ' + pocty.ano + ' zapnuto · ❌ ' + pocty.ne + ' vypnuto · ❔ ' + pocty.nezn + ' neznámo</div>';
+}
 </script>
 </body>
 </html>
