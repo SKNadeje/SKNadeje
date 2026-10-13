@@ -776,7 +776,9 @@ async function load() {
             const bSkore = t.hit_skore ? 5 : 0;
             const bRozdil = t.hit_rozdil ? 1 : 0;
             const bPocet = t.hit_pocet ? 1 : 0;
-            const bTrend = Math.max(0, (t.body || 0) - bSkore - bRozdil - bPocet);
+            const zaklBody = t.joker ? (t.body || 0) / 2 : (t.body || 0); // základ před žolíkem
+            const bTrend = Math.max(0, zaklBody - bSkore - bRozdil - bPocet);
+            const bZolik = (t.body || 0) - zaklBody;
             const rr = (nazev, zisk) => `<div class="rr"><span>${nazev}</span><b class="${zisk ? 'ok' : 'no'}">${zisk ? '+' + zisk + ' b.' : '—'}</b></div>`;
             const onclickAttr = rozbal ? ` onclick="prepniRozpad('${t.id}')"` : '';
             const rozpadHtml = rozbal ? `<div class="rozpad" id="rozpad-${t.id}">
@@ -784,6 +786,7 @@ async function load() {
                         ${rr('↗️ Vítěz (trend)', bTrend)}
                         ${rr('➖ Rozdíl skóre', bRozdil)}
                         ${rr('🔢 Počet branek', bPocet)}
+                        ${t.joker ? rr('🃏 Žolík (×2)', bZolik) : ''}
                         <div class="rr celkem"><span>Celkem</span><b>${t.body || 0} b.</b></div>
                     </div>` : '';
             return `<div class="hist${rozbal ? ' klik' : ''}"${onclickAttr}>
