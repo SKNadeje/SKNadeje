@@ -645,6 +645,7 @@ body.sez-zima .nav button::after, body.sez-vanoce .nav button::after, body.sez-s
 .f-D { background: #f0c359; }
 .f-L { background: #e74c3c; }
 .f-none { opacity: .3; font-size: .8em; }
+
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -1615,13 +1616,30 @@ function obnovFinale() {
     el.innerHTML = `🏆 Do finále v Madridu zbývá <b>${d} dní ${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}</b>`;
 }
 
-function zobrazJokerOznameni() {
+async function jokerSessionId() {
+    try { const { data: { session } } = await sb.auth.getSession(); return session ? session.user.id : null; } catch (e) { return null; }
+}
+async function zobrazJokerOznameni() {
     try { if (localStorage.getItem('joker_oznameni_skryt') === '1') return; } catch (e) {}
+    const uid = await jokerSessionId();
+    if (uid) {
+        try {
+            const { data: h } = await sb.from('hraci').select('skryt_joker_oznameni').eq('user_id', uid).maybeSingle();
+            if (h && h.skryt_joker_oznameni) return;
+        } catch (e) {}
+    }
     var m = document.getElementById('joker-modal'); if (m) m.classList.add('on');
 }
-function zavriJokerOznameni() {
+async function zavriJokerOznameni() {
     var ch = document.getElementById('jk-nezobraz');
-    if (ch && ch.checked) { try { localStorage.setItem('joker_oznameni_skryt', '1'); } catch (e) {} }
+    if (ch && ch.checked) {
+        try { localStorage.setItem('joker_oznameni_skryt', '1'); } catch (e) {}
+        const uid = await jokerSessionId();
+        if (uid) {
+            const { error } = await sb.rpc('skryj_joker_oznameni');
+            if (error) alert('Volbu se nepodařilo uložit: ' + error.message);
+        }
+    }
     var m = document.getElementById('joker-modal'); if (m) m.classList.remove('on');
 }
 document.addEventListener('DOMContentLoaded', function () { setTimeout(zobrazJokerOznameni, 600); sezonniOzdoby(); });
