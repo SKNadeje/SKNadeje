@@ -158,6 +158,119 @@ a.tile.hall:hover { border-style: solid; }
     .tile.wide { flex-wrap: wrap; }
     .tile.wide .enter { width: 100%; text-align: center; }
 }
+
+/* ===== HLAVNÍ DLAŽDICE NAHOŘE (aktivní turnaj) ===== */
+.tile.wide.aktivni {
+    background: radial-gradient(ellipse at 92% 0%, rgba(212,175,55,.26), transparent 55%),
+                linear-gradient(135deg, #16223f 0%, #0b1226 60%, #1b1432 100%);
+    border: 1px solid rgba(240,217,135,.7);
+    border-radius: 22px;
+    padding: 26px 24px;
+    min-height: 150px;
+    box-shadow: 0 18px 48px rgba(0,0,0,.6), 0 0 40px rgba(212,175,55,.22), inset 0 1px 0 rgba(255,255,255,.08);
+    gap: 20px;
+}
+.tile.wide.aktivni::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.09) 50%, transparent 65%);
+    transform: translateX(-100%);
+    animation: hlavniSheen 5s ease-in-out infinite;
+}
+@keyframes hlavniSheen { 0%, 55% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.tile.wide.aktivni .logo {
+    width: 116px; height: 116px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.14), rgba(212,175,55,.08));
+    border: 2px solid rgba(240,217,135,.55);
+    box-shadow: 0 0 26px rgba(212,175,55,.35);
+}
+.tile.wide.aktivni .tname {
+    font-size: 1.4rem; font-weight: 900; letter-spacing: .3px;
+    background: linear-gradient(90deg, #fff3c4, #d4af37 80%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: #f0d987;
+}
+.tile.wide.aktivni .tmeta { color: #b8c2dc; font-size: .72rem; }
+.tile.wide.aktivni .thook { color: #f0d987; font-size: .8rem; }
+.tile.wide.aktivni .tnote { color: #9aa6c4; }
+.tile.wide.aktivni .badge { top: 16px; right: 16px; }
+.tile.wide.aktivni .enter {
+    border-radius: 999px; padding: 12px 22px;
+    background: linear-gradient(135deg, #f0d987, #c9a02e);
+    box-shadow: 0 6px 22px rgba(212,175,55,.45);
+}
+.tile.wide.aktivni .enter::after { content: ' →'; }
+a.tile.wide.aktivni:hover { transform: translateY(-3px); box-shadow: 0 22px 56px rgba(0,0,0,.65), 0 0 52px rgba(212,175,55,.36), inset 0 1px 0 rgba(255,255,255,.1); }
+@media (prefers-reduced-motion: reduce) { .tile.wide.aktivni::before { animation: none; } }
+@media (max-width: 560px) {
+    .tile.wide.aktivni { padding: 20px 18px; }
+    .tile.wide.aktivni .logo { width: 92px; height: 92px; }
+    .tile.wide.aktivni .tname { font-size: 1.2rem; }
+}
+
+/* ===== VIZUÁL HUBU (nápady 1–6, 10–12) ===== */
+#castice { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.hub { position: relative; z-index: 1; }
+
+/* 3) pomalý zlatý přechod nadpisu + záře */
+h1 {
+    background-size: 220% auto;
+    animation: titulShimmer 7s linear infinite;
+    filter: drop-shadow(0 0 14px rgba(212,175,55,.35));
+}
+@keyframes titulShimmer { 0% { background-position: 0% 50%; } 100% { background-position: 220% 50%; } }
+
+/* 6) barevné téma každého turnaje */
+.tile.tema-cl { --t: #d4af37; }
+.tile.tema-hokej { --t: #7fd4ff; }
+.tile.tema-euro { --t: #5fd68a; }
+.tile.tema-wc { --t: #e8c15a; }
+.tile { border-color: color-mix(in srgb, var(--t, #d4af37) 22%, transparent); box-shadow: 0 16px 24px -16px color-mix(in srgb, var(--t, #d4af37) 35%, transparent); }
+a.tile:hover { border-color: var(--t, #d4af37); box-shadow: 0 12px 32px rgba(0,0,0,.5), 0 0 22px color-mix(in srgb, var(--t, #d4af37) 28%, transparent); }
+
+/* 4) odraz pod dlaždicemi (jemná záře pod hranou) je v box-shadow výše */
+
+/* 5) štítek NOVÉ u turnajů, které se otevřou brzy */
+.tile.st-soon::before {
+    content: 'NOVÉ';
+    position: absolute; top: 13px; left: 13px;
+    font-size: .52rem; font-weight: 900; letter-spacing: 1.5px;
+    padding: 4px 9px; border-radius: 999px; color: #05070f;
+    background: linear-gradient(90deg, #d4af37, #fff3c4, #d4af37);
+    background-size: 200% auto;
+    animation: noveShimmer 2.6s linear infinite;
+    pointer-events: none;
+}
+@keyframes noveShimmer { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+/* 10) postupné rozsvěcení dlaždic zleva */
+@keyframes rozsvit {
+    from { opacity: 0; filter: brightness(.35); transform: translateY(14px); }
+    to { opacity: 1; filter: brightness(1); transform: none; }
+}
+.tile { animation: rozsvit .8s ease both; }
+.tile:nth-child(1) { animation-delay: .05s; }
+.tile:nth-child(2) { animation-delay: .17s; }
+.tile:nth-child(3) { animation-delay: .29s; }
+.tile:nth-child(4) { animation-delay: .41s; }
+.tile:nth-child(5) { animation-delay: .53s; }
+.tile.aktivni { animation: rozsvit .8s ease .05s both, aktivniPulse 2.8s ease-in-out .85s infinite; }
+
+/* 11) šipka na tlačítku Vstoupit se hýbe při najetí */
+.enter::after { content: ' →'; display: inline-block; transition: transform .2s ease; }
+a.tile:hover .enter::after { transform: translateX(4px); }
+
+/* 12) logo se při najetí na dlaždici zvětší */
+.logo { transition: transform .3s ease; }
+a.tile:hover .logo { transform: scale(1.07); }
+
+@media (prefers-reduced-motion: reduce) {
+    h1, .tile.st-soon::before { animation: none; }
+    .tile { animation: none; }
+    .enter::after, .logo { transition: none; }
+}
+@media (max-width: 560px) {
+    .tile.st-soon::before { top: 11px; left: 11px; }
+}
 </style>
 </head>
 <body>
@@ -241,7 +354,7 @@ a.tile.hall:hover { border-style: solid; }
    ============================================================ */
 const TURNAJE = [
     {
-        nazev: 'MS ve fotbale 2026',
+        nazev: 'MS ve fotbale 2026', tema: 'wc',
         meta: 'USA · Mexiko · Kanada · 25 hráčů · bank 5 000 Kč',
        hook: '🏆 Vítěz: Jan Rathouský',
         stav: 'archiv',
@@ -250,7 +363,7 @@ const TURNAJE = [
         url: 'wc2026.html'               // po přejmenování 'wc2026.html'
     },
    {
-        nazev: 'MS v hokeji 2027',
+        nazev: 'MS v hokeji 2027', tema: 'hokej',
         meta: 'Düsseldorf · Mannheim · 14.–30. 5. 2027',
         note: 'Sázková kancelář otevřena – vsaď si dlouhodobý tip',
         stav: 'soon',
@@ -259,7 +372,7 @@ const TURNAJE = [
         url: 'hokej2027/welcome.html'
     },
     {
-        nazev: 'Euro 2028',
+        nazev: 'Euro 2028', tema: 'euro',
         meta: 'Británie · Irsko · léto 2028',
         note: 'Kvalifikace ještě běží',
         stav: 'soon',
@@ -268,7 +381,7 @@ const TURNAJE = [
         url: null
     },
     {
-     nazev: 'Liga mistrů',
+     nazev: 'Liga mistrů', tema: 'cl',
         meta: 'Celá sezóna 2026/27 · od září',
         note: 'Dlouhodobá tipovačka – tabulka, zápasy i pavouk',
         hook: '⚡ Probíhá',
@@ -299,7 +412,7 @@ function tileHtml(t) {
     const b = BADGE[t.stav] || BADGE.soon;
     const tag = t.url ? 'a' : 'div';
     const href = t.url ? ` href="${t.url}"` : '';
-    const cls = `tile${t.hlavni ? ' wide' : ''}${t.url ? '' : ' disabled'}${t.aktivni ? ' aktivni' : ''}${t.stav === 'archiv' ? ' archiv-tile' : ''}`;
+    const cls = `tile${t.hlavni ? ' wide' : ''}${t.url ? '' : ' disabled'}${t.aktivni ? ' aktivni' : ''}${t.stav === 'archiv' ? ' archiv-tile' : ''}${t.tema ? ' tema-' + t.tema : ''} st-${t.stav}`;
 
     if (t.hlavni) {
         return `<${tag}${href} class="${cls}">
@@ -585,6 +698,47 @@ function aktualizujTlacitkoNotif(pocet) {
         btn.style.color = '#d4af37';
     }
 }
+</script>
+<script>
+/* 1) jemné částice stoupající za dlaždicemi */
+(function () {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const c = document.createElement('canvas'); c.id = 'castice';
+    document.body.prepend(c);
+    const x = c.getContext('2d');
+    let w, h, p = [];
+    function velikost() { w = c.width = innerWidth; h = c.height = innerHeight; }
+    function nova() { return { x: Math.random() * w, y: h + Math.random() * h * .3, r: .6 + Math.random() * 1.6, v: .15 + Math.random() * .35, a: .15 + Math.random() * .35, d: Math.random() * 6.28 }; }
+    velikost(); p = Array.from({ length: Math.min(60, Math.round(w / 22)) }, nova);
+    addEventListener('resize', velikost);
+    (function krok() {
+        x.clearRect(0, 0, w, h);
+        p.forEach((q, i) => {
+            q.y -= q.v; q.d += .01; q.x += Math.sin(q.d) * .25;
+            if (q.y < -10) p[i] = nova();
+            x.globalAlpha = q.a; x.fillStyle = '#d4af37';
+            x.beginPath(); x.arc(q.x, q.y, q.r, 0, 6.283); x.fill();
+        });
+        requestAnimationFrame(krok);
+    })();
+})();
+
+/* 2) parallax – dlaždice se jemně posouvají za kurzorem (jen myš, ne mobil) */
+(function () {
+    if (!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches)) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const grid = document.getElementById('grid');
+    if (!grid) return;
+    grid.addEventListener('pointermove', e => {
+        const dx = (e.clientX / innerWidth - .5), dy = (e.clientY / innerHeight - .5);
+        grid.querySelectorAll('.tile').forEach(t => {
+            t.style.translate = (dx * 8).toFixed(1) + 'px ' + (dy * 6).toFixed(1) + 'px';
+        });
+    });
+    grid.addEventListener('pointerleave', () => {
+        grid.querySelectorAll('.tile').forEach(t => { t.style.translate = ''; });
+    });
+})();
 </script>
 </body>
 </html>
