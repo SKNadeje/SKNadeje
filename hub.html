@@ -271,11 +271,35 @@ a.tile:hover .logo { transform: scale(1.07); }
 @media (max-width: 560px) {
     .tile.st-soon::before { top: 11px; left: 11px; }
 }
+
+/* ===== DALŠÍ VYCHYTÁVKY (6, 7, 8, 9, 12) ===== */
+/* 6) odznak počtu účastníků */
+.tile[data-ucast]::after {
+    content: attr(data-ucast); position: absolute; top: 44px; right: 13px;
+    font-size: .5rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 999px; pointer-events: none;
+    color: var(--t, #d4af37); background: rgba(0,0,0,.25);
+    border: 1px solid color-mix(in srgb, var(--t, #d4af37) 45%, transparent);
+}
+/* 7) odpočet do startu přímo na dlaždici */
+.odpocet { font-size: .66rem; color: #d4af37; margin-top: 6px; font-weight: 700; }
+/* 8) trofej u archivovaných turnajů – při najetí poskočí */
+.tile.archiv-tile .tname::after { content: ' 🏆'; display: inline-block; }
+a.tile.archiv-tile:hover .tname::after { animation: trofejSkok .6s ease; }
+@keyframes trofejSkok { 0% { transform: none; } 40% { transform: translateY(-4px) rotate(-12deg) scale(1.2); } 100% { transform: none; } }
+/* 9) zvuk – přepínač */
+#zvuk-btn:hover { border-color: #d4af37; color: #d4af37; }
+/* 12) plynulý přechod mezi stránkami */
+body { animation: hubVstup .45s ease; }
+body.odchod { opacity: 0; transition: opacity .3s ease; }
+@keyframes hubVstup { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { body, .tile.archiv-tile .tname::after { animation: none !important; } body.odchod { transition: none; } }
 </style>
 </head>
 <body>
 <div class="hub">
     <a href="welcome.html" style="display:inline-flex; align-items:center; gap:6px; color:#8a93ad; text-decoration:none; font-size:.72rem; margin-bottom:18px; transition:color .2s;" onmouseover="this.style.color='#d4af37'" onmouseout="this.style.color='#8a93ad'">← Zpět na úvod</a>
+    <div style="text-align:right; margin-bottom:6px;"><button id="zvuk-btn" style="background:transparent; color:#8a93ad; border:1px solid rgba(255,255,255,.15); border-radius:999px; padding:5px 12px; font-size:.66rem; font-family:inherit; cursor:pointer;">🔇 Zvuk vypnut</button></div>
     <div class="presents">SK Naděje presents</div>
     <h1>Tipovačky</h1>
     <div class="sub">Vyber turnaj a vstup do hry</div>
@@ -354,7 +378,7 @@ a.tile:hover .logo { transform: scale(1.07); }
    ============================================================ */
 const TURNAJE = [
     {
-        nazev: 'MS ve fotbale 2026', tema: 'wc',
+        nazev: 'MS ve fotbale 2026', tema: 'wc', ucast: '25 hráčů',
         meta: 'USA · Mexiko · Kanada · 25 hráčů · bank 5 000 Kč',
        hook: '🏆 Vítěz: Jan Rathouský',
         stav: 'archiv',
@@ -363,7 +387,7 @@ const TURNAJE = [
         url: 'wc2026.html'               // po přejmenování 'wc2026.html'
     },
    {
-        nazev: 'MS v hokeji 2027', tema: 'hokej',
+        nazev: 'MS v hokeji 2027', tema: 'hokej', start: '2027-05-14T00:00:00',
         meta: 'Düsseldorf · Mannheim · 14.–30. 5. 2027',
         note: 'Sázková kancelář otevřena – vsaď si dlouhodobý tip',
         stav: 'soon',
@@ -415,7 +439,7 @@ function tileHtml(t) {
     const cls = `tile${t.hlavni ? ' wide' : ''}${t.url ? '' : ' disabled'}${t.aktivni ? ' aktivni' : ''}${t.stav === 'archiv' ? ' archiv-tile' : ''}${t.tema ? ' tema-' + t.tema : ''} st-${t.stav}`;
 
     if (t.hlavni) {
-        return `<${tag}${href} class="${cls}">
+        return `<${tag}${href}${t.ucast ? ' data-ucast="' + t.ucast + '"' : ''}${t.start ? ' data-start="' + t.start + '"' : ''} class="${cls}">
             <span class="badge ${b.cls}">${b.text}</span>
             ${logoHtml(t)}
             <div style="flex:1; min-width:0;">
@@ -426,7 +450,7 @@ function tileHtml(t) {
             ${t.url ? `<div class="enter">Vstoupit</div>` : ''}
         </${tag}>`;
     }
-   return `<${tag}${href} class="${cls}">
+   return `<${tag}${href}${t.ucast ? ' data-ucast="' + t.ucast + '"' : ''}${t.start ? ' data-start="' + t.start + '"' : ''} class="${cls}">
         <span class="badge ${b.cls}">${b.text}</span>
         <div class="trow">
             ${logoHtml(t)}
@@ -738,6 +762,67 @@ function aktualizujTlacitkoNotif(pocet) {
     grid.addEventListener('pointerleave', () => {
         grid.querySelectorAll('.tile').forEach(t => { t.style.translate = ''; });
     });
+})();
+</script>
+<script>
+/* 7) odpočet do startu + 6) odznak účastníků – doplní se při vykreslení dlaždic */
+(function () {
+    const grid = document.getElementById('grid');
+    if (!grid) return;
+    function dekoruj() {
+        grid.querySelectorAll('.tile[data-start]').forEach(el => {
+            if (el.dataset.odp) return;
+            const dny = Math.ceil((new Date(el.dataset.start) - Date.now()) / 864e5);
+            const meta = el.querySelector('.tmeta');
+            if (meta && dny > 0) meta.insertAdjacentHTML('afterend', '<div class="odpocet">⏳ začíná za ' + dny + ' dní</div>');
+            el.dataset.odp = '1';
+        });
+    }
+    new MutationObserver(dekoruj).observe(grid, { childList: true, subtree: true });
+    dekoruj();
+})();
+
+/* 9) zvuk při otevření turnaje (volitelný, pamatuje se) + 12) fade přechod */
+(function () {
+    const btn = document.getElementById('zvuk-btn');
+    const grid = document.getElementById('grid');
+    let zvuk = localStorage.getItem('hub_zvuk') === '1';
+    let ctx = null;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function pipni() {
+        try {
+            ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+            const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'sine';
+            o.frequency.setValueAtTime(660, t);
+            o.frequency.exponentialRampToValueAtTime(990, t + .12);
+            g.gain.setValueAtTime(.0001, t);
+            g.gain.exponentialRampToValueAtTime(.12, t + .02);
+            g.gain.exponentialRampToValueAtTime(.0001, t + .25);
+            o.connect(g).connect(ctx.destination);
+            o.start(t); o.stop(t + .26);
+        } catch (e) {}
+    }
+    function popis() { btn.textContent = zvuk ? '🔊 Zvuk zapnut' : '🔇 Zvuk vypnut'; }
+    btn.addEventListener('click', () => {
+        zvuk = !zvuk;
+        localStorage.setItem('hub_zvuk', zvuk ? '1' : '0');
+        popis();
+        if (zvuk) pipni();
+    });
+    popis();
+    grid.addEventListener('click', e => {
+        const a = e.target.closest('a.tile');
+        if (!a) return;
+        const cil = a.getAttribute('href');
+        if (!cil) return;
+        e.preventDefault();
+        if (zvuk) pipni();
+        if (reduce) { location.href = cil; return; }
+        document.body.classList.add('odchod');
+        setTimeout(() => { location.href = cil; }, 320);
+    });
+    addEventListener('pageshow', e => { if (e.persisted) document.body.classList.remove('odchod'); });
 })();
 </script>
 </body>
