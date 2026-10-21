@@ -101,7 +101,7 @@ a.tile.archiv-tile:hover { opacity: .85; filter: grayscale(0); }
     padding: 8px;
 }
 .tile.wide .logo { width: 100px; height: 100px; font-size: 2.6rem; border-radius: 16px; }
-.logo img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+.logo img, .logo video { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
 
 /* malé dlaždice: logo vlevo, text vedle */
 .trow { display: flex; align-items: center; gap: 14px; }
@@ -178,10 +178,8 @@ a.tile.hall:hover { border-style: solid; }
 }
 @keyframes hlavniSheen { 0%, 55% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 .tile.wide.aktivni .logo {
-    width: 116px; height: 116px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,255,255,.14), rgba(212,175,55,.08));
-    border: 2px solid rgba(240,217,135,.55);
-    box-shadow: 0 0 26px rgba(212,175,55,.35);
+    width: 116px; height: 116px;
+    background: none; border: none; box-shadow: none; padding: 0;
 }
 .tile.wide.aktivni .tname {
     font-size: 1.4rem; font-weight: 900; letter-spacing: .3px;
@@ -288,7 +286,6 @@ a.tile:hover .logo { transform: scale(1.07); }
 a.tile.archiv-tile:hover .tname::after { animation: trofejSkok .6s ease; }
 @keyframes trofejSkok { 0% { transform: none; } 40% { transform: translateY(-4px) rotate(-12deg) scale(1.2); } 100% { transform: none; } }
 /* 9) zvuk – přepínač */
-#zvuk-btn:hover { border-color: #d4af37; color: #d4af37; }
 /* 12) plynulý přechod mezi stránkami */
 body { animation: hubVstup .45s ease; }
 body.odchod { opacity: 0; transition: opacity .3s ease; }
@@ -299,7 +296,6 @@ body.odchod { opacity: 0; transition: opacity .3s ease; }
 <body>
 <div class="hub">
     <a href="welcome.html" style="display:inline-flex; align-items:center; gap:6px; color:#8a93ad; text-decoration:none; font-size:.72rem; margin-bottom:18px; transition:color .2s;" onmouseover="this.style.color='#d4af37'" onmouseout="this.style.color='#8a93ad'">← Zpět na úvod</a>
-    <div style="text-align:right; margin-bottom:6px;"><button id="zvuk-btn" style="background:transparent; color:#8a93ad; border:1px solid rgba(255,255,255,.15); border-radius:999px; padding:5px 12px; font-size:.66rem; font-family:inherit; cursor:pointer;">🔇 Zvuk vypnut</button></div>
     <div class="presents">SK Naděje presents</div>
     <h1>Tipovačky</h1>
     <div class="sub">Vyber turnaj a vstup do hry</div>
@@ -412,7 +408,7 @@ const TURNAJE = [
         stav: 'live',
         aktivni: true,
         hlavni: true,
-        logo: 'logo-cl.png',
+        logo: 'logo-cl.png?v=2',
         emoji: '🛡️',
         url: 'ChampionsLeague/welcome.html'
     }
@@ -427,6 +423,9 @@ const BADGE = {
 
 function logoHtml(t) {
     const fallback = `this.parentNode.textContent='${t.emoji || '🏆'}'`;
+    if (t.logo && /\.(mp4|webm)$/i.test(t.logo)) {
+        return `<div class="logo"><video src="${t.logo}" autoplay muted loop playsinline preload="auto"></video></div>`;
+    }
     return t.logo
         ? `<div class="logo"><img src="${t.logo}" alt="" onerror="${fallback}"></div>`
         : `<div class="logo">${t.emoji || '🏆'}</div>`;
@@ -769,55 +768,13 @@ function aktualizujTlacitkoNotif(pocet) {
 (function () {
     const grid = document.getElementById('grid');
     if (!grid) return;
-    function dekoruj() {
-        grid.querySelectorAll('.tile[data-start]').forEach(el => {
-            if (el.dataset.odp) return;
-            const dny = Math.ceil((new Date(el.dataset.start) - Date.now()) / 864e5);
-            const meta = el.querySelector('.tmeta');
-            if (meta && dny > 0) meta.insertAdjacentHTML('afterend', '<div class="odpocet">⏳ začíná za ' + dny + ' dní</div>');
-            el.dataset.odp = '1';
-        });
-    }
-    new MutationObserver(dekoruj).observe(grid, { childList: true, subtree: true });
-    dekoruj();
-})();
-
-/* 9) zvuk při otevření turnaje (volitelný, pamatuje se) + 12) fade přechod */
-(function () {
-    const btn = document.getElementById('zvuk-btn');
-    const grid = document.getElementById('grid');
-    let zvuk = localStorage.getItem('hub_zvuk') === '1';
-    let ctx = null;
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    function pipni() {
-        try {
-            ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
-            const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
-            o.type = 'sine';
-            o.frequency.setValueAtTime(660, t);
-            o.frequency.exponentialRampToValueAtTime(990, t + .12);
-            g.gain.setValueAtTime(.0001, t);
-            g.gain.exponentialRampToValueAtTime(.12, t + .02);
-            g.gain.exponentialRampToValueAtTime(.0001, t + .25);
-            o.connect(g).connect(ctx.destination);
-            o.start(t); o.stop(t + .26);
-        } catch (e) {}
-    }
-    function popis() { btn.textContent = zvuk ? '🔊 Zvuk zapnut' : '🔇 Zvuk vypnut'; }
-    btn.addEventListener('click', () => {
-        zvuk = !zvuk;
-        localStorage.setItem('hub_zvuk', zvuk ? '1' : '0');
-        popis();
-        if (zvuk) pipni();
-    });
-    popis();
     grid.addEventListener('click', e => {
         const a = e.target.closest('a.tile');
         if (!a) return;
         const cil = a.getAttribute('href');
         if (!cil) return;
         e.preventDefault();
-        if (zvuk) pipni();
         if (reduce) { location.href = cil; return; }
         document.body.classList.add('odchod');
         setTimeout(() => { location.href = cil; }, 320);
