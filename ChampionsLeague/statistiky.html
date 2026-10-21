@@ -235,6 +235,30 @@ html[data-theme="dortmund"] h1 { color: #fde100; -webkit-text-fill-color: #fde10
 .jok-b { color: var(--gold); font-weight: 900; }
 .karta-kola-btn { display:block; margin:4px auto 16px; background:linear-gradient(120deg,var(--gold),#e0a63e); color:#1a1206; border:none; padding:11px 24px; border-radius:100px; font-weight:800; font-size:.88em; cursor:pointer; font-family:inherit; box-shadow:0 4px 16px rgba(240,195,89,.3); }
 .karta-kola-btn:hover { transform:translateY(-1px); }
+.kral-koruna { display:inline-block; margin-right:4px; animation: korunaFloat 2s ease-in-out infinite; }
+@keyframes korunaFloat { 0%,100%{transform:translateY(0) rotate(-7deg)} 50%{transform:translateY(-4px) rotate(7deg)} }
+@media (prefers-reduced-motion: reduce){ .kral-koruna { animation:none; } }
+
+/* ===== vývoj – grafický klenot ===== */
+.vyvoj-kart { position:relative; background: radial-gradient(ellipse at 50% 0%, rgba(0,229,255,.10), transparent 60%), linear-gradient(180deg, rgba(12,20,44,.9), rgba(5,9,22,.96)); border:1px solid rgba(255,255,255,.09); border-radius:18px; padding:12px 10px 8px; box-shadow: 0 12px 34px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.05); }
+.vyvoj-svg { overflow:visible; display:block; width:100%; height:auto; }
+.vyvoj-line { stroke-dasharray:1; stroke-dashoffset:1; animation: vyvojDraw 1.5s cubic-bezier(.25,.8,.25,1) forwards; }
+@keyframes vyvojDraw { to { stroke-dashoffset:0; } }
+.vyvoj-area { opacity:0; animation: vyvojFade 1s ease .7s forwards; }
+@keyframes vyvojFade { to { opacity:1; } }
+.vyvoj-guide { opacity:0; transition: opacity .15s; }
+.vyvoj-tip { position:absolute; top:14px; left:0; min-width:150px; opacity:0; transition: opacity .15s; pointer-events:none; background: rgba(8,12,28,.94); border:1px solid rgba(240,195,89,.45); border-radius:12px; padding:9px 11px; box-shadow: 0 8px 24px rgba(0,0,0,.55); font-size:.72em; z-index:3; }
+.vyvoj-tip-h { font-weight:900; color:#f0c359; margin-bottom:6px; letter-spacing:.3px; }
+.vyvoj-tip-r { display:flex; align-items:center; gap:7px; padding:2px 0; color:var(--text); }
+.vyvoj-tip-r i { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
+.vyvoj-tip-r b { margin-left:auto; padding-left:12px; color:#fff; }
+.vyvoj-legenda { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:12px; }
+.vyvoj-leg { display:inline-flex; align-items:center; gap:6px; background: rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:100px; padding:4px 11px; font-size:.72em; cursor:pointer; user-select:none; transition: background .15s, border-color .15s; }
+.vyvoj-leg:hover { background: rgba(255,255,255,.09); border-color: rgba(240,195,89,.4); }
+.vyvoj-leg i { width:8px; height:8px; border-radius:50%; display:inline-block; }
+.vyvoj-leg b { color: #f0c359; }
+.vyvoj-leg.off { opacity:.35; text-decoration: line-through; }
+@media (prefers-reduced-motion: reduce) { .vyvoj-line, .vyvoj-area { animation:none; stroke-dashoffset:0; opacity:1; } }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -337,7 +361,7 @@ function radek(h, poradiNum, rankLabel, hodnotaHtml, subHtml) {
     return `<div class="radek ${cls}">
         <span class="poradi">${rankLabel}</span>
         <div class="telo">
-            <span class="jmeno" onclick="location.href='profil.html?id=${h.user_id}'">${(window._avatary && window._avatary[h.user_id]) ? window._avatary[h.user_id] + ' ' : ''}${h.jmeno}${h.jmeno === LEGENDA_JMENO ? ' <span class="legenda-tag">🏆</span>' : ''}${korunka}</span>
+            <span class="jmeno" onclick="location.href='profil.html?id=${h.user_id}'">${(window._kraloveKola && window._kraloveKola.has(h.user_id)) ? '<span class="kral-koruna">👑</span>' : ''}${(window._avatary && window._avatary[h.user_id]) ? window._avatary[h.user_id] + ' ' : ''}${h.jmeno}${h.jmeno === LEGENDA_JMENO ? ' <span class="legenda-tag">🏆</span>' : ''}${korunka}</span>
             <div class="sub">${subHtml}</div>
         </div>
         <span class="hodnota">${hodnotaHtml}</span>
@@ -449,22 +473,88 @@ function kartaKola() {
     }, 'image/png');
 }
 
+function vyvojCesta(pts) {
+    if (!pts.length) return '';
+    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+        const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+        const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+        d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    }
+    return d;
+}
 function vyvojInner() {
     const serie = window._vyvojSerie || [], kola = window._vyvojKola || [], skryti = window._vyvojSkryti || {};
-    const vid = serie.filter((_, i) => !skryti[i]);
-    const W = 340, H = 250, padL = 30, padB = 24, padT = 10, padR = 8;
-    const maxY = Math.max(1, ...vid.map(s => s.konec));
+    const W = 340, H = 270, padL = 34, padB = 26, padT = 16, padR = 64;
+    const vid = serie.map((s, i) => ({ s, i })).filter(o => !skryti[o.i]);
+    const maxY = Math.max(1, ...vid.map(o => o.s.konec));
     const nX = kola.length;
     const px = i => padL + (nX === 1 ? (W - padL - padR) / 2 : (i / (nX - 1)) * (W - padL - padR));
     const py = v => padT + (1 - v / maxY) * (H - padT - padB);
-    let svg = `<svg viewBox="0 0 ${W} ${H}" class="vyvoj-svg">`;
-    for (let g = 0; g <= 4; g++) { const v = maxY * g / 4, y = py(v); svg += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,.08)"/><text x="${padL - 3}" y="${y + 3}" text-anchor="end" font-size="8" fill="#9fb4dd">${Math.round(v)}</text>`; }
-    kola.forEach((k, i) => { svg += `<text x="${px(i)}" y="${H - padB + 14}" text-anchor="middle" font-size="8" fill="#9fb4dd">${k}.</text>`; });
-    serie.forEach((sr, si) => { if (skryti[si]) return; const c = sr.barva; svg += `<polyline points="${sr.body.map((v, i) => px(i) + ',' + py(v)).join(' ')}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>`; sr.body.forEach((v, i) => { svg += `<circle cx="${px(i)}" cy="${py(v)}" r="2.4" fill="${c}"/>`; }); });
+    const base = H - padB;
+    const gid = 'vg' + Math.random().toString(36).slice(2, 7);
+    let defs = `<defs><filter id="${gid}-glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+    vid.forEach(({ s, i }) => { defs += `<linearGradient id="${gid}-f${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${s.barva}" stop-opacity=".32"/><stop offset="100%" stop-color="${s.barva}" stop-opacity="0"/></linearGradient>`; });
+    defs += '</defs>';
+    let svg = `<svg viewBox="0 0 ${W} ${H}" class="vyvoj-svg">${defs}`;
+    for (let g = 0; g <= 4; g++) {
+        const v = maxY * g / 4, y = py(v);
+        svg += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,${g ? .06 : .13})" stroke-dasharray="${g ? '2 3' : ''}"/><text x="${padL - 6}" y="${y + 3}" text-anchor="end" font-size="8" fill="#7d8fb8">${Math.round(v)}</text>`;
+    }
+    kola.forEach((k, i) => { svg += `<text x="${px(i)}" y="${base + 15}" text-anchor="middle" font-size="8" fill="#7d8fb8">${k}.</text>`; });
+    // plocha pod vedoucím hráčem
+    if (vid.length) {
+        const L = vid[0], pts = L.s.body.map((v, i) => [px(i), py(v)]);
+        if (pts.length > 1) svg += `<path class="vyvoj-area" d="${vyvojCesta(pts)} L${px(nX - 1)},${base} L${px(0)},${base} Z" fill="url(#${gid}-f${L.i})"/>`;
+    }
+    // křivky (plynule se vykreslí)
+    vid.forEach(({ s, i }, idx) => {
+        const pts = s.body.map((v, k) => [px(k), py(v)]);
+        const delay = (idx * .12).toFixed(2);
+        svg += `<path class="vyvoj-line" pathLength="1" d="${vyvojCesta(pts)}" fill="none" stroke="${s.barva}" stroke-width="2.4" stroke-linecap="round" filter="url(#${gid}-glow)" style="animation-delay:${delay}s"/>`;
+        pts.forEach((p, k) => { svg += `<circle cx="${p[0]}" cy="${p[1]}" r="${k === pts.length - 1 ? 3.4 : 2.1}" fill="${s.barva}" stroke="#070b18" stroke-width="1.2"/>`; });
+    });
+    // korunka u vedoucího
+    if (vid.length) {
+        const L = vid[0], lx = px(nX - 1), ly = py(L.s.body[L.s.body.length - 1] || 0);
+        svg += `<text x="${lx}" y="${ly - 9}" text-anchor="middle" font-size="11">👑</text>`;
+    }
+    // popisky na konci čar (bez kolize)
+    const konecy = vid.map(o => ({ y: py(o.s.body[o.s.body.length - 1] || 0), name: o.s.jmeno, c: o.s.barva })).sort((a, b) => a.y - b.y);
+    let posledni = -99;
+    konecy.forEach(o => { o.yy = Math.max(o.y, posledni + 11); posledni = o.yy; });
+    konecy.forEach(o => {
+        const nm = o.name.length > 9 ? o.name.slice(0, 8) + '…' : o.name;
+        svg += `<text x="${px(nX - 1) + 7}" y="${o.yy + 3}" font-size="8.5" font-weight="800" fill="${o.c}">${nm}</text>`;
+    });
+    // vodítko pro najetí
+    svg += `<g class="vyvoj-guide"><line x1="0" y1="${padT}" x2="0" y2="${base}" stroke="rgba(255,255,255,.28)" stroke-dasharray="3 3"/></g>`;
     svg += '</svg>';
-    const leg = serie.map((sr, si) => `<span class="vyvoj-leg ${skryti[si] ? 'off' : ''}" onclick="vyvojToggle(${si})"><i style="background:${sr.barva}"></i>${sr.jmeno} <b>${sr.konec}</b></span>`).join('');
-    return `<div style="font-size:.72em; opacity:.6; text-align:center; margin-bottom:6px;">Kumulativní body ze zápasů po kolech — klikni na jméno pro skrytí/zobrazení</div><div class="vyvoj-ovladace"><button onclick="vyvojVse(true)">✓ Vše</button><button onclick="vyvojVse(false)">✕ Nic</button></div>${svg}<div class="vyvoj-legenda">${leg}</div>`;
+    const leg = serie.map((sr, si) => `<span class="vyvoj-leg ${skryti[si] ? 'off' : ''}" onclick="vyvojToggle(${si})"><i style="background:${sr.barva}"></i><b>${si + 1}.</b> ${sr.jmeno} <b>${sr.konec}</b></span>`).join('');
+    return `<div style="font-size:.72em; opacity:.6; text-align:center; margin-bottom:8px;">Body po kolech · top 5 · „Vše“ ukáže všechny · najeď nebo ťukni do grafu</div><div class="vyvoj-kart">${svg}<div class="vyvoj-tip"></div></div><div class="vyvoj-legenda">${leg}</div>`;
 }
+(function () {
+    // vodítko a tabulka bodů při najetí na graf (funguje i po překreslení)
+    document.addEventListener('pointermove', e => {
+        const k = e.target.closest && e.target.closest('.vyvoj-kart');
+        if (!k) { document.querySelectorAll('.vyvoj-tip').forEach(t => t.style.opacity = 0); document.querySelectorAll('.vyvoj-guide').forEach(g => g.style.opacity = 0); return; }
+        const svg = k.querySelector('svg'), tip = k.querySelector('.vyvoj-tip'), guide = k.querySelector('.vyvoj-guide');
+        const kola = window._vyvojKola || []; if (!svg || !tip || !guide || !kola.length) return;
+        const r = svg.getBoundingClientRect(), kr = k.getBoundingClientRect(), vb = svg.viewBox.baseVal;
+        const x = (e.clientX - r.left) * vb.width / r.width;
+        const padL = 34, padR = 64, inner = vb.width - padL - padR, n = kola.length;
+        let idx = Math.round((x - padL) / inner * (n - 1)); idx = Math.max(0, Math.min(n - 1, idx));
+        const gx = padL + (n === 1 ? inner / 2 : idx / (n - 1) * inner);
+        guide.setAttribute('transform', `translate(${gx},0)`); guide.style.opacity = 1;
+        const skryti = window._vyvojSkryti || {}, serie = window._vyvojSerie || [];
+        const rows = serie.map((sr, si) => ({ sr, si })).filter(o => !skryti[o.si])
+            .map(o => ({ name: o.sr.jmeno, val: o.sr.body[idx] || 0, c: o.sr.barva })).sort((a, b) => b.val - a.val);
+        tip.innerHTML = `<div class="vyvoj-tip-h">po ${kola[idx]}. kole</div>` + rows.slice(0, 8).map(q => `<div class="vyvoj-tip-r"><i style="background:${q.c}"></i>${q.name}<b>${q.val}</b></div>`).join('');
+        tip.style.opacity = 1;
+        tip.style.left = Math.max(4, Math.min(kr.width - 160, (e.clientX - kr.left) - 70)) + 'px';
+    });
+})();
 function vyvojToggle(i) { window._vyvojSkryti = window._vyvojSkryti || {}; window._vyvojSkryti[i] = !window._vyvojSkryti[i]; const b = document.getElementById('vyvoj-box'); if (b) b.innerHTML = vyvojInner(); }
 function vyvojVse(zobraz) { const se = window._vyvojSerie || []; window._vyvojSkryti = {}; if (!zobraz) se.forEach((_, i) => window._vyvojSkryti[i] = true); const b = document.getElementById('vyvoj-box'); if (b) b.innerHTML = vyvojInner(); }
 
@@ -482,6 +572,7 @@ const POHLEDY = {
         const n = serie.length;
         serie.forEach((sr, i) => sr.barva = `hsl(${Math.round(i * 360 / n)},68%,62%)`);
         window._vyvojSerie = serie; window._vyvojKola = kola; window._vyvojSkryti = {};
+        serie.forEach((_, i) => { if (i >= 5) window._vyvojSkryti[i] = true; });
         return `<div id="vyvoj-box">${vyvojInner()}</div>`;
     },
     jokery: () => {
@@ -651,12 +742,15 @@ async function zmenRivala() {
 }
 
 async function load() {
-    const [zR, tR, dR, avR] = await Promise.all([
+    const [zR, tR, dR, avR, kR] = await Promise.all([
         sb.from('cl_zapasy').select('*'),
         sb.from('cl_tipy_zapasy').select('*'),
         sb.from('cl_dlouhodobe').select('*'),
-        sb.from('hraci').select('user_id, avatar')
+        sb.from('hraci').select('user_id, avatar'),
+        sb.from('cl_kola').select('*').order('id', { ascending: false }).limit(1)
     ]);
+    const poslKolo = (kR && kR.data && kR.data[0]) ? kR.data[0] : null;
+    window._kraloveKola = new Set(poslKolo ? (poslKolo.kral || []).map(u => u.user_id) : []);
     window._avatary = {};
     (avR?.data || []).forEach(h => { if (h.avatar) window._avatary[h.user_id] = h.avatar; });
     stats = spocitejStatistikyCL(zR.data || [], tR.data || [], dR.data || []);
