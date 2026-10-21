@@ -569,6 +569,7 @@ body { animation: pageIn .35s ease both; }
 .mapa-legenda span { display:flex; align-items:center; gap:6px; }
 .mapa-legenda i { width:14px; height:3px; border-radius:2px; display:inline-block; }
 .bet-top { display:flex; justify-content:space-between; }
+.rk-kdo { width:100%; font-size:.72em; opacity:.85; padding-top:4px; }
 .bet-reakce { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:7px; }
 .rk-count { font-size:.92em; background:rgba(255,255,255,.06); border:1px solid transparent; padding:2px 8px; border-radius:100px; cursor:pointer; }
 .rk-count.mine { border-color:var(--gold); background:rgba(var(--gold-rgb,212,175,55),.15); }
@@ -1431,11 +1432,26 @@ function prepniKoloSekce(hl, k) {
 }
 
 const REAKCE_EMOJI = ['😂', '👏', '🔥', '🤡', '😮', '💩'];
+async function rkKdo(zapasId, cilId, emoji, el) {
+    document.querySelectorAll('.rk-kdo').forEach(x => x.remove());
+    const ids = ((window._reakce || {})[zapasId + '|' + cilId] || []).filter(r => r.emoji === emoji).map(r => r.od_user_id);
+    if (!ids.length) return;
+    const { data } = await sb.from('hraci').select('user_id, jmeno').in('user_id', ids);
+    const jm = ids.map(id => ((data || []).find(h => h.user_id === id) || {}).jmeno || 'hráč');
+    const box = document.createElement('div');
+    box.className = 'rk-kdo';
+    box.textContent = emoji + ' reagovali: ' + jm.join(', ');
+    el.parentElement.appendChild(box);
+    setTimeout(() => {
+        const zavri = e => { if (!box.contains(e.target)) { box.remove(); document.removeEventListener('click', zavri); } };
+        document.addEventListener('click', zavri);
+    }, 0);
+}
 function reakceHtml(zapasId, cilId) {
     const r = (window._reakce && window._reakce[zapasId + '|' + cilId]) || [];
     const pocty = {}; r.forEach(x => pocty[x.emoji] = (pocty[x.emoji] || 0) + 1);
     const moje = mojeId ? r.find(x => x.od_user_id === mojeId) : null;
-    const counts = Object.keys(pocty).map(e => `<span class="rk-count ${moje && moje.emoji === e ? 'mine' : ''}" onclick="reagovat(${zapasId},'${cilId}','${e}')">${e} ${pocty[e]}</span>`).join('');
+    const counts = Object.keys(pocty).map(e => `<span class="rk-count ${moje && moje.emoji === e ? 'mine' : ''}" onclick="rkKdo(${zapasId},'${cilId}','${e}',this)">${e} ${pocty[e]}</span>`).join('');
     const paleta = (mojeId && cilId !== mojeId)
         ? `<span class="rk-add" onclick="rkPaleta(this)">＋</span><span class="rk-paleta">${REAKCE_EMOJI.map(e => `<span onclick="reagovat(${zapasId},'${cilId}','${e}')">${e}</span>`).join('')}</span>`
         : '';
@@ -2493,7 +2509,7 @@ function zavriPlatbu() {
 <script src="../chat.js?v=3"></script>
 <script>
 window.SB_KEY = SB_KEY;
-inicializujChat({ klient: sb, tabulka: 'cl_chat', soutez: 'cl', barva: 'var(--fial)' });
+inicializujChat({ klient: sb, tabulka: 'cl_chat', soutez: 'cl', barva: 'var(--fial)', reakce: 'cl_chat_reakce' });
 </script>
 
 <script>
