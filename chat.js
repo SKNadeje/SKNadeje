@@ -21,6 +21,7 @@ let _chat = {
 
 function inicializujChat(config) {
     Object.assign(_chat, config);
+    vlozChatCss();
     vlozChatHTML();
     nastavTazeniChatu();
     zjistiUzivatele();
@@ -188,6 +189,7 @@ async function nactiZpravy() {
             .from(_chat.tabulka).select('*')
             .order('created_at', { ascending: false }).limit(50);
         _chat.zpravy = (data || []).reverse();
+        await nactiReakce();
         vykresliZpravy();
     } catch (e) { console.warn('Chat: načtení selhalo', e); }
 }
@@ -215,6 +217,7 @@ function vykresliZpravy() {
                         border-radius:12px; padding:8px 12px; font-size:.85em; word-break:break-word;">
                 ${formatujText(z.message)}${upraveno}
             </div>
+            ${reakceChat(z)}
         </div>`;
     }).join('');
     box.scrollTop = box.scrollHeight;
@@ -334,9 +337,74 @@ async function posliChatNotifikaci(text) {
     } catch (e) { console.warn('Chat notifikace selhala:', e); }
 }
 
+const CHAT_REAKCE = ['😂','👏','🔥','🤡','😮','💩'];
+function vlozChatCss() {
+    if (document.getElementById('chat-rk-css')) return;
+    const st = document.createElement('style'); st.id = 'chat-rk-css';
+    st.textContent = `.ch-rk{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:center}
+.ch-chip{font-size:.72em;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);cursor:pointer;user-select:none}
+.ch-chip.mine{border-color:${_chat.barva};background:${_chat.barva}22}
+.ch-add{font-size:.75em;padding:2px 8px;border-radius:999px;border:1px dashed rgba(255,255,255,.25);cursor:pointer;opacity:.7}
+.ch-kdo{font-size:.66em;opacity:.8;margin-top:3px;width:100%}
+.ch-paleta{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.ch-paleta span{font-size:1.1em;cursor:pointer;padding:2px 4px;border-radius:6px;background:rgba(255,255,255,.06)}`;
+    document.head.appendChild(st);
+}
+function reakceChat(z) {
+    if (!_chat.reakce) return '';
+    const list = (_chat.reakceMap || {})[z.id] || [];
+    const pocty = {}; list.forEach(r => { pocty[r.emoji] = (pocty[r.emoji] || 0) + 1; });
+    const moje = list.find(r => r.user_id === _chat.mojeId);
+    const chipy = Object.keys(pocty).map(e =>
+        `<span class="ch-chip ${moje && moje.emoji === e ? 'mine' : ''}" onclick="kdoChat(${z.id},'${e}')">${e} ${pocty[e]}</span>`).join('');
+    let kdo = '';
+    if (_chat.kdo && _chat.kdo.indexOf(z.id + '|') === 0) {
+        const e = _chat.kdo.split('|')[1];
+        const jm = list.filter(r => r.emoji === e).map(r => escapeHtml(r.jmeno || 'hráč'));
+        kdo = `<div class="ch-kdo">${e} reagovali: ${jm.join(', ')}</div>`;
+    }
+    const paleta = _chat.paleta === z.id
+        ? `<div class="ch-paleta">${CHAT_REAKCE.map(e => `<span onclick="reagovatChat(${z.id},'${e}')">${e}</span>`).join('')}</div>` : '';
+    return `<div class="ch-rk">${chipy}<span class="ch-add" onclick="rkPaletaChat(${z.id})">＋</span></div>${kdo}${paleta}`;
+}
+function rkPaletaChat(zid) { _chat.paleta = _chat.paleta === zid ? null : zid; vykresliZpravy(); }
+function kdoChat(zid, emoji) {
+    const klic = zid + '|' + emoji;
+    _chat.kdo = _chat.kdo === klic ? null : klic;
+    vykresliZpravy();
+}
+async function nactiReakce() {
+    if (!_chat.reakce || !_chat.zpravy.length) return;
+    try {
+        const ids = _chat.zpravy.map(z => z.id);
+        const { data } = await _chat.klient.from(_chat.reakce).select('*').in('zprava_id', ids);
+        const m = {};
+        (data || []).forEach(r => { (m[r.zprava_id] = m[r.zprava_id] || []).push(r); });
+        _chat.reakceMap = m;
+    } catch (e) { console.warn('Chat: reakce selhaly', e); }
+}
+async function reagovatChat(zid, emoji) {
+    if (!_chat.mojeId || !_chat.reakce) { alert('Pro reakce se musíš přihlásit.'); return; }
+    const moje = ((_chat.reakceMap || {})[zid] || []).find(r => r.user_id === _chat.mojeId);
+    try {
+        if (moje && moje.emoji === emoji) {
+            const { error } = await _chat.klient.from(_chat.reakce).delete().eq('zprava_id', zid).eq('user_id', _chat.mojeId);
+            if (error) throw error;
+        } else {
+            const { error } = await _chat.klient.from(_chat.reakce).upsert(
+                { zprava_id: zid, user_id: _chat.mojeId, jmeno: _chat.mojeJmeno, emoji: emoji, created_at: new Date().toISOString() },
+                { onConflict: 'zprava_id,user_id' });
+            if (error) throw error;
+        }
+        _chat.paleta = null;
+        await nactiReakce();
+        vykresliZpravy();
+    } catch (e) { alert('Reakci se nepodařilo uložit: ' + e.message); }
+}
+
 function nastavRealtime() {
     if (_chat.subscription) return;
-    _chat.subscription = _chat.klient
+    const ch = _chat.klient
         .channel('chat-' + _chat.tabulka)
         .on('postgres_changes', { event: '*', schema: 'public', table: _chat.tabulka }, (payload) => {
             if (payload.eventType === 'INSERT') {
@@ -350,6 +418,11 @@ function nastavRealtime() {
                 _chat.zpravy = _chat.zpravy.filter(z => z.id !== payload.old.id);
             }
             if (_chat.otevreno) vykresliZpravy();
-        })
-        .subscribe();
+        });
+    if (_chat.reakce) {
+        ch.on('postgres_changes', { event: '*', schema: 'public', table: _chat.reakce }, () => {
+            nactiReakce().then(() => { if (_chat.otevreno) vykresliZpravy(); });
+        });
+    }
+    _chat.subscription = ch.subscribe();
 }
