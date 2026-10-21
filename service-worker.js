@@ -3,7 +3,7 @@ importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
 // SK Naděje Tipovačka - Service Worker
 // v5: HTML se vždy tahá čerstvě (žádná stará verze stránek po nasazení)
-const CACHE_NAME = 'sknadeje-v5';
+const CACHE_NAME = 'sknadeje-v6';
 const URLS_TO_CACHE = [
     './',
     './index.html',
@@ -45,8 +45,10 @@ self.addEventListener('fetch', event => {
         || event.request.destination === 'document'
         || event.request.url.split('?')[0].endsWith('.html');
 
+    const jeObrazek = /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(event.request.url);
+
     event.respondWith(
-        fetch(event.request, jeHTML ? { cache: 'no-store' } : {})
+        fetch(event.request, (jeHTML || jeObrazek) ? { cache: 'no-store' } : {})
             .then(response => {
                 // Cachuj jen úspěšné GET (pro offline fallback)
                 if (response && response.status === 200 && event.request.method === 'GET') {
