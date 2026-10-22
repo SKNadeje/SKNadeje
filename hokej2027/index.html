@@ -870,6 +870,35 @@
     #matchList .match-card { margin-bottom: 0; }
     #dlouhodobyCard, #bonusCard { max-width: 760px; width: 100%; }
 }
+
+/* ===== PC (od 1000 px): levý sloupec (logo, bank, statistiky) + pravý (zápasy) ===== */
+@media (min-width: 1000px) {
+    body {
+        display: grid;
+        grid-template-columns: 300px minmax(0, 1fr);
+        column-gap: 28px;
+        align-items: start;
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 24px 28px 40px;
+    }
+    body > * { grid-column: 2; min-width: 0; }
+    body > img.header-logo {
+        grid-column: 1; grid-row: 1;
+        position: sticky; top: 24px;
+        width: 100%; max-width: 260px; height: auto;
+        margin: 0 auto 18px; justify-self: center;
+    }
+    body > .bank-box {
+        grid-column: 1; grid-row: 2;
+        width: 100%; max-width: none; margin: 0 0 16px;
+    }
+    body > .btn-stats {
+        grid-column: 1; grid-row: 3;
+        width: 100%; max-width: none; margin: 0;
+        justify-self: stretch;
+    }
+}
 </style>
 <script>
 // 🎨 MOTIVY – aplikuj uložený motiv co nejdřív (před vykreslením)
