@@ -899,6 +899,33 @@
         justify-self: stretch;
     }
 }
+
+/* ===== PC: levý panel (logo, text, bank, statistiky) je pevný, scrolluje jen pravá část ===== */
+@media (min-width: 1000px) {
+    body {
+        display: grid;
+        grid-template-columns: 300px minmax(0, 1fr);
+        column-gap: 24px;
+        align-items: start;
+        max-width: none;
+        margin: 0;
+        padding: 20px 24px 40px;
+    }
+    body > * { grid-column: 2; min-width: 0; }
+    body > .levy-panel {
+        grid-column: 1; grid-row: 1 / span 40;
+        position: sticky; top: 20px; align-self: start;
+        display: flex; flex-direction: column; gap: 14px;
+        width: 100%;
+    }
+    .levy-panel img.header-logo {
+        width: 100%; max-width: 240px; height: auto;
+        margin: 0 auto; display: block;
+    }
+    .levy-panel > div { text-align: center; margin: 0 !important; }
+    .levy-panel .bank-box { width: 100%; max-width: none; margin: 0; }
+    .levy-panel .btn-stats { width: 100%; max-width: none; margin: 0; justify-self: stretch; }
+}
 </style>
 <script>
 // 🎨 MOTIVY – aplikuj uložený motiv co nejdřív (před vykreslením)
@@ -987,9 +1014,6 @@ document.addEventListener('click', function(e) {
 
     <a href="admin.html" class="admin-lock" id="adminLock" style="display:none;">⚙️</a>
 
-    <img src="logo-hokej2027.png" class="header-logo" alt="SÁZKOVÁ KANCELÁŘ NADĚJE – MS 2027" onerror="this.outerHTML='<h1 style=\'color:var(--neon)\'>🏒 MS 2027</h1>'">
-    <div style="font-size:0.75em; letter-spacing:3px; opacity:0.65; margin:-10px 0 20px; text-transform:uppercase;">MS v hokeji 2027 · Düsseldorf & Mannheim</div>
-
     <div id="userBadge" class="user-badge" style="display:none;">
         <span>👤</span>
         <span id="userBadgeName" class="user-badge-name" style="cursor:pointer; text-decoration:underline; text-decoration-color:rgba(var(--neon-rgb), .4); text-underline-offset:3px;"
@@ -997,6 +1021,10 @@ document.addEventListener('click', function(e) {
               title="Zobrazit můj profil"></span>
         <button class="user-logout" onclick="doLogout()">odhlásit</button>
     </div>
+    <aside class="levy-panel">
+    <img src="logo-hokej2027.png" class="header-logo" alt="SÁZKOVÁ KANCELÁŘ NADĚJE – MS 2027" onerror="this.outerHTML='<h1 style=\'color:var(--neon)\'>🏒 MS 2027</h1>'">
+    <div style="font-size:0.75em; letter-spacing:3px; opacity:0.65; margin:-10px 0 20px; text-transform:uppercase;">MS v hokeji 2027 · Düsseldorf & Mannheim</div>
+
 
     <div class="bank-box">
         <span class="bank-label">Bank nejbližšího zápasu</span>
@@ -1018,6 +1046,7 @@ document.addEventListener('click', function(e) {
     </div>
 
     <a href="statistiky.html" class="btn-stats">📊 ŽEBŘÍČKY A STATISTIKY</a>
+    </aside>
 
     <div class="reklama-banner" id="reklamaBanner"></div>
     <div id="zapasyFiltr" style="display:flex; gap:8px; margin:18px 0 4px; flex-wrap:wrap;">
