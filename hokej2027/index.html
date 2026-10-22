@@ -854,6 +854,22 @@
 .zapas-fltr.bonus-alert { border-color:#ff8c1a !important; color:#ffa64d !important; animation: bonusBlik 1.3s ease-in-out infinite; }
 @keyframes bonusBlik { 0%,100% { box-shadow: 0 0 0 rgba(255,140,26,0); } 50% { box-shadow: 0 0 16px rgba(255,140,26,.85); } }
 @media (prefers-reduced-motion: reduce) { .zapas-fltr.bonus-alert { animation:none; box-shadow:0 0 10px rgba(255,140,26,.5); } }
+
+/* ===== PC: celá šířka stránky (mobil beze změny) ===== */
+@media (min-width: 900px) {
+    body { padding: 24px 32px; }
+    .bank-box { max-width: 640px; margin-left: auto; margin-right: auto; }
+    #zapasyFiltr, .reklama-banner { max-width: 1100px; }
+    #matchList {
+        max-width: 1100px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        align-items: start;
+    }
+    #matchList .match-card { margin-bottom: 0; }
+    #dlouhodobyCard, #bonusCard { max-width: 760px; width: 100%; }
+}
 </style>
 <script>
 // 🎨 MOTIVY – aplikuj uložený motiv co nejdřív (před vykreslením)
