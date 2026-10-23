@@ -243,6 +243,7 @@ body { animation: pageIn .35s ease both; }
 @keyframes ribShine { 0%{left:-60%;} 35%,100%{left:170%;} }
 @media (prefers-reduced-motion: reduce) { .kral-ribbon::after, .legenda-ribbon::after { display:none; } }
 .hero-prumer { text-align:center; font-size:.82em; margin:12px 0 2px; }
+
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -492,7 +493,9 @@ async function load() {
     const posledniKolo = kola.length ? kola[kola.length - 1] : null;
     const jeAktualniKral = posledniKolo && (posledniKolo.kral || []).some(x => x.user_id === uid);
     const hKralEl = document.getElementById('hKral');
-    if (hKralEl) hKralEl.innerHTML = jeAktualniKral ? `<span class="kral-ribbon">👑 Král ${kola.length}. kola</span>` : '';
+    const _jm = (document.getElementById('hJmeno')?.textContent || '').trim();
+    const _titul = ['Deny'].includes(_jm) ? 'Královna' : 'Král';
+    if (hKralEl) hKralEl.innerHTML = jeAktualniKral ? `<span class="kral-ribbon">👑 ${_titul} ${kola.length}. kola</span>` : '';
     const zapasMap = {}; zapasy.forEach(z => zapasMap[z.id] = z);
 
     const mojeTipy = tipy.filter(t => t.user_id === uid).sort((a, b) =>
