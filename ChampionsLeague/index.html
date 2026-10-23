@@ -691,6 +691,24 @@ body.sez-zima .nav button::after, body.sez-vanoce .nav button::after, body.sez-s
     .levy-panel .sekce, .pravy-panel .sekce { display: block !important; }
     .nav button[onclick*="tabulka"], .nav button[onclick*="zebricek"] { display: none !important; }
 }
+
+/* ===== MOBIL (do 999 px): původní pořadí prvků, velké logo a panely skryté ===== */
+@media (max-width: 999px) {
+    .levy-logo { display: none !important; }
+    .levy-panel, .pravy-panel { display: contents; }
+    .wrap { display: flex; flex-direction: column; }
+    .wrap > * { order: 11; }
+    .wrap > a.zpet { order: 1; }
+    .wrap > h1 { order: 2; }
+    .wrap > .zlata-linka { order: 3; }
+    .wrap > .nav { order: 4; }
+    .wrap > .auth-lista { order: 5; }
+    .wrap > .prihlas-vyzva { order: 6; }
+    .wrap > #sekce-tipy { order: 7; }
+    .wrap > #sekce-mapa { order: 8; }
+    .wrap > #sekce-tabulka { order: 9; }
+    .wrap > #sekce-zebricek { order: 10; }
+}
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
