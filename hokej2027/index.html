@@ -950,10 +950,10 @@
 /* ===== PC: pravý sloupec (tabulky), větší ikona profilu ===== */
 .pravy-panel { display: none; }
 @media (min-width: 1000px) {
-    body { grid-template-columns: 300px minmax(0, 1fr) 340px; max-width: 1440px; }
+    body { grid-template-columns: 300px minmax(0, 1fr) 340px; max-width: none; width: 100%; box-sizing: border-box; }
     body > .pravy-panel {
         display: flex; flex-direction: column; gap: 14px;
-        grid-column: 3; grid-row: 1 / span 40;
+        grid-column: 3; grid-row: 1 / span 40; justify-self: end;
         position: sticky; top: 20px; align-self: start;
         width: 340px;
     }
