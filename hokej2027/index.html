@@ -1007,6 +1007,14 @@
     body > * { order: 20; }
     #userBadge, .levy-panel > .header-logo, .levy-panel > div:not(.levy-index), .pravy-panel > .bank-box, .levy-panel > .btn-stats { }
 }
+
+/* ===== PC: odkaz zpět nahoře, žebříček vlevo nad tabulkou indexu ===== */
+@media (min-width: 1000px) {
+    body > a:not(.btn-stats):not(.admin-lock) { grid-column: 2; grid-row: 1; justify-self: start; }
+    body > .bank-box { grid-row: 2; }
+    .levy-panel > .btn-stats { order: 1; }
+    .levy-index { order: 2; }
+}
 </style>
 <script>
 // 🎨 MOTIVY – aplikuj uložený motiv co nejdřív (před vykreslením)
