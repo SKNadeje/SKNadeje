@@ -994,7 +994,7 @@
 .li-tab td { padding:6px; border-bottom:1px solid rgba(255,255,255,.05); }
 @media (min-width: 1000px) {
     .levy-index { display: block; width: 100%; background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:12px; box-sizing:border-box; }
-    body > .bank-box { grid-column: 2; grid-row: 1; width: 100%; max-width: 1100px; margin: 0 auto 14px; justify-self: center; box-sizing: border-box; }
+    body > .bank-box { grid-column: 2; grid-row: 1; width: 100%; max-width: 1100px; margin: 0 auto 14px 0; justify-self: start; box-sizing: border-box; }
 }
 @media (max-width: 999px) {
     .levy-panel, .pravy-panel { display: contents; }
@@ -1014,6 +1014,12 @@
     body > .bank-box { grid-row: 2; }
     .levy-panel > .btn-stats { order: 1; }
     .levy-index { order: 2; }
+}
+
+/* ===== PC: všechny prvky ve středu stejná šířka (jako zápasy) a levá hrana ===== */
+@media (min-width: 1000px) {
+    #dlouhodobyCard, #bonusCard, #userBadge, #matchList, #reklamaBanner, #zapasyFiltr { box-sizing: border-box !important; }
+    #dlouhodobyCard, #bonusCard { max-width: 1100px !important; width: 100% !important; margin-left: 0 !important; }
 }
 </style>
 <script>
