@@ -983,7 +983,7 @@
 .pp-prepinac { display:flex; gap:6px; margin: 4px 0 8px; }
 .pp-prepinac button { flex:1; font-size:.72em; padding:7px 8px; border-radius:10px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.04); color:inherit; cursor:pointer; font-family:inherit; font-weight:700; }
 .pp-prepinac button.on { border-color: var(--neon); color: var(--neon); }
-.pp-zapas { background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:10px 12px; margin-bottom:8px; text-align:left; }
+.pp-zapas { background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:10px 12px; margin-bottom:8px; text-align:center; width:100%; box-sizing:border-box; min-height:84px; display:flex; flex-direction:column; justify-content:center; align-items:center; }
 .pp-zn { font-size:.72em; opacity:.6; font-weight:800; letter-spacing:.6px; }
 .pp-zt { font-weight:800; margin:4px 0; }
 .pp-zs { font-size:.72em; opacity:.5; }
@@ -2292,7 +2292,7 @@ inicializujChat({ klient: sb, tabulka: 'hokej27_chat', soutez: 'hokej', barva: '
         <table class="pp-tab"><thead><tr><th>#</th><th>Hráč</th><th>Tým</th><th>B</th></tr></thead>
         <tbody><tr><td colspan="4" style="text-align:center;opacity:.5;padding:10px;">Zatím prázdné</td></tr></tbody></table></div>`;
     const zapas = (nazev) => `<div class="pp-zapas"><div class="pp-zn">${nazev}</div><div class="pp-zt">— vs —</div><div class="pp-zs">doplní se</div></div>`;
-    const po = [['Čtvrtfinále', 4], ['Semifinále', 2], ['Finále', 1], ['Zápas o bronz', 1]]
+    const po = [['Čtvrtfinále', 4], ['Semifinále', 2], ['Zápas o bronz', 1], ['Finále', 1]]
         .map(([n, c]) => Array.from({ length: c }, (_, i) => zapas(c > 1 ? n + ' ' + (i + 1) : n)).join('')).join('');
     box.innerHTML = `<div class="pp-nadpis">📊 MS 2027</div>
         <div class="pp-prepinac"><button id="ppB1" class="on" onclick="ppPrepni('zakl')">Základní skupiny</button><button id="ppB2" onclick="ppPrepni('po')">Play-off</button></div>
