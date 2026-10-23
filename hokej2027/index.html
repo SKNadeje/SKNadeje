@@ -977,6 +977,36 @@
     .vs-circle { margin-top: 6px; }
     #dlouhodobyCard, #bonusCard { max-width: 1100px !important; width: 100% !important; }
 }
+
+/* ===== levý/pravý panel: index vlevo, bank + přepínač vpravo; mobil zachová pořadí ===== */
+.levy-index { display: none; }
+.pp-prepinac { display:flex; gap:6px; margin: 4px 0 8px; }
+.pp-prepinac button { flex:1; font-size:.72em; padding:7px 8px; border-radius:10px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.04); color:inherit; cursor:pointer; font-family:inherit; font-weight:700; }
+.pp-prepinac button.on { border-color: var(--neon); color: var(--neon); }
+.pp-zapas { background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:10px 12px; margin-bottom:8px; text-align:left; }
+.pp-zn { font-size:.72em; opacity:.6; font-weight:800; letter-spacing:.6px; }
+.pp-zt { font-weight:800; margin:4px 0; }
+.pp-zs { font-size:.72em; opacity:.5; }
+.li-h { font-weight:900; letter-spacing:.8px; font-size:.85em; margin-bottom:8px; color: var(--neon); text-align:left; }
+.li-p { font-size:.8em; opacity:.6; }
+.li-tab { width:100%; border-collapse:collapse; font-size:.82em; text-align:left; }
+.li-tab th { opacity:.55; font-weight:700; padding:4px 6px; border-bottom:1px solid rgba(255,255,255,.1); }
+.li-tab td { padding:6px; border-bottom:1px solid rgba(255,255,255,.05); }
+@media (min-width: 1000px) {
+    .levy-index { display: block; width: 100%; background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:12px; box-sizing:border-box; }
+    .pravy-panel .bank-box { width: 100%; max-width: 340px; margin: 0 0 8px; box-sizing: border-box; }
+}
+@media (max-width: 999px) {
+    .levy-panel, .pravy-panel { display: contents; }
+    #pravyPanel { display: none; }
+    .levy-panel > .header-logo, .levy-panel > img.header-logo { order: 1; }
+    .levy-panel > div:not(.levy-index) { order: 2; }
+    #userBadge { order: 3; }
+    .pravy-panel > .bank-box { order: 4; }
+    .levy-panel > .btn-stats { order: 5; }
+    body > * { order: 20; }
+    #userBadge, .levy-panel > .header-logo, .levy-panel > div:not(.levy-index), .pravy-panel > .bank-box, .levy-panel > .btn-stats { }
+}
 </style>
 <script>
 // 🎨 MOTIVY – aplikuj uložený motiv co nejdřív (před vykreslením)
@@ -1077,25 +1107,9 @@ document.addEventListener('click', function(e) {
     <div style="font-size:0.75em; letter-spacing:3px; opacity:0.65; margin:-10px 0 20px; text-transform:uppercase;">MS v hokeji 2027 · Düsseldorf & Mannheim</div>
 
 
-    <div class="bank-box">
-        <span class="bank-label">Bank nejbližšího zápasu</span>
-        <div class="bank-main-val"><span id="uiMainBank">0</span> Kč</div>
-        <div class="bank-total-row">
-            <span class="bank-total-label">Celkový bank v hře:</span>
-            <span class="bank-total-val"><span id="uiTotalBank">0</span> Kč</span>
-        </div>
-        <div class="bank-total-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(var(--neon-rgb), 0.2);">
-            <span class="bank-total-label">Fond Naděje (kumulováno):</span>
-            <span class="bank-total-val" style="color: var(--gold);"><span id="uiHopeIndex">0</span> Kč</span>
-        </div>
-        <div style="display:flex; justify-content:center; gap:16px; margin-top:10px; font-size:0.75em; opacity:0.7;">
-            <span>🥇 <b id="hope-1">0</b> Kč</span>
-            <span>🥈 <b id="hope-2">0</b> Kč</span>
-            <span>🥉 <b id="hope-3">0</b> Kč</span>
-        </div>
-        <div style="font-size:0.68em; opacity:0.45; margin-top:8px;">Fond si na konci turnaje dělí top 3 Indexu Naděje (50/30/20)</div>
-    </div>
 
+
+    <div class="levy-index" id="levyIndex"></div>
     <a href="statistiky.html" class="btn-stats">📊 ŽEBŘÍČKY A STATISTIKY</a>
     </aside>
 
@@ -1123,7 +1137,27 @@ document.addEventListener('click', function(e) {
     <div id="bonusCard" style="display:none;"></div>
     <div id="matchList"></div>
 
-  <aside class="pravy-panel" id="pravyPanel"></aside>
+  <aside class="pravy-panel">
+    <div class="bank-box">
+        <span class="bank-label">Bank nejbližšího zápasu</span>
+        <div class="bank-main-val"><span id="uiMainBank">0</span> Kč</div>
+        <div class="bank-total-row">
+            <span class="bank-total-label">Celkový bank v hře:</span>
+            <span class="bank-total-val"><span id="uiTotalBank">0</span> Kč</span>
+        </div>
+        <div class="bank-total-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(var(--neon-rgb), 0.2);">
+            <span class="bank-total-label">Fond Naděje (kumulováno):</span>
+            <span class="bank-total-val" style="color: var(--gold);"><span id="uiHopeIndex">0</span> Kč</span>
+        </div>
+        <div style="display:flex; justify-content:center; gap:16px; margin-top:10px; font-size:0.75em; opacity:0.7;">
+            <span>🥇 <b id="hope-1">0</b> Kč</span>
+            <span>🥈 <b id="hope-2">0</b> Kč</span>
+            <span>🥉 <b id="hope-3">0</b> Kč</span>
+        </div>
+        <div style="font-size:0.68em; opacity:0.45; margin-top:8px;">Fond si na konci turnaje dělí top 3 Indexu Naděje (50/30/20)</div>
+    </div>
+    <div id="pravyPanel"></div>
+  </aside>
   <div id="miniSlip">
         <div class="slip-head"><span>🎟️ TIKET</span><span id="slipCount" style="opacity:.6; font-size:.85em;"></span></div>
         <div id="slipItems"></div>
@@ -2212,6 +2246,57 @@ inicializujChat({ klient: sb, tabulka: 'hokej27_chat', soutez: 'hokej', barva: '
     box.innerHTML = `<div class="pp-nadpis">📊 Tabulky · MS 2027</div>` + tab('Skupina A', SKUPINA_A) + tab('Skupina B', SKUPINA_B) + kb
         + `<div class="pp-pozn">Výsledky a body se doplní z API.</div>`;
 })();
+</script>
+<script src="zebricky.js?v=1"></script>
+<script>
+/* Index Naděje v levém panelu (PC) – stejný výpočet jako ve statistikách */
+(async function () {
+    const box = document.getElementById('levyIndex');
+    if (!box || typeof spocitejStatistiky !== 'function') return;
+    box.innerHTML = '<div class="li-h">⭐ Index Naděje</div><div class="li-p">Načítám…</div>';
+    try {
+        const [zR, sR, bR, btR] = await Promise.all([
+            sb.from('hokej27_zapasy').select('*'), sb.from('hokej27_sazky').select('*'),
+            sb.from('hokej27_bonus').select('*'), sb.from('hokej27_bonus_tipy').select('*')
+        ]);
+        const stats = spocitejStatistiky(zR.data || [], sR.data || []);
+        const bSpr = {};
+        (bR.data || []).forEach(b => { if (b.vyhodnoceno && b.spravna != null) bSpr[b.id] = { spravna: b.spravna, body: b.body }; });
+        const bm = {};
+        (btR.data || []).forEach(t => { const b = bSpr[t.bonus_id]; if (b && t.odpoved === b.spravna) bm[t.user_id] = (bm[t.user_id] || 0) + b.body; });
+        stats.hraci.forEach(h => { if (bm[h.user_id]) h.nb = (h.nb || 0) + bm[h.user_id]; });
+        const rady = [...stats.hraci].sort((a, b) => (b.nb || 0) - (a.nb || 0));
+        box.innerHTML = `<div class="li-h">⭐ Index Naděje</div>
+            <table class="li-tab"><thead><tr><th>#</th><th>Hráč</th><th>NB</th></tr></thead>
+            <tbody>${rady.map((h, i) => `<tr><td>${i + 1}</td><td>${h.jmeno || 'hráč'}</td><td><b>${h.nb || 0}</b></td></tr>`).join('') || '<tr><td colspan="3">Zatím prázdné</td></tr>'}</tbody></table>`;
+    } catch (e) { box.innerHTML = '<div class="li-p">Index se nepodařilo načíst</div>'; }
+})();
+
+/* Pravý panel: přepínač Základní skupiny / Play-off; play-off zápasy připravené k doplnění */
+(function () {
+    const box = document.getElementById('pravyPanel');
+    if (!box || typeof SKUPINA_A === 'undefined') return;
+    const tab = (nazev, tymy) => `<div class="pp-box"><div class="pp-hlava">${nazev}</div>
+        <table class="pp-tab"><thead><tr><th>#</th><th>Tým</th><th>Z</th><th>B</th></tr></thead>
+        <tbody>${tymy.map((t, i) => `<tr><td>${i + 1}</td><td>${t}</td><td>–</td><td>–</td></tr>`).join('')}</tbody></table></div>`;
+    const kb = `<div class="pp-box"><div class="pp-hlava">🎯 Kanadské bodování</div>
+        <table class="pp-tab"><thead><tr><th>#</th><th>Hráč</th><th>Tým</th><th>B</th></tr></thead>
+        <tbody><tr><td colspan="4" style="text-align:center;opacity:.5;padding:10px;">Zatím prázdné</td></tr></tbody></table></div>`;
+    const zapas = (nazev) => `<div class="pp-zapas"><div class="pp-zn">${nazev}</div><div class="pp-zt">— vs —</div><div class="pp-zs">doplní se</div></div>`;
+    const po = [['Čtvrtfinále', 4], ['Semifinále', 2], ['Finále', 1], ['Zápas o bronz', 1]]
+        .map(([n, c]) => Array.from({ length: c }, (_, i) => zapas(c > 1 ? n + ' ' + (i + 1) : n)).join('')).join('');
+    box.innerHTML = `<div class="pp-nadpis">📊 MS 2027</div>
+        <div class="pp-prepinac"><button id="ppB1" class="on" onclick="ppPrepni('zakl')">Základní skupiny</button><button id="ppB2" onclick="ppPrepni('po')">Play-off</button></div>
+        <div id="ppZakl">${tab('Skupina A', SKUPINA_A)}${tab('Skupina B', SKUPINA_B)}${kb}</div>
+        <div id="ppPO" style="display:none;">${po}</div>`;
+})();
+function ppPrepni(k) {
+    const z = k === 'zakl';
+    document.getElementById('ppZakl').style.display = z ? '' : 'none';
+    document.getElementById('ppPO').style.display = z ? 'none' : '';
+    document.getElementById('ppB1').classList.toggle('on', z);
+    document.getElementById('ppB2').classList.toggle('on', !z);
+}
 </script>
 </body>
 </html>
