@@ -994,7 +994,7 @@
 .li-tab td { padding:6px; border-bottom:1px solid rgba(255,255,255,.05); }
 @media (min-width: 1000px) {
     .levy-index { display: block; width: 100%; background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:12px; box-sizing:border-box; }
-    .pravy-panel .bank-box { width: 100%; max-width: 340px; margin: 0 0 8px; box-sizing: border-box; }
+    body > .bank-box { grid-column: 2; grid-row: 1; width: 100%; max-width: 1100px; margin: 0 auto 14px; justify-self: center; box-sizing: border-box; }
 }
 @media (max-width: 999px) {
     .levy-panel, .pravy-panel { display: contents; }
@@ -1002,7 +1002,7 @@
     .levy-panel > .header-logo, .levy-panel > img.header-logo { order: 1; }
     .levy-panel > div:not(.levy-index) { order: 2; }
     #userBadge { order: 3; }
-    .pravy-panel > .bank-box { order: 4; }
+    body > .bank-box { order: 4; }
     .levy-panel > .btn-stats { order: 5; }
     body > * { order: 20; }
     #userBadge, .levy-panel > .header-logo, .levy-panel > div:not(.levy-index), .pravy-panel > .bank-box, .levy-panel > .btn-stats { }
@@ -1095,6 +1095,24 @@ document.addEventListener('click', function(e) {
 
     <a href="admin.html" class="admin-lock" id="adminLock" style="display:none;">⚙️</a>
 
+    <div class="bank-box">
+        <span class="bank-label">Bank nejbližšího zápasu</span>
+        <div class="bank-main-val"><span id="uiMainBank">0</span> Kč</div>
+        <div class="bank-total-row">
+            <span class="bank-total-label">Celkový bank v hře:</span>
+            <span class="bank-total-val"><span id="uiTotalBank">0</span> Kč</span>
+        </div>
+        <div class="bank-total-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(var(--neon-rgb), 0.2);">
+            <span class="bank-total-label">Fond Naděje (kumulováno):</span>
+            <span class="bank-total-val" style="color: var(--gold);"><span id="uiHopeIndex">0</span> Kč</span>
+        </div>
+        <div style="display:flex; justify-content:center; gap:16px; margin-top:10px; font-size:0.75em; opacity:0.7;">
+            <span>🥇 <b id="hope-1">0</b> Kč</span>
+            <span>🥈 <b id="hope-2">0</b> Kč</span>
+            <span>🥉 <b id="hope-3">0</b> Kč</span>
+        </div>
+        <div style="font-size:0.68em; opacity:0.45; margin-top:8px;">Fond si na konci turnaje dělí top 3 Indexu Naděje (50/30/20)</div>
+    </div>
     <div id="userBadge" class="user-badge" style="display:none;">
         <span>👤</span>
         <span id="userBadgeName" class="user-badge-name" style="cursor:pointer; text-decoration:underline; text-decoration-color:rgba(var(--neon-rgb), .4); text-underline-offset:3px;"
@@ -1138,24 +1156,7 @@ document.addEventListener('click', function(e) {
     <div id="matchList"></div>
 
   <aside class="pravy-panel">
-    <div class="bank-box">
-        <span class="bank-label">Bank nejbližšího zápasu</span>
-        <div class="bank-main-val"><span id="uiMainBank">0</span> Kč</div>
-        <div class="bank-total-row">
-            <span class="bank-total-label">Celkový bank v hře:</span>
-            <span class="bank-total-val"><span id="uiTotalBank">0</span> Kč</span>
-        </div>
-        <div class="bank-total-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(var(--neon-rgb), 0.2);">
-            <span class="bank-total-label">Fond Naděje (kumulováno):</span>
-            <span class="bank-total-val" style="color: var(--gold);"><span id="uiHopeIndex">0</span> Kč</span>
-        </div>
-        <div style="display:flex; justify-content:center; gap:16px; margin-top:10px; font-size:0.75em; opacity:0.7;">
-            <span>🥇 <b id="hope-1">0</b> Kč</span>
-            <span>🥈 <b id="hope-2">0</b> Kč</span>
-            <span>🥉 <b id="hope-3">0</b> Kč</span>
-        </div>
-        <div style="font-size:0.68em; opacity:0.45; margin-top:8px;">Fond si na konci turnaje dělí top 3 Indexu Naděje (50/30/20)</div>
-    </div>
+
     <div id="pravyPanel"></div>
   </aside>
   <div id="miniSlip">
