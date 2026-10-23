@@ -904,7 +904,8 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 const ADMIN_ID = "92a1e51b-e03c-48d7-99df-76c2f60a455f";
 
 const STARTOVNE = 200;
-const DELENI = [0.6, 0.3, 0.1];
+const ZENSKE_JMENA = ['Deny'];   // ženská jména: titul 'Královna' místo 'Král'
+const DELENI = [0.5, 0.3, 0.2];
 const BODY = { presne: 5, trend: 1, top8: 3, vitezZC: 8, propadlik: 1, qf: 2, sf: 5, finale: 8, vitezCL: 20,
                cech: 5, slavia_misto: 5, slavia_body: 5, slavia_goly: 5 };
 const CESKE_TYMY = ['Slavia Praha', 'Sparta Praha', 'Viktoria Plzeň', 'Baník Ostrava'];
@@ -2395,11 +2396,12 @@ async function nactiKralKola() {
         const k = data[0];
         const jmena = (k.kral || []).map(x => x.jmeno).join(', ');
         const body = (k.kral && k.kral[0]) ? k.kral[0].body : 0;
-        el.innerHTML = `<div class="kral-banner">👑 <b>Král ${count || ''}. kola:</b> ${jmena} <span class="kral-body">+${body} b.</span></div>`;
+        const titul = ((k.kral || []).length && (k.kral || []).every(x => ZENSKE_JMENA.includes(x.jmeno))) ? 'Královna' : 'Král';
+        el.innerHTML = `<div class="kral-banner">👑 <b>${titul} ${count || ''}. kola:</b> ${jmena} <span class="kral-body">+${body} b.</span></div>`;
         window._kraloveKola = new Set((k.kral || []).map(u => u.user_id)); renderZebricek();
         if (mojeId && (k.kral || []).some(u => u.user_id === mojeId)) {
             const kk = 'osl_kral_cl';
-            if (localStorage.getItem(kk) !== String(count)) { localStorage.setItem(kk, String(count)); konfety(temaBarvy()); oslavaToast('👑 Jsi Král ' + (count || '') + '. kola!'); }
+            if (localStorage.getItem(kk) !== String(count)) { localStorage.setItem(kk, String(count)); konfety(temaBarvy()); oslavaToast('👑 Jsi ' + ((typeof mojeJmeno !== 'undefined' && ZENSKE_JMENA.includes(mojeJmeno)) ? 'Královna ' : 'Král ') + (count || '') + '. kola!'); }
         }
     } catch (e) { el.innerHTML = ''; }
 }
