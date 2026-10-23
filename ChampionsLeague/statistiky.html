@@ -350,6 +350,7 @@ const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
 const STARTOVNE = 200;              // do banku jde 200 Kč z každého startovného
+const ZENSKE_JMENA = ['Deny'];   // ženská jména: titul 'Královna' místo 'Král'
 const DELENI = [0.5, 0.3, 0.2];     // dělení banku mezi top 3
 
 let stats = null, bank = 0, aktKat = 'celkem';
@@ -467,7 +468,7 @@ function kartaKola() {
         if (!blob) return;
         const file = new File([blob], 'karta-' + K + '-kola.png', { type: 'image/png' });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try { await navigator.share({ files: [file], title: K + '. kolo – SK Naděje', text: 'Král ' + K + '. kola: ' + kral.jmeno + ' (+' + kral.body + ' b.)' }); return; } catch (e) {}
+            try { await navigator.share({ files: [file], title: K + '. kolo – SK Naděje', text: (ZENSKE_JMENA.includes(kral.jmeno) ? 'Královna ' : 'Král ') + K + '. kola: ' + kral.jmeno + ' (+' + kral.body + ' b.)' }); return; } catch (e) {}
         }
         const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'karta-' + K + '-kola.png'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     }, 'image/png');
