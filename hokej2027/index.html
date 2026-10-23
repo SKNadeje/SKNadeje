@@ -946,6 +946,30 @@
         text-align: left;
     }
 }
+
+/* ===== PC: pravý sloupec (tabulky), větší ikona profilu ===== */
+.pravy-panel { display: none; }
+@media (min-width: 1000px) {
+    body { grid-template-columns: 300px minmax(0, 1fr) 340px; max-width: 1440px; }
+    body > .pravy-panel {
+        display: flex; flex-direction: column; gap: 14px;
+        grid-column: 3; grid-row: 1 / span 40;
+        position: sticky; top: 20px; align-self: start;
+        width: 340px;
+    }
+    .pp-nadpis { font-weight: 900; letter-spacing: 1px; font-size: .9em; opacity: .9; text-align: left; }
+    .pp-box { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 12px; }
+    .pp-hlava { font-weight: 800; color: var(--neon); margin-bottom: 8px; font-size: .9em; }
+    .pp-tab { width: 100%; border-collapse: collapse; font-size: .82em; }
+    .pp-tab th { text-align: left; opacity: .55; font-weight: 700; padding: 4px 6px; border-bottom: 1px solid rgba(255,255,255,.1); }
+    .pp-tab td { padding: 6px 6px; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .pp-tab tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+    .pp-pozn { font-size: .72em; opacity: .5; text-align: left; }
+    /* větší ikona profilu nahoře */
+    #userBadge { padding: 10px 18px; font-size: 1.05em; }
+    #userBadge > span:first-child { font-size: 1.8em; line-height: 1; }
+    #userBadge .user-badge-name { font-size: 1.05em; }
+}
 </style>
 <script>
 // 🎨 MOTIVY – aplikuj uložený motiv co nejdřív (před vykreslením)
@@ -1092,6 +1116,7 @@ document.addEventListener('click', function(e) {
     <div id="bonusCard" style="display:none;"></div>
     <div id="matchList"></div>
 
+  <aside class="pravy-panel" id="pravyPanel"></aside>
   <div id="miniSlip">
         <div class="slip-head"><span>🎟️ TIKET</span><span id="slipCount" style="opacity:.6; font-size:.85em;"></span></div>
         <div id="slipItems"></div>
@@ -2164,6 +2189,18 @@ inicializujChat({ klient: sb, tabulka: 'hokej27_chat', soutez: 'hokej', barva: '
         OneSignal.User.PushSubscription.addEventListener('change', () => syncPush(OneSignal));
         syncPush(OneSignal);
     });
+})();
+</script>
+<script>
+/* Pravý panel (PC): tabulky skupin z losu – doplnit výsledky z API později */
+(function () {
+    const box = document.getElementById('pravyPanel');
+    if (!box || typeof SKUPINA_A === 'undefined') return;
+    const tab = (nazev, tymy) => `<div class="pp-box"><div class="pp-hlava">${nazev}</div>
+        <table class="pp-tab"><thead><tr><th>#</th><th>Tým</th><th>Z</th><th>B</th></tr></thead>
+        <tbody>${tymy.map((t, i) => `<tr><td>${i + 1}</td><td>${t}</td><td>–</td><td>–</td></tr>`).join('')}</tbody></table></div>`;
+    box.innerHTML = `<div class="pp-nadpis">📊 Tabulky · MS 2027</div>` + tab('Skupina A', SKUPINA_A) + tab('Skupina B', SKUPINA_B)
+        + `<div class="pp-pozn">Výsledky a body se doplní z API.</div>`;
 })();
 </script>
 </body>
