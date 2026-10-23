@@ -665,6 +665,31 @@ body.sez-zima .nav button::after, body.sez-vanoce .nav button::after, body.sez-s
 @media (min-width: 1400px) {
     .kolo-obsah { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* ===== PC: levý panel (logo, nadpis, žebříček), střed (zápasy), pravý panel (tabulka LM) ===== */
+@media (min-width: 1000px) {
+    .wrap {
+        display: grid;
+        grid-template-columns: 300px minmax(0, 1fr) 340px;
+        column-gap: 24px;
+        align-items: start;
+        max-width: 1560px;
+    }
+    .wrap > * { grid-column: 2; min-width: 0; }
+    .wrap > .levy-panel, .wrap > .pravy-panel {
+        position: sticky; top: 20px; align-self: start;
+        max-height: calc(100vh - 40px); overflow-y: auto;
+    }
+    .wrap > .levy-panel { grid-column: 1; grid-row: 1 / span 60; }
+    .wrap > .pravy-panel { grid-column: 3; grid-row: 1 / span 60; }
+    .levy-panel { display: flex; flex-direction: column; gap: 14px; }
+    .pravy-panel #klubOdznak { position: static !important; width: 110px !important; height: auto !important; margin: 0 auto 10px; }
+    .levy-panel .levy-logo { display: block; width: 100%; max-width: 230px; height: auto; margin: 0 auto; }
+    .levy-panel h1 { font-size: 1.6em; margin: 6px 0 2px; text-align: center; }
+    .levy-panel .zlata-linka { display: none; }
+    .levy-panel .sekce, .pravy-panel .sekce { display: block !important; }
+    .nav button[onclick*="tabulka"], .nav button[onclick*="zebricek"] { display: none !important; }
+}
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -699,7 +724,6 @@ function zobrazKlubOdznak(t) {
 </script>
 </head>
 <body>
-<img id="klubOdznak" src="" alt="" style="display:none; position:fixed; top:10px; left:12px; z-index:10000; width:64px; height:64px; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));">
 <img id="klubVodoznak" src="" alt="" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:0; width:75vw; max-width:420px; height:auto; object-fit:contain; opacity:.05; pointer-events:none;">
 <div id="themeSwitch" style="position:fixed; top:12px; right:12px; z-index:10000;">
     <button onclick="prepniThemePanel()" style="background:rgba(var(--fial-rgb),.12); border:1px solid rgba(var(--fial-rgb),.45); color:var(--text); width:42px; height:42px; border-radius:50%; cursor:pointer; font-size:1.2em; backdrop-filter:blur(6px);" title="Změnit vzhled">🎨</button>
@@ -755,8 +779,16 @@ document.addEventListener('DOMContentLoaded',function(){ var t=(function(){try{r
 document.addEventListener('click',function(e){ var sw=document.getElementById('themeSwitch'); if(sw&&!sw.contains(e.target)){ var p=document.getElementById('themePanel'); if(p) p.style.display='none'; } });
 </script>
 <div class="wrap">
+<aside class="levy-panel">
+    <img class="levy-logo" src="CL-logo1.png" alt="Liga mistrů">
+            <h1>Liga mistrů</h1>
+    <div class="sekce" id="sekce-zebricek">
+        <div class="bank-info" id="bank-info">…</div>
+        <div id="kralKola"></div>
+        <div id="zebricek"></div>
+    </div>
+</aside>
     <a class="zpet" href="welcome.html">← Welcome stránka</a>
-    <h1>Liga mistrů</h1>
     <div class="zlata-linka"></div>
 
     <div class="nav">
@@ -823,15 +855,13 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     </div>
 
     <!-- ======= SEKCE ŽEBŘÍČEK ======= -->
+<aside class="pravy-panel">
+    <img id="klubOdznak" src="" alt="" style="display:none; position:fixed; top:10px; left:12px; z-index:10000; width:64px; height:64px; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));">
+    <div class="sekce" id="sekce-tabulka"></div>
+</aside>
     <div class="sekce" id="sekce-mapa"></div>
 
-    <div class="sekce" id="sekce-tabulka"></div>
 
-    <div class="sekce" id="sekce-zebricek">
-        <div class="bank-info" id="bank-info">…</div>
-        <div id="kralKola"></div>
-        <div id="zebricek"></div>
-    </div>
 </div>
 
 <!-- MODAL DLOUHODOBKY -->
