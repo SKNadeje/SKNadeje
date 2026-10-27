@@ -712,6 +712,7 @@ body.sez-zima .nav button::after, body.sez-vanoce .nav button::after, body.sez-s
     .levy-panel > h1 { order: 2; }
     .pravy-panel > #sekce-tabulka { order: 9; }
     .levy-panel > #sekce-zebricek { order: 10; }
+    .wrap > #oznBanner { order: 4; }
 }
 
 /* ===== odpočet do finále – přehlednější ===== */
@@ -2729,6 +2730,8 @@ async function otevriZv() {
         .eq('user_id', session.user.id).not('odpoved', 'is', null).order('odpoved_kdy', { ascending: false }).limit(1);
     if (data && data[0]) {
         const z = data[0];
+        if (z.odpoved_kdy) localStorage.setItem('zv_videno', z.odpoved_kdy);
+        const _btn = document.getElementById('nav-zprava'); if (_btn) _btn.textContent = '✉️ Zpráva adminovi';
         box.innerHTML = `<div style="border-top:1px solid rgba(255,255,255,.12); padding-top:10px;"><div style="font-size:.72em; opacity:.6; font-weight:800; letter-spacing:.5px;">ODPOVĚĎ ADMINA · ${new Date(z.odpoved_kdy).toLocaleString('cs-CZ')}</div><div style="margin-top:4px; white-space:pre-wrap;">${String(z.odpoved).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</div></div>`;
     }
 }
@@ -2744,6 +2747,18 @@ async function nactiOznameni() {
         <span onclick="localStorage.setItem('ozn_skryt','${o.id}'); document.getElementById('oznBanner').innerHTML='';" style="cursor:pointer; opacity:.6; font-size:1.3em; line-height:1;">×</span></div>`;
 }
 setTimeout(nactiOznameni, 900);
+async function kontrolaOdpovedi() {
+    const btn = document.getElementById('nav-zprava');
+    if (!btn) return;
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+    const { data } = await sb.from('zpetna_vazba').select('odpoved_kdy')
+        .eq('user_id', session.user.id).not('odpoved', 'is', null).order('odpoved_kdy', { ascending: false }).limit(1);
+    const kdy = data && data[0] && data[0].odpoved_kdy;
+    const videno = localStorage.getItem('zv_videno');
+    btn.textContent = (kdy && (!videno || new Date(kdy) > new Date(videno))) ? '✉️ Zpráva adminovi ●' : '✉️ Zpráva adminovi';
+}
+setTimeout(kontrolaOdpovedi, 1200);
 function zavriZv() { document.getElementById('zvModal').style.display = 'none'; }
 async function odeslatZv() {
     const t = document.getElementById('zvText').value.trim();
