@@ -823,6 +823,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     <a class="zpet" href="welcome.html">← Welcome stránka</a>
     <div class="zlata-linka"></div>
 
+    <div style="text-align:center; margin:0 0 12px;"><button onclick="otevriZv()" style="background:transparent; border:1px solid rgba(var(--gold-rgb,212,175,55),.45); color:var(--gold); border-radius:100px; padding:6px 14px; font-size:.72em; font-weight:800; letter-spacing:.5px; cursor:pointer; font-family:inherit;">✉️ Napsat adminovi</button></div>
     <div class="nav">
         <button class="tady" id="nav-tipy" onclick="prepni('tipy')">Tipování</button>
         <button id="nav-mapa" onclick="prepni('mapa')">🗺️ Mapa</button>
@@ -2701,6 +2702,33 @@ async function otevriHistoriiKralu() {
         <div style="font-weight:800; opacity:.6; font-size:.78em; letter-spacing:.8px; margin:14px 0 4px;">PŘEHLED KOL</div>${radky}`;
 }
 function zavriHistorii() { document.getElementById('krHistorie').style.display = 'none'; }
+</script>
+<div id="zvModal" onclick="if(event.target===this)zavriZv()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:5000; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#0f1626; border:1px solid rgba(212,175,55,.45); border-radius:16px; max-width:420px; width:100%; padding:18px; color:#eef2ff;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><b>✉️ Napsat adminovi</b><span onclick="zavriZv()" style="cursor:pointer; font-size:1.5em; opacity:.6;">×</span></div>
+    <div style="font-size:.85em; opacity:.7; margin-bottom:8px;">Pochvala, nápad, chyba, cokoliv. Zpráva jde jen adminovi.</div>
+    <textarea id="zvText" rows="5" maxlength="1000" style="width:100%; box-sizing:border-box; border-radius:10px; padding:10px; background:rgba(255,255,255,.06); color:#eef2ff; border:1px solid rgba(255,255,255,.15); font-family:inherit; font-size:.95em; resize:vertical;"></textarea>
+    <button onclick="odeslatZv()" style="margin-top:10px; width:100%; padding:11px; border-radius:10px; border:none; background:linear-gradient(135deg,#f0d987,#c9a02e); color:#1a1206; font-weight:900; cursor:pointer; font-family:inherit;">ODESLAT</button>
+    <div id="zvMsg" style="margin-top:8px; font-size:.85em; color:#ff8a80; min-height:1em;"></div>
+  </div>
+</div>
+<script>
+function otevriZv() { document.getElementById('zvModal').style.display = 'flex'; }
+function zavriZv() { document.getElementById('zvModal').style.display = 'none'; }
+async function odeslatZv() {
+    const t = document.getElementById('zvText').value.trim();
+    const msg = document.getElementById('zvMsg');
+    if (t.length < 3) { msg.style.color = '#ff8a80'; msg.textContent = 'Napiš aspoň pár slov.'; return; }
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { alert('Pro odeslání se nejdřív přihlas.'); return; }
+    const jm = (typeof mojeJmeno !== 'undefined' && mojeJmeno) ? mojeJmeno : (session.user.email || '').split('@')[0];
+    msg.style.color = '#c9b678'; msg.textContent = 'Odesílám…';
+    const { error } = await sb.from('zpetna_vazba').insert({ user_id: session.user.id, jmeno: jm, zprava: t });
+    if (error) { msg.style.color = '#ff8a80'; msg.textContent = 'Chyba: ' + error.message; return; }
+    document.getElementById('zvText').value = '';
+    msg.style.color = '#7fe0a0'; msg.textContent = '✅ Odesláno, díky!';
+    setTimeout(() => { zavriZv(); msg.textContent = ''; }, 1500);
+}
 </script>
 </body>
 </html>
