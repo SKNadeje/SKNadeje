@@ -191,6 +191,17 @@ async function init() {
 </div>
 
         <div class="karta">
+            <h2>📢 Oznámení hráčům</h2>
+            <div style="font-size:.8em; opacity:.7; margin-bottom:8px;">Zobrazí se nahoře v appce. Nové oznámení nahradí předchozí.</div>
+            <textarea id="oznText" rows="3" style="width:100%; box-sizing:border-box; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.06); color:inherit; font-family:inherit;"></textarea>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+                <button class="btn" onclick="vyhlasOznameni()">📢 Vyhlásit</button>
+                <button class="btn btn-mini" onclick="skryjOznameni()">Skrýt aktuální</button>
+            </div>
+            <div id="oznMsg" style="margin-top:8px; font-size:.85em;"></div>
+        </div>
+
+        <div class="karta">
             <h2>✉️ Zprávy od hráčů <span id="zvPocet" style="font-size:.7em; opacity:.7;"></span></h2>
             <button class="btn" onclick="nactiZpravy()">🔄 Načíst zprávy</button>
             <div id="zvSeznam" style="margin-top:12px;"></div>
@@ -1115,12 +1126,38 @@ async function nactiZpravy() {
     box.innerHTML = (data || []).map(z => `<div style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,.08); ${z.precteno ? 'opacity:.55;' : ''}">
         <div style="font-size:.78em; opacity:.7;">${new Date(z.created_at).toLocaleString('cs-CZ')} · <b>${escZv(z.jmeno || 'hráč')}</b></div>
         <div style="margin:4px 0; white-space:pre-wrap;">${escZv(z.zprava)}</div>
-        <button class="btn btn-mini" onclick="oznacZpravu(${z.id}, ${!z.precteno})">${z.precteno ? '↩ nepřečtené' : '✓ přečtené'}</button></div>`).join('')
+        ${z.odpoved ? `<div style="font-size:.85em; opacity:.8; margin:4px 0 6px; padding-left:8px; border-left:2px solid #d4af37; white-space:pre-wrap;">↩ ${escZv(z.odpoved)}</div>` : ''}
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+            <input id="odp-${z.id}" placeholder="Odpověď…" style="flex:1; min-width:160px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.06); color:inherit; font-family:inherit;">
+            <button class="btn btn-mini" onclick="odpovedZpravu(${z.id})">Odpovědět</button>
+            <button class="btn btn-mini" onclick="oznacZpravu(${z.id}, ${!z.precteno})">${z.precteno ? '↩ nepřečtené' : '✓ přečtené'}</button>
+        </div></div>`).join('')
         || 'Zatím žádné zprávy.';
+}
+async function odpovedZpravu(id) {
+    const txt = document.getElementById('odp-' + id).value.trim();
+    if (!txt) return alert('Napiš odpověď.');
+    const { error } = await sb.from('zpetna_vazba').update({ odpoved: txt, odpoved_kdy: new Date().toISOString() }).eq('id', id);
+    if (error) return alert('Chyba: ' + error.message);
+    nactiZpravy();
 }
 async function oznacZpravu(id, stav) {
     await sb.from('zpetna_vazba').update({ precteno: stav }).eq('id', id);
     nactiZpravy();
+}
+
+async function vyhlasOznameni() {
+    const t = document.getElementById('oznText').value.trim();
+    const m = document.getElementById('oznMsg');
+    if (!t) { m.textContent = 'Napiš text oznámení.'; return; }
+    await sb.from('oznameni').update({ aktivni: false }).eq('aktivni', true);
+    const { error } = await sb.from('oznameni').insert({ text: t, aktivni: true });
+    m.textContent = error ? 'Chyba: ' + error.message : '✅ Vyhlášeno.';
+    if (!error) document.getElementById('oznText').value = '';
+}
+async function skryjOznameni() {
+    await sb.from('oznameni').update({ aktivni: false }).eq('aktivni', true);
+    document.getElementById('oznMsg').textContent = '✅ Oznámení skryto.';
 }
 </script>
 </body>
