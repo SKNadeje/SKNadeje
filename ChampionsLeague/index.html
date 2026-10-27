@@ -823,6 +823,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     <a class="zpet" href="welcome.html">← Welcome stránka</a>
     <div class="zlata-linka"></div>
 
+    <div id="oznBanner"></div>
     <div class="nav">
         <button class="tady" id="nav-tipy" onclick="prepni('tipy')">Tipování</button>
         <button id="nav-mapa" onclick="prepni('mapa')">🗺️ Mapa</button>
@@ -830,7 +831,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
         <button id="nav-domov" onclick="prepniDomov()" title="Nastavit tuto appku jako domovskou">🏠 Domů</button>
         <a href="statistiky.html" style="text-decoration:none;"><button id="nav-zebricek">Žebříček</button></a>
         <a id="nav-admin" href="admin.html" style="display:none; text-decoration:none;"><button style="background:rgba(212,175,55,.15); border:1px solid rgba(212,175,55,.5); color:#d4af37;">⚙️ Admin</button></a>
-        <button id="nav-zprava" onclick="otevriZv()">✉️ Zpráva adminovi</button>
+        <button id="nav-zprava" onclick="otevriZv()">✉️ Adminovi</button>
     </div>
 
     <div class="auth-lista" id="auth-lista" style="display:none;">
@@ -1579,7 +1580,8 @@ function renderZapasy() {
         const zavrit = (filtrZapasu === 'hotovo') ? !(window._rozbalenaKola && window._rozbalenaKola.has(k)) : window._sbalenaKola.has(k);
         sekce.className = 'kolo-blok' + (zavrit ? ' sbaleno' : '');
         const nazev = k === 0 ? 'Ostatní zápasy' : k + '. kolo';
-        sekce.innerHTML = `<div class="kolo-hl" onclick="prepniKoloSekce(this, ${k})"><span>${nazev}</span><span class="kolo-pocet">${skup[k].length} · ▾</span></div><div class="kolo-obsah"></div>`;
+        const bodyKola = skup[k].reduce((acc, m) => { const t = (tipyMap[m.id] || []).find(x => x.user_id === mojeId); return acc + ((m.status === 'vyhodnoceno' && t) ? (t.body || 0) : 0); }, 0);
+        sekce.innerHTML = `<div class="kolo-hl" onclick="prepniKoloSekce(this, ${k})"><span>${nazev}</span><span class="kolo-pocet">${filtrZapasu === 'hotovo' ? bodyKola + ' b. · ▾' : skup[k].length + ' · ▾'}</span></div><div class="kolo-obsah"></div>`;
         const telo = sekce.querySelector('.kolo-obsah');
         skup[k].forEach(m => {
         const tipy = tipyMap[m.id] || [];
@@ -1596,7 +1598,7 @@ function renderZapasy() {
                 <div class="mr-side">${logoTymu(m.domaci, 24)}<span class="mr-name">${m.domaci}</span></div>
                 <div class="mr-center">
                     ${hotovo
-                        ? `<div class="mr-vysl">${m.vysledek_d}:${m.vysledek_h}</div>${hlaskaVysledek(m.vysledek_d, m.vysledek_h)}`
+                        ? `<div class="mr-vysl">${mujTip ? (mujTip.body || 0) : 0}</div>`
                         : `<div class="mr-timer" id="timer-${m.id}">--:--</div>`}
                     ${mujTip
                         ? `<div class="mr-tip">✓ ${mujTip.skore}${hotovo ? ` <b>+${mujTip.body}</b>` : ''}</div>`
@@ -1867,9 +1869,12 @@ async function ulozTip(id) {
     const { error } = await sb.from('cl_tipy_zapasy')
         .upsert({ zapas_id: id, user_id: mojeId, jmeno: mojeJmeno, skore, joker }, { onConflict: 'zapas_id,user_id' });
     if (error) return alert('Chyba: ' + error.message);
+    const _otev = [...document.querySelectorAll('[id^="detail-"].open')].map(e => e.id);
     razitko('✓ Tip uložen');
     pripomenDlouhodobku();
-    nactiVse();
+    await nactiVse();
+    const _obnov = () => _otev.forEach(id => document.getElementById(id)?.classList.add('open'));
+    _obnov(); setTimeout(_obnov, 400);
 }
 
 async function nahodneVsechny() {
@@ -2710,10 +2715,35 @@ function zavriHistorii() { document.getElementById('krHistorie').style.display =
     <textarea id="zvText" rows="5" maxlength="1000" style="width:100%; box-sizing:border-box; border-radius:10px; padding:10px; background:rgba(255,255,255,.06); color:#eef2ff; border:1px solid rgba(255,255,255,.15); font-family:inherit; font-size:.95em; resize:vertical;"></textarea>
     <button onclick="odeslatZv()" style="margin-top:10px; width:100%; padding:11px; border-radius:10px; border:none; background:linear-gradient(135deg,#f0d987,#c9a02e); color:#1a1206; font-weight:900; cursor:pointer; font-family:inherit;">ODESLAT</button>
     <div id="zvMsg" style="margin-top:8px; font-size:.85em; color:#ff8a80; min-height:1em;"></div>
+    <div id="zvOdpoved" style="margin-top:12px;"></div>
   </div>
 </div>
 <script>
-function otevriZv() { document.getElementById('zvModal').style.display = 'flex'; }
+async function otevriZv() {
+    document.getElementById('zvModal').style.display = 'flex';
+    const box = document.getElementById('zvOdpoved');
+    box.innerHTML = '';
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+    const { data } = await sb.from('zpetna_vazba').select('odpoved,odpoved_kdy')
+        .eq('user_id', session.user.id).not('odpoved', 'is', null).order('odpoved_kdy', { ascending: false }).limit(1);
+    if (data && data[0]) {
+        const z = data[0];
+        box.innerHTML = `<div style="border-top:1px solid rgba(255,255,255,.12); padding-top:10px;"><div style="font-size:.72em; opacity:.6; font-weight:800; letter-spacing:.5px;">ODPOVĚĎ ADMINA · ${new Date(z.odpoved_kdy).toLocaleString('cs-CZ')}</div><div style="margin-top:4px; white-space:pre-wrap;">${String(z.odpoved).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</div></div>`;
+    }
+}
+async function nactiOznameni() {
+    const box = document.getElementById('oznBanner');
+    if (!box) return;
+    const { data } = await sb.from('oznameni').select('id,text').eq('aktivni', true).order('created_at', { ascending: false }).limit(1);
+    const o = data && data[0];
+    if (!o || localStorage.getItem('ozn_skryt') === String(o.id)) { box.innerHTML = ''; return; }
+    const esc = String(o.text).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    box.innerHTML = `<div style="display:flex; align-items:center; gap:10px; background:rgba(var(--gold-rgb,212,175,55),.12); border:1px solid rgba(var(--gold-rgb,212,175,55),.45); border-radius:12px; padding:10px 14px; margin-bottom:12px; font-size:.9em;">
+        <span>📢</span><span style="flex:1; white-space:pre-wrap;">${esc}</span>
+        <span onclick="localStorage.setItem('ozn_skryt','${o.id}'); document.getElementById('oznBanner').innerHTML='';" style="cursor:pointer; opacity:.6; font-size:1.3em; line-height:1;">×</span></div>`;
+}
+setTimeout(nactiOznameni, 900);
 function zavriZv() { document.getElementById('zvModal').style.display = 'none'; }
 async function odeslatZv() {
     const t = document.getElementById('zvText').value.trim();
