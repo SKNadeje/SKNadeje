@@ -191,6 +191,12 @@ async function init() {
 </div>
 
         <div class="karta">
+            <h2>✉️ Zprávy od hráčů <span id="zvPocet" style="font-size:.7em; opacity:.7;"></span></h2>
+            <button class="btn" onclick="nactiZpravy()">🔄 Načíst zprávy</button>
+            <div id="zvSeznam" style="margin-top:12px;"></div>
+        </div>
+
+        <div class="karta">
             <h2>🎨 Viditelnost vodoznaku (loga na pozadí)</h2>
             <div style="font-size:.8em; opacity:.7; margin-bottom:10px;">Platí pro všechny stránky CL. 0 % = vypnuto.</div>
             <div style="display:flex; align-items:center; gap:12px;">
@@ -1095,6 +1101,26 @@ async function nactiStavNotifikaci() {
              + '<b>' + (h.jmeno || '(bez jména)') + '</b>'
              + '<span style="text-align:right;">' + stav + (kdy ? ' <span style="opacity:.45; font-size:.8em;">' + kdy + '</span>' : '') + '</span></div>';
     }).join('') + '<div style="margin-top:10px; font-size:.82em; opacity:.8;">✅ ' + pocty.ano + ' zapnuto · ❌ ' + pocty.ne + ' vypnuto · ❔ ' + pocty.nezn + ' neznámo</div>';
+}
+</script>
+<script>
+function escZv(x) { return String(x ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+async function nactiZpravy() {
+    const box = document.getElementById('zvSeznam');
+    box.innerHTML = 'Načítám…';
+    const { data, error } = await sb.from('zpetna_vazba').select('*').order('created_at', { ascending: false });
+    if (error) { box.innerHTML = 'Chyba: ' + error.message; return; }
+    const nove = (data || []).filter(z => !z.precteno).length;
+    document.getElementById('zvPocet').textContent = nove ? '(' + nove + ' nových)' : '';
+    box.innerHTML = (data || []).map(z => `<div style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,.08); ${z.precteno ? 'opacity:.55;' : ''}">
+        <div style="font-size:.78em; opacity:.7;">${new Date(z.created_at).toLocaleString('cs-CZ')} · <b>${escZv(z.jmeno || 'hráč')}</b></div>
+        <div style="margin:4px 0; white-space:pre-wrap;">${escZv(z.zprava)}</div>
+        <button class="btn btn-mini" onclick="oznacZpravu(${z.id}, ${!z.precteno})">${z.precteno ? '↩ nepřečtené' : '✓ přečtené'}</button></div>`).join('')
+        || 'Zatím žádné zprávy.';
+}
+async function oznacZpravu(id, stav) {
+    await sb.from('zpetna_vazba').update({ precteno: stav }).eq('id', id);
+    nactiZpravy();
 }
 </script>
 </body>
