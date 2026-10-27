@@ -1593,7 +1593,12 @@ function renderZapasy() {
         const card = document.createElement('div');
         const jeNetipnuto = !mujTip && !zavreno && !hotovo && mojeId;
         card.className = 'match-card' + (mujTip ? ' tipnuto' : (jeNetipnuto ? ' netipnuto' : ''));
-        card.onclick = () => document.getElementById('detail-' + m.id).classList.toggle('open');
+        card.onclick = () => {
+            const d = document.getElementById('detail-' + m.id);
+            d.classList.toggle('open');
+            window._otevrene = window._otevrene || new Set();
+            if (d.classList.contains('open')) window._otevrene.add(m.id); else window._otevrene.delete(m.id);
+        };
         card.innerHTML = `
             <div class="mr">
                 <div class="mr-side">${logoTymu(m.domaci, 24)}<span class="mr-name">${m.domaci}</span></div>
@@ -1609,7 +1614,7 @@ function renderZapasy() {
             </div>
             ${barSazek(tipy, m)}
             ${m.outsider ? `<div class="mr-outsider">👤 Outsider: ${m.outsider} · trend +3 b.</div>` : ''}
-            <div id="detail-${m.id}" class="details" onclick="event.stopPropagation()">
+            <div id="detail-${m.id}" class="details${window._otevrene && window._otevrene.has(m.id) ? ' open' : ''}" onclick="event.stopPropagation()">
                 <div style="text-align:center; font-size:.68em; opacity:.5; margin-bottom:10px;">tipů: ${tipy.length}</div>
                 ${(!zavreno && !hotovo && mojeId) ? `
                     <div class="score-row">
@@ -1870,12 +1875,11 @@ async function ulozTip(id) {
     const { error } = await sb.from('cl_tipy_zapasy')
         .upsert({ zapas_id: id, user_id: mojeId, jmeno: mojeJmeno, skore, joker }, { onConflict: 'zapas_id,user_id' });
     if (error) return alert('Chyba: ' + error.message);
-    const _otev = [...document.querySelectorAll('[id^="detail-"].open')].map(e => e.id);
+    window._otevrene = window._otevrene || new Set();
+    window._otevrene.delete(Number(id)); window._otevrene.delete(id);
     razitko('✓ Tip uložen');
     pripomenDlouhodobku();
     await nactiVse();
-    const _obnov = () => _otev.forEach(id => document.getElementById(id)?.classList.add('open'));
-    _obnov(); setTimeout(_obnov, 400);
 }
 
 async function nahodneVsechny() {
