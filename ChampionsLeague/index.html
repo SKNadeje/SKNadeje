@@ -823,7 +823,6 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
     <a class="zpet" href="welcome.html">← Welcome stránka</a>
     <div class="zlata-linka"></div>
 
-    <div style="text-align:center; margin:0 0 12px;"><button onclick="otevriZv()" style="background:transparent; border:1px solid rgba(var(--gold-rgb,212,175,55),.45); color:var(--gold); border-radius:100px; padding:6px 14px; font-size:.72em; font-weight:800; letter-spacing:.5px; cursor:pointer; font-family:inherit;">✉️ Napsat adminovi</button></div>
     <div class="nav">
         <button class="tady" id="nav-tipy" onclick="prepni('tipy')">Tipování</button>
         <button id="nav-mapa" onclick="prepni('mapa')">🗺️ Mapa</button>
@@ -831,6 +830,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
         <button id="nav-domov" onclick="prepniDomov()" title="Nastavit tuto appku jako domovskou">🏠 Domů</button>
         <a href="statistiky.html" style="text-decoration:none;"><button id="nav-zebricek">Žebříček</button></a>
         <a id="nav-admin" href="admin.html" style="display:none; text-decoration:none;"><button style="background:rgba(212,175,55,.15); border:1px solid rgba(212,175,55,.5); color:#d4af37;">⚙️ Admin</button></a>
+        <button id="nav-zprava" onclick="otevriZv()">✉️ Adminovi</button>
     </div>
 
     <div class="auth-lista" id="auth-lista" style="display:none;">
