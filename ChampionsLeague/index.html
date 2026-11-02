@@ -1863,6 +1863,32 @@ function jokerVolno() {
     return Math.max(0, 5 - u);
 }
 
+
+/* Přímé uložení tipu přes REST (obejde zámek Supabase klienta, který někdy visí) */
+const SB_URL_TIP = 'https://vlabocwezmpwnxrwxihs.supabase.co';
+const SB_KEY_TIP = 'sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X';
+function tokenPrihlaseni() {
+    try {
+        const k = Object.keys(localStorage).find(x => /^sb-.*-auth-token$/.test(x));
+        const v = JSON.parse(localStorage.getItem(k) || 'null');
+        return (v && (v.access_token || (v.currentSession && v.currentSession.access_token))) || null;
+    } catch (e) { return null; }
+}
+async function ulozTipRest(row) {
+    const tok = tokenPrihlaseni();
+    const r = await fetch(SB_URL_TIP + '/rest/v1/cl_tipy_zapasy?on_conflict=zapas_id,user_id', {
+        method: 'POST',
+        headers: {
+            'apikey': SB_KEY_TIP,
+            'Authorization': 'Bearer ' + (tok || SB_KEY_TIP),
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify(row)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (await r.text()));
+}
+
 async function ulozTip(id) {
     const sD = document.getElementById('scD-' + id).value;
     const sH = document.getElementById('scH-' + id).value;
@@ -1872,8 +1898,8 @@ async function ulozTip(id) {
     const jinde = Object.values(tipyMap).flat().filter(t => t.user_id === mojeId && t.joker && String(t.zapas_id) !== String(id)).length;
     if (joker && jinde >= 5) return alert('Máš vyčerpaných všech 5 jokerů na celou hru. 🃏');
     const skore = `${parseInt(sD)}:${parseInt(sH)}`;
-    const { error } = await sb.from('cl_tipy_zapasy')
-        .upsert({ zapas_id: id, user_id: mojeId, jmeno: mojeJmeno, skore, joker }, { onConflict: 'zapas_id,user_id' });
+    let error = null;
+    try { await ulozTipRest({ zapas_id: id, user_id: mojeId, jmeno: mojeJmeno, skore, joker }); } catch (e) { error = e; }
     if (error) return alert('Chyba: ' + error.message);
     window._otevrene = window._otevrene || new Set();
     window._otevrene.delete(Number(id)); window._otevrene.delete(id);
