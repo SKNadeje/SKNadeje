@@ -460,6 +460,19 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
 const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
 const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
 const sb = supabase.createClient(SB_URL, SB_KEY);
+async function nactiVsechnyTipy() {
+    // Supabase vrací max 1000 řádků na dotaz, proto načítáme po stránkách
+    let vse = [], od = 0; const strana = 1000;
+    while (true) {
+        const { data, error } = await sb.from('cl_tipy_zapasy').select('*').order('id', { ascending: true }).range(od, od + strana - 1);
+        if (error) throw error;
+        vse = vse.concat(data || []);
+        if (!data || data.length < strana) break;
+        od += strana;
+    }
+    return { data: vse };
+}
+
 
 function hashCode(str) {
     let h = 0;
@@ -482,7 +495,7 @@ async function load() {
 
     const [zR, tR, dR, kR] = await Promise.all([
         sb.from('cl_zapasy').select('*'),
-        sb.from('cl_tipy_zapasy').select('*'),
+        nactiVsechnyTipy(),
         sb.from('cl_dlouhodobe').select('*'),
         sb.from('cl_kola').select('*').order('id', { ascending: true })
     ]);
