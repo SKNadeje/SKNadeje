@@ -1072,13 +1072,25 @@ function skeletonRows(n, karta) {
     let out = ''; for (let i = 0; i < n; i++) out += `<div class="${karta ? 'skel-card' : 'skel-row'}"></div>`; return out;
 }
 
+async function nactiVsechnyTipy() {
+    // Supabase vrací max 1000 řádků na dotaz, proto načítáme po stránkách
+    let vse = [], od = 0; const strana = 1000;
+    while (true) {
+        const { data, error } = await sb.from('cl_tipy_zapasy').select('*').order('id', { ascending: true }).range(od, od + strana - 1);
+        if (error) throw error;
+        vse = vse.concat(data || []);
+        if (!data || data.length < strana) break;
+        od += strana;
+    }
+    return { data: vse };
+}
 async function nactiVse() {
     const _zeb = document.getElementById('zebricek'), _mat = document.getElementById('matches');
     if (_zeb && !_zeb.innerHTML.trim()) _zeb.innerHTML = skeletonRows(6);
     if (_mat && !_mat.innerHTML.trim()) _mat.innerHTML = skeletonRows(3, true);
     const [zR, tR, sR, dR, hR, rkR] = await Promise.all([
         sb.from('cl_zapasy').select('*').order('deadline', { ascending: true }),
-        sb.from('cl_tipy_zapasy').select('*'),
+        nactiVsechnyTipy(),
         sb.from('cl_stav').select('*').eq('id', 1).maybeSingle(),
         sb.from('cl_dlouhodobe').select('*'),
         sb.from('hraci').select('user_id, tema'),
