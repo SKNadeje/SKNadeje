@@ -1879,7 +1879,7 @@ async function ulozTip(id) {
     window._otevrene.delete(Number(id)); window._otevrene.delete(id);
     razitko('✓ Tip uložen');
     pripomenDlouhodobku();
-    await nactiVse();
+    nactiVse().catch(e => console.error('nactiVse selhalo', e));
 }
 
 async function nahodneVsechny() {
