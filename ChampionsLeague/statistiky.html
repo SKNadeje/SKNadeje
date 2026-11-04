@@ -5,7 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NADĚJE · Žebříčky Champions League</title>
 <link rel="icon" href="../favicon.ico">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+/* ===== Živé body (běžící zápasy, jen zamčené a nevyhodnocené) ===== */
+function zivyBody(m, tip) {
+    const d = m.live_domaci, h = m.live_hoste;
+    const [td, th] = tip.skore.split(':').map(Number);
+    const presne = td === d && th === h;
+    const trend = (d > h && td > th) || (d < h && td < th) || (d === h && td === th);
+    let trendBody = 0;
+    if (trend) {
+        if (m.outsider) {
+            const outVyhral = (d > h && m.outsider === m.domaci && td > th) || (h > d && m.outsider === m.hoste && th > td);
+            if (outVyhral) trendBody = 3;
+            else if (d === h && td === th) trendBody = 2;
+            else trendBody = 1;
+        } else trendBody = 1;
+    }
+    const hitRozdil = Math.abs(td - th) === Math.abs(d - h);
+    const hitPocet = (td + th) === (d + h);
+    const zaklad = (presne ? 5 : 0) + trendBody + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
+    return zaklad * (tip.joker ? 2 : 1);
+}
+function zivyStav(m, tip) {
+    if (!tip || m.status === 'vyhodnoceno' || m.live_domaci == null || m.live_hoste == null) return null;
+    if (!(new Date(m.deadline) <= Date.now())) return null;
+    const bezi = ['IN_PLAY', 'PAUSED', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'].includes(m.live_stav);
+    const konec = m.live_stav === 'FINISHED';
+    if (!bezi && !konec) return null;
+    return { body: zivyBody(m, tip), bezi };
+}
+function zivyPridej(stats, zapasy, tipy) {
+    let bezi = false;
+    const mapa = {}; zapasy.forEach(z => { mapa[z.id] = z; });
+    tipy.forEach(t => {
+        const L = zivyStav(mapa[t.zapas_id] || {}, t);
+        if (!L) return;
+        const h = stats.hraci.find(x => x.user_id === t.user_id);
+        if (h) h.nb = (h.nb || 0) + L.body;
+        if (L.bezi) bezi = true;
+    });
+    return bezi;
+}
+</script>
 <script src="cl-zebricky.js?v=1"></script>
 <style>
 :root {
@@ -367,6 +408,48 @@ const ZENSKE_JMENA = ['Deny'];   // ženská jména: titul 'Královna' místo 'K
 const DELENI = [0.5, 0.3, 0.2];     // dělení banku mezi top 3
 
 let stats = null, bank = 0, aktKat = 'celkem';
+
+/* ===== Živé body (běžící zápasy, jen zamčené a nevyhodnocené) ===== */
+function zivyBody(m, tip) {
+    const d = m.live_domaci, h = m.live_hoste;
+    const [td, th] = tip.skore.split(':').map(Number);
+    const presne = td === d && th === h;
+    const trend = (d > h && td > th) || (d < h && td < th) || (d === h && td === th);
+    let trendBody = 0;
+    if (trend) {
+        if (m.outsider) {
+            const outVyhral = (d > h && m.outsider === m.domaci && td > th) || (h > d && m.outsider === m.hoste && th > td);
+            if (outVyhral) trendBody = 3;
+            else if (d === h && td === th) trendBody = 2;
+            else trendBody = 1;
+        } else trendBody = 1;
+    }
+    const hitRozdil = Math.abs(td - th) === Math.abs(d - h);
+    const hitPocet = (td + th) === (d + h);
+    const zaklad = (presne ? 5 : 0) + trendBody + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
+    return zaklad * (tip.joker ? 2 : 1);
+}
+function zivyStav(m, tip) {
+    if (!tip || !m || m.status === 'vyhodnoceno' || m.live_domaci == null || m.live_hoste == null) return null;
+    if (!(new Date(m.deadline) <= Date.now())) return null;
+    const bezi = ['IN_PLAY', 'PAUSED', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'].includes(m.live_stav);
+    const konec = m.live_stav === 'FINISHED';
+    if (!bezi && !konec) return null;
+    return { body: zivyBody(m, tip), bezi };
+}
+function zivyPridej(stats, zapasy, tipy) {
+    let bezi = false;
+    const mapa = {}; zapasy.forEach(z => { mapa[z.id] = z; });
+    tipy.forEach(t => {
+        const L = zivyStav(mapa[t.zapas_id], t);
+        if (!L) return;
+        const h = stats.hraci.find(x => x.user_id === t.user_id);
+        if (h) h.nb = (h.nb || 0) + L.body;
+        if (L.bezi) bezi = true;
+    });
+    return bezi;
+}
+
 
 const LEGENDA_JMENO = 'Jan Rathouský';
 function radek(h, poradiNum, rankLabel, hodnotaHtml, subHtml) {
@@ -768,6 +851,12 @@ async function load() {
     window._avatary = {};
     (avR?.data || []).forEach(h => { if (h.avatar) window._avatary[h.user_id] = h.avatar; });
     stats = spocitejStatistikyCL(zR.data || [], tR.data || [], dR.data || []);
+    const _zivyBezi = zivyPridej(stats, zR.data || [], tR.data || []);
+    if (_zivyBezi) {
+        const _h1 = document.querySelector('h1');
+        const _ban = '<div style="font-size:.75em; font-weight:700; color:#f0c359; padding:6px 10px; margin:8px auto; max-width:560px; border-radius:10px; background:rgba(212,175,55,.1); border:1px solid rgba(212,175,55,.35); text-align:center;"><span style="color:#ff3b3f;">● LIVE</span> body se přepočítávají podle běžících zápasů</div>';
+        if (_h1) _h1.insertAdjacentHTML('afterend', _ban);
+    }
     window._zapasyRaw = zR.data || []; window._tipyRaw = tR.data || [];
     window._dlUsers = new Set((dR.data || []).map(d => d.user_id)); // hráči s dlouhodobkou (i s 0 body)
     const paid = (dR.data || []).filter(d => d.zaplaceno).length;
