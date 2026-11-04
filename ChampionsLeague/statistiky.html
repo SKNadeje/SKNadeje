@@ -864,6 +864,17 @@ async function load() {
     prepni('celkem');
 }
 load();
+
+/* Automatické obnovení každou minutu, když se změní živá skóre nebo stav zápasů */
+let _zivyKlic = '';
+setInterval(async () => {
+    if (document.hidden) return;
+    const { data } = await sb.from('cl_zapasy').select('id,live_domaci,live_hoste,live_stav,status').order('deadline', { ascending: true });
+    if (!data) return;
+    const k = JSON.stringify(data);
+    if (_zivyKlic && k !== _zivyKlic) load();
+    _zivyKlic = k;
+}, 60000);
 </script>
 
 <script>
