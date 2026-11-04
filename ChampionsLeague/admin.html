@@ -61,6 +61,19 @@ select.pole option { background:#14101f; color:#fff; }
 const SB_URL = "https://vlabocwezmpwnxrwxihs.supabase.co";
 const SB_KEY = "sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X";
 const sb = supabase.createClient(SB_URL, SB_KEY);
+async function nactiVsechnyTipy(select) {
+    // Supabase vrací max 1000 řádků na dotaz, proto načítáme po stránkách
+    let vse = [], od = 0; const strana = 1000;
+    while (true) {
+        const { data, error } = await sb.from('cl_tipy_zapasy').select(select).order('id', { ascending: true }).range(od, od + strana - 1);
+        if (error) throw error;
+        vse = vse.concat(data || []);
+        if (!data || data.length < strana) break;
+        od += strana;
+    }
+    return { data: vse };
+}
+
 const ADMIN_ID = "92a1e51b-e03c-48d7-99df-76c2f60a455f";
 const BODY = { presne: 5, trend: 1, top8: 3, vitezZC: 8, propadlik: 1, qf: 2, sf: 5, finale: 8, vitezCL: 20,
                cech: 5, slavia_misto: 5, slavia_body: 5, slavia_goly: 5 };
@@ -636,7 +649,7 @@ function kolaHtml(list, renderRow, desc) {
 async function nactiZapasy() {
     const [{ data: zapasy }, { data: tipy }] = await Promise.all([
         sb.from('cl_zapasy').select('*').order('deadline', { ascending: false }),
-        sb.from('cl_tipy_zapasy').select('*')
+        nactiVsechnyTipy('*')
     ]);
     const tMap = {};
     (tipy || []).forEach(t => (tMap[t.zapas_id] = tMap[t.zapas_id] || []).push(t));
@@ -951,7 +964,7 @@ async function nactiDlouhodobe() {
     if (box) {
         const [hR, tR] = await Promise.all([
             sb.from('hraci').select('user_id, jmeno'),
-            sb.from('cl_tipy_zapasy').select('user_id')
+            nactiVsechnyTipy('user_id')
         ]);
         const maDl = new Set((dl || []).map(r => r.user_id));
         const tipoval = new Set((tR.data || []).map(t => t.user_id));
@@ -1026,7 +1039,7 @@ async function vyhodnotKolo() {
     msg.innerHTML = '<span style="opacity:.6;">Počítám…</span>';
 
     // 1) aktuální součet bodů za ZÁPASY per hráč
-    const { data: tipy, error: e1 } = await sb.from('cl_tipy_zapasy').select('user_id, jmeno, body');
+    const { data: tipy, error: e1 } = await nactiVsechnyTipy('user_id, jmeno, body');
     if (e1) { msg.innerHTML = '<span style="color:#ff5555;">Chyba: ' + e1.message + '</span>'; return; }
     const soucet = {};
     (tipy || []).forEach(t => {
