@@ -41,7 +41,7 @@ function zivyPridej(stats, zapasy, tipy) {
         const L = zivyStav(mapa[t.zapas_id] || {}, t);
         if (!L) return;
         const h = stats.hraci.find(x => x.user_id === t.user_id);
-        if (h) h.nb = (h.nb || 0) + L.body;
+        if (h) { h.nb = (h.nb || 0) + L.body; h.celkem = (h.celkem || 0) + L.body; }
         if (L.bezi) bezi = true;
     });
     return bezi;
