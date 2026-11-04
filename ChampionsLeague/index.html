@@ -723,6 +723,15 @@ body.sez-zima .nav button::after, body.sez-vanoce .nav button::after, body.sez-s
 .fc-num b { font-size: 1.9em; font-weight: 900; line-height: 1; color: #fff3c4; font-variant-numeric: tabular-nums; text-shadow: 0 0 14px rgba(212,175,55,.35); }
 .fc-num small { font-size: .6em; text-transform: uppercase; letter-spacing: 1.5px; opacity: .55; margin-top: 4px; }
 .fc-sep { font-size: 1.6em; font-weight: 900; color: var(--gold); opacity: .6; line-height: 1; padding-bottom: 14px; }
+
+/* ===== živé body ===== */
+.mr-live { font-size: .7em; font-weight: 800; color: var(--gold); margin-top: 3px; }
+.live-dot { color: #ff3b3f; animation: livePulse 1.2s ease-in-out infinite; }
+@keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
+
+/* ===== LIVE v žebříčku ===== */
+.zeb-live { font-size: .75em; font-weight: 700; color: var(--gold); padding: 6px 10px; margin-bottom: 8px; border-radius: 10px; background: rgba(var(--gold-rgb,212,175,55),.1); border: 1px solid rgba(var(--gold-rgb,212,175,55),.35); text-align: center; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -1567,6 +1576,35 @@ async function reagovat(zapasId, cilId, emoji) {
     nactiVse();
 }
 
+/* ===== Živé body (provizorní, jen zamčené a nevyhodnocené zápasy) ===== */
+function zivyBody(m, tip) {
+    const d = m.live_domaci, h = m.live_hoste;
+    const [td, th] = tip.skore.split(':').map(Number);
+    const presne = td === d && th === h;
+    const trend = (d > h && td > th) || (d < h && td < th) || (d === h && td === th);
+    let trendBody = 0;
+    if (trend) {
+        if (m.outsider) {
+            const outVyhral = (d > h && m.outsider === m.domaci && td > th) || (h > d && m.outsider === m.hoste && th > td);
+            if (outVyhral) trendBody = 3;
+            else if (d === h && td === th) trendBody = 2;
+            else trendBody = 1;
+        } else trendBody = 1;
+    }
+    const hitRozdil = Math.abs(td - th) === Math.abs(d - h);
+    const hitPocet = (td + th) === (d + h);
+    const zaklad = (presne ? 5 : 0) + trendBody + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
+    return zaklad * (tip.joker ? 2 : 1);
+}
+function zivyBodHtml(m, tip, zavreno, hotovo) {
+    if (!tip || hotovo || !zavreno || m.live_domaci == null || m.live_hoste == null) return '';
+    const bezi = ['IN_PLAY', 'PAUSED', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'].includes(m.live_stav);
+    const konec = m.live_stav === 'FINISHED';
+    if (!bezi && !konec) return '';
+    const pts = zivyBody(m, tip);
+    return `<div class="mr-live">${bezi ? '<span class="live-dot">● LIVE</span> ' : ''}${m.live_domaci}:${m.live_hoste} · <b>${pts} b.</b></div>`;
+}
+
 function renderZapasy() {
     const cont = document.getElementById('matches');
     cont.innerHTML = '';
@@ -1621,6 +1659,7 @@ function renderZapasy() {
                     ${mujTip
                         ? `<div class="mr-tip">✓ ${mujTip.skore}${hotovo ? ` <b>+${mujTip.body}</b>` : ''}</div>`
                         : ((!zavreno && !hotovo && mojeId) ? `<div class="mr-chybi">⚠ Chybí tip</div>` : `<div class="mr-faze">${FAZE_TXT[m.faze] || m.faze}</div>`)}
+                    ${zivyBodHtml(m, mujTip, zavreno, hotovo)}
                 </div>
                 <div class="mr-side host"><span class="mr-name">${m.hoste}</span>${logoTymu(m.hoste, 24)}</div>
             </div>
@@ -2472,6 +2511,18 @@ async function nactiKralKola() {
 
 const LEGENDA_JMENO = 'Jan Rathouský';
 function klubOdznakHtml(uid) { const t = temaMap[uid]; return (t && typeof KLUB_LOGA !== 'undefined' && KLUB_LOGA[t]) ? `<img class="klub-mini" src="${KLUB_LOGA[t]}" alt="">` : ''; }
+/* ===== Živé body v žebříčku ===== */
+function zivyStav(m, tip) {
+    if (!tip || m.status === 'vyhodnoceno' || m.live_domaci == null || m.live_hoste == null) return null;
+    if (!(new Date(m.deadline) <= Date.now())) return null;
+    const bezi = ['IN_PLAY', 'PAUSED', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'].includes(m.live_stav);
+    const konec = m.live_stav === 'FINISHED';
+    if (!bezi && !konec) return null;
+    return { body: zivyBody(m, tip), bezi };
+}
+function zivyZebBanner() {
+    return window._zivyBezi ? '<div class="zeb-live"><span class="live-dot">● LIVE</span> body se přepočítávají podle běžících zápasů</div>' : '';
+}
 function renderZebricek() {
     const body = {}; // user_id -> {jm, zap, dl, user_id, zaplaceno}
     function zajisti(user_id, jmeno) {
@@ -2479,8 +2530,13 @@ function renderZebricek() {
         if (jmeno) body[user_id].jm = jmeno; // nejnovější jméno
         return body[user_id];
     }
+    window._zivyBezi = false;
     Object.values(tipyMap).flat().forEach(t => {
-        zajisti(t.user_id, t.jmeno).zap += t.body || 0;
+        const b = zajisti(t.user_id, t.jmeno);
+        b.zap += t.body || 0;
+        const m = (typeof zapasyCache !== 'undefined') ? zapasyCache.find(z => z.id === t.zapas_id) : null;
+        const L = m ? zivyStav(m, t) : null;
+        if (L) { b.zap += L.body; if (L.bezi) window._zivyBezi = true; }
     });
     dlouhodobe.forEach(d => {
         const b = zajisti(d.user_id, d.jmeno);
@@ -2539,7 +2595,7 @@ function renderZebricek() {
         </div>`;
     }).join('');
 
-    document.getElementById('zebricek').innerHTML = podiumHtml + radekHtml;
+    document.getElementById('zebricek').innerHTML = zivyZebBanner() + podiumHtml + radekHtml;
     animujBody();
 }
 
