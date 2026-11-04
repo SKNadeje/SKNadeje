@@ -2534,7 +2534,7 @@ function renderZebricek() {
     Object.values(tipyMap).flat().forEach(t => {
         const b = zajisti(t.user_id, t.jmeno);
         b.zap += t.body || 0;
-        const m = (typeof zapasyCache !== 'undefined') ? zapasyCache.find(z => z.id === t.zapas_id) : null;
+        const m = zapasy.find(z => z.id === t.zapas_id);
         const L = m ? zivyStav(m, t) : null;
         if (L) { b.zap += L.body; if (L.bezi) window._zivyBezi = true; }
     });
