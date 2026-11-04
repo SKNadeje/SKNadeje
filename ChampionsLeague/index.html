@@ -2873,5 +2873,20 @@ async function odeslatZv() {
     setTimeout(() => { zavriZv(); msg.textContent = ''; }, 1500);
 }
 </script>
+<script>
+/* Automatické obnovení zápasů každou minutu (živá skóre), jen když se něco změnilo a uživatel nic nevybírá */
+setInterval(async () => {
+    if (document.hidden) return;
+    const a = document.activeElement;
+    if (a && (a.tagName === 'SELECT' || a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
+    const { data } = await sb.from('cl_zapasy').select('*').order('deadline', { ascending: true });
+    if (!data) return;
+    const klic = z => [z.id, z.live_domaci, z.live_hoste, z.live_stav, z.status];
+    if (JSON.stringify(data.map(klic)) === JSON.stringify(zapasy.map(klic))) return;
+    zapasy = data;
+    renderZapasy();
+    renderZebricek();
+}, 60000);
+</script>
 </body>
 </html>
