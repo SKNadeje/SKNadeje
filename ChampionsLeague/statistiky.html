@@ -24,7 +24,7 @@ function zivyBody(m, tip) {
     const hitRozdil = Math.abs(td - th) === Math.abs(d - h);
     const hitPocet = (td + th) === (d + h);
     const zaklad = (presne ? 5 : 0) + trendBody + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
-    return zaklad * (tip.joker ? 2 : 1);
+    return zaklad * (tip.joker ? 2 : 1) * (m.nadilka ? 2 : 1);
 }
 function zivyStav(m, tip) {
     if (!tip || m.status === 'vyhodnoceno' || m.live_domaci == null || m.live_hoste == null) return null;
@@ -427,7 +427,7 @@ function zivyBody(m, tip) {
     const hitRozdil = Math.abs(td - th) === Math.abs(d - h);
     const hitPocet = (td + th) === (d + h);
     const zaklad = (presne ? 5 : 0) + trendBody + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
-    return zaklad * (tip.joker ? 2 : 1);
+    return zaklad * (tip.joker ? 2 : 1) * (m.nadilka ? 2 : 1);
 }
 function zivyStav(m, tip) {
     if (!tip || !m || m.status === 'vyhodnoceno' || m.live_domaci == null || m.live_hoste == null) return null;
