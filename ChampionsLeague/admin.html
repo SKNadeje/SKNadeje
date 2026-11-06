@@ -722,7 +722,7 @@ async function vyhodnotZapas(id) {
     const d = parseInt(document.getElementById('vd-' + id).value);
     const h = parseInt(document.getElementById('vh-' + id).value);
     if (isNaN(d) || isNaN(h)) return msg('Doplň skóre.', true);
-    const { data: zapas } = await sb.from('cl_zapasy').select('domaci, hoste, outsider').eq('id', id).maybeSingle();
+    const { data: zapas } = await sb.from('cl_zapasy').select('domaci, hoste, outsider, nadilka').eq('id', id).maybeSingle();
     const vitez = d > h ? zapas?.domaci : (h > d ? zapas?.hoste : null);
     const outsiderVyhral = zapas?.outsider && vitez && zapas.outsider === vitez;
 
@@ -755,7 +755,7 @@ async function vyhodnotZapas(id) {
 
         // Body se sčítají (jako u hokeje): přesné skóre + trend + rozdíl + počet
         const zaklad = (presne ? BODY.presne : 0) + trendBody + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
-        const b = zaklad * (t.joker ? 2 : 1); // 🃏 joker = dvojnásobek
+        const b = zaklad * (t.joker ? 2 : 1) * (zapas?.nadilka ? 2 : 1); // 🃏 joker ×2, 🎅 nadílka ×2
         await sb.from('cl_tipy_zapasy').update({
             body: b, hit_skore: presne, hit_trend: trend,
             hit_rozdil: hitRozdil, hit_pocet: hitPocet
