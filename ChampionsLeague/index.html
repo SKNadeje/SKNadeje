@@ -1594,7 +1594,7 @@ function zivyBody(m, tip) {
     const hitRozdil = Math.abs(td - th) === Math.abs(d - h);
     const hitPocet = (td + th) === (d + h);
     const zaklad = (presne ? 5 : 0) + trendBody + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
-    return zaklad * (tip.joker ? 2 : 1);
+    return zaklad * (tip.joker ? 2 : 1) * (m.nadilka ? 2 : 1);
 }
 function zivyBodHtml(m, tip, zavreno, hotovo) {
     if (!tip || hotovo || !zavreno || m.live_domaci == null || m.live_hoste == null) return '';
@@ -1657,7 +1657,7 @@ function renderZapasy() {
                         ? `<div class="mr-vysl">${m.vysledek_d}:${m.vysledek_h}</div>${hlaskaVysledek(m.vysledek_d, m.vysledek_h)}`
                         : `<div class="mr-timer" id="timer-${m.id}">--:--</div>`}
                     ${mujTip
-                        ? `<div class="mr-tip">✓ ${mujTip.skore}${hotovo ? ` <b>+${mujTip.body}</b>` : ''}</div>`
+                        ? `<div class="mr-tip">✓ ${mujTip.skore}${hotovo ? ` <b>+${mujTip.body}</b>` : ''}</div>${zivyBodHtml(m, mujTip, zavreno, hotovo)}`
                         : ((!zavreno && !hotovo && mojeId) ? `<div class="mr-chybi">⚠ Chybí tip</div>` : `<div class="mr-faze">${FAZE_TXT[m.faze] || m.faze}</div>`)}
                     ${zivyBodHtml(m, mujTip, zavreno, hotovo)}
                 </div>
@@ -2887,6 +2887,35 @@ setInterval(async () => {
     renderZapasy();
     renderZebricek();
 }, 60000);
+</script>
+<div id="nadilkaModal" onclick="if(event.target===this)zavriNadilku()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:6000; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#0f1626; border:1px solid rgba(212,175,55,.6); border-radius:18px; max-width:420px; width:100%; padding:22px; color:#eef2ff; text-align:center; box-shadow:0 0 40px rgba(212,175,55,.25);">
+    <div style="font-size:2.6em; line-height:1;">🎅</div>
+    <div style="font-weight:900; font-size:1.15em; letter-spacing:.5px; margin:8px 0 4px; color:#f0d987;">MIKULÁŠSKÁ NADÍLKA</div>
+    <div style="font-size:.85em; opacity:.75; margin-bottom:14px;">6. herní kolo</div>
+    <div style="text-align:left; font-size:.92em; line-height:1.6; background:rgba(255,255,255,.05); border-radius:12px; padding:12px 14px;">
+      • Všechny body v 6. kole se <b>násobí ×2</b>.<br>
+      • Běžný zápas: až <b>16 b.</b> (s outsider bonusem až 20 b.).<br>
+      • Žolík platí i tady, takže s ním až <b>32 b.</b> (40 b. s outsiderem).<br>
+      • Žolík zůstává jen 3 za turnaj, použij ho na zápas, kde si věříš.
+    </div>
+    <button onclick="zavriNadilku()" style="margin-top:16px; width:100%; padding:12px; border-radius:12px; border:none; background:linear-gradient(135deg,#f0d987,#c9a02e); color:#1a1206; font-weight:900; cursor:pointer; font-family:inherit; letter-spacing:.5px;">SUPER, JDU DO TOHO 🎁</button>
+  </div>
+</div>
+<script>
+function zavriNadilku() { document.getElementById('nadilkaModal').style.display = 'none'; }
+/* Popup o Mikulášské nadílce – jednou na zařízení, když se vypíšou zápasy 6. kola */
+(function () {
+    let pokusy = 0;
+    const cekej = () => {
+        if (!zapasy || zapasy.length === 0) { if (++pokusy < 40) setTimeout(cekej, 800); return; }
+        if (!zapasy.some(z => z.nadilka)) return;
+        if (localStorage.getItem('nadilka_info_6')) return;
+        localStorage.setItem('nadilka_info_6', '1');
+        document.getElementById('nadilkaModal').style.display = 'flex';
+    };
+    setTimeout(cekej, 1500);
+})();
 </script>
 </body>
 </html>
