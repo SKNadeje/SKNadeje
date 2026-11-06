@@ -509,6 +509,16 @@ async function load() {
     const _jm = (document.getElementById('hJmeno')?.textContent || '').trim();
     const _titul = ['Deny'].includes(_jm) ? 'Královna' : 'Král';
     if (hKralEl) hKralEl.innerHTML = jeAktualniKral ? `<span class="kral-ribbon">👑 ${_titul} ${kola.length}. kola</span>` : '';
+    // 🎅 Odznak Mikuláš: nejvyšší součet bodů v 6. kole (až po vyhodnocení celého kola)
+    const _k6 = zapasy.filter(z => z.kolo === 6);
+    if (hKralEl && _k6.length && _k6.every(z => z.status === 'vyhodnoceno')) {
+        const _sum = {};
+        tipy.forEach(t => { if (_k6.some(z => z.id === t.zapas_id)) _sum[t.user_id] = (_sum[t.user_id] || 0) + (t.body || 0); });
+        const _max = Math.max(0, ...Object.values(_sum));
+        if (_max > 0 && _sum[uid] === _max) {
+            hKralEl.innerHTML += '<span class="kral-ribbon" style="margin-left:6px;">🎅 Mikuláš 6. kola</span>';
+        }
+    }
     const zapasMap = {}; zapasy.forEach(z => zapasMap[z.id] = z);
 
     const mojeTipy = tipy.filter(t => t.user_id === uid).sort((a, b) =>
