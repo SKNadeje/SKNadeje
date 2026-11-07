@@ -802,7 +802,7 @@ async function load() {
             const bSkore = t.hit_skore ? 5 : 0;
             const bRozdil = t.hit_rozdil ? 1 : 0;
             const bPocet = t.hit_pocet ? 1 : 0;
-            const _nas = (t.joker ? 2 : 1) * (zapasMap[t.zapas_id]?.nadilka ? 2 : 1);
+            const _nas = (t.joker && !zapasMap[t.zapas_id]?.nadilka ? 2 : 1) * (zapasMap[t.zapas_id]?.nadilka ? 2 : 1);
             const zaklBody = (t.body || 0) / _nas; // základ před žolíkem a nadílkou
             const bTrend = Math.max(0, zaklBody - bSkore - bRozdil - bPocet);
             const bZolik = (t.body || 0) - zaklBody;
@@ -813,7 +813,7 @@ async function load() {
                         ${rr('↗️ Vítěz (trend)', bTrend)}
                         ${rr('➖ Rozdíl skóre', bRozdil)}
                         ${rr('🔢 Počet branek', bPocet)}
-                        ${_nas > 1 ? rr((t.joker ? '🃏 Žolík' : '') + (t.joker && zapasMap[t.zapas_id]?.nadilka ? ' + ' : '') + (zapasMap[t.zapas_id]?.nadilka ? '🎅 Nadílka' : '') + ' (×' + _nas + ')', bZolik) : ''}
+                        ${_nas > 1 ? rr((t.joker && !zapasMap[t.zapas_id]?.nadilka ? '🃏 Žolík' : '') + (zapasMap[t.zapas_id]?.nadilka ? '🎅 Nadílka' : '') + ' (×' + _nas + ')', bZolik) : ''}
                         <div class="rr celkem"><span>Celkem</span><b>${t.body || 0} b.</b></div>
                     </div>` : '';
             return `<div class="hist${rozbal ? ' klik' : ''}"${onclickAttr}>
