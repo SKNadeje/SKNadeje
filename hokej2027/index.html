@@ -973,8 +973,7 @@
 
 /* ===== PC: VS u vlajek, užší dlouhodobka a bonus ===== */
 @media (min-width: 1000px) {
-    .flags-wrapper { align-items: flex-start; }
-    .vs-circle { margin-top: 6px; }
+    .flags-wrapper { align-items: center; }
     #dlouhodobyCard, #bonusCard { max-width: 1100px !important; width: 100% !important; }
 }
 
@@ -1020,6 +1019,25 @@
 @media (min-width: 1000px) {
     #dlouhodobyCard, #bonusCard, #userBadge, #matchList, #reklamaBanner, #zapasyFiltr { box-sizing: border-box !important; }
     #dlouhodobyCard, #bonusCard { max-width: 1100px !important; width: 100% !important; margin-left: 0 !important; }
+}
+
+/* ===== MOBIL: přepínač tabulek (skupiny a play-off) ===== */
+@media (max-width: 999px) {
+    .mob-tabulky-btn { order: 19; display: block; width: 100%; margin: 8px 0; padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05); color: var(--text); font-weight: 800; font-family: inherit; cursor: pointer; }
+    #pravyPanel.mob-open { display: block !important; order: 19; width: 100%; }
+    #pravyPanel .pp-box { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+    #pravyPanel .pp-hlava { font-weight: 800; color: var(--neon); margin-bottom: 8px; font-size: .9em; }
+    #pravyPanel .pp-tab { width: 100%; border-collapse: collapse; font-size: .82em; }
+    #pravyPanel .pp-tab th { text-align: left; opacity: .55; padding: 4px 6px; border-bottom: 1px solid rgba(255,255,255,.1); }
+    #pravyPanel .pp-tab td { padding: 6px; border-bottom: 1px solid rgba(255,255,255,.05); }
+    #pravyPanel .pp-nadpis { font-weight: 900; margin-bottom: 8px; }
+    #pravyPanel .pp-prepinac { display: flex; gap: 6px; margin: 4px 0 8px; }
+    #pravyPanel .pp-prepinac button { flex: 1; padding: 7px; border-radius: 10px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); color: inherit; font-family: inherit; font-weight: 700; }
+    #pravyPanel .pp-prepinac button.on { border-color: var(--neon); color: var(--neon); }
+    #pravyPanel .pp-zapas { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 10px; margin-bottom: 8px; text-align: center; }
+}
+@media (min-width: 1000px) {
+    .mob-tabulky-btn { display: none; }
 }
 </style>
 <script>
@@ -1167,6 +1185,7 @@ document.addEventListener('click', function(e) {
     </div>
 
     <div id="bonusCard" style="display:none;"></div>
+    <button id="mobTabBtn" class="mob-tabulky-btn" onclick="mobTabulky()">📊 Tabulky MS (skupiny a play-off)</button>
     <div id="matchList"></div>
 
   <aside class="pravy-panel">
@@ -2311,6 +2330,14 @@ function ppPrepni(k) {
     document.getElementById('ppPO').style.display = z ? 'none' : '';
     document.getElementById('ppB1').classList.toggle('on', z);
     document.getElementById('ppB2').classList.toggle('on', !z);
+}
+</script>
+<script>
+function mobTabulky() {
+    const p = document.getElementById('pravyPanel');
+    const otevrit = !p.classList.contains('mob-open');
+    p.classList.toggle('mob-open', otevrit);
+    document.getElementById('mobTabBtn').textContent = otevrit ? '📊 Skrýt tabulky' : '📊 Tabulky MS (skupiny a play-off)';
 }
 </script>
 </body>
