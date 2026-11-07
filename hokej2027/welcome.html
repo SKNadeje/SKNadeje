@@ -155,7 +155,7 @@ html[data-theme="cesko"] .zalozeno {
     max-width: 100%;
     position: relative; z-index: 1;
     display: flex; align-items: center; justify-content: center;
-    transform: translateX(-6%);   /* kompenzace nevycentrované grafiky v PNG */
+    transform: translateX(-10%);   /* kompenzace nevycentrované grafiky v PNG */
 }
 .logo-inner::before {
     content: ''; position: absolute; inset: -8%; z-index: -1;
@@ -396,6 +396,34 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
         </div>
 
         <div class="pr-sekce">
+            <h3>🏦 Výplata banku zápasu</h3>
+            <ul>
+                <li>Bank zápasu tvoří vklady tipujících (20 Kč z každé sázky).</li>
+                <li>Banku dostanou hráči, kteří <b>trefí přesný výsledek</b>. Pokud je mezi nimi někdo, kdo trefil i střelce, berou banku jen oni.</li>
+                <li>Banka se rozdělí <b>rovným dílem</b> mezi vítěze (zaokrouhleno dolů).</li>
+                <li>Když nikdo přesně netrefí, <b>50 %</b> banku jde do Fondu Naděje a <b>50 %</b> se převede do dalšího zápasu.</li>
+                <li>Střelec bez přesného skóre dostane jen body, žádnou banku.</li>
+            </ul>
+        </div>
+
+        <div class="pr-sekce">
+            <h3>💰 Fond Naděje</h3>
+            <ul>
+                <li>Do fondu jde <b>5 Kč z každé sázky</b> a <b>50 Kč z každé dlouhodobky</b>.</li>
+                <li>Do fondu se přidává i polovina nevyplacených bank (viz výše).</li>
+                <li>Na konci turnaje se fond rozdělí mezi <b>top 3 Indexu Naděje</b> v poměru <b>50 / 30 / 20 %</b>.</li>
+            </ul>
+        </div>
+
+        <div class="pr-sekce">
+            <h3>🏆 Body dlouhodobky</h3>
+            <div class="pr-radek"><span>Vítěz skupiny (za každou správně)</span><b>3 NB</b></div>
+            <div class="pr-radek"><span>Šampion turnaje</span><b>10 NB</b></div>
+            <div class="pr-radek"><span>Král kanadského bodování</span><b>8 NB</b></div>
+            <div class="pr-radek"><span>Každý trefený hráč All-Star šestky</span><b>4 NB</b></div>
+        </div>
+
+        <div class="pr-sekce">
             <h3>🎯 Jak se tipuje</h3>
             <ul>
                 <li><b>Jednotlivé zápasy</b> – tipuješ přesný výsledek (po 60 min.) a střelce gólu. Střelce vybíráš přímo ze soupisky týmu. Každý zápas má uzávěrku před výhozem.</li>
@@ -464,7 +492,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
             <div class="pr-radek"><span>Trend – remíza v zápase s outsiderem 🎲</span><b>2 NB</b></div>
             <div class="pr-radek"><span>Stejný rozdíl skóre (tip 3:1, výsl. 2:0)</span><b>1 NB</b></div>
             <div class="pr-radek"><span>Stejný počet branek (tip 3:1, výsl. 2:2)</span><b>1 NB</b></div>
-            <p style="margin-top:10px; font-size:.76rem; opacity:.75;">Body se sčítají – za jeden zápas můžeš získat i 10 NB. „Outsidera" u nevyrovnaných zápasů občas určí admin (🎲 uvidíš přímo u zápasu) – tip na jeho výhru dá 3 NB, remíza 2 NB. Bodování dlouhodobého tipu se vyhodnotí po skončení turnaje.</p>
+            <p style="margin-top:10px; font-size:.76rem; opacity:.75;">Body se sčítají: za jeden zápas až <b>11 NB</b> (s outsiderem až <b>13 NB</b>). Žolík body ×2 (max. 3 za turnaj).</p>
         </div>
 
         <button class="pravidla-btn" style="width:100%; justify-content:center; margin-top:20px;" onclick="zavriPravidla()">Rozumím, jdeme na to 🏒</button>
@@ -535,6 +563,27 @@ setInterval(() => {
             var c = document.querySelector('.notif-callout');
             if (c) c.style.display = 'none';
         }
+    } catch (e) {}
+})();
+</script>
+<script>
+/* Přeskočení úvodní stránky, pokud si to hráč vypnul v profilu (?ukaz=1 ji zobrazí vždy) */
+(async function () {
+    try {
+        if (new URLSearchParams(location.search).has('ukaz')) return;
+        const k = Object.keys(localStorage).find(x => /^sb-.*-auth-token$/.test(x));
+        if (!k) return;
+        const v = JSON.parse(localStorage.getItem(k) || 'null');
+        const tok = v && (v.access_token || (v.currentSession && v.currentSession.access_token));
+        if (!tok) return;
+        let b = tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        while (b.length % 4) b += '=';
+        const uid = JSON.parse(atob(b)).sub;
+        const sl = 'skryt_welcome_hokej';
+        const r = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/rest/v1/hraci?user_id=eq.' + uid + '&select=' + sl,
+            { headers: { apikey: 'sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X', Authorization: 'Bearer ' + tok } });
+        const d = await r.json();
+        if (d && d[0] && d[0][sl]) location.replace('index.html');
     } catch (e) {}
 })();
 </script>
