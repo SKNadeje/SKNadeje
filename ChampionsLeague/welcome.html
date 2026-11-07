@@ -670,5 +670,26 @@ function sezonniOzdoby(override){ document.querySelectorAll('.sezona-snih,.vanoc
   if(emb){ for(var i=0;i<14;i++){ var e=document.createElement('div'); e.className='ember'; e.style.left=(Math.random()*100)+'%'; e.style.animationDuration=(7+Math.random()*8)+'s'; e.style.animationDelay=(-Math.random()*12)+'s'; emb.appendChild(e);} }
 })();
 </script>
+<script>
+/* Přeskočení úvodní stránky, pokud si to hráč vypnul v profilu (?ukaz=1 ji zobrazí vždy) */
+(async function () {
+    try {
+        if (new URLSearchParams(location.search).has('ukaz')) return;
+        const k = Object.keys(localStorage).find(x => /^sb-.*-auth-token$/.test(x));
+        if (!k) return;
+        const v = JSON.parse(localStorage.getItem(k) || 'null');
+        const tok = v && (v.access_token || (v.currentSession && v.currentSession.access_token));
+        if (!tok) return;
+        let b = tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        while (b.length % 4) b += '=';
+        const uid = JSON.parse(atob(b)).sub;
+        const sl = 'skryt_welcome_cl';
+        const r = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/rest/v1/hraci?user_id=eq.' + uid + '&select=' + sl,
+            { headers: { apikey: 'sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X', Authorization: 'Bearer ' + tok } });
+        const d = await r.json();
+        if (d && d[0] && d[0][sl]) location.replace('index.html');
+    } catch (e) {}
+})();
+</script>
 </body>
 </html>
