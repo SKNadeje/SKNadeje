@@ -617,7 +617,7 @@ load();
 <script>
 (async function () {
     const box = document.getElementById('welcomeNastaveni');
-    if (!box || !window.sb) return;
+    if (!box || typeof sb === 'undefined') return;
     const { data: { session } } = await sb.auth.getSession();
     if (!session) return;
     const pid = new URLSearchParams(location.search).get('id');
