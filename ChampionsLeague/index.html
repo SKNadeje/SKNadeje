@@ -1594,7 +1594,7 @@ function zivyBody(m, tip) {
     const hitRozdil = Math.abs(td - th) === Math.abs(d - h);
     const hitPocet = (td + th) === (d + h);
     const zaklad = (presne ? 5 : 0) + trendBody + (hitRozdil ? 1 : 0) + (hitPocet ? 1 : 0);
-    return zaklad * (tip.joker ? 2 : 1) * (m.nadilka ? 2 : 1);
+    return zaklad * (tip.joker && !m.nadilka ? 2 : 1) * (m.nadilka ? 2 : 1);
 }
 function zivyBodHtml(m, tip, zavreno, hotovo) {
     if (!tip || hotovo || !zavreno || m.live_domaci == null || m.live_hoste == null) return '';
@@ -1675,7 +1675,7 @@ function renderZapasy() {
                         <select id="scH-${m.id}" class="score-input">${opceGolu(mujTip ? mujTip.skore.split(':')[1] : '')}</select>
                         <button type="button" class="kostka-btn" onclick="hodKostkou(${m.id})" title="Hodit kostkou – náhodné skóre">🎲</button>
                     </div>
-                    <label class="joker-lbl"><input type="checkbox" id="jok-${m.id}" ${mujTip && mujTip.joker ? 'checked' : ''}> 🃏 Joker <b>2× body</b> <span class="joker-zbyva">zbývá ${jokerVolno()}/5</span></label>
+                    ${m.nadilka ? '<div class="joker-lbl" style="opacity:.6">🎅 Nadílka – žolík se v tomto kole nepoužívá</div>' : `<label class="joker-lbl"><input type="checkbox" id="jok-${m.id}" ${mujTip && mujTip.joker ? 'checked' : ''}> 🃏 Joker <b>2× body</b> <span class="joker-zbyva">zbývá ${jokerVolno()}/5</span></label>`}
                     <button class="btn-tip" onclick="ulozTip(${m.id})">${mujTip ? 'UPRAVIT TIP' : 'ULOŽIT TIP'}</button>
                 ` : ''}
                 ${zavreno && !hotovo ? '<div style="text-align:center; color:var(--fial); font-weight:900; font-size:.8em; margin-bottom:10px;">TIPY UZAVŘENY</div>' : ''}
@@ -1945,7 +1945,7 @@ async function ulozTip(id) {
     const sH = document.getElementById('scH-' + id).value;
     if (sD === '' || sH === '') return alert('Vyplň obě čísla.');
     const jokEl = document.getElementById('jok-' + id);
-    const joker = !!(jokEl && jokEl.checked);
+    const joker = !!(jokEl && jokEl.checked) && !(zapasy.find(z => z.id === id) || {}).nadilka;
     const jinde = Object.values(tipyMap).flat().filter(t => t.user_id === mojeId && t.joker && String(t.zapas_id) !== String(id)).length;
     if (joker && jinde >= 5) return alert('Máš vyčerpaných všech 5 jokerů na celou hru. 🃏');
     const skore = `${parseInt(sD)}:${parseInt(sH)}`;
@@ -2896,8 +2896,8 @@ setInterval(async () => {
     <div style="text-align:left; font-size:.92em; line-height:1.6; background:rgba(255,255,255,.05); border-radius:12px; padding:12px 14px;">
       • Všechny body v 6. kole se <b>násobí ×2</b>.<br>
       • Běžný zápas: až <b>16 b.</b> (s outsider bonusem až 20 b.).<br>
-      • Žolík platí i tady, takže s ním až <b>32 b.</b> (40 b. s outsiderem).<br>
-      • Žolík zůstává jen 3 za turnaj, použij ho na zápas, kde si věříš.
+      • <b>Žolík se v tomto kole nepoužívá</b>, všechny body se prostě násobí.<br>
+      • Body z outsider bonusu se počítají normálně.
     </div>
     <button onclick="zavriNadilku()" style="margin-top:16px; width:100%; padding:12px; border-radius:12px; border:none; background:linear-gradient(135deg,#f0d987,#c9a02e); color:#1a1206; font-weight:900; cursor:pointer; font-family:inherit; letter-spacing:.5px;">SUPER, JDU DO TOHO 🎁</button>
   </div>
