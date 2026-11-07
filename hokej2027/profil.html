@@ -607,5 +607,33 @@ function prepniAvatarVyber() {
 }
 load();
 </script>
+<div id="welcomeNastaveni" style="display:none; max-width:520px; margin:18px auto 30px; padding:14px 16px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); font-size:.9em;">
+    <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+        <input type="checkbox" id="welcomeSkryt" style="width:18px; height:18px;">
+        <span>🏠 Už nechci zobrazovat úvodní stránku hokeje při vstupu (kdykoliv můžeš zase zapnout)</span>
+    </label>
+    <div id="welcomeMsg" style="font-size:.8em; opacity:.7; margin-top:6px;"></div>
+</div>
+<script>
+(async function () {
+    const box = document.getElementById('welcomeNastaveni');
+    if (!box || !window.sb) return;
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+    const pid = new URLSearchParams(location.search).get('id');
+    if (pid && pid !== session.user.id) return;
+    const sl = 'skryt_welcome_hokej';
+    const { data: h } = await sb.from('hraci').select(sl).eq('user_id', session.user.id).maybeSingle();
+    box.style.display = 'block';
+    const cb = document.getElementById('welcomeSkryt');
+    cb.checked = !!(h && h[sl]);
+    cb.onchange = async () => {
+        const m = document.getElementById('welcomeMsg');
+        const { error } = await sb.rpc('nastav_skryt_welcome', { p_turnaj: 'hokej', p_skryt: cb.checked });
+        m.textContent = error ? 'Chyba: ' + error.message
+            : (cb.checked ? 'Úvodní stránka se už nezobrazí. Zapnout zpět můžeš kdykoliv zde.' : 'Úvodní stránka se zase zobrazí.');
+    };
+})();
+</script>
 </body>
 </html>
