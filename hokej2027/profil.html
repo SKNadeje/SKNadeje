@@ -635,5 +635,31 @@ load();
     };
 })();
 </script>
+<div id="kvizOdznaky" style="display:none; max-width:520px; margin:18px auto 30px; padding:14px 16px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12);">
+    <div style="font-weight:900; margin-bottom:8px;">🧩 Odznaky z kvízů</div>
+    <div id="kvizOdznakyList" style="font-size:.9em;"></div>
+</div>
+<script>
+(async function () {
+    const box = document.getElementById('kvizOdznaky');
+    if (!box || typeof sb === 'undefined') return;
+    let uid = new URLSearchParams(location.search).get('id');
+    if (!uid) {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) return;
+        uid = session.user.id;
+    }
+    const { data, error } = await sb.from('kviz_odznak')
+        .select('typ, vytvoreno, kviz_den(datum)').eq('user_id', uid).order('vytvoreno', { ascending: false });
+    if (error) return;
+    box.style.display = 'block';
+    const nazvy = { detektiv: '🕵️ Detektiv', bystry: '🔍 Bystrý', hadac: '🎯 Hádač' };
+    document.getElementById('kvizOdznakyList').innerHTML = (data || []).length
+        ? data.map(o => `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,.08);">
+            <span>${nazvy[o.typ] || o.typ}</span>
+            <span style="opacity:.7;">${o.kviz_den?.datum ? new Date(o.kviz_den.datum).toLocaleDateString('cs-CZ') : ''}</span></div>`).join('')
+        : '<div style="opacity:.6;">Zatím žádný odznak.</div>';
+})();
+</script>
 </body>
 </html>
