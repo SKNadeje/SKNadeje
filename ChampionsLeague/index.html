@@ -755,7 +755,15 @@ body.sez-zima .nav button::after, body.sez-vanoce .nav button::after, body.sez-s
 .tl-grid .tl-sk { font-size: .85em; padding: 2px 8px; }
 .tl-grid .tl-b { font-size: .72em; min-width: 44px; }
 .tl-grid .bet-reakce { margin-top: 3px; gap: 4px; }
-@media (max-width: 420px) { .tl-grid { grid-template-columns: 1fr; } }
+@media (max-width: 420px) {
+    .tl-grid { gap: 4px 6px; }
+    .tl-grid .tl-row { padding: 4px 6px; gap: 5px; border-radius: 8px; }
+    .tl-grid .tl-av { width: 20px; height: 20px; font-size: .65em; }
+    .tl-grid .tl-jm { font-size: .72em; }
+    .tl-grid .tl-sk { font-size: .75em; padding: 1px 6px; }
+    .tl-grid .tl-b { font-size: .64em; min-width: 36px; }
+    .tl-grid .bet-reakce { margin-top: 2px; gap: 3px; }
+}
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
