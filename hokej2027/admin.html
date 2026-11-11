@@ -266,6 +266,36 @@ input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { fil
 
     <!-- 🎯 BONUS DNE -->
     <div class="card">
+        <div class="collapsible-header" onclick="toggleSection('secKviz')">🧩 KVÍZ – DLAŽDICE A NÁPOVĚDY <span class="collapse-arrow">▾</span></div>
+        <div class="collapsible-body" id="secKviz">
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
+                <input type="date" id="kvDatum">
+                <button class="btn" onclick="kvNacti()">Načíst den</button>
+            </div>
+            <div style="font-size:.85em; opacity:.8; margin-bottom:6px;">Klikej na dlaždice v pořadí, v jakém se mají odkrývat (1. klik = 1. odkrytí).</div>
+            <div id="kvMrizka" style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px; max-width:340px; margin-bottom:8px;"></div>
+            <div id="kvPoradiText" style="font-size:.8em; opacity:.75; margin-bottom:6px;"></div>
+            <button class="btn" onclick="kvVymaz()">Vymazat pořadí</button>
+            <div style="margin-top:14px; display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px;">
+                <div><label>Tým</label><input id="kvTym" type="text"></div>
+                <div><label>Pozice</label><input id="kvPozice" type="text"></div>
+                <div><label>Číslo dresu</label><input id="kvCislo" type="number"></div>
+                <div><label>Správné jméno</label><input id="kvJmeno" type="text"></div>
+                <div><label>Začátek (pražský čas)</label><input id="kvStart" type="datetime-local"></div>
+                <div><label>Konec (pražský čas)</label><input id="kvKonec" type="datetime-local"></div>
+                <div><label>Složka s dlaždicemi</label><input id="kvSlozka" type="text"></div>
+            </div>
+            <div style="margin-top:14px; display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px;">
+                <div><label>Tým se ukáže</label><select id="kvTymPo"></select></div>
+                <div><label>Pozice se ukáže</label><select id="kvPozicePo"></select></div>
+                <div><label>Číslo se ukáže</label><select id="kvCisloPo"></select></div>
+            </div>
+            <button class="btn" style="margin-top:14px;" onclick="kvUloz()">💾 Uložit den kvízu</button>
+            <div id="kvMsg" style="margin-top:8px; font-size:.85em;"></div>
+        </div>
+    </div>
+
+    <div class="card">
         <div class="collapsible-header" onclick="toggleSection('secBonus')">🎯 BONUS DNE <span class="collapse-arrow">▼</span></div>
         <div class="collapsible-body" id="secBonus">
             <h3 style="color:#f1c40f;">Nový bonus</h3>
@@ -1136,6 +1166,101 @@ async function nactiStavNotifikaci() {
              + '<span style="text-align:right;">' + stav + (kdy ? ' <span style="opacity:.45; font-size:.8em;">' + kdy + '</span>' : '') + '</span></div>';
     }).join('') + '<div style="margin-top:10px; font-size:.82em; opacity:.8;">✅ ' + pocty.ano + ' zapnuto · ❌ ' + pocty.ne + ' vypnuto · ❔ ' + pocty.nezn + ' neznámo</div>';
 }
+</script>
+<script>
+/* 🧩 Kvíz – správa dne (admin) */
+let kvPoradi = [];
+function kvPragueOffset(utcMs) {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Prague', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(new Date(utcMs)).map(x => [x.type, x.value]));
+    const wall = Date.UTC(+p.year, p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+    return (wall - utcMs) / 60000;
+}
+function kvPragueIso(local) {
+    if (!local) return null;
+    const guess = Date.parse(local + ':00Z');
+    return new Date(guess - kvPragueOffset(guess) * 60000).toISOString();
+}
+function kvPragueLocal(iso) {
+    if (!iso) return '';
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Prague', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
+    return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+}
+function kvMsg(t, chyba) { const m = document.getElementById('kvMsg'); m.style.color = chyba ? '#ff8a80' : '#7fe0a0'; m.textContent = t; }
+function kvNakresli() {
+    document.getElementById('kvMrizka').innerHTML = Array.from({ length: 16 }, (_, i) => {
+        const p = kvPoradi.indexOf(i + 1);
+        return `<button onclick="kvKlik(${i + 1})" style="padding:8px 0; border-radius:8px; border:1px solid ${p >= 0 ? '#f0d987' : 'rgba(255,255,255,.2)'}; background:${p >= 0 ? 'rgba(240,217,135,.18)' : 'rgba(255,255,255,.04)'}; color:inherit; cursor:pointer;">${p >= 0 ? '<b>' + (p + 1) + '</b> · ' : ''}${String(i + 1).padStart(2, '0')}</button>`;
+    }).join('');
+    document.getElementById('kvPoradiText').textContent = kvPoradi.length
+        ? 'Pořadí: ' + kvPoradi.map((n, i) => `${i + 1}→${String(n).padStart(2, '0')}`).join('  ·  ') + ` (${kvPoradi.length}/16)`
+        : 'Zatím žádné pořadí.';
+}
+function kvKlik(n) {
+    const p = kvPoradi.indexOf(n);
+    if (p >= 0) kvPoradi.splice(p, 1); else if (kvPoradi.length < 16) kvPoradi.push(n);
+    kvNakresli();
+}
+function kvVymaz() { kvPoradi = []; kvNakresli(); }
+function kvPlnSelekty() {
+    ['kvTymPo', 'kvPozicePo', 'kvCisloPo'].forEach(id => {
+        document.getElementById(id).innerHTML = '<option value="">— nezobrazovat —</option>' +
+            Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">po ${i + 1}. dlaždici</option>`).join('');
+    });
+}
+function kvDnesPraha() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Prague' }).format(new Date()); }
+async function kvNacti() {
+    const d = document.getElementById('kvDatum').value;
+    if (!d) return kvMsg('Vyber datum.', true);
+    const { data: den } = await sb.from('kviz_den').select('*').eq('datum', d).maybeSingle();
+    let jmeno = '';
+    if (den) {
+        const { data: t } = await sb.from('kviz_tajemstvi').select('jmeno').eq('den_id', den.id).maybeSingle();
+        jmeno = t?.jmeno || '';
+    }
+    document.getElementById('kvTym').value = den?.tym || '';
+    document.getElementById('kvPozice').value = den?.pozice || '';
+    document.getElementById('kvCislo').value = den?.cislo_dresu || '';
+    document.getElementById('kvJmeno').value = jmeno;
+    document.getElementById('kvStart').value = den ? kvPragueLocal(den.start_at) : `${d}T08:00`;
+    document.getElementById('kvKonec').value = den ? kvPragueLocal(den.konec_at) : `${new Date(Date.parse(d + 'T00:00:00Z') + 864e5).toISOString().slice(0, 10)}T00:00`;
+    document.getElementById('kvSlozka').value = den?.slozka || `den/${d}`;
+    document.getElementById('kvTymPo').value = den?.napoveda_tym_po || '';
+    document.getElementById('kvPozicePo').value = den?.napoveda_pozice_po || '';
+    document.getElementById('kvCisloPo').value = den?.napoveda_cislo_po || '';
+    kvPoradi = den?.poradi ? [...den.poradi] : [];
+    kvNakresli();
+    kvMsg(den ? 'Den načten.' : 'Den zatím neexistuje – vyplň a ulož.', !den);
+}
+async function kvUloz() {
+    const d = document.getElementById('kvDatum').value;
+    if (!d) return kvMsg('Vyber datum.', true);
+    if (kvPoradi.length !== 16) return kvMsg('Pořadí musí mít všech 16 dlaždic (zatím ' + kvPoradi.length + ').', true);
+    const num = id => { const v = document.getElementById(id).value; return v === '' ? null : Number(v); };
+    const row = {
+        datum: d,
+        tym: document.getElementById('kvTym').value.trim() || null,
+        pozice: document.getElementById('kvPozice').value.trim() || null,
+        cislo_dresu: num('kvCislo'),
+        slozka: document.getElementById('kvSlozka').value.trim() || `den/${d}`,
+        poradi: kvPoradi,
+        napoveda_tym_po: num('kvTymPo'),
+        napoveda_pozice_po: num('kvPozicePo'),
+        napoveda_cislo_po: num('kvCisloPo'),
+        start_at: kvPragueIso(document.getElementById('kvStart').value),
+        konec_at: kvPragueIso(document.getElementById('kvKonec').value),
+    };
+    const { data: den, error } = await sb.from('kviz_den').upsert(row, { onConflict: 'datum' }).select().single();
+    if (error) return kvMsg('Chyba: ' + error.message, true);
+    const jm = document.getElementById('kvJmeno').value.trim();
+    if (jm) {
+        const { error: e2 } = await sb.from('kviz_tajemstvi').upsert({ den_id: den.id, jmeno: jm }, { onConflict: 'den_id' });
+        if (e2) return kvMsg('Chyba u jména: ' + e2.message, true);
+    }
+    kvMsg('✅ Uloženo.');
+}
+document.getElementById('kvDatum').value = kvDnesPraha();
+kvPlnSelekty();
+kvNakresli();
 </script>
 </body>
 </html>
