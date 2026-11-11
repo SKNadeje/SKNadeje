@@ -2515,7 +2515,7 @@ function kvizHtml(d) {
             <div style="font-size:.8em; opacity:.6; margin-top:2px; text-align:center;">Špatné pokusy: ${d.spatne}</div>`;
     }
     return `<div class="kviz-karta">
-        <div class="kviz-hlava"><b>🧩 Hádej hráče</b><span>${d.stav === 'konec' ? 'skončilo' : 'do půlnoci'} · odkryto ${d.pocet}/${celk}</span></div>
+        <div class="kviz-hlava"><b>🧩 ${d.nadpis || 'Hádej hráče'}</b><span>${d.stav === 'konec' ? 'skončilo' : 'do půlnoci'} · odkryto ${d.pocet}/${celk}</span></div>
         <div class="kviz-mrizka">${dl}</div>
         <div style="margin-top:10px; text-align:center;">${btnOdkryt}</div>
         <div style="margin-top:10px; text-align:center;">${nap}</div>
