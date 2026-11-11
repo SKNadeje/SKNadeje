@@ -122,7 +122,13 @@
         }
 
         .user-name { font-weight: bold; font-size: 0.95em; }
-    </style>
+    
+@media (min-width: 1000px) {
+    .container { max-width: 1400px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; align-items: start; }
+    .container > :not(.card) { grid-column: 1 / -1; }
+    .container > .card { margin-bottom: 24px; min-width: 0; }
+}
+</style>
 <style>
 :root { --neon: #00f2ff; color-scheme: dark; }
 html, body { color-scheme: dark; }
@@ -284,6 +290,7 @@ input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { fil
                 <div><label>Začátek (pražský čas)</label><input id="kvStart" type="datetime-local"></div>
                 <div><label>Konec (pražský čas)</label><input id="kvKonec" type="datetime-local"></div>
                 <div><label>Složka s dlaždicemi</label><input id="kvSlozka" type="text"></div>
+                <div><label>Nadpis nad fotkou</label><input id="kvNadpis" type="text" placeholder="Hádej hráče"></div>
             </div>
             <div style="margin-top:14px; display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px;">
                 <div><label>Tým se ukáže</label><select id="kvTymPo"></select></div>
@@ -1224,6 +1231,7 @@ async function kvNacti() {
     document.getElementById('kvStart').value = den ? kvPragueLocal(den.start_at) : `${d}T08:00`;
     document.getElementById('kvKonec').value = den ? kvPragueLocal(den.konec_at) : `${new Date(Date.parse(d + 'T00:00:00Z') + 864e5).toISOString().slice(0, 10)}T00:00`;
     document.getElementById('kvSlozka').value = den?.slozka || `den/${d}`;
+    document.getElementById('kvNadpis').value = den?.nadpis || '';
     document.getElementById('kvTymPo').value = den?.napoveda_tym_po || '';
     document.getElementById('kvPozicePo').value = den?.napoveda_pozice_po || '';
     document.getElementById('kvCisloPo').value = den?.napoveda_cislo_po || '';
@@ -1242,6 +1250,7 @@ async function kvUloz() {
         pozice: document.getElementById('kvPozice').value.trim() || null,
         cislo_dresu: num('kvCislo'),
         slozka: document.getElementById('kvSlozka').value.trim() || `den/${d}`,
+        nadpis: document.getElementById('kvNadpis').value.trim() || null,
         poradi: kvPoradi,
         napoveda_tym_po: num('kvTymPo'),
         napoveda_pozice_po: num('kvPozicePo'),
