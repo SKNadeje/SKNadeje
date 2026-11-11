@@ -1085,8 +1085,9 @@
 .kviz-zamek { font-size: 1.1em; }
 .kviz-zamceno { opacity: .5; }
 @media (min-width: 1000px) {
-    #kvizCard { max-width: 560px; }
-    .kviz-mrizka { max-width: 340px; margin: 0 auto; }
+    #kvizCard { max-width: 760px; }
+    .kviz-mrizka { max-width: 520px; margin: 0 auto; gap: 6px; }
+    .kviz-dl { font-size: 1.3em; }
 }
 </style>
 <script>
@@ -2454,10 +2455,11 @@ setTimeout(renderDenik, 1500);
 setInterval(renderDenik, 60000);
 </script>
 <script>
-/* 🧩 Hádání hráče podle fotky (denní kvíz, v2) */
+/* 🧩 Hádání hráče podle fotky (denní kvíz) */
 const KVIZ_URL = 'https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/kviz';
 const KVIZ_KEY = 'sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X';
 let _kviz = null;
+let _kvizZprava = '';
 async function kvizZavolej(metoda, telo) {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) return { ok: false, chyba: 'Přihlas se.' };
@@ -2477,23 +2479,19 @@ async function kvizStav() {
     if (btn) btn.classList.toggle('kviz-blik', !!(_kviz && _kviz.kviz && _kviz.stav === 'aktivni'));
     return _kviz;
 }
-async function renderKviz() {
-    const box = document.getElementById('kvizCard');
-    box.innerHTML = '<div style="opacity:.6; padding:20px; text-align:center;">Načítám kvíz…</div>';
-    const d = await kvizStav();
-    if (!d) { box.innerHTML = '<div style="opacity:.6; padding:20px; text-align:center;">Přihlas se, abys mohl hrát.</div>'; return; }
-    if (!d.kviz) { box.innerHTML = '<div class="kviz-karta" style="text-align:center; opacity:.7;">🧩 Dnes žádný kvíz.</div>'; return; }
+function kvizHtml(d) {
     if (d.stav === 'pred') {
-        box.innerHTML = `<div class="kviz-karta" style="text-align:center; padding:24px 10px;">
+        return `<div class="kviz-karta" style="text-align:center; padding:24px 10px;">
             <div style="font-size:2em;">🧩</div><b>Kvíz začíná v ${kvizCas(d.start_at)}</b>
             <div style="opacity:.7; font-size:.85em; margin-top:6px;">Do půlnoci odkryješ fotku postupně a můžeš hádat.</div></div>`;
-        return;
     }
     const celk = d.celkem;
+    const odkryte = {};
+    (d.dlazdice || []).forEach(x => { odkryte[x.cislo] = x.url; });
     let dl = '';
-    for (let i = 0; i < celk; i++) {
-        dl += i < d.dlazdice.length
-            ? `<div class="kviz-dl"><img src="${d.dlazdice[i]}" alt=""></div>`
+    for (let i = 1; i <= celk; i++) {
+        dl += odkryte[i]
+            ? `<div class="kviz-dl"><img src="${odkryte[i]}" alt=""></div>`
             : `<div class="kviz-dl kviz-zamek">🔒</div>`;
     }
     const nazvy = { tym: 'Tým', pozice: 'Pozice', cislo_dresu: 'Číslo' };
@@ -2513,30 +2511,40 @@ async function renderKviz() {
         spodek = `<div style="display:flex; gap:8px; margin-top:12px;">
             <input id="kvizOdhad" placeholder="Jméno hráče" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.06); color:inherit; font-family:inherit;">
             <button onclick="kvizHadej()" class="kviz-odkryt" style="padding:10px 16px;">HÁDAT</button></div>
-            <div id="kvizMsg" style="margin-top:8px; font-size:.85em; min-height:1em;"></div>
-            <div style="font-size:.8em; opacity:.6; margin-top:2px;">Špatné pokusy: ${d.spatne}</div>`;
+            <div id="kvizMsg" style="margin-top:8px; font-size:.85em; min-height:1em; text-align:center;">${_kvizZprava}</div>
+            <div style="font-size:.8em; opacity:.6; margin-top:2px; text-align:center;">Špatné pokusy: ${d.spatne}</div>`;
     }
-    box.innerHTML = `<div class="kviz-karta">
+    return `<div class="kviz-karta">
         <div class="kviz-hlava"><b>🧩 Hádej hráče</b><span>${d.stav === 'konec' ? 'skončilo' : 'do půlnoci'} · odkryto ${d.pocet}/${celk}</span></div>
         <div class="kviz-mrizka">${dl}</div>
         <div style="margin-top:10px; text-align:center;">${btnOdkryt}</div>
-        <div style="margin-top:10px;">${nap}</div>
+        <div style="margin-top:10px; text-align:center;">${nap}</div>
         ${spodek}</div>`;
+}
+/* překreslí kartu bez blikání a bez skoku stránky (výška se zachová) */
+async function renderKviz(prvni) {
+    const box = document.getElementById('kvizCard');
+    if (prvni) box.innerHTML = '<div style="opacity:.6; padding:20px; text-align:center;">Načítám kvíz…</div>';
+    box.style.minHeight = box.offsetHeight + 'px';
+    const d = await kvizStav();
+    if (!d) { box.innerHTML = '<div style="opacity:.6; padding:20px; text-align:center;">Přihlas se, abys mohl hrát.</div>'; box.style.minHeight = ''; return; }
+    if (!d.kviz) { box.innerHTML = '<div class="kviz-karta" style="text-align:center; opacity:.7;">🧩 Dnes žádný kviz.</div>'; box.style.minHeight = ''; return; }
+    box.innerHTML = kvizHtml(d);
+    box.style.minHeight = '';
 }
 async function kvizOdkryj() {
     const r = await kvizZavolej('POST', { akce: 'odkryj' });
-    if (!r.ok) alert(r.chyba);
-    renderKviz();
+    if (!r.ok) { _kvizZprava = `<span style="color:#ff8a80;">${r.chyba}</span>`; }
+    else { _kvizZprava = ''; }
+    await renderKviz(false);
 }
 async function kvizHadej() {
     const odhad = document.getElementById('kvizOdhad').value.trim();
-    const msg = document.getElementById('kvizMsg');
-    if (odhad.length < 2) { msg.textContent = 'Napiš jméno.'; return; }
+    if (odhad.length < 2) { _kvizZprava = 'Napiš jméno.'; await renderKviz(false); return; }
     const r = await kvizZavolej('POST', { akce: 'hadej', odhad });
-    if (!r.ok) { msg.style.color = '#ff8a80'; msg.textContent = r.chyba; return; }
-    msg.style.color = r.data.spravne ? '#7fe0a0' : '#ff8a80';
-    msg.textContent = r.data.spravne ? '✅ Správně!' : '❌ Špatně, zkus to znovu.';
-    setTimeout(renderKviz, 1000);
+    if (!r.ok) { _kvizZprava = `<span style="color:#ff8a80;">${r.chyba}</span>`; }
+    else { _kvizZprava = r.data.spravne ? '<span style="color:#7fe0a0;">✅ Správně!</span>' : '<span style="color:#ff8a80;">❌ Špatně, zkus to znovu.</span>'; }
+    await renderKviz(false);
 }
 /* přepínač: záložka Kvíz */
 const _puvodniPrepni = prepniZapasy;
@@ -2550,7 +2558,8 @@ prepniZapasy = function (rezim) {
         document.getElementById('matchList').style.display = 'none';
         document.getElementById('dlouhodobyCard').style.display = 'none';
         document.getElementById('bonusCard').style.display = 'none';
-        renderKviz();
+        _kvizZprava = '';
+        renderKviz(true);
     }
 };
 setTimeout(kvizStav, 2000);
