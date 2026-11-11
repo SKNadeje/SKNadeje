@@ -732,6 +732,19 @@ body.sez-zima .nav button::after, body.sez-vanoce .nav button::after, body.sez-s
 
 /* ===== LIVE v žebříčku ===== */
 .zeb-live { font-size: .75em; font-weight: 700; color: var(--gold); padding: 6px 10px; margin-bottom: 8px; border-radius: 10px; background: rgba(var(--gold-rgb,212,175,55),.1); border: 1px solid rgba(var(--gold-rgb,212,175,55),.35); text-align: center; }
+
+/* ===== výpis tipů hráčů (uzamčený / vyhodnocený zápas) ===== */
+.tl-wrap { margin-bottom: 7px; }
+.tl-row { display: flex; align-items: center; gap: 10px; background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 8px 12px; }
+.tl-row.tl-me { border-color: rgba(212,175,55,.6); background: rgba(212,175,55,.09); }
+.tl-av { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, #2a3f7a, #14213f); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: .8em; }
+.tl-jm { flex: 1; min-width: 0; font-weight: 800; font-size: .85em; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-jm:hover { color: var(--fial); }
+.tl-sk { font-weight: 900; font-size: .95em; padding: 3px 10px; border-radius: 8px; background: rgba(0,0,0,.28); font-variant-numeric: tabular-nums; }
+.tl-b { font-weight: 900; font-size: .8em; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+.tl-b.ok { color: #2ecc71; }
+.tl-b.no { opacity: .45; }
+.tl-zolik { font-size: .9em; }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -1680,8 +1693,7 @@ function renderZapasy() {
                 ` : ''}
                 ${zavreno && !hotovo ? '<div style="text-align:center; color:var(--fial); font-weight:900; font-size:.8em; margin-bottom:10px;">TIPY UZAVŘENY</div>' : ''}
                 ${!mojeId && !hotovo ? '<div style="text-align:center; font-size:.78em; opacity:.6;">Přihlas se pro tipování.</div>' : ''}
-                <div style="margin-top:14px;">${(zavreno || hotovo) ? tipy.map(t => `
-                    <div class="bet-row"><div class="bet-top"><span class="kdo" onclick="location.href='profil.html?id=${t.user_id}'">${t.jmeno}${t.user_id === mojeId ? ' (ty)' : ''}</span><span>${t.skore}${hotovo ? ` · +${t.body} b.` : ''}</span></div>${reakceHtml(m.id, t.user_id)}</div>`).join('') : (tipy.length ? `<div style="font-size:.7em; opacity:.45; text-align:center;">Tipy ostatních se odkryjí po uzávěrce.</div>` : '')}</div>
+                <div style="margin-top:14px;">${(zavreno || hotovo) ? [...tipy].sort((a, b) => hotovo ? (b.body || 0) - (a.body || 0) : 0).map(t => `<div class="tl-wrap"><div class="tl-row${t.user_id === mojeId ? ' tl-me' : ''}"><div class="tl-av">${(t.jmeno || '?').charAt(0).toUpperCase()}</div><div class="tl-jm" onclick="location.href='profil.html?id=${t.user_id}'">${t.jmeno}${t.user_id === mojeId ? ' · ty' : ''}${t.joker ? ' <span class="tl-zolik">🃏</span>' : ''}</div><div class="tl-sk">${t.skore}</div>${hotovo ? `<div class="tl-b ${t.body > 0 ? 'ok' : 'no'}">${t.body > 0 ? '+' + t.body : '0'} b.</div>` : ''}</div>${reakceHtml(m.id, t.user_id)}</div>`).join('') : (tipy.length ? `<div style="font-size:.7em; opacity:.45; text-align:center;">Tipy ostatních se odkryjí po uzávěrce.</div>` : '')}</div>
             </div>`;
             telo.appendChild(card);
         });
