@@ -745,6 +745,17 @@ body.sez-zima .nav button::after, body.sez-vanoce .nav button::after, body.sez-s
 .tl-b.ok { color: #2ecc71; }
 .tl-b.no { opacity: .45; }
 .tl-zolik { font-size: .9em; }
+
+/* ===== výpis tipů ve dvou sloupcích (kompaktní) ===== */
+.tl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; align-items: start; }
+.tl-grid .tl-wrap { margin-bottom: 0; }
+.tl-grid .tl-row { padding: 6px 9px; gap: 7px; border-radius: 10px; }
+.tl-grid .tl-av { width: 24px; height: 24px; font-size: .75em; }
+.tl-grid .tl-jm { font-size: .8em; }
+.tl-grid .tl-sk { font-size: .85em; padding: 2px 8px; }
+.tl-grid .tl-b { font-size: .72em; min-width: 44px; }
+.tl-grid .bet-reakce { margin-top: 3px; gap: 4px; }
+@media (max-width: 420px) { .tl-grid { grid-template-columns: 1fr; } }
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -1693,7 +1704,7 @@ function renderZapasy() {
                 ` : ''}
                 ${zavreno && !hotovo ? '<div style="text-align:center; color:var(--fial); font-weight:900; font-size:.8em; margin-bottom:10px;">TIPY UZAVŘENY</div>' : ''}
                 ${!mojeId && !hotovo ? '<div style="text-align:center; font-size:.78em; opacity:.6;">Přihlas se pro tipování.</div>' : ''}
-                <div style="margin-top:14px;">${(zavreno || hotovo) ? [...tipy].sort((a, b) => hotovo ? (b.body || 0) - (a.body || 0) : 0).map(t => `<div class="tl-wrap"><div class="tl-row${t.user_id === mojeId ? ' tl-me' : ''}"><div class="tl-av">${(t.jmeno || '?').charAt(0).toUpperCase()}</div><div class="tl-jm" onclick="location.href='profil.html?id=${t.user_id}'">${t.jmeno}${t.user_id === mojeId ? ' · ty' : ''}${t.joker ? ' <span class="tl-zolik">🃏</span>' : ''}</div><div class="tl-sk">${t.skore}</div>${hotovo ? `<div class="tl-b ${t.body > 0 ? 'ok' : 'no'}">${t.body > 0 ? '+' + t.body : '0'} b.</div>` : ''}</div>${reakceHtml(m.id, t.user_id)}</div>`).join('') : (tipy.length ? `<div style="font-size:.7em; opacity:.45; text-align:center;">Tipy ostatních se odkryjí po uzávěrce.</div>` : '')}</div>
+                <div class="tl-grid" style="margin-top:14px;">${(zavreno || hotovo) ? [...tipy].sort((a, b) => hotovo ? (b.body || 0) - (a.body || 0) : 0).map(t => `<div class="tl-wrap"><div class="tl-row${t.user_id === mojeId ? ' tl-me' : ''}"><div class="tl-av">${(t.jmeno || '?').charAt(0).toUpperCase()}</div><div class="tl-jm" onclick="location.href='profil.html?id=${t.user_id}'">${t.jmeno}${t.user_id === mojeId ? ' · ty' : ''}${t.joker ? ' <span class="tl-zolik">🃏</span>' : ''}</div><div class="tl-sk">${t.skore}</div>${hotovo ? `<div class="tl-b ${t.body > 0 ? 'ok' : 'no'}">${t.body > 0 ? '+' + t.body : '0'} b.</div>` : ''}</div>${reakceHtml(m.id, t.user_id)}</div>`).join('') : (tipy.length ? `<div style="font-size:.7em; opacity:.45; text-align:center;">Tipy ostatních se odkryjí po uzávěrce.</div>` : '')}</div>
             </div>`;
             telo.appendChild(card);
         });
