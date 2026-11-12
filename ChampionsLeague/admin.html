@@ -1249,7 +1249,7 @@ function kvcDnesPraha() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'E
 async function kvcNacti() {
     const d = document.getElementById('kvcDatum').value;
     if (!d) return kvcMsg('Vyber datum.', true);
-    const { data: den } = await sb.from('kviz_den').select('*').eq('soutez', 'hokej').eq('soutez', 'cl').eq('datum', d).maybeSingle();
+    const { data: den } = await sb.from('kviz_den').select('*').eq('soutez', 'cl').eq('datum', d).maybeSingle();
     let jmeno = '';
     if (den) {
         const { data: t } = await sb.from('kviz_tajemstvi').select('jmeno').eq('den_id', den.id).maybeSingle();
@@ -1276,7 +1276,7 @@ async function kvcUloz() {
     if (kvcPoradi.length !== 16) return kvcMsg('Pořadí musí mít všech 16 dlaždic (zatím ' + kvcPoradi.length + ').', true);
     const num = id => { const v = document.getElementById(id).value; return v === '' ? null : Number(v); };
     const row = {
-        soutez: 'hokej',
+        soutez: 'cl',
         datum: d,
         tym: document.getElementById('kvcTym').value.trim() || null,
         pozice: document.getElementById('kvcPozice').value.trim() || null,
