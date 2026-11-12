@@ -1176,6 +1176,7 @@ async function nactiStavNotifikaci() {
 </script>
 <script>
 /* 🧩 Kvíz – správa dne (admin) */
+const kvCzSlozka = d => d.split('-').reverse().join('.');   // 2026-11-12 -> 12.11.2026
 let kvPoradi = [];
 function kvPragueOffset(utcMs) {
     const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Prague', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(new Date(utcMs)).map(x => [x.type, x.value]));
@@ -1230,7 +1231,7 @@ async function kvNacti() {
     document.getElementById('kvJmeno').value = jmeno;
     document.getElementById('kvStart').value = den ? kvPragueLocal(den.start_at) : `${d}T08:00`;
     document.getElementById('kvKonec').value = den ? kvPragueLocal(den.konec_at) : `${new Date(Date.parse(d + 'T00:00:00Z') + 864e5).toISOString().slice(0, 10)}T00:00`;
-    document.getElementById('kvSlozka').value = den?.slozka || `den/${d}`;
+    document.getElementById('kvSlozka').value = den?.slozka || kvCzSlozka(d);
     document.getElementById('kvNadpis').value = den?.nadpis || '';
     document.getElementById('kvTymPo').value = den?.napoveda_tym_po || '';
     document.getElementById('kvPozicePo').value = den?.napoveda_pozice_po || '';
@@ -1250,7 +1251,7 @@ async function kvUloz() {
         tym: document.getElementById('kvTym').value.trim() || null,
         pozice: document.getElementById('kvPozice').value.trim() || null,
         cislo_dresu: num('kvCislo'),
-        slozka: document.getElementById('kvSlozka').value.trim() || `den/${d}`,
+        slozka: document.getElementById('kvSlozka').value.trim() || kvCzSlozka(d),
         nadpis: document.getElementById('kvNadpis').value.trim() || null,
         poradi: kvPoradi,
         napoveda_tym_po: num('kvTymPo'),
