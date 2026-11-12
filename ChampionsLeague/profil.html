@@ -953,5 +953,43 @@ load();
     };
 })();
 </script>
+<script>
+/* 🧩 Kvízové odznaky – přidají se mezi ostatní odznaky v profilu */
+(async function () {
+    if (typeof sb === 'undefined') return;
+    let uid = new URLSearchParams(location.search).get('id');
+    if (!uid) {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) return;
+        uid = session.user.id;
+    }
+    const { data, error } = await sb.from('kviz_odznak').select('typ').eq('user_id', uid).eq('soutez', 'cl');
+    if (error) return;
+    const pocty = { detektiv: 0, bystry: 0, hadac: 0 };
+    (data || []).forEach(o => { if (o.typ in pocty) pocty[o.typ]++; });
+    const def = [
+        { t: 'detektiv', ic: '🕵️', l: 'Detektiv', p: 'Uhodl kvíz do 4 odkrytých dlaždic.' },
+        { t: 'bystry', ic: '🔍', l: 'Bystrý', p: 'Uhodl kvíz do 8 odkrytých dlaždic.' },
+        { t: 'hadac', ic: '🎯', l: 'Hádač', p: 'Uhodl kvíz později.' }
+    ];
+    // počkej, až se odznaky vykreslí (jinak by je přepsal výpis)
+    let pokusy = 0;
+    const pridej = () => {
+        const grid = document.getElementById('odznaky');
+        if (!grid || !grid.innerHTML.trim()) {
+            if (++pokusy < 60) setTimeout(pridej, 500);
+            return;
+        }
+        grid.insertAdjacentHTML('beforeend', def.map(d => {
+            const n = pocty[d.t];
+            return `<div class="odz ${n ? 'on' : ''}"><div class="ic">${d.ic}</div><div class="l">${d.l}${n > 1 ? ' ×' + n : ''}</div><div class="p">${d.p}</div></div>`;
+        }).join(''));
+        const cnt = document.getElementById('odznakyPocet');
+        const m = cnt && cnt.textContent.match(/^(\d+)\/(\d+)$/);
+        if (m) cnt.textContent = (+m[1] + def.filter(d => pocty[d.t]).length) + '/' + (+m[2] + def.length);
+    };
+    pridej();
+})();
+</script>
 </body>
 </html>
