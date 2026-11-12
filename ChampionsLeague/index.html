@@ -3039,8 +3039,9 @@ async function renderKviz(prvni, po) {
     box.style.minHeight = box.offsetHeight + 'px';
     const d = await kvizStav(po);
     if (!d && !prvni) { /* síť/přihlášení – nechat stávající obsah */ }
-    box.innerHTML = kvizHtml(d);
+    box.innerHTML = kvizHtml(d) + '<div id="kvizZebBox"></div>';
     box.style.minHeight = '';
+    kvizNactiZebricek();
 }
 function kvizRender(prvni) { return renderKviz(prvni); }
 async function kvizOdkryj() {
@@ -3056,7 +3057,7 @@ async function kvizHadej() {
     if (r.data.spravne) {
         _kviz = { kviz: true, ...r.data };
         _kvizZprava = '';
-        document.getElementById('matches').innerHTML = kvizHtml(_kviz);
+        document.getElementById('matches').innerHTML = kvizHtml(_kviz) + '<div id="kvizZebBox"></div>'; kvizNactiZebricek();
         const btn = document.getElementById('zf-kviz');
         return;
     }
@@ -3068,6 +3069,25 @@ async function kvizHadej() {
 async function kvizDalsi() {
     _kvizZprava = '';
     await renderKviz(false, _kvizId);
+}
+async function kvizNactiZebricek() {
+    const box = document.getElementById('kvizZebBox');
+    if (!box) return;
+    const r = await kvizZavolej('GET', null, '&zebricek=1');
+    if (!r.ok) { box.innerHTML = ''; return; }
+    const radky = r.data.radky || [];
+    const ja = r.data.ja;
+    box.innerHTML = `<div class="kviz-karta" style="margin-top:14px;">
+        <div class="kviz-hlava"><b>🏆 Žebříček kvízu</b><span>${radky.length} hráčů</span></div>
+        ${radky.length ? `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:.85em;">
+            <thead><tr style="opacity:.6;"><th style="text-align:left; padding:6px;">#</th><th style="text-align:left; padding:6px;">Hráč</th><th style="padding:6px;">Uhodl</th><th style="padding:6px;">🕵️</th><th style="padding:6px;">🔍</th><th style="padding:6px;">🎯</th><th style="padding:6px;">Špatně</th></tr></thead>
+            <tbody>${radky.map((x, i) => `<tr style="border-top:1px solid rgba(255,255,255,.08); ${x.user_id === ja ? 'background:rgba(240,217,135,.12); font-weight:800;' : ''}">
+                <td style="padding:6px;">${i + 1}.</td><td style="padding:6px;">${kvizEsc(x.jmeno)}</td>
+                <td style="text-align:center; padding:6px;"><b>${x.vyreseno}</b></td>
+                <td style="text-align:center; padding:6px;">${x.detektiv}</td><td style="text-align:center; padding:6px;">${x.bystry}</td>
+                <td style="text-align:center; padding:6px;">${x.hadac}</td><td style="text-align:center; padding:6px; opacity:.7;">${x.spatne}</td></tr>`).join('')}</tbody></table></div>`
+            : '<div style="opacity:.6; text-align:center;">Zatím nikdo nehádal.</div>'}
+    </div>`;
 }
 setTimeout(kvizStav, 2000);
 setInterval(kvizStav, 60000);
