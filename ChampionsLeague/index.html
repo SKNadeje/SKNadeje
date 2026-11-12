@@ -764,6 +764,29 @@ body.sez-zima .nav button::after, body.sez-vanoce .nav button::after, body.sez-s
     .tl-grid .tl-b { font-size: .64em; min-width: 36px; }
     .tl-grid .bet-reakce { margin-top: 2px; gap: 3px; }
 }
+/* ===== kvíz ===== */
+.kviz-blik { animation: kvizBlik 1.2s ease-in-out infinite; border-color: #ff5050 !important; color: #ff8a8a !important; }
+@keyframes kvizBlik { 0%,100% { box-shadow: 0 0 0 0 rgba(255,80,80,0); } 50% { box-shadow: 0 0 16px 4px rgba(255,80,80,.55); } }
+@media (prefers-reduced-motion: reduce) { .kviz-blik { animation: none; box-shadow: 0 0 10px rgba(255,80,80,.5); } }
+.kviz-mrizka { display:grid; grid-template-columns: repeat(4, 1fr); gap: 4px; border-radius: 14px; overflow: hidden; }
+.kviz-dl { aspect-ratio: 1 / 1; border-radius: 6px; background: linear-gradient(135deg,#1a2a52,#0b1226); display:flex; align-items:center; justify-content:center; font-size:.9em; opacity:.7; overflow:hidden; }
+.kviz-dl img { width:100%; height:100%; object-fit:cover; display:block; }
+.kviz-napoveda { display:inline-block; font-size:.78em; padding:4px 10px; border-radius:100px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); margin:3px 4px 3px 0; }
+
+/* ===== kvíz v2 ===== */
+.kviz-karta { background: rgba(255,255,255,.04); border: 1px solid rgba(var(--neon-rgb),.35); border-radius: 16px; padding: 14px; }
+.kviz-hlava { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: .9em; }
+.kviz-hlava span { opacity: .7; font-size: .8em; }
+.kviz-odkryt { padding: 9px 16px; border-radius: 10px; border: 1px solid rgba(240,217,135,.6); background: rgba(240,217,135,.12); color: #f0d987; font-weight: 800; cursor: pointer; font-family: inherit; }
+.kviz-odkryt:disabled { opacity: .4; cursor: default; }
+.kviz-zamek { font-size: 1.1em; }
+.kviz-zamceno { opacity: .5; }
+@media (min-width: 1000px) {
+    #kvizCard { max-width: 760px; }
+    .kviz-mrizka { max-width: 520px; margin: 0 auto; gap: 6px; }
+    .kviz-dl { font-size: 1.3em; }
+}
+
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
@@ -893,6 +916,7 @@ document.addEventListener('click',function(e){ var sw=document.getElementById('t
             <button class="zf-btn tady" id="zf-aktivni" onclick="prepniFiltrZapasu('aktivni')">⚽ Aktivní</button>
             <button class="zf-btn" id="zf-hotovo" onclick="prepniFiltrZapasu('hotovo')">✅ Vyhodnocené</button>
             <button class="zf-btn" id="zf-dlouhodobe" onclick="prepniFiltrZapasu('dlouhodobe')">👟 Dlouhodobé</button>
+        <button class="zf-btn" id="zf-kviz" onclick="prepniFiltrZapasu('kviz')">🧩 Kvíz</button>
         </div>
 
         <!-- Dlouhodobé tipy (jen ve filtru Dlouhodobé) -->
@@ -1071,6 +1095,8 @@ function prepniFiltrZapasu(f) {
     document.getElementById('zf-aktivni').classList.toggle('tady', f === 'aktivni');
     document.getElementById('zf-hotovo').classList.toggle('tady', f === 'hotovo');
     document.getElementById('zf-dlouhodobe').classList.toggle('tady', f === 'dlouhodobe');
+    document.getElementById('zf-kviz').classList.toggle('tady', f === 'kviz');
+    if (f === 'kviz') { document.getElementById('dlouhodobeWrap').style.display = 'none'; document.getElementById('matches').style.display = 'block'; kvizRender(true); return; }
 
     // Dlouhodobé karty jen ve svém režimu, seznam zápasů jen v ostatních
     const jeDl = f === 'dlouhodobe';
@@ -1638,6 +1664,7 @@ function zivyBodHtml(m, tip, zavreno, hotovo) {
 }
 
 function renderZapasy() {
+    if (filtrZapasu === 'kviz') { kvizRender(false); return; }
     const cont = document.getElementById('matches');
     cont.innerHTML = '';
     const zobrazit = zapasy
@@ -2947,6 +2974,101 @@ function zavriNadilku() { document.getElementById('nadilkaModal').style.display 
     };
     setTimeout(cekej, 1500);
 })();
+</script>
+<script>
+/* 🧩 Kvíz (CL) – filtr v indexu */
+const KVIZ_URL = 'https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/kviz?soutez=cl';
+const KVIZ_KEY = 'sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X';
+let _kviz = null;
+let _kvizZprava = '';
+async function kvizZavolej(metoda, telo) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return { ok: false, chyba: 'Přihlas se.' };
+    const r = await fetch(KVIZ_URL, {
+        method: metoda,
+        headers: { Authorization: 'Bearer ' + session.access_token, apikey: KVIZ_KEY, 'Content-Type': 'application/json' },
+        body: telo ? JSON.stringify(telo) : undefined
+    });
+    const v = await r.json().catch(() => ({}));
+    return r.ok ? { ok: true, data: v } : { ok: false, chyba: v.chyba || 'Chyba' };
+}
+const kvizCas = iso => iso ? new Date(iso).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '—';
+async function kvizStav() {
+    const r = await kvizZavolej('GET');
+    _kviz = r.ok ? r.data : null;
+    const btn = document.getElementById('zf-kviz');
+    if (btn) btn.classList.toggle('kviz-blik', !!(_kviz && _kviz.kviz && _kviz.stav === 'aktivni'));
+    return _kviz;
+}
+function kvizHtml(d) {
+    if (d.stav === 'pred') {
+        return `<div class="kviz-karta" style="text-align:center; padding:24px 10px;">
+            <div style="font-size:2em;">🧩</div><b>Kvíz začíná v ${kvizCas(d.start_at)}</b>
+            <div style="opacity:.7; font-size:.85em; margin-top:6px;">Do půlnoci odkryješ fotku postupně a můžeš hádat.</div></div>`;
+    }
+    const celk = d.celkem;
+    const odkryte = {};
+    (d.dlazdice || []).forEach(x => { odkryte[x.cislo] = x.url; });
+    let dl = '';
+    for (let i = 1; i <= celk; i++) {
+        dl += odkryte[i]
+            ? `<div class="kviz-dl"><img src="${odkryte[i]}" alt=""></div>`
+            : `<div class="kviz-dl kviz-zamek">🔒</div>`;
+    }
+    const nazvy = { tym: 'Tým', pozice: 'Pozice', cislo_dresu: 'Číslo' };
+    const nap = Object.keys(nazvy).map(k => d.napovedy[k]
+        ? `<span class="kviz-napoveda">${nazvy[k]}: <b>${d.napovedy[k]}</b></span>`
+        : `<span class="kviz-napoveda kviz-zamceno">${nazvy[k]}: 🔒 po ${d.cekaNa[k]}. dlaždici</span>`).join('');
+    const muzuOdkryt = d.stav === 'aktivni' && !d.vyhral && d.pocet < celk;
+    const btnOdkryt = d.stav === 'aktivni'
+        ? `<button class="kviz-odkryt" ${muzuOdkryt ? '' : 'disabled'} onclick="kvizOdkryj()">🔓 Odkrýt další dlaždici (${d.pocet}/${celk})</button>`
+        : '';
+    let spodek;
+    if (d.stav === 'konec') {
+        spodek = `<div style="text-align:center; margin-top:12px;">Kvíz skončil. Správně: <b>${d.jmeno || '—'}</b></div>`;
+    } else if (d.vyhral) {
+        spodek = `<div style="text-align:center; margin-top:12px; color:#7fe0a0;">✅ Uhodl jsi! Špatných pokusů: ${d.spatne}</div>`;
+    } else {
+        spodek = `<div style="display:flex; gap:8px; margin-top:12px;">
+            <input id="kvizOdhad" placeholder="Jméno hráče" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.06); color:inherit; font-family:inherit;">
+            <button onclick="kvizHadej()" class="kviz-odkryt" style="padding:10px 16px;">HÁDAT</button></div>
+            <div id="kvizMsg" style="margin-top:8px; font-size:.85em; min-height:1em; text-align:center;">${_kvizZprava}</div>
+            <div style="font-size:.8em; opacity:.6; margin-top:2px; text-align:center;">Špatné pokusy: ${d.spatne}</div>`;
+    }
+    return `<div class="kviz-karta">
+        <div class="kviz-hlava"><b>🧩 ${d.nadpis || 'Hádej hráče'}</b><span>${d.stav === 'konec' ? 'skončilo' : 'do půlnoci'} · odkryto ${d.pocet}/${celk}</span></div>
+        <div class="kviz-mrizka">${dl}</div>
+        <div style="margin-top:10px; text-align:center;">${btnOdkryt}</div>
+        <div style="margin-top:10px; text-align:center;">${nap}</div>
+        ${spodek}</div>`;
+}
+/* překreslí kartu bez blikání a bez skoku stránky (výška se zachová) */
+async function kvizRender(prvni) {
+    const box = document.getElementById('matches');
+    if (prvni) box.innerHTML = '<div style="opacity:.6; padding:20px; text-align:center;">Načítám kvíz…</div>';
+    box.style.minHeight = box.offsetHeight + 'px';
+    const d = await kvizStav();
+    if (!d) { box.innerHTML = '<div style="opacity:.6; padding:20px; text-align:center;">Přihlas se, abys mohl hrát.</div>'; box.style.minHeight = ''; return; }
+    if (!d.kviz) { box.innerHTML = '<div class="kviz-karta" style="text-align:center; opacity:.7;">🧩 Dnes žádný kviz.</div>'; box.style.minHeight = ''; return; }
+    box.innerHTML = kvizHtml(d);
+    box.style.minHeight = '';
+}
+async function kvizOdkryj() {
+    const r = await kvizZavolej('POST', { akce: 'odkryj' });
+    if (!r.ok) { _kvizZprava = `<span style="color:#ff8a80;">${r.chyba}</span>`; }
+    else { _kvizZprava = ''; }
+    await kvizRender(false);
+}
+async function kvizHadej() {
+    const odhad = document.getElementById('kvizOdhad').value.trim();
+    if (odhad.length < 2) { _kvizZprava = 'Napiš jméno.'; await kvizRender(false); return; }
+    const r = await kvizZavolej('POST', { akce: 'hadej', odhad });
+    if (!r.ok) { _kvizZprava = `<span style="color:#ff8a80;">${r.chyba}</span>`; }
+    else { _kvizZprava = r.data.spravne ? '<span style="color:#7fe0a0;">✅ Správně!</span>' : '<span style="color:#ff8a80;">❌ Špatně, zkus to znovu.</span>'; }
+    await kvizRender(false);
+}
+setTimeout(kvizStav, 2000);
+setInterval(kvizStav, 60000);
 </script>
 </body>
 </html>
