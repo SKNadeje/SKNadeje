@@ -125,33 +125,37 @@ async function init() {
     document.getElementById('obsah').className = '';
     document.getElementById('obsah').innerHTML = `
         <div class="card">
-        <div class="collapsible-header" onclick="toggleSection('secKviz')">🧩 KVÍZ – DLAŽDICE A NÁPOVĚDY <span class="collapse-arrow">▾</span></div>
+        <div class="collapsible-header" onclick="toggleSection('secKviz')">🧩 KVÍZY – HÁDANKY ZA SEBOU <span class="collapse-arrow">▾</span></div>
         <div class="collapsible-body" id="secKviz">
-            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
-                <input type="date" id="kvcDatum">
-                <button class="btn" onclick="kvcNacti()">Načíst den</button>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                <button class="btn" onclick="PFXNovy()">+ Nový kvíz</button>
+                <button class="btn" onclick="PFXNacti()">Obnovit seznam</button>
             </div>
-            <div style="font-size:.85em; opacity:.8; margin-bottom:6px;">Klikej na dlaždice v pořadí odkrývání (nepovinné – nevyplněné se odkryjí popořadí 01 až 16).</div>
-            <div id="kvcMrizka" style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px; max-width:340px; margin-bottom:8px;"></div>
-            <div id="kvcPoradiText" style="font-size:.8em; opacity:.75; margin-bottom:6px;"></div>
-            <button class="btn" onclick="kvcVymaz()">Vymazat pořadí</button>
-            <div style="margin-top:14px; display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px;">
-                <div><label>Správné jméno <b>*</b></label><input id="kvcJmeno" type="text"></div>
-                <div><label>Začátek (pražský čas)</label><input id="kvcStart" type="datetime-local"></div>
-                <div><label>Konec (pražský čas)</label><input id="kvcKonec" type="datetime-local"></div>
-                <div><label>Složka s dlaždicemi</label><input id="kvcSlozka" type="text"></div>
-                <div><label>Nadpis nad fotkou</label><input id="kvcNadpis" type="text" placeholder="Hádej hráče"></div>
+            <div id="PFXSeznam"></div>
+            <div id="PFXEditor" style="display:none; margin-top:16px; border-top:1px solid rgba(255,255,255,.12); padding-top:14px;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px;">
+                    <div><label>Správné jméno <b>*</b></label><input id="PFXJmeno" type="text"></div>
+                    <div><label>Pořadí kvízu</label><input id="PFXPorad" type="number" min="1"></div>
+                    <div><label>Složka s dlaždicemi (nepovinné)</label><input id="PFXSlozka" type="text" placeholder="např. 12.11.2026"></div>
+                    <div><label>Nadpis nad fotkou (nepovinné)</label><input id="PFXNadpis" type="text" placeholder="Hádej hráče"></div>
+                    <div style="display:flex; align-items:center; gap:8px;"><input id="PFXAktivni" type="checkbox" checked><label style="margin:0;">Aktivní (vidí hráči)</label></div>
+                </div>
+                <div style="font-size:.85em; opacity:.8; margin:12px 0 6px;">Pořadí dlaždic (nepovinné – nevyplněné se doplní popořadí):</div>
+                <div id="PFXMrizka" style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px; max-width:340px;"></div>
+                <div id="PFXPoradiText" style="font-size:.8em; opacity:.75; margin:6px 0;"></div>
+                <button class="btn" onclick="PFXVymaz()">Vymazat pořadí</button>
+                <div style="margin-top:14px; font-weight:800;">Nápovědy (nepovinné)</div>
+                <div id="PFXNapList" style="display:grid; gap:6px; margin-top:6px;"></div>
+                <button class="btn" style="margin-top:8px;" onclick="PFXPridejNap()">+ Přidat nápovědu</button>
+                <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn" onclick="PFXUloz()">💾 Uložit</button>
+                    <button class="btn" onclick="PFXZavri()">Zavřít</button>
+                </div>
+                <div id="PFXMsg" style="margin-top:8px; font-size:.85em;"></div>
             </div>
-            <div style="margin-top:14px;">
-                <div style="font-weight:800; margin-bottom:6px;">Nápovědy (nepovinné)</div>
-                <div id="kvcNapList" style="display:grid; gap:6px;"></div>
-                <button class="btn" style="margin-top:8px;" onclick="kvcPridejNap()">+ Přidat nápovědu</button>
-            </div>
-            <button class="btn" style="margin-top:14px;" onclick="kvcUloz()">💾 Uložit den kvízu</button>
-            <div id="kvcMsg" style="margin-top:8px; font-size:.85em;"></div>
-
         </div>
     </div>
+
 
 <div class="karta">
             <h2>➕ Vypsat zápasy k tipování</h2>
@@ -1230,85 +1234,122 @@ async function skryjOznameni() {
 }
 </script>
 <script>
-/* 🧩 Kvíz – správa dne (admin) */
-let kvcPoradi = [];
-let kvcNap = [];
-const kvcEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function kvcMsg(t, chyba) { const m = document.getElementById('kvcMsg'); m.style.color = chyba ? '#ff8a80' : '#7fe0a0'; m.textContent = t; }
-function kvcCzSlozka(d) { return d.split('-').reverse().join('.'); }
-function kvcPragueOffset(utcMs) {
-    const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Prague', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(new Date(utcMs)).map(x => [x.type, x.value]));
-    return (Date.UTC(+p.year, p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - utcMs) / 60000;
-}
-function kvcPragueIso(local) { if (!local) return null; const g = Date.parse(local + ':00Z'); return new Date(g - kvcPragueOffset(g) * 60000).toISOString(); }
-function kvcPragueLocal(iso) {
-    if (!iso) return '';
-    const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Prague', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
-    return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
-}
-function kvcDnesPraha() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Prague' }).format(new Date()); }
-function kvcNakresli() {
-    document.getElementById('kvcMrizka').innerHTML = Array.from({ length: 16 }, (_, i) => {
-        const p = kvcPoradi.indexOf(i + 1);
-        return `<button onclick="kvcKlik(${i + 1})" style="padding:8px 0; border-radius:8px; border:1px solid ${p >= 0 ? '#f0d987' : 'rgba(255,255,255,.2)'}; background:${p >= 0 ? 'rgba(240,217,135,.18)' : 'rgba(255,255,255,.04)'}; color:inherit; cursor:pointer;">${p >= 0 ? '<b>' + (p + 1) + '</b> · ' : ''}${String(i + 1).padStart(2, '0')}</button>`;
+/* 🧩 Kvíz – správa hádanek (admin) */
+let PFXId = null;
+let PFXDlaz = [];
+let PFXNap = [];
+let PFXSeznamData = [];
+const PFXEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function PFXMsg(t, chyba) { const m = document.getElementById('PFXMsg'); m.style.color = chyba ? '#ff8a80' : '#7fe0a0'; m.textContent = t; }
+function PFXNakresli() {
+    document.getElementById('PFXMrizka').innerHTML = Array.from({ length: 16 }, (_, i) => {
+        const p = PFXDlaz.indexOf(i + 1);
+        return `<button onclick="PFXKlik(${i + 1})" style="padding:8px 0; border-radius:8px; border:1px solid ${p >= 0 ? '#f0d987' : 'rgba(255,255,255,.2)'}; background:${p >= 0 ? 'rgba(240,217,135,.18)' : 'rgba(255,255,255,.04)'}; color:inherit; cursor:pointer;">${p >= 0 ? '<b>' + (p + 1) + '</b> · ' : ''}${String(i + 1).padStart(2, '0')}</button>`;
     }).join('');
-    document.getElementById('kvcPoradiText').textContent = kvcPoradi.length
-        ? 'Pořadí: ' + kvcPoradi.map((n, i) => `${i + 1}→${String(n).padStart(2, '0')}`).join('  ·  ') + ` (${kvcPoradi.length}/16)`
+    document.getElementById('PFXPoradiText').textContent = PFXDlaz.length
+        ? 'Pořadí: ' + PFXDlaz.map((n, i) => `${i + 1}→${String(n).padStart(2, '0')}`).join('  ·  ') + ` (${PFXDlaz.length}/16)`
         : 'Pořadí nevyplněno → dlaždice se odkryjí popořadí 01 až 16.';
 }
-function kvcKlik(n) { const p = kvcPoradi.indexOf(n); if (p >= 0) kvcPoradi.splice(p, 1); else if (kvcPoradi.length < 16) kvcPoradi.push(n); kvcNakresli(); }
-function kvcVymaz() { kvcPoradi = []; kvcNakresli(); }
-function kvcNapNakresli() {
-    document.getElementById('kvcNapList').innerHTML = kvcNap.map((n, i) => `<div style="display:grid; grid-template-columns:1fr 1.5fr 110px auto; gap:6px; align-items:center;">
-        <input value="${kvcEsc(n.label)}" placeholder="Název (např. Tým)" oninput="kvcNapZmen(${i},'label',this.value)" style="padding:6px;">
-        <input value="${kvcEsc(n.text)}" placeholder="Obsah nápovědy" oninput="kvcNapZmen(${i},'text',this.value)" style="padding:6px;">
-        <select onchange="kvcNapZmen(${i},'po',this.value)" style="padding:6px;">${Array.from({ length: 16 }, (_, k) => `<option value="${k + 1}" ${n.po == k + 1 ? 'selected' : ''}>po ${k + 1}.</option>`).join('')}</select>
-        <button onclick="kvcNapSmaz(${i})" style="padding:6px 10px;">✕</button></div>`).join('') || '<div style="opacity:.6; font-size:.85em;">Zatím žádná nápověda.</div>';
+function PFXKlik(n) { const p = PFXDlaz.indexOf(n); if (p >= 0) PFXDlaz.splice(p, 1); else if (PFXDlaz.length < 16) PFXDlaz.push(n); PFXNakresli(); }
+function PFXVymaz() { PFXDlaz = []; PFXNakresli(); }
+function PFXNapNakresli() {
+    document.getElementById('PFXNapList').innerHTML = PFXNap.map((n, i) => `<div style="display:grid; grid-template-columns:1fr 1.5fr 110px auto; gap:6px; align-items:center;">
+        <input value="${PFXEsc(n.label)}" placeholder="Název (např. Tým)" oninput="PFXNapZmen(${i},'label',this.value)" style="padding:6px;">
+        <input value="${PFXEsc(n.text)}" placeholder="Obsah nápovědy" oninput="PFXNapZmen(${i},'text',this.value)" style="padding:6px;">
+        <select onchange="PFXNapZmen(${i},'po',this.value)" style="padding:6px;">${Array.from({ length: 16 }, (_, k) => `<option value="${k + 1}" ${n.po == k + 1 ? 'selected' : ''}>po ${k + 1}.</option>`).join('')}</select>
+        <button onclick="PFXNapSmaz(${i})" style="padding:6px 10px;">✕</button></div>`).join('') || '<div style="opacity:.6; font-size:.85em;">Zatím žádná nápověda.</div>';
 }
-function kvcPridejNap() { kvcNap.push({ label: '', text: '', po: Math.min(16, kvcNap.length * 4 + 4) }); kvcNapNakresli(); }
-function kvcNapZmen(i, k, v) { kvcNap[i][k] = k === 'po' ? Number(v) : v; }
-function kvcNapSmaz(i) { kvcNap.splice(i, 1); kvcNapNakresli(); }
-async function kvcNacti() {
-    const d = document.getElementById('kvcDatum').value;
-    if (!d) return kvcMsg('Vyber datum.', true);
-    const { data: den } = await sb.from('kviz_den').select('*').eq('soutez', 'cl').eq('datum', d).maybeSingle();
-    let jmeno = '';
-    if (den) { const { data: t } = await sb.from('kviz_tajemstvi').select('jmeno').eq('den_id', den.id).maybeSingle(); jmeno = t?.jmeno || ''; }
-    document.getElementById('kvcJmeno').value = jmeno;
-    document.getElementById('kvcStart').value = den ? kvcPragueLocal(den.start_at) : `${d}T08:00`;
-    document.getElementById('kvcKonec').value = den ? kvcPragueLocal(den.konec_at) : `${new Date(Date.parse(d + 'T00:00:00Z') + 864e5).toISOString().slice(0, 10)}T00:00`;
-    document.getElementById('kvcSlozka').value = den?.slozka || kvcCzSlozka(d);
-    document.getElementById('kvcNadpis').value = den?.nadpis || '';
-    kvcPoradi = den?.poradi ? [...den.poradi] : [];
-    kvcNap = Array.isArray(den?.napovedy) ? den.napovedy.map(n => ({ ...n })) : [];
-    kvcNakresli(); kvcNapNakresli();
-    kvcMsg(den ? 'Den načten.' : 'Den zatím neexistuje – vyplň a ulož.', !den);
+function PFXPridejNap() { PFXNap.push({ label: '', text: '', po: Math.min(16, PFXNap.length * 4 + 4) }); PFXNapNakresli(); }
+function PFXNapZmen(i, k, v) { PFXNap[i][k] = k === 'po' ? Number(v) : v; }
+function PFXNapSmaz(i) { PFXNap.splice(i, 1); PFXNapNakresli(); }
+async function PFXNacti() {
+    const { data: dny } = await sb.from('kviz_den').select('*').eq('soutez', 'cl')
+        .order('porad', { ascending: true, nullsFirst: false }).order('id', { ascending: true });
+    const { data: tajne } = await sb.from('kviz_tajemstvi').select('den_id, jmeno');
+    const jm = Object.fromEntries((tajne || []).map(t => [t.den_id, t.jmeno]));
+    PFXSeznamData = dny || [];
+    document.getElementById('PFXSeznam').innerHTML = PFXSeznamData.length
+        ? PFXSeznamData.map((d, i) => `<div style="display:grid; grid-template-columns:auto 1fr auto auto; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.08);">
+            <b>${d.porad ?? (i + 1)}.</b>
+            <span>${PFXEsc(jm[d.id] || '—')} ${d.aktivni ? '' : '<span style="opacity:.6; font-size:.8em;">(neaktivní)</span>'}</span>
+            <button class="btn" onclick="PFXOtevri(${d.id})">Upravit</button>
+            <button class="btn" onclick="PFXSmaz(${d.id})">Smazat</button></div>`).join('')
+        : '<div style="opacity:.6;">Zatím žádný kvíz.</div>';
 }
-async function kvcUloz() {
-    const d = document.getElementById('kvcDatum').value;
-    if (!d) return kvcMsg('Vyber datum.', true);
-    const jm = document.getElementById('kvcJmeno').value.trim();
-    if (!jm) return kvcMsg('Vyplň správné jméno hráče (jen to je povinné).', true);
-    const poradi = [...kvcPoradi];
-    for (let k = 1; k <= 16; k++) if (!poradi.includes(k)) poradi.push(k);
-    const napovedy = kvcNap.filter(n => n.text && String(n.text).trim())
+async function PFXOtevri(id) {
+    const d = PFXSeznamData.find(x => x.id === id);
+    if (!d) return;
+    const { data: t } = await sb.from('kviz_tajemstvi').select('jmeno').eq('den_id', id).maybeSingle();
+    PFXId = id;
+    document.getElementById('PFXJmeno').value = t?.jmeno || '';
+    document.getElementById('PFXPorad').value = d.porad ?? '';
+    document.getElementById('PFXSlozka').value = d.slozka || '';
+    document.getElementById('PFXNadpis').value = d.nadpis || '';
+    document.getElementById('PFXAktivni').checked = !!d.aktivni;
+    PFXDlaz = Array.isArray(d.poradi) ? [...d.poradi] : [];
+    PFXNap = Array.isArray(d.napovedy) ? d.napovedy.map(n => ({ ...n })) : [];
+    document.getElementById('PFXEditor').style.display = 'block';
+    PFXNakresli(); PFXNapNakresli();
+    PFXMsg('Hádanka načtena.');
+}
+function PFXNovy() {
+    const max = Math.max(0, ...PFXSeznamData.map(d => d.porad || 0));
+    PFXId = null;
+    document.getElementById('PFXJmeno').value = '';
+    document.getElementById('PFXPorad').value = max + 1;
+    document.getElementById('PFXSlozka').value = '';
+    document.getElementById('PFXNadpis').value = '';
+    document.getElementById('PFXAktivni').checked = true;
+    PFXDlaz = []; PFXNap = [];
+    document.getElementById('PFXEditor').style.display = 'block';
+    PFXNakresli(); PFXNapNakresli();
+    PFXMsg('Nová hádanka – vyplň a ulož. Složku můžeš nechat prázdnou (použije se číslo hádanky).');
+}
+function PFXZavri() { document.getElementById('PFXEditor').style.display = 'none'; PFXId = null; }
+async function PFXUloz() {
+    const jm = document.getElementById('PFXJmeno').value.trim();
+    if (!jm) return PFXMsg('Vyplň správné jméno hráče (jen to je povinné).', true);
+    const dlaz = [...PFXDlaz];
+    for (let k = 1; k <= 16; k++) if (!dlaz.includes(k)) dlaz.push(k);
+    const napovedy = PFXNap.filter(n => n.text && String(n.text).trim())
         .map(n => ({ label: (n.label || 'Nápověda').trim(), text: String(n.text).trim(), po: n.po || 1 }));
+    const porad = Number(document.getElementById('PFXPorad').value) || null;
     const row = {
-        soutez: 'cl', datum: d, poradi, napovedy,
-        slozka: document.getElementById('kvcSlozka').value.trim() || kvcCzSlozka(d),
-        nadpis: document.getElementById('kvcNadpis').value.trim() || null,
-        start_at: kvcPragueIso(document.getElementById('kvcStart').value),
-        konec_at: kvcPragueIso(document.getElementById('kvcKonec').value),
+        soutez: 'cl', porad, aktivni: document.getElementById('PFXAktivni').checked,
+        poradi: dlaz, napovedy,
+        slozka: document.getElementById('PFXSlozka').value.trim() || null,
+        nadpis: document.getElementById('PFXNadpis').value.trim() || null,
     };
-    const { data: den, error } = await sb.from('kviz_den').upsert(row, { onConflict: 'soutez,datum' }).select().single();
-    if (error) return kvcMsg('Chyba: ' + error.message, true);
+    let den, error;
+    if (PFXId) {
+        ({ data: den, error } = await sb.from('kviz_den').update(row).eq('id', PFXId).select().single());
+    } else {
+        ({ data: den, error } = await sb.from('kviz_den').insert(row).select().single());
+    }
+    if (error) return PFXMsg('Chyba: ' + error.message, true);
     const { error: e2 } = await sb.from('kviz_tajemstvi').upsert({ den_id: den.id, jmeno: jm }, { onConflict: 'den_id' });
-    if (e2) return kvcMsg('Chyba u jména: ' + e2.message, true);
-    kvcMsg('✅ Uloženo.');
+    if (e2) return PFXMsg('Chyba u jména: ' + e2.message, true);
+    PFXId = den.id;
+    await PFXNacti();
+    PFXMsg('✅ Uloženo.');
 }
-document.getElementById('kvcDatum').value = kvcDnesPraha();
-kvcNakresli(); kvcNapNakresli();
+async function PFXSmaz(id) {
+    if (!confirm('Opravdu smazat tuto hádanku včetně tipů?')) return;
+    const { error } = await sb.from('kviz_den').delete().eq('id', id);
+    if (error) return alert('Chyba: ' + error.message);
+    if (PFXId === id) PFXZavri();
+    await PFXNacti();
+}
+(function () {
+    let hotovo = false;
+    const kontrola = () => {
+        if (!hotovo && document.getElementById('PFXSeznam')) { hotovo = true; PFXNacti(); }
+    };
+    new MutationObserver(kontrola).observe(document.body, { childList: true, subtree: true });
+    kontrola();
+})();
 </script>
+
 
 <script>
 function toggleSection(id) { const el = document.getElementById(id); el.style.display = ''; el.classList.toggle('open'); }
