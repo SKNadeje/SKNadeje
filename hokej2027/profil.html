@@ -645,7 +645,7 @@ load();
         if (!session) return;
         uid = session.user.id;
     }
-    const { data, error } = await sb.from('kviz_odznak').select('typ').eq('user_id', uid);
+    const { data, error } = await sb.from('kviz_odznak').select('typ').eq('user_id', uid).eq('soutez', 'hokej');
     if (error) return;
     const pocty = { detektiv: 0, bystry: 0, hadac: 0 };
     (data || []).forEach(o => { if (o.typ in pocty) pocty[o.typ]++; });
