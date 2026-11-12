@@ -3000,6 +3000,7 @@ async function kvizStav() {
     if (btn) btn.classList.toggle('kviz-blik', !!(_kviz && _kviz.kviz && _kviz.stav === 'aktivni'));
     return _kviz;
 }
+const kvizEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function kvizHtml(d) {
     if (d.stav === 'pred') {
         return `<div class="kviz-karta" style="text-align:center; padding:24px 10px;">
@@ -3015,10 +3016,8 @@ function kvizHtml(d) {
             ? `<div class="kviz-dl"><img src="${odkryte[i]}" alt=""></div>`
             : `<div class="kviz-dl kviz-zamek">🔒</div>`;
     }
-    const nazvy = { tym: 'Tým', pozice: 'Pozice', cislo_dresu: 'Číslo' };
-    const nap = Object.keys(nazvy).map(k => d.napovedy[k]
-        ? `<span class="kviz-napoveda">${nazvy[k]}: <b>${d.napovedy[k]}</b></span>`
-        : `<span class="kviz-napoveda kviz-zamceno">${nazvy[k]}: 🔒 po ${d.cekaNa[k]}. dlaždici</span>`).join('');
+    const nap = (d.napovedy || []).map(n => `<span class="kviz-napoveda">${kvizEsc(n.label)}: <b>${kvizEsc(n.text)}</b></span>`).join('')
+        + (d.cekaNa || []).map(n => `<span class="kviz-napoveda kviz-zamceno">${kvizEsc(n.label)}: 🔒 po ${n.po}. dlaždici</span>`).join('');
     const muzuOdkryt = d.stav === 'aktivni' && !d.vyhral && d.pocet < celk;
     const btnOdkryt = d.stav === 'aktivni'
         ? `<button class="kviz-odkryt" ${muzuOdkryt ? '' : 'disabled'} onclick="kvizOdkryj()">🔓 Odkrýt další dlaždici (${d.pocet}/${celk})</button>`
@@ -3064,7 +3063,7 @@ async function kvizHadej() {
     if (odhad.length < 2) { _kvizZprava = 'Napiš jméno.'; await kvizRender(false); return; }
     const r = await kvizZavolej('POST', { akce: 'hadej', odhad });
     if (!r.ok) { _kvizZprava = `<span style="color:#ff8a80;">${r.chyba}</span>`; }
-    else { _kvizZprava = r.data.spravne ? '<span style="color:#7fe0a0;">✅ Správně!</span>' : '<span style="color:#ff8a80;">❌ Špatně, zkus to znovu.</span>'; }
+    else { _kvizZprava = r.data.skoro ? '<span style="color:#f0d987;">🤏 Skoro! Zkontroluj pravopis (nepočítá se jako pokus).</span>' : r.data.spravne ? '<span style="color:#7fe0a0;">✅ Správně!</span>' : '<span style="color:#ff8a80;">❌ Špatně, zkus to znovu.</span>'; }
     await kvizRender(false);
 }
 setTimeout(kvizStav, 2000);
