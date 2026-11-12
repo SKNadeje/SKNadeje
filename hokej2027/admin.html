@@ -1218,7 +1218,7 @@ function kvDnesPraha() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Eu
 async function kvNacti() {
     const d = document.getElementById('kvDatum').value;
     if (!d) return kvMsg('Vyber datum.', true);
-    const { data: den } = await sb.from('kviz_den').select('*').eq('datum', d).maybeSingle();
+    const { data: den } = await sb.from('kviz_den').select('*').eq('soutez', 'hokej').eq('datum', d).maybeSingle();
     let jmeno = '';
     if (den) {
         const { data: t } = await sb.from('kviz_tajemstvi').select('jmeno').eq('den_id', den.id).maybeSingle();
@@ -1245,6 +1245,7 @@ async function kvUloz() {
     if (kvPoradi.length !== 16) return kvMsg('Pořadí musí mít všech 16 dlaždic (zatím ' + kvPoradi.length + ').', true);
     const num = id => { const v = document.getElementById(id).value; return v === '' ? null : Number(v); };
     const row = {
+        soutez: 'hokej',
         datum: d,
         tym: document.getElementById('kvTym').value.trim() || null,
         pozice: document.getElementById('kvPozice').value.trim() || null,
@@ -1258,7 +1259,7 @@ async function kvUloz() {
         start_at: kvPragueIso(document.getElementById('kvStart').value),
         konec_at: kvPragueIso(document.getElementById('kvKonec').value),
     };
-    const { data: den, error } = await sb.from('kviz_den').upsert(row, { onConflict: 'datum' }).select().single();
+    const { data: den, error } = await sb.from('kviz_den').upsert(row, { onConflict: 'soutez,datum' }).select().single();
     if (error) return kvMsg('Chyba: ' + error.message, true);
     const jm = document.getElementById('kvJmeno').value.trim();
     if (jm) {
