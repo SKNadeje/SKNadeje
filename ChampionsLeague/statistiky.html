@@ -889,34 +889,36 @@ setInterval(async () => {
 })();
 </script>
 
-<div id="kvizZebStats" style="max-width:720px; margin:24px auto; padding:0 12px;"></div>
 <script>
-/* 🧩 Žebříček kvízu na statistikách */
-(async function () {
-    const box = document.getElementById('kvizZebStats');
+/* 🧩 Kvíz jako záložka na statistikách */
+(function () {
+    if (typeof POHLEDY === 'undefined' || typeof prepni !== 'function') return;
+    POHLEDY.kviz = () => '<div id="kvizTabulka" style="max-width:820px; margin:0 auto;"></div>';
+    const _puvodni = prepni;
+    prepni = function (kat) { _puvodni(kat); if (kat === 'kviz') kvizNactiTabulku(); };
+    const zalozky = document.querySelector('.zalozky');
+    if (zalozky && !zalozky.querySelector('[data-kat="kviz"]')) {
+        zalozky.insertAdjacentHTML('beforeend', '<div class="zalozka" data-kat="kviz" onclick="prepni(\'kviz\')">🧩 Kvíz</div>');
+    }
+})();
+async function kvizNactiTabulku() {
+    const box = document.getElementById('kvizTabulka');
     if (!box || typeof sb === 'undefined') return;
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) return;
-    const r = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/kviz?soutez=cl&zebricek=1', {
+    if (!session) { box.innerHTML = '<div style="opacity:.6; text-align:center;">Přihlas se, abys viděl žebříček.</div>'; return; }
+    const r = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/kviz?soutez=SOUTEZ&zebricek=1', {
         headers: { Authorization: 'Bearer ' + session.access_token, apikey: 'sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X' }
     });
-    if (!r.ok) return;
+    if (!r.ok) { box.innerHTML = ''; return; }
     const data = await r.json();
     const radky = data.radky || [];
     const ja = data.ja;
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    box.innerHTML = `<div style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:14px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><b>🧩 Žebříček kvízu</b><span style="opacity:.6; font-size:.8em;">${radky.length} hráčů</span></div>
-        ${radky.length ? `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:.85em;">
-            <thead><tr style="opacity:.6;"><th style="text-align:left; padding:6px;">#</th><th style="text-align:left; padding:6px;">Hráč</th><th style="padding:6px;">Uhodl</th><th style="padding:6px;">🕵️</th><th style="padding:6px;">🔍</th><th style="padding:6px;">🎯</th><th style="padding:6px;">Špatně</th></tr></thead>
-            <tbody>${radky.map((x, i) => `<tr style="border-top:1px solid rgba(255,255,255,.08); ${x.user_id === ja ? 'background:rgba(240,217,135,.12); font-weight:800;' : ''}">
-                <td style="padding:6px;">${i + 1}.</td><td style="padding:6px;">${esc(x.jmeno)}</td>
-                <td style="text-align:center; padding:6px;"><b>${x.vyreseno}</b></td>
-                <td style="text-align:center; padding:6px;">${x.detektiv}</td><td style="text-align:center; padding:6px;">${x.bystry}</td>
-                <td style="text-align:center; padding:6px;">${x.hadac}</td><td style="text-align:center; padding:6px; opacity:.7;">${x.spatne}</td></tr>`).join('')}</tbody></table></div>`
-            : '<div style="opacity:.6; text-align:center;">Zatím nikdo nehádal.</div>'}
-    </div>`;
-})();
+    box.innerHTML = radky.length ? `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:.9em;">
+        <thead><tr style="opacity:.6;"><th style="text-align:left; padding:8px;">#</th><th style="text-align:left; padding:8px;">Hráč</th><th style="padding:8px;">Uhodl</th><th style="padding:8px;">🕵️</th><th style="padding:8px;">🔍</th><th style="padding:8px;">🎯</th><th style="padding:8px;">Špatně</th></tr></thead>
+        <tbody>${radky.map((x, i) => `<tr style="border-top:1px solid rgba(255,255,255,.08); ${x.user_id === ja ? 'background:rgba(240,217,135,.12); font-weight:800;' : ''}"><td style="padding:8px;">${i + 1}.</td><td style="padding:8px;">${esc(x.jmeno)}</td><td style="text-align:center; padding:8px;"><b>${x.vyreseno}</b></td><td style="text-align:center; padding:8px;">${x.detektiv}</td><td style="text-align:center; padding:8px;">${x.bystry}</td><td style="text-align:center; padding:8px;">${x.hadac}</td><td style="text-align:center; padding:8px; opacity:.7;">${x.spatne}</td></tr>`).join('')}</tbody></table></div>`
+        : '<div style="opacity:.6; text-align:center;">Zatím nikdo nehádal.</div>';
+}
 </script>
 </body>
 </html>
