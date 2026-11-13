@@ -954,41 +954,54 @@ load();
 })();
 </script>
 <script>
-/* 🧩 Kvízové odznaky – přidají se mezi ostatní odznaky v profilu */
+/* 🧩 Kvízové odznaky (přičítají se) + popup u všech odznaků */
 (async function () {
     if (typeof sb === 'undefined') return;
     let uid = new URLSearchParams(location.search).get('id');
-    if (!uid) {
-        const { data: { session } } = await sb.auth.getSession();
-        if (!session) return;
-        uid = session.user.id;
-    }
-    const { data, error } = await sb.from('kviz_odznak').select('typ').eq('user_id', uid).eq('soutez', 'cl');
-    if (error) return;
+    if (!uid) { const { data: { session } } = await sb.auth.getSession(); if (!session) return; uid = session.user.id; }
+    const SOUTEZ = 'cl';
+    const [odz, tipy] = await Promise.all([
+        sb.from('kviz_odznak').select('typ').eq('user_id', uid).eq('soutez', SOUTEZ),
+        sb.from('kviz_tip').select('spravne').eq('user_id', uid).eq('soutez', SOUTEZ).eq('spravne', true)
+    ]);
+    if (odz.error || tipy.error) return;
     const pocty = { detektiv: 0, bystry: 0, hadac: 0 };
-    (data || []).forEach(o => { if (o.typ in pocty) pocty[o.typ]++; });
+    (odz.data || []).forEach(o => { if (o.typ in pocty) pocty[o.typ]++; });
     const def = [
-        { t: 'detektiv', ic: '🕵️', l: 'Detektiv', p: 'Uhodl kvíz do 4 odkrytých dlaždic.' },
-        { t: 'bystry', ic: '🔍', l: 'Bystrý', p: 'Uhodl kvíz do 8 odkrytých dlaždic.' },
-        { t: 'hadac', ic: '🎯', l: 'Hádač', p: 'Uhodl kvíz později.' }
+        { ic: '🧩', l: 'Uhodnuté hádanky', n: (tipy.data || []).length, p: 'Kolik hádanek kvízu jsi uhodl.' },
+        { ic: '🕵️', l: 'Detektiv', n: pocty.detektiv, p: 'Hádanka uhodnutá do 4 odkrytých dlaždic.' },
+        { ic: '🔍', l: 'Bystrý', n: pocty.bystry, p: 'Hádanka uhodnutá do 8 odkrytých dlaždic.' },
+        { ic: '🎯', l: 'Hádač', n: pocty.hadac, p: 'Hádanka uhodnutá později.' }
     ];
-    // počkej, až se odznaky vykreslí (jinak by je přepsal výpis)
     let pokusy = 0;
     const pridej = () => {
         const grid = document.getElementById('odznaky');
-        if (!grid || !grid.innerHTML.trim()) {
-            if (++pokusy < 60) setTimeout(pridej, 500);
-            return;
-        }
-        grid.insertAdjacentHTML('beforeend', def.map(d => {
-            const n = pocty[d.t];
-            return `<div class="odz ${n ? 'on' : ''}"><div class="ic">${d.ic}</div><div class="l">${d.l}${n > 1 ? ' ×' + n : ''}</div><div class="p">${d.p}</div></div>`;
-        }).join(''));
+        if (!grid || !grid.innerHTML.trim()) { if (++pokusy < 60) setTimeout(pridej, 500); return; }
+        grid.querySelectorAll('.odz.kviz').forEach(x => x.remove());
+        grid.insertAdjacentHTML('beforeend', def.map(d => `<div class="odz kviz ${d.n ? 'on' : ''}"><div class="ic">${d.ic}</div><div class="l">${d.l}${d.n ? ' ×' + d.n : ''}</div><div class="p">${d.p}</div></div>`).join(''));
         const cnt = document.getElementById('odznakyPocet');
         const m = cnt && cnt.textContent.match(/^(\d+)\/(\d+)$/);
-        if (m) cnt.textContent = (+m[1] + def.filter(d => pocty[d.t]).length) + '/' + (+m[2] + def.length);
+        if (m) cnt.textContent = (+m[1] + def.filter(d => d.n).length) + '/' + (+m[2] + def.length);
     };
     pridej();
+})();
+/* popup u každého odznaku */
+(function () {
+    const pop = document.createElement('div');
+    pop.id = 'odzPopup';
+    pop.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:7000; align-items:center; justify-content:center; padding:20px;';
+    pop.innerHTML = '<div id="odzPopupBox" style="background:#0f1626; border:1px solid rgba(212,175,55,.5); border-radius:18px; max-width:360px; width:100%; padding:22px; text-align:center; color:#eef2ff;"></div>';
+    document.body.appendChild(pop);
+    pop.addEventListener('click', e => { if (e.target === pop) pop.style.display = 'none'; });
+    document.addEventListener('click', e => {
+        const o = e.target.closest && e.target.closest('#odznaky .odz');
+        if (!o) return;
+        const ic = o.querySelector('.ic')?.textContent || '';
+        const l = o.querySelector('.l')?.textContent || '';
+        const p = o.querySelector('.p')?.textContent || '';
+        document.getElementById('odzPopupBox').innerHTML = `<div style="font-size:2.6em;">${ic}</div><div style="font-weight:900; font-size:1.1em; margin:8px 0 4px;">${l}</div><div style="opacity:.8; font-size:.92em;">${p}</div><button onclick="document.getElementById('odzPopup').style.display='none'" style="margin-top:16px; padding:10px 22px; border-radius:10px; border:none; background:linear-gradient(135deg,#f0d987,#c9a02e); color:#1a1206; font-weight:900; cursor:pointer; font-family:inherit;">OK</button>`;
+        pop.style.display = 'flex';
+    });
 })();
 </script>
 </body>
