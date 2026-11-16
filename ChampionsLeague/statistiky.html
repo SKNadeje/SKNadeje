@@ -906,7 +906,7 @@ async function kvizNactiTabulku() {
     if (!box || typeof sb === 'undefined') return;
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { box.innerHTML = '<div style="opacity:.6; text-align:center;">Přihlas se, abys viděl žebříček.</div>'; return; }
-    const r = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/kviz?soutez=SOUTEZ&zebricek=1', {
+    const r = await fetch('https://vlabocwezmpwnxrwxihs.supabase.co/functions/v1/kviz?soutez=cl&zebricek=1', {
         headers: { Authorization: 'Bearer ' + session.access_token, apikey: 'sb_publishable_H9egZ3Rrq5LYi02NxpvjCQ_xDXOQP4X' }
     });
     if (!r.ok) { box.innerHTML = ''; return; }
