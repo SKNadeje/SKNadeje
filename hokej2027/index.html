@@ -2415,22 +2415,49 @@ function mobTabulky() {
 </div>
 <script>
 function zavriTym() { document.getElementById('tymModal').style.display = 'none'; }
+let _tymRezim = 'aktualni';
 function otevriTym(nazev) {
-    const m = document.getElementById('tymModal');
+    _tymRezim = 'aktualni';
+    tymZobraz(nazev);
+    document.getElementById('tymModal').style.display = 'flex';
+}
+function tymPrepni(rezim, nazev) {
+    _tymRezim = rezim;
+    tymZobraz(nazev);
+}
+function tymZobraz(nazev) {
     document.getElementById('tymNazev').textContent = nazev;
     const skup = SKUPINA_A.includes(nazev) ? 'Skupina A' : (SKUPINA_B.includes(nazev) ? 'Skupina B' : '');
-    const zap = (zapasyCache || []).filter(z => z.domaci === nazev || z.hoste === nazev)
-        .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
-    const radky = zap.length ? zap.map(z => {
-        const doma = z.domaci === nazev;
-        const soupr = doma ? z.hoste : z.domaci;
-        const vys = z.status === 'vyhodnoceno' ? `${z.vysledek_d}:${z.vysledek_h}`
-            : (new Date(z.deadline) <= Date.now() ? 'čeká na výsledek'
-            : new Date(z.deadline).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }));
-        return `<div style="display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.08);"><span>${doma ? 'doma proti' : 'venku v'} <b>${soupr}</b></span><b>${vys}</b></div>`;
-    }).join('') : '<div style="opacity:.6;">Zatím žádné zápasy.</div>';
-    document.getElementById('tymObsah').innerHTML = `<div style="font-size:.8em; opacity:.6; margin-bottom:8px;">${skup}</div>${radky}`;
-    m.style.display = 'flex';
+    const prepinac = `<div style="display:flex; gap:6px; margin-bottom:12px;">
+        <button class="zapas-fltr ${_tymRezim === 'aktualni' ? 'on' : ''}" onclick="tymPrepni('aktualni', '${nazev}')">Aktuální MS</button>
+        <button class="zapas-fltr ${_tymRezim === 'historie' ? 'on' : ''}" onclick="tymPrepni('historie', '${nazev}')">Historie MS</button></div>`;
+    let obsah;
+    if (_tymRezim === 'aktualni') {
+        const zap = (zapasyCache || []).filter(z => z.domaci === nazev || z.hoste === nazev)
+            .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+        const radky = zap.length ? zap.map(z => {
+            const doma = z.domaci === nazev;
+            const soupr = doma ? z.hoste : z.domaci;
+            const vys = z.status === 'vyhodnoceno' ? `${z.vysledek_d}:${z.vysledek_h}`
+                : (new Date(z.deadline) <= Date.now() ? 'čeká na výsledek'
+                : new Date(z.deadline).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }));
+            return `<div style="display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.08);"><span>${doma ? 'doma proti' : 'venku v'} <b>${soupr}</b></span><b>${vys}</b></div>`;
+        }).join('') : '<div style="opacity:.6;">Zatím žádné zápasy.</div>';
+        obsah = `<div style="font-size:.8em; opacity:.6; margin-bottom:8px;">${skup}</div>${radky}`;
+    } else {
+        const h = (window.TYMY_HISTORIE || {})[nazev] || { uspechy: [], iihf: null, h2h: [] };
+        const bez = '<div style="opacity:.6;">Zatím bez údajů.</div>';
+        const usp = (h.uspechy || []).length
+            ? h.uspechy.map(u => `<div style="padding:4px 0;">🏆 <b>${u.rok}</b> – ${u.co}</div>`).join('') : bez;
+        const iihf = h.iihf && h.iihf.pozice
+            ? `<div><b>${h.iihf.pozice}. místo</b> · ${h.iihf.body} b. <span style="opacity:.6; font-size:.85em;">(${h.iihf.aktualizace || ''})</span></div>` : bez;
+        const h2hRad = (h.h2h || []).length
+            ? h.h2h.map(x => `<div style="display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,.08);"><span>${x.rok} · ${x.soupeř}${x.po ? ' <span style="color:#f0d987;">(PO)</span>' : ''}</span><b>${x.skore}</b></div>`).join('')
+            : bez;
+        const nadpis = t => `<div style="font-weight:800; margin:14px 0 6px; color:#f0d987; font-size:.9em;">${t}</div>`;
+        obsah = `${nadpis('🏆 Úspěchy na MS')}${usp}${nadpis('📊 Pořadí v IIHF žebříčku')}${iihf}${nadpis('🤝 Vzájemné zápasy (H2H)')}${h2hRad}`;
+    }
+    document.getElementById('tymObsah').innerHTML = prepinac + obsah;
 }
 /* 8) Deník: včera / dnes / zítra */
 function renderDenik() {
@@ -2569,5 +2596,6 @@ setTimeout(kvizStav, 2000);
 setInterval(kvizStav, 60000);
 </script>
 
+<script src="mshistorie.js?v=1"></script>
 </body>
 </html>
