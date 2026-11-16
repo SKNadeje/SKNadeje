@@ -3025,7 +3025,7 @@ function kvizHtml(d) {
             <div id="kvizMsg" style="margin-top:8px; font-size:.85em; min-height:1em; text-align:center;">${_kvizZprava}</div>
             <div style="font-size:.8em; opacity:.6; margin-top:2px; text-align:center;">Špatné pokusy: ${d.spatne || 0}</div>`;
     }
-    const btnOdkryt = d.vyhral ? '' : `<button class="kviz-odkryt" ${d.pocet < 16 ? '' : 'disabled'} onclick="kvizOdkryj()">🔓 Odkrýt další dlaždici (${d.pocet}/16)</button>`;
+    const btnOdkryt = d.vyhral ? '' : `<button class="kviz-odkryt" ${d.pocet < 16 ? '' : 'disabled'} onclick="kvizOdkryj()">🧩 Odhalit další díl (${d.pocet}/16)</button>`;
     return `<div class="kviz-karta">
         <div class="kviz-hlava"><b>🧩 ${kvizEsc(d.nadpis || 'Hádej hráče')}</b><span>odkryto ${d.pocet}/16</span></div>
         <div class="kviz-mrizka">${dl}</div>
