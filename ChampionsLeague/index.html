@@ -3002,7 +3002,38 @@ async function kvizStav(po) {
     if (btn) btn.classList.toggle('kviz-blik', !!(_kviz && _kviz.kviz));
     return _kviz;
 }
+function kvizHtmlMic(d) {
+    const nap = (d.napovedy || []).map(n => `<span class="kviz-napoveda">${kvizEsc(n.label)}: <b>${kvizEsc(n.text)}</b></span>`).join('')
+        + (d.cekaNa || []).map(n => `<span class="kviz-napoveda kviz-zamceno">${kvizEsc(n.label)}: 🔒 po ${n.po}. špatném pokusu</span>`).join('');
+    let obraz;
+    if (d.vyhral && d.mic) {
+        obraz = `<div style="position:relative; display:inline-block; max-width:100%; width:100%;"><img src="${d.foto}" alt="" style="display:block; width:100%; border-radius:12px;"><div style="position:absolute; left:${d.mic.x}%; top:${d.mic.y}%; width:9%; aspect-ratio:1/1; transform:translate(-50%,-50%); border:3px solid #7fe0a0; border-radius:50%;"></div></div>`;
+    } else {
+        obraz = `<img src="${d.foto}" alt="" onclick="kvizMicKlik(event)" style="display:block; width:100%; border-radius:12px; cursor:crosshair;">`;
+    }
+    const spodek = d.vyhral
+        ? `<div style="text-align:center; color:#7fe0a0; margin-top:10px;">✅ Správně! ${d.dalsi ? '<button class="kviz-odkryt" onclick="kvizDalsi()">Další hádanka ▶</button>' : '<span style="opacity:.7;">Další kvíz zatím není.</span>'}</div>`
+        : `<div id="kvizMsg" style="text-align:center; min-height:1.2em; margin-top:8px;">${_kvizZprava}</div><div style="font-size:.8em; opacity:.6; text-align:center;">Špatné pokusy: ${d.spatne || 0}</div>`;
+    return `<div class="kviz-karta"><div class="kviz-hlava"><b>🔍 ${kvizEsc(d.nadpis || 'Najdi míč')}</b><span>klikni na originální míč</span></div>${obraz}${spodek}<div style="margin-top:10px; text-align:center;">${nap}</div></div>`;
+}
+async function kvizMicKlik(ev) {
+    const img = ev.currentTarget;
+    const r = img.getBoundingClientRect();
+    const x = (ev.clientX - r.left) / r.width * 100;
+    const y = (ev.clientY - r.top) / r.height * 100;
+    const res = await kvizZavolej('POST', { akce: 'klik', kviz_id: _kvizId, x, y });
+    if (!res.ok) { _kvizZprava = `<span style="color:#ff8a80;">${kvizEsc(res.chyba)}</span>`; return renderKviz(false); }
+    if (res.data.spravne) {
+        _kviz = { kviz: true, ...res.data };
+        _kvizZprava = '';
+        document.getElementById('__BOX__').innerHTML = kvizHtml(_kviz);
+        return;
+    }
+    _kvizZprava = '<span style="color:#ff8a80;">❌ Špatně, zkus to znovu.</span>';
+    await renderKviz(false);
+}
 function kvizHtml(d) {
+    if (d && d.typ === "najdi_mic") return kvizHtmlMic(d);
     if (!d || !d.kviz) return '<div class="kviz-karta" style="text-align:center; padding:26px; opacity:.85;">🧩 Další kvíz zatím není.</div>';
     const odkryte = {};
     (d.dlazdice || []).forEach(x => { odkryte[x.cislo] = x.url; });
@@ -3025,10 +3056,12 @@ function kvizHtml(d) {
             <div id="kvizMsg" style="margin-top:8px; font-size:.85em; min-height:1em; text-align:center;">${_kvizZprava}</div>
             <div style="font-size:.8em; opacity:.6; margin-top:2px; text-align:center;">Špatné pokusy: ${d.spatne || 0}</div>`;
     }
-    const btnOdkryt = d.vyhral ? '' : `<button class="kviz-odkryt" ${d.pocet < 16 ? '' : 'disabled'} onclick="kvizOdkryj()">🧩 Odhalit další díl (${d.pocet}/16)</button>`;
+    const maskaHtml = d.maska ? `<div style="font-family:monospace; font-size:1.5em; letter-spacing:3px; text-align:center; margin:4px 0 10px; white-space:pre;">${kvizEsc(d.maska)}</div>` : '';
+    const btnOdkryt = d.vyhral ? '' : `<button class="kviz-odkryt" ${d.pocet < (d.celkem || 16) ? '' : 'disabled'} onclick="kvizOdkryj()${d.typ === 'sibenice' ? '🔤 Odhalit další písmeno' : '🧩 Odhalit další díl'} (${d.pocet}/${d.celkem || 16})</button>`;
     return `<div class="kviz-karta">
-        <div class="kviz-hlava"><b>🧩 ${kvizEsc(d.nadpis || 'Hádej hráče')}</b><span>odkryto ${d.pocet}/16</span></div>
-        <div class="kviz-mrizka">${dl}</div>
+        <div class="kviz-hlava"><b>🧩 ${kvizEsc(d.nadpis || 'Hádej hráče')}</b><span>odkryto ${d.pocet}/${d.celkem || 16}</span></div>
+        ${maskaHtml}
+        ${d.typ === 'sibenice' ? '' : `<div class="kviz-mrizka">${dl}</div>`}
         <div style="margin-top:10px; text-align:center;">${btnOdkryt}</div>
         <div style="margin-top:10px; text-align:center;">${nap}</div>
         ${spodek}</div>`;
@@ -3060,8 +3093,10 @@ async function kvizHadej() {
         const btn = document.getElementById('zf-kviz');
         return;
     }
-    _kvizZprava = r.data.skoro
-        ? '<span style="color:#f0d987;">🤏 Skoro! Zkontroluj pravopis (nepočítá se jako pokus).</span>'
+    _kvizZprava = r.data.feedback === 'hori'
+        ? '<span style="color:#ff8a4c;">🔥 Hoří! Jsi moc blízko.</span>'
+        : r.data.feedback === 'prihoriva'
+        ? '<span style="color:#f0d987;">🌡️ Přihořívá, jsi na stopě.</span>'
         : '<span style="color:#ff8a80;">❌ Špatně, zkus to znovu.</span>';
     await renderKviz(false);
 }
