@@ -3046,7 +3046,7 @@ async function kvizMicKlik(ev) {
 }
 async function kvizHistorie() {
   try {
-    const box = document.getElementById('__BOX__');
+    const box = document.getElementById('matches');
     box.innerHTML = '<div style="opacity:.6; padding:20px; text-align:center;">Načítám historii…</div>';
     const r = await kvizZavolej('GET', null, '&historie=1');
     if (!r.ok) { box.innerHTML = `<div class="kviz-karta" style="text-align:center; color:#ff8a80;">${kvizEsc(r.chyba)}</div>`; return; }
@@ -3058,12 +3058,12 @@ async function kvizHistorie() {
             <span>${x.uhadl ? '✅' : '❌'} <button class="kviz-odkryt" ${x.uhadl ? '' : 'disabled'} onclick="kvizHistorieDen(${x.id})">Zobrazit</button></span></div>`).join('')
             : '<div style="opacity:.6; text-align:center;">Zatím žádná historie.</div>'}
     </div>`;
-  } catch (e) { document.getElementById('__BOX__').innerHTML = `<div class="kviz-karta" style="color:#ff8a80;">Historie se nenačetla: ${kvizEsc(e.message)}</div>`; }
+  } catch (e) { document.getElementById('matches').innerHTML = `<div class="kviz-karta" style="color:#ff8a80;">Historie se nenačetla: ${kvizEsc(e.message)}</div>`; }
 }
 async function kvizHistorieDen(id) {
     const r = await kvizZavolej('GET', null, '&den=' + id);
     if (!r.ok) { _kvizZprava = `<span style="color:#ff8a80;">${kvizEsc(r.chyba)}</span>`; return; }
-    document.getElementById('__BOX__').innerHTML = kvizHtml(r.data)
+    document.getElementById('matches').innerHTML = kvizHtml(r.data)
         + `<div style="text-align:center; margin-top:10px;"><button class="kviz-odkryt" onclick="kvizHistorie()">← Zpět na historii</button></div>`;
 }
 function kvizHtml(d) {
