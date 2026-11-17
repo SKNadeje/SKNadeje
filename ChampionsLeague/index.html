@@ -3016,7 +3016,7 @@ function kvizHtmlMic(d) {
         ? `<div style="text-align:center; color:#7fe0a0; margin-top:10px;">✅ Správně! ${d.dalsi ? '<button class="kviz-odkryt" onclick="kvizDalsi()">Další hádanka ▶</button>' : '<span style="opacity:.7;">Další kvíz zatím není.</span>'}</div>`
         : `<div id="kvizMsg" style="text-align:center; min-height:1.2em; margin-top:8px;">${_kvizZprava}</div><div id="micInfo" style="font-size:.8em; opacity:.6; text-align:center;">Špatné pokusy: ${d.spatne || 0}</div>`;
     return `<div class="kviz-karta">
-        <div class="kviz-hlava"><b>🔍 ${kvizEsc(d.nadpis || 'Najdi míč')}</b><span>klikni na originální míč</span></div>
+        <div style="text-align:center; margin-bottom:8px;"><div style="font-weight:900; font-size:1.35em;">🔍 ${kvizEsc(d.nadpis || 'Najdi míč')}</div><div style="font-size:.8em; opacity:.7;">klikni na originální míč</div></div>
         <div id="micWrap" style="position:relative; width:100%;">
             <img id="micImg" src="${d.foto}" alt="" onclick="kvizMicKlik(event)" style="display:block; width:100%; border-radius:12px; cursor:crosshair;">
             ${krizy}${kruh}
@@ -3045,6 +3045,7 @@ async function kvizMicKlik(ev) {
     document.getElementById('kvizMsg').innerHTML = '<span style="color:#ff8a80;">❌ Špatně, zkus to znovu.</span>';
 }
 async function kvizHistorie() {
+  try {
     const box = document.getElementById('__BOX__');
     box.innerHTML = '<div style="opacity:.6; padding:20px; text-align:center;">Načítám historii…</div>';
     const r = await kvizZavolej('GET', null, '&historie=1');
@@ -3057,6 +3058,7 @@ async function kvizHistorie() {
             <span>${x.uhadl ? '✅' : '❌'} <button class="kviz-odkryt" ${x.uhadl ? '' : 'disabled'} onclick="kvizHistorieDen(${x.id})">Zobrazit</button></span></div>`).join('')
             : '<div style="opacity:.6; text-align:center;">Zatím žádná historie.</div>'}
     </div>`;
+  } catch (e) { document.getElementById('__BOX__').innerHTML = `<div class="kviz-karta" style="color:#ff8a80;">Historie se nenačetla: ${kvizEsc(e.message)}</div>`; }
 }
 async function kvizHistorieDen(id) {
     const r = await kvizZavolej('GET', null, '&den=' + id);
@@ -3091,7 +3093,7 @@ function kvizHtml(d) {
     const maskaHtml = d.maska ? `<div style="font-family:monospace; font-size:1.5em; letter-spacing:3px; text-align:center; margin:4px 0 10px; white-space:pre;">${kvizEsc(d.maska)}</div>` : '';
     const btnOdkryt = d.vyhral ? '' : `<button class="kviz-odkryt" ${d.pocet < (d.celkem || 16) ? '' : 'disabled'} onclick="kvizOdkryj()${d.typ === 'sibenice' ? '🔤 Odhalit další písmeno' : '🧩 Odhalit další díl'} (${d.pocet}/${d.celkem || 16})</button>`;
     return `<div class="kviz-karta">
-        <div class="kviz-hlava"><b>🧩 ${kvizEsc(d.nadpis || 'Hádej hráče')}</b><span>odkryto ${d.pocet}/${d.celkem || 16}</span></div>
+        <div style="text-align:center; margin-bottom:8px;"><div style="font-weight:900; font-size:1.35em;">🧩 ${kvizEsc(d.nadpis || 'Hádej hráče')}</div><div style="font-size:.8em; opacity:.7;">odkryto ${d.pocet}/${d.celkem || 16}</div></div>
         ${maskaHtml}
         ${d.typ === 'sibenice' ? '' : `<div class="kviz-mrizka">${dl}</div>`}
         <div style="margin-top:10px; text-align:center;">${btnOdkryt}</div>
