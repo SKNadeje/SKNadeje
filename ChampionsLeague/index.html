@@ -3091,7 +3091,7 @@ function kvizHtml(d) {
             <div style="font-size:.8em; opacity:.6; margin-top:2px; text-align:center;">Špatné pokusy: ${d.spatne || 0}</div>`;
     }
     const maskaHtml = d.maska ? `<div style="font-family:monospace; font-size:1.5em; letter-spacing:3px; text-align:center; margin:4px 0 10px; white-space:pre;">${kvizEsc(d.maska)}</div>` : '';
-    const btnOdkryt = d.vyhral ? '' : `<button class="kviz-odkryt" ${d.pocet < (d.celkem || 16) ? '' : 'disabled'} onclick="kvizOdkryj()${d.typ === 'sibenice' ? '🔤 Odhalit další písmeno' : '🧩 Odhalit další díl'} (${d.pocet}/${d.celkem || 16})</button>`;
+    const btnOdkryt = d.vyhral ? '' : `<button class="kviz-odkryt" ${d.pocet < (d.celkem || 16) ? '' : 'disabled'} onclick="kvizOdkryj()">${d.typ === 'sibenice' ? '🔤 Odhalit další písmeno' : '🧩 Odhalit další díl'} (${d.pocet}/${d.celkem || 16})</button>`;
     return `<div class="kviz-karta">
         <div style="text-align:center; margin-bottom:8px;"><div style="font-weight:900; font-size:1.35em;">🧩 ${kvizEsc(d.nadpis || 'Hádej hráče')}</div><div style="font-size:.8em; opacity:.7;">odkryto ${d.pocet}/${d.celkem || 16}</div></div>
         ${maskaHtml}
