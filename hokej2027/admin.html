@@ -365,6 +365,10 @@ input[type="datetime-local"].auth-input::-webkit-calendar-picker-indicator { fil
                     <div><label>Pořadí kvízu</label><input id="PFXPorad" type="number" min="1"></div>
                     <div><label>Složka s dlaždicemi (nepovinné)</label><input id="PFXSlozka" type="text" placeholder="např. 12.11.2026"></div>
                     <div><label>Nadpis nad fotkou (nepovinné)</label><input id="PFXNadpis" type="text" placeholder="Hádej hráče"></div>
+                    <div><label>Typ kvízu</label><select id="PFXTyp"><option value="foto">Foto (dlaždice z fotky)</option><option value="sibenice">Šibenice (jen text, odhalují se písmena)</option><option value="najdi_mic">Najdi míč (klik na fotku)</option></select></div>
+                    <div><label>Míč: X (% šířky)</label><input id="PFXMicX" type="number" step="0.1"></div>
+                    <div><label>Míč: Y (% výšky)</label><input id="PFXMicY" type="number" step="0.1"></div>
+                    <div><label>Tolerance (%)</label><input id="PFXMicTol" type="number" step="0.5" placeholder="4"></div>
                     <div style="display:flex; align-items:center; gap:8px;"><input id="PFXAktivni" type="checkbox" checked><label style="margin:0;">Aktivní (vidí hráči)</label></div>
                 </div>
                 <div style="font-size:.85em; opacity:.8; margin:12px 0 6px;">Pořadí dlaždic (nepovinné – nevyplněné se doplní popořadí):</div>
@@ -1230,6 +1234,10 @@ async function PFXOtevri(id) {
     document.getElementById('PFXPorad').value = d.porad ?? '';
     document.getElementById('PFXSlozka').value = d.slozka || '';
     document.getElementById('PFXNadpis').value = d.nadpis || '';
+    document.getElementById('PFXTyp').value = d.typ || 'foto';
+    document.getElementById('PFXMicX').value = d.mic_x ?? '';
+    document.getElementById('PFXMicY').value = d.mic_y ?? '';
+    document.getElementById('PFXMicTol').value = d.mic_tol ?? 4;
     document.getElementById('PFXAktivni').checked = !!d.aktivni;
     PFXDlaz = Array.isArray(d.poradi) ? [...d.poradi] : [];
     PFXNap = Array.isArray(d.napovedy) ? d.napovedy.map(n => ({ ...n })) : [];
@@ -1244,6 +1252,10 @@ function PFXNovy() {
     document.getElementById('PFXPorad').value = max + 1;
     document.getElementById('PFXSlozka').value = '';
     document.getElementById('PFXNadpis').value = '';
+    document.getElementById('PFXTyp').value = 'foto';
+    document.getElementById('PFXMicX').value = '';
+    document.getElementById('PFXMicY').value = '';
+    document.getElementById('PFXMicTol').value = 4;
     document.getElementById('PFXAktivni').checked = true;
     PFXDlaz = []; PFXNap = [];
     document.getElementById('PFXEditor').style.display = 'block';
@@ -1264,6 +1276,10 @@ async function PFXUloz() {
         poradi: dlaz, napovedy,
         slozka: document.getElementById('PFXSlozka').value.trim() || null,
         nadpis: document.getElementById('PFXNadpis').value.trim() || null,
+        typ: document.getElementById('PFXTyp').value,
+        mic_x: Number(document.getElementById('PFXMicX').value) || null,
+        mic_y: Number(document.getElementById('PFXMicY').value) || null,
+        mic_tol: Number(document.getElementById('PFXMicTol').value) || 4,
     };
     let den, error;
     if (PFXId) {
