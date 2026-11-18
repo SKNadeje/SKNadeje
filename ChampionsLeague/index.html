@@ -790,6 +790,15 @@ body.sez-zima .nav button::after, body.sez-vanoce .nav button::after, body.sez-s
 .mic-kriz { position:absolute; width:26px; height:26px; transform:translate(-50%,-50%); pointer-events:none;
   background: linear-gradient(45deg, transparent 42%, #ff4d4d 42%, #ff4d4d 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, #ff4d4d 42%, #ff4d4d 58%, transparent 58%); }
 .mic-kruh { position:absolute; width:9%; aspect-ratio:1/1; transform:translate(-50%,-50%); border:3px solid #7fe0a0; border-radius:50%; pointer-events:none; box-shadow:0 0 12px rgba(127,224,160,.6); }
+
+/* ===== mobil: výsledek a body vždy vidět, jméno se zkrátí ===== */
+@media (max-width: 420px) {
+    .tl-grid .tl-av { display: none; }
+    .tl-grid .tl-row { gap: 4px; padding: 5px 6px; }
+    .tl-grid .tl-jm { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tl-grid .tl-sk, .tl-grid .tl-b { flex-shrink: 0; }
+    .tl-grid .tl-b { min-width: auto; font-size: .7em; }
+}
 </style>
 <script>
 (function(){ try { var t=localStorage.getItem('cl_theme')||'tmavy'; if(t!=='tmavy') document.documentElement.setAttribute('data-theme',t); } catch(e){} })();
