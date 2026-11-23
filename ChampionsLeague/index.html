@@ -3111,7 +3111,7 @@ async function kvizLogoHadej() {
     if (r.data.spravne) {
         _kviz = { kviz: true, ...r.data };
         _kvizZprava = '';
-        document.getElementById('__BOX__').innerHTML = kvizHtml(_kviz);
+        document.getElementById('matches').innerHTML = kvizHtml(_kviz);
         return;
     }
     _kvizZprava = '<span style="color:#ff8a80;">❌ Špatně, zkus to znovu.</span>';
