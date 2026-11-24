@@ -2504,10 +2504,11 @@ async function kvizZavolej(metoda, telo, extra) {
     const v = await r.json().catch(() => ({}));
     return r.ok ? { ok: true, data: v } : { ok: false, chyba: v.chyba || 'Chyba' };
 }
-async function kvizStav(po) {
-    const r = await kvizZavolej('GET', null, po ? '&po=' + po : '');
-    _kviz = r.ok ? r.data : null;
-    if (_kviz && _kviz.kviz) _kvizId = _kviz.id;
+async function kvizStav(po, kviz, nastavit) {
+    const extra = (po ? '&po=' + po : '') + (kviz ? '&kviz=' + kviz : '');
+    const r = await kvizZavolej('GET', null, extra);
+    const data = r.ok ? r.data : null;
+    if (nastavit) { _kviz = data; if (data && data.kviz) _kvizId = data.id; }
     const btn = document.getElementById('fltr-kviz');
     if (btn) btn.classList.toggle('kviz-blik', !!(_kviz && _kviz.kviz));
     return _kviz;
@@ -2534,7 +2535,7 @@ const _micSpatne = {};
 async function kvizVzdat() {
     if (!confirm('Opravdu se nechat podat? Hádanka se uzavře bez bodů.')) return;
     const r = await kvizZavolej('POST', { akce: 'vzdat', kviz_id: _kvizId });
-    if (!r.ok) { _kvizZprava = `<span style="color:#ff8a80;">${kvizEsc(r.chyba)}</span>`; return renderKviz(false); }
+    if (!r.ok) { _kvizZprava = `<span style="color:#ff8a80;">${kvizEsc(r.chyba)}</span>`; return renderKviz(false, null, _kvizId); }
     _kviz = { kviz: true, ...r.data, vzdal: true };
     _kvizZprava = '';
     document.getElementById('kvizCard').innerHTML = kvizHtml(_kviz);
@@ -2566,7 +2567,7 @@ async function kvizHistorie() {
     if (!r.ok) { box.innerHTML = `<div class="kviz-karta" style="text-align:center; color:#ff8a80;">${kvizEsc(r.chyba)}</div>`; return; }
     const radky = r.data.radky || [];
     box.innerHTML = `<div class="kviz-karta">
-        <div class="kviz-hlava"><b>📚 Historie kvízů</b><span><button class="kviz-odkryt" onclick="renderKviz(false)">← Zpět</button></span></div>
+        <div class="kviz-hlava"><b>📚 Historie kvízů</b><span><button class="kviz-odkryt" onclick="renderKviz(false, null, _kvizId)">← Zpět</button></span></div>
         ${radky.length ? radky.map(x => `<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.08);">
             <span>${kvizEsc(x.nadpis || (x.typ === 'najdi_mic' ? 'Najdi míč' : 'Hádej hráče'))} <span style="opacity:.6; font-size:.8em;">#${x.porad ?? x.id}</span></span>
             <span>${x.uhadl ? '✅' : x.zobrazit ? '🏳️' : '❌'} <button class="kviz-odkryt" ${x.zobrazit ? '' : 'disabled'} onclick="kvizHistorieDen(${x.id})">Zobrazit</button></span></div>`).join('')
@@ -2580,8 +2581,43 @@ async function kvizHistorieDen(id) {
     document.getElementById('kvizCard').innerHTML = kvizHtml(r.data)
         + `<div style="text-align:center; margin-top:10px;"><button class="kviz-odkryt" onclick="kvizHistorie()">← Zpět na historii</button></div>`;
 }
+function kvizHtmlLogo(d) {
+    const nap = (d.napovedy || []).map(n => `<span class="kviz-napoveda">${kvizEsc(n.label)}: <b>${kvizEsc(n.text)}</b></span>`).join('')
+        + (d.cekaNa || []).map(n => `<span class="kviz-napoveda kviz-zamceno">${kvizEsc(n.label)}: 🔒 po ${n.po}. špatném pokusu</span>`).join('');
+    const hlava = `<div style="text-align:center; margin-bottom:8px;"><div style="font-weight:900; font-size:1.35em;">🛡️ ${kvizEsc(d.nadpis || 'Hádej klub')}</div><div style="font-size:.8em; opacity:.7;">Který klub je na logu?</div></div>`;
+    const obraz = `<img src="${d.foto}" alt="" style="display:block; max-width:100%; max-height:340px; margin:0 auto; border-radius:12px;">`;
+    let spodek;
+    if (d.vyhral || d.vzdal) {
+        spodek = `<div style="text-align:center; margin-top:12px; color:${d.vyhral ? '#7fe0a0' : '#f0d987'};">${d.vyhral ? '✅ Správně' : '🏳️ Správná odpověď'}: <b>${kvizEsc(d.jmeno || '')}</b></div>`
+            + (d.vyhral && d.dalsi ? `<div style="text-align:center; margin-top:10px;"><button class="kviz-odkryt" onclick="kvizDalsi()">Další hádanka ▶</button></div>`
+                : `<div style="text-align:center; margin-top:10px; opacity:.7;">Další kvíz zatím není.</div>`);
+    } else {
+        spodek = `<div style="display:flex; gap:8px; margin-top:12px;">
+            <input id="kvizOdhad" placeholder="Název klubu" style="flex:1; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.06); color:inherit; font-family:inherit;">
+            <button onclick="kvizLogoHadej()" class="kviz-odkryt" style="padding:10px 16px;">HÁDAT</button></div>
+            <div id="kvizMsg" style="margin-top:8px; font-size:.85em; min-height:1em; text-align:center;">${_kvizZprava}</div>
+            <div style="font-size:.8em; opacity:.6; margin-top:2px; text-align:center;">Špatné pokusy: ${d.spatne || 0}</div>
+            <div style="text-align:center; margin-top:10px;"><button class="kviz-odkryt" style="opacity:.85;" onclick="kvizVzdat()">🏳️ Nevím, nechám se podat</button></div>`;
+    }
+    return `<div class="kviz-karta">${hlava}${obraz}${spodek}<div style="margin-top:10px; text-align:center;">${nap}</div></div>`;
+}
+async function kvizLogoHadej() {
+    const odhad = document.getElementById('kvizOdhad').value.trim();
+    if (odhad.length < 2) { _kvizZprava = 'Napiš název.'; return renderKviz(false, null, _kvizId); }
+    const r = await kvizZavolej('POST', { akce: 'hadej', kviz_id: _kvizId, odhad });
+    if (!r.ok) { _kvizZprava = `<span style="color:#ff8a80;">${kvizEsc(r.chyba)}</span>`; return renderKviz(false, null, _kvizId); }
+    if (r.data.spravne) {
+        _kviz = { kviz: true, ...r.data };
+        _kvizZprava = '';
+        document.getElementById('kvizCard').innerHTML = kvizHtml(_kviz);
+        return;
+    }
+    _kvizZprava = '<span style="color:#ff8a80;">❌ Špatně, zkus to znovu.</span>';
+    await renderKviz(false, null, _kvizId);
+}
 function kvizHtml(d) {
     if (d && d.typ === "najdi_mic") return kvizHtmlMic(d);
+    if (d && d.typ === "logo") return kvizHtmlLogo(d);
     if (!d || !d.kviz) return '<div class="kviz-karta" style="text-align:center; padding:26px; opacity:.85;">🧩 Další kvíz zatím není.</div>';
     const odkryte = {};
     (d.dlazdice || []).forEach(x => { odkryte[x.cislo] = x.url; });
@@ -2615,11 +2651,11 @@ function kvizHtml(d) {
         <div style="margin-top:10px; text-align:center;">${nap}</div>
         ${spodek}${vzdatHtml}</div>`;
 }
-async function renderKviz(prvni, po) {
+async function renderKviz(prvni, po, kviz) {
     const box = document.getElementById('kvizCard');
     if (prvni) box.innerHTML = '<div style="opacity:.6; padding:20px; text-align:center;">Načítám…</div>';
     box.style.minHeight = box.offsetHeight + 'px';
-    const d = await kvizStav(po);
+    const d = await kvizStav(po, kviz, true);
     if (!d && !prvni) { /* síť/přihlášení – nechat stávající obsah */ }
     box.innerHTML = kvizHtml(d) + '<div style="text-align:center; margin-top:12px;"><button class="kviz-odkryt" onclick="kvizHistorie()">📚 Historie kvízů</button></div>';
     box.style.minHeight = '';
@@ -2628,13 +2664,13 @@ function kvizRender(prvni) { return renderKviz(prvni); }
 async function kvizOdkryj() {
     const r = await kvizZavolej('POST', { akce: 'odkryj', kviz_id: _kvizId });
     _kvizZprava = r.ok ? '' : `<span style="color:#ff8a80;">${kvizEsc(r.chyba)}</span>`;
-    await renderKviz(false);
+    await renderKviz(false, null, _kvizId);
 }
 async function kvizHadej() {
     const odhad = document.getElementById('kvizOdhad').value.trim();
-    if (odhad.length < 2) { _kvizZprava = 'Napiš jméno.'; return renderKviz(false); }
+    if (odhad.length < 2) { _kvizZprava = 'Napiš jméno.'; return renderKviz(false, null, _kvizId); }
     const r = await kvizZavolej('POST', { akce: 'hadej', kviz_id: _kvizId, odhad });
-    if (!r.ok) { _kvizZprava = `<span style="color:#ff8a80;">${kvizEsc(r.chyba)}</span>`; return renderKviz(false); }
+    if (!r.ok) { _kvizZprava = `<span style="color:#ff8a80;">${kvizEsc(r.chyba)}</span>`; return renderKviz(false, null, _kvizId); }
     if (r.data.spravne) {
         _kviz = { kviz: true, ...r.data };
         _kvizZprava = '';
@@ -2647,7 +2683,7 @@ async function kvizHadej() {
         : r.data.feedback === 'prihoriva'
         ? '<span style="color:#f0d987;">🌡️ Přihořívá, jsi na stopě.</span>'
         : '<span style="color:#ff8a80;">❌ Špatně, zkus to znovu.</span>';
-    await renderKviz(false);
+    await renderKviz(false, null, _kvizId);
 }
 async function kvizDalsi() {
     _kvizZprava = '';
@@ -2670,8 +2706,8 @@ prepniZapasy = function (rezim) {
     }
 };
 
-setTimeout(kvizStav, 2000);
-setInterval(kvizStav, 60000);
+setTimeout(() => kvizStav(), 2000);
+setInterval(() => kvizStav(), 60000);
 </script>
 
 <script src="mshistorie.js?v=1"></script>
